@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/icone.png') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='img/icone.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style_login.css')}}">
+</head>    
+<br>
+    <br>
+        <br>
+            <br>
+                <br>
+                    <br>
+                        <br>
+    <body>
+    <h1>Login</h1>
+        
+        <div class="message-flash">
+        <!-- Exibindo mensagens flash -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        </div>
+        <div class="Login">
+        <form method="POST" action="{{ url_for('login.login_colaboradores') }}">
+                <input type="text" name="username" id="username" placeholder="Username" required>
+                <input type="password" name="password" id="password" placeholder="Password" required>
+                <button type="submit" class="btn-btn-primary">Enviar</button>
+            </form><br>
+        </div><br><br><br><br><br>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    </body>
+</html>

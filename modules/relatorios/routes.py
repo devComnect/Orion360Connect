@@ -299,7 +299,7 @@ def extrair_comparativo_relatorios():
     else:
         img_path = None
 
-    # ▶️ Geração do PDF
+    # Geração do PDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)

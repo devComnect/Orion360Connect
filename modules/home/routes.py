@@ -27,3 +27,7 @@ def render_insights():
 @home_bp.route('/relatorios', methods=['GET'])
 def render_relatorio():
     return render_template('relatorios.html')
+
+@home_bp.route('/login', methods=['GET'])
+def render_login_colaboradores():
+    return render_template('login_colaboradores.html')

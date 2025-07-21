@@ -143,6 +143,17 @@ def performance_colaboradores_render():
         "Henrique": 2028,
         "Rafael": 2029
         }
+    
+    OPERADORES_CREDENTIAL = {
+        "dneto": 2025,
+        "gmaciel": 2022,
+        "lkaizer": 2024,
+        "msilva" : 2021,
+        "esilva" : 2029,
+        "gmelo" : 2023,
+        "rragga" : 2020,
+        "halmeida": 2028,
+    }
 
     data = request.get_json()
     nome = data.get('nome')
@@ -153,7 +164,8 @@ def performance_colaboradores_render():
 
     operador_id = OPERADORES_IDS.get(nome)
     if not operador_id:
-        operador_id = ""
+        operador_id = OPERADORES_CREDENTIAL.get(nome)
+        #operador_id = ""
         #return jsonify({"status": "error", "message": f"Operador '{nome}' não encontrado"}), 404
 
     # Define a data (ontem)
@@ -619,7 +631,7 @@ def get_sla_operador():
 
     # Filtro com operador, período e grupo de suporte
     chamados = Chamado.query.filter(
-        Chamado.nome_grupo.ilike('SUPORTE COMNEcT - N1'),
+        Chamado.nome_grupo.ilike('%SUPORTE%'),
         Chamado.nome_status != 'Cancelado',
         Chamado.operador == nome,
         Chamado.data_criacao >= data_inicio
