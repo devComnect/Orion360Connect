@@ -3,10 +3,7 @@ from flask_login import login_user, logout_user, login_required
 from application.models import db 
 from application.models import User
 from datetime import datetime
-from application.models import db, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, PesquisaSatisfacao
-
-import bcrypt
-from werkzeug.security import check_password_hash
+from application.models import db, PerformanceColaboradores
 
 login_bp = Blueprint('login', __name__)
 # Crie o objeto admin
@@ -17,7 +14,6 @@ login_bp = Blueprint('login', __name__)
 @login_required
 def home():
     return render_template('dashboard.html')
-
 
 @login_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -39,7 +35,6 @@ def register():
         return redirect(url_for('authenticate.login'))
 
     return render_template('register.html')
-
 
 @login_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -74,14 +69,12 @@ def login():
 
     return render_template('login.html')  # Renderiza o template de login
 
-
 @login_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
     session.pop('username', None)  # Remover o 'username' da sessão, se existir
     logout_user()
     return render_template('login.html')
-
 
 @login_bp.route('/login/colaboradores', methods=['GET', 'POST'])
 def login_colaboradores():
@@ -196,8 +189,6 @@ def login_colaboradores():
             flash('Credenciais inválidas. Tente novamente.', 'danger')
 
     return render_template('login_colaboradores.html')
-
-
 
 @login_bp.route('/render/colaboradores', methods=['GET'])
 def render_login_operadores():
