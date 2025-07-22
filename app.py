@@ -21,6 +21,7 @@ from modules.admin.routes import admin_bp
 from modules.delgrande.operadores.routes import operadores_bp
 from modules.insights.routes import insights_bp
 from modules.relatorios.routes import relatorios_bp
+from modules.escala.routes import escala_bp
 from modules.delgrande.relatorios.utils import (
     processar_e_armazenar_performance,
     processar_e_armazenar_performance_vyrtos,
@@ -67,6 +68,7 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(operadores_bp)
 app.register_blueprint(insights_bp)
 app.register_blueprint(relatorios_bp)
+app.register_blueprint(escala_bp)
 
 # Init extensions
 db.init_app(app)

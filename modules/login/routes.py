@@ -196,5 +196,5 @@ def render_login_operadores():
     nome = session.get('nome')
     #total_chamados = session.get('total_chamados', 0)  # Pega da sessão, default 0
 
-    return render_template('colaboradores.html', nome=nome)
+    return render_template('colaboradores_individual.html', nome=nome)
  

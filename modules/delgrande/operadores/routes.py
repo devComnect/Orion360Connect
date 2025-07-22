@@ -4,7 +4,7 @@ from application.models import db, DesempenhoAtendente, DesempenhoAtendenteVyrto
 from modules.delgrande.auth.utils import authenticate, authenticate_relatorio
 from application.models import Chamado
 from settings.endpoints import CREDENTIALS
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from sqlalchemy import func, cast, Date, and_, or_
 
 
@@ -133,48 +133,20 @@ def get_performance_colaboradores():
 
 @operadores_bp.route('/performanceColaboradoresRender', methods=['POST'])
 def performance_colaboradores_render():
-    OPERADORES_IDS = {
-        "Renato": 2020,
-        "Matheus": 2021,
-        "Gustavo": 2022,
-        "Raysa": 2023,
-        "Lucas": 2024,
-        "Danilo": 2025,
-        "Henrique": 2028,
-        "Rafael": 2029
-        }
-    
-    OPERADORES_CREDENTIAL = {
-        "dneto": 2025,
-        "gmaciel": 2022,
-        "lkaizer": 2024,
-        "msilva" : 2021,
-        "esilva" : 2029,
-        "gmelo" : 2023,
-        "rragga" : 2020,
-        "halmeida": 2028,
-    }
-
+    session.clear()
     data = request.get_json()
     nome = data.get('nome')
-    print(nome)
 
-    '''if not nome:
-        return jsonify({"status": "error", "message": "Nome do operador não fornecido"}), 400'''
+    if not nome:
+        return jsonify({"status": "error", "message": "Nome do operador não fornecido"}), 400
 
-    operador_id = OPERADORES_IDS.get(nome)
-    if not operador_id:
-        operador_id = OPERADORES_CREDENTIAL.get(nome)
-        #operador_id = ""
-        #return jsonify({"status": "error", "message": f"Operador '{nome}' não encontrado"}), 404
+    hoje = date.today()
 
-    # Define a data (ontem)
-    hoje = datetime.now().date()
+    registros = PerformanceColaboradores.query.filter(
+        PerformanceColaboradores.name == nome,
+        PerformanceColaboradores.data == hoje
+    )
 
-    # Busca os registros no banco
-    registros = PerformanceColaboradores.query.filter_by(operador_id=operador_id, data=hoje).all()
-
-    # Inicializa os acumuladores
     acumulado = {
         "ch_atendidas": 0,
         "ch_naoatendidas": 0,
@@ -188,7 +160,7 @@ def performance_colaboradores_render():
     }
 
     for item in registros:
-        acumulado["ch_atendidas"] += item.ch_atendidas
+        acumulado["ch_atendidas"] = item.ch_atendidas
         acumulado["ch_naoatendidas"] += item.ch_naoatendidas
         acumulado["tempo_online"] += item.tempo_online
         acumulado["tempo_livre"] += item.tempo_livre
@@ -233,6 +205,16 @@ def performance_colaboradores_render():
     session['dados'] = dados
 
     return jsonify({"redirect_url": url_for('operadores_bp.render_operadores')})
+
+@operadores_bp.route('/colaboradores', methods=['GET'])
+def render_operadores():
+    nome = session.get('nome')
+    dados = session.get('dados')
+
+    if not nome or not dados:
+        return "Dados não encontrados na sessão", 400
+
+    return render_template('colaboradores.html', nome=nome, dados=dados)
 
 @operadores_bp.route('/performanceColaboradores', methods=['POST'])
 def get_performance_colaboradores():
@@ -318,155 +300,6 @@ def get_performance_colaboradores():
 
     return jsonify({"status": "success", "dados": dados})
 
-'''@operadores_bp.route('/performanceColaboradores', methods=['POST'])
-def get_performance_colaboradores():
-    OPERADORES_IDS = {
-        "Renato": 2020,
-        "Matheus": 2021,
-        "Gustavo": 2022,
-        "Raysa": 2023,
-        "Lucas": 2024,
-        "Danilo": 2025,
-        "Henrique": 2028,
-        "Rafael": 2029
-    }
-
-    data = request.get_json()
-    nome = data.get('nome')
-    dias_str = str(data.get('dias', '1'))
-
-    operador_id = OPERADORES_IDS.get(nome)
-    if not operador_id:
-        return jsonify({"status": "error", "message": "Operador não encontrado"}), 404
-
-    hoje = datetime.now().date()
-    ontem = hoje - timedelta(days=1)
-
-    # Verifica se o usuário está pedindo os dados para 90 dias
-    if dias_str == "90":
-        # Autentica e faz o request à API externa para obter os dados dos últimos 90 dias
-        auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
-        if "access_token" not in auth_response:
-            return jsonify({"status": "error", "message": "Falha na autenticação"}), 401
-
-        access_token = auth_response["access_token"]
-        data_inicial = hoje - timedelta(days=89)
-        data_final = ontem
-
-        class Params:
-            initial_date = data_inicial
-            final_date = data_final
-            initial_hour = "00:00:00"
-            final_hour = "23:59:59"
-            fixed = 0
-            week = ""
-            agents = [operador_id]
-            queues = [1]
-            options = {"sort": {"data": -1}, "offset": 0, "count": 1000}
-            conf = {}
-
-        # Chama a API externa para pegar os dados de performance
-        response = utils.atendentePerformance(access_token, Params)
-        dados_atendentes = response.get("result", {}).get("data", [])
-
-        # Armazena os dados no banco de dados
-        for item in dados_atendentes:
-            data_registro = datetime.strptime(item["data"], "%Y-%m-%d").date()
-            registro = PerformanceColaboradores.query.filter_by(operador_id=operador_id, data=data_registro).first()
-
-            if not registro:
-                # Caso o registro ainda não exista, cria um novo
-                registro = PerformanceColaboradores(
-                    operador_id=operador_id,
-                    data=data_registro,
-                    ch_atendidas=item.get("ch_atendidas", 0),
-                    ch_naoatendidas=item.get("ch_naoatendidas", 0),
-                    tempo_online=item.get("tempo_online", 0),
-                    tempo_livre=item.get("tempo_livre", 0),
-                    tempo_servico=item.get("tempo_servico", 0),
-                    pimprod_refeicao=item.get("pimprod_Refeicao", 0),
-                    tempo_minatend=item.get("tempo_minatend"),
-                    tempo_medatend=item.get("tempo_medatend"),
-                    tempo_maxatend=item.get("tempo_maxatend")
-                )
-                db.session.add(registro)
-
-        # Confirma a transação no banco
-        db.session.commit()
-        return jsonify({"status": "success", "message": "Dados de 90 dias armazenados com sucesso."})
-
-    else:
-        # Se não for 90 dias, realiza a consulta no banco de dados
-        dias = int(dias_str)
-        data_inicial = hoje - timedelta(days=dias)
-        registros = PerformanceColaboradores.query.filter(
-            PerformanceColaboradores.operador_id == operador_id,
-            PerformanceColaboradores.data >= data_inicial,
-            PerformanceColaboradores.data <= ontem
-        ).all()
-
-        # Inicializa os acumuladores para os dados
-        acumulado = {
-            "ch_atendidas": 0,
-            "ch_naoatendidas": 0,
-            "tempo_online": 0,
-            "tempo_livre": 0,
-            "tempo_servico": 0,
-            "pimprod_Refeicao": 0,
-            "tempo_minatend": None,
-            "tempo_medatend": [],
-            "tempo_maxatend": None
-        }
-
-        # Processa os dados dos registros encontrados
-        for r in registros:
-            acumulado["ch_atendidas"] += r.ch_atendidas
-            acumulado["ch_naoatendidas"] += r.ch_naoatendidas
-            acumulado["tempo_online"] += r.tempo_online
-            acumulado["tempo_livre"] += r.tempo_livre
-            acumulado["tempo_servico"] += r.tempo_servico
-            acumulado["pimprod_Refeicao"] += r.pimprod_refeicao
-
-            if r.tempo_minatend is not None:
-                acumulado["tempo_minatend"] = r.tempo_minatend if acumulado["tempo_minatend"] is None else min(acumulado["tempo_minatend"], r.tempo_minatend)
-            if r.tempo_maxatend is not None:
-                acumulado["tempo_maxatend"] = r.tempo_maxatend if acumulado["tempo_maxatend"] is None else max(acumulado["tempo_maxatend"], r.tempo_maxatend)
-            if r.tempo_medatend is not None:
-                acumulado["tempo_medatend"].append(r.tempo_medatend)
-
-        # Calcula a média do tempo de atendimento
-        media_geral = (
-            sum(acumulado["tempo_medatend"]) / len(acumulado["tempo_medatend"])
-            if acumulado["tempo_medatend"] else 0
-        )
-
-        # Organiza os dados para o retorno
-        dados = {
-            "periodo": dias_str,
-            "ch_atendidas": acumulado["ch_atendidas"],
-            "ch_naoatendidas": acumulado["ch_naoatendidas"],
-            "tempo_online": acumulado["tempo_online"],
-            "tempo_livre": acumulado["tempo_livre"],
-            "tempo_servico": acumulado["tempo_servico"],
-            "pimprod_Refeicao": acumulado["pimprod_Refeicao"],
-            "tempo_minatend": acumulado["tempo_minatend"] or 0,
-            "tempo_medatend": round(media_geral, 2),
-            "tempo_maxatend": acumulado["tempo_maxatend"] or 0
-        }
-
-        return jsonify({"status": "success", "dados": dados})'''
-
-@operadores_bp.route('/colaboradores', methods=['GET'])
-def render_operadores():
-    nome = session.get('nome')
-    dados = session.get('dados')
-    total_chamados = session.get('total_chamados', 0)  # Pega da sessão, default 0
-
-    if not nome or not dados:
-        return "Dados não encontrados na sessão", 400
-
-    return render_template('colaboradores.html', nome=nome, dados=dados, total_chamados=total_chamados)
-
 @operadores_bp.route('/ChamadosSuporte/ticketsOperador', methods=['POST'])
 def chamados_por_operador_periodo():
     try:
@@ -525,8 +358,8 @@ def chamados_telefone_vs_atendidas():
             return jsonify({'status': 'error', 'message': 'Nome do operador não fornecido'}), 400
 
         operador = PerformanceColaboradores.query.filter_by(name=nome_operador).first()
-        if not operador:
-            return jsonify({'status': 'error', 'message': f"Operador '{nome_operador}' não encontrado"}), 404
+        #if not operador:
+        #    return jsonify({'status': 'error', 'message': f"Operador '{nome_operador}' não encontrado"}), 404
 
         operador_id = operador.operador_id
 
@@ -619,7 +452,6 @@ def chamados_telefone_vs_atendidas():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-
 @operadores_bp.route('/GetSlaOperador', methods=['POST'])
 def get_sla_operador():
     data = request.get_json()
@@ -631,7 +463,7 @@ def get_sla_operador():
 
     # Filtro com operador, período e grupo de suporte
     chamados = Chamado.query.filter(
-        Chamado.nome_grupo.ilike('%SUPORTE%'),
+        #Chamado.nome_grupo.ilike('%SUPORTE%'),
         Chamado.nome_status != 'Cancelado',
         Chamado.operador == nome,
         Chamado.data_criacao >= data_inicio

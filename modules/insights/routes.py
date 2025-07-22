@@ -353,9 +353,8 @@ def get_operadores():
             Chamado.operador != 'Paulo',
             Chamado.operador != 'Luciano',
             Chamado.operador != 'Alexandre',
-            Chamado.operador != 'Chrysthyanne',
             Chamado.operador != 'Suporte',
-            Chamado.nome_grupo.like('SUPORTE COMNEcT%')
+            #Chamado.nome_grupo.like('SUPORTE COMNEcT%')
         ).distinct().order_by(
             Chamado.operador
         ).all()

@@ -1,0 +1,86 @@
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const abas = JSON.parse(document.getElementById('dados-json').textContent);
+
+      const abasDiv = document.getElementById('abas');
+      const planilhasDiv = document.getElementById('planilhas');
+      const downloadBtn = document.getElementById('download-btn');
+      const downloadOriginalBtn = document.getElementById('download-original-btn');
+
+      const tabelas = {};
+      let abaAtual = null;
+
+      Object.keys(abas).forEach((nomeAba, index) => {
+        // Botão da aba
+        const btn = document.createElement('button');
+        btn.textContent = nomeAba;
+        btn.classList.add('aba-btn');
+        if(index === 0) {
+          btn.classList.add('active');
+          abaAtual = nomeAba;
+        }
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          document.querySelectorAll('.planilha-container').forEach(div => div.classList.remove('active'));
+          document.getElementById(`planilha-${nomeAba}`).classList.add('active');
+
+          abaAtual = nomeAba;
+        });
+        abasDiv.appendChild(btn);
+
+        // Container da planilha
+        const container = document.createElement('div');
+        container.id = `planilha-${nomeAba}`;
+        container.classList.add('planilha-container');
+        if(index === 0) container.classList.add('active');
+        container.style.height = '400px';
+        planilhasDiv.appendChild(container);
+
+        // Monta colunas para Tabulator
+        const dados = abas[nomeAba];
+        const colunas = Object.keys(dados[0] || {}).map(campo => ({
+          title: campo,
+          field: campo,
+          editor: "input",
+          headerFilter: "input",
+        }));
+
+        // Inicializa Tabulator
+        tabelas[nomeAba] = new Tabulator(container, {
+          data: dados,
+          columns: colunas,
+          layout: "fitColumns",
+          movableColumns: true,
+          pagination: "local",
+          paginationSize: 20,
+          cellEdited: (cell) => {
+            console.log(`Editado na aba ${nomeAba}: campo=${cell.getField()}, valor=${cell.getValue()}`, cell.getRow().getData());
+          }
+        });
+      });
+
+      // Download da aba atual (editada)
+      downloadBtn.addEventListener('click', () => {
+        if(!abaAtual) return alert("Nenhuma aba selecionada.");
+
+        const table = tabelas[abaAtual];
+        const dados = table.getData();
+
+        if(dados.length === 0) return alert("A aba está vazia.");
+
+        const ws = XLSX.utils.json_to_sheet(dados);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, abaAtual);
+
+        XLSX.writeFile(wb, `escala_${abaAtual}.xlsx`);
+      });
+
+      // Download da planilha original via rota Flask
+      downloadOriginalBtn.addEventListener('click', () => {
+        window.location.href = '/escala/download_original';
+      });
+
+    });
+  </script>

@@ -1,0 +1,81 @@
+body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f6f9;
+    }
+
+    #buttons-container {
+      margin-bottom: 15px;
+    }
+
+    button.download-btn {
+      padding: 10px 20px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-right: 10px;
+      transition: background-color 0.3s ease;
+    }
+    button.download-btn:hover {
+      background-color: #3367d6;
+    }
+
+    #abas {
+      margin-bottom: 10px;
+    }
+
+    button.aba-btn {
+      padding: 8px 16px;
+      margin-right: 4px;
+      cursor: pointer;
+      border: 1px solid #aaa;
+      background-color: #eee;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+    }
+
+    button.aba-btn:hover {
+      background-color: #ddd;
+    }
+
+    button.aba-btn.active {
+      background-color: #4285f4;
+      color: white;
+      border-color: #4285f4;
+    }
+
+    .planilha-container {
+      display: none;
+      margin-top: 10px;
+    }
+
+    .planilha-container.active {
+      display: block;
+    }
+
+ /* Estilização customizada para o Tabulator */
+.tabulator {
+  background-color: #8e8c8c; /* cinza escuro suave */
+  border: 1px solid #999;
+  color: #333;
+}
+
+.tabulator-header {
+  background-color: #707070;
+  color: #000;
+}
+
+.tabulator-col,
+.tabulator-cell {
+  background-color: #7b7a7a; /* células individuais */
+  color: #222;
+  border-color: #777575;
+}
+
+.tabulator-row:hover {
+  background-color: #ccc !important;
+}
+

@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, render_template, request
 from flask_login import login_required
+import pandas as pd
 
 
 home_bp = Blueprint('home_bp', __name__)
@@ -31,3 +32,22 @@ def render_relatorio():
 @home_bp.route('/login', methods=['GET'])
 def render_login_colaboradores():
     return render_template('login_colaboradores.html')
+
+@home_bp.route('/escala', methods=['GET'])
+def render_escala():
+    caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte 2026.xlsm'
+
+    # Lê todas as abas da planilha .xlsm
+    xls = pd.ExcelFile(caminho_arquivo)
+    abas = {}
+    for aba in xls.sheet_names:
+        df = pd.read_excel(xls, sheet_name=aba)
+        df.fillna('', inplace=True)
+        abas[aba] = df.to_dict(orient='records')
+
+    # Debug para checar dados no console do servidor
+    print("Abas encontradas:", list(abas.keys()))
+    for aba, dados in abas.items():
+        print(f"Aba '{aba}' exemplo:", dados[:2])
+
+    return render_template('escala.html', abas=abas)

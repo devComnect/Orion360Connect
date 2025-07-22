@@ -37,7 +37,7 @@
     <div class="col">
       <div class="card shadow-sm h-100">
         <div class="card-body text-center">
-          <h6>Chamadas Atendidas</h6>
+          <h6>Ligações Atendidas</h6>
           <p class="fs-4" id="ch_atendidas">-</p>
         </div>
       </div>
@@ -45,7 +45,7 @@
     <div class="col">
       <div class="card shadow-sm h-100">
         <div class="card-body text-center">
-          <h6>Chamadas Não Atendidas</h6>
+          <h6>Ligações não Atendidas</h6>
           <p class="fs-4" id="ch_naoatendidas">-</p>
         </div>
       </div>
@@ -53,7 +53,7 @@
     <div class="col">
       <div class="card shadow-sm h-100">
         <div class="card-body text-center">
-          <h6>Tickets Atendidos</h6>
+          <h6>Chamados Atendidos</h6>
           <p class="fs-4" id="total_chamados">-</p>
         </div>
       </div>
@@ -110,14 +110,14 @@
   <!-- Ligações vs Tickets -->
 <div class="col-md-5">
   <div class="card shadow-sm card-grafico-pequeno">
-    <div class="card-header text-center">Ligações Vs Tickets</div>
+    <div class="card-header text-center">Ligações vs Chamados</div>
     <div class="card-body">
       
       <!-- Resumo acima do gráfico -->
       <div id="resumoChamados" class="mb-3 text-center text-white small">
-        <p><strong>Total de Tickets:</strong> <span id="totalTickets">-</span></p>
+        <p><strong>Total de Chamados:</strong> <span id="totalTickets">-</span></p>
         <p><strong>Total de Ligações:</strong> <span id="totalLigacoes">-</span></p>
-        <p><strong>Diferença:</strong> <span id="diferencaChamados">-</span></p>
+        <p><strong>Chamados não Registrados:</strong> <span id="diferencaChamados">-</span></p>
       </div>
 
       <canvas id="atendidasVsTickets"></canvas>
