@@ -4,6 +4,8 @@ from application.models import db
 from application.models import User
 from datetime import datetime
 from application.models import db, PerformanceColaboradores
+import logging
+from flask_login import current_user
 
 login_bp = Blueprint('login', __name__)
 # Crie o objeto admin
@@ -44,7 +46,6 @@ def login():
 
         print(f"Tentando fazer login com: {username} e senha: {password}")
 
-        # Busca o usuário no banco de dados
         user = User.query.filter_by(username=username).first()
         
         if user:
@@ -52,22 +53,19 @@ def login():
         else:
             print(f"Usuário {username} não encontrado no banco de dados.")
 
-        # Verifique se a senha armazenada no banco corresponde à senha fornecida
         if user and user.password == password:
             print(f"Senha correta para o usuário {username}. Login bem-sucedido.")
-            login_user(user)  # Autentica o usuário
+            
+            #session.permanent = True  # 👈 mantém a sessão viva pelo tempo definido em app.py
+            #login_user(user, remember=True)  # 👈 remember=True mantém login mesmo ao fechar navegador
 
-            # Armazena o nome de usuário na sessão
             session['username'] = user.username
+            #logging.info(f'Usuário logado: {current_user.username}')
 
-            # Redireciona para a página inicial (home)
-            #return redirect(url_for('home_bp.render_admin'))  # Redireciona para a rota 'home'
             return render_template('insights.html')
         else:
             print("Credenciais inválidas ou senha incorreta.")
-            flash('Credenciais inválidas. Tente novamente.', 'danger')  # Exibe mensagem de erro
-
-    return render_template('login.html')  # Renderiza o template de login
+            flash('Credenciais inválidas. Tente novamente.', 'danger')
 
 @login_bp.route('/logout', methods=['POST'])
 @login_required

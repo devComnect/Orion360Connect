@@ -133,7 +133,8 @@ def get_performance_colaboradores():
 
 @operadores_bp.route('/performanceColaboradoresRender', methods=['POST'])
 def performance_colaboradores_render():
-    session.clear()
+    session.pop('dados', None)
+    session.pop('nome', None)
     data = request.get_json()
     nome = data.get('nome')
 

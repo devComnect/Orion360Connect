@@ -351,7 +351,6 @@ def get_operadores():
             Chamado.operador != 'API',
             Chamado.operador != 'Caio',
             Chamado.operador != 'Paulo',
-            Chamado.operador != 'Luciano',
             Chamado.operador != 'Alexandre',
             Chamado.operador != 'Suporte',
             #Chamado.nome_grupo.like('SUPORTE COMNEcT%')

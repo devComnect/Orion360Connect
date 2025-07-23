@@ -1,7 +1,6 @@
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for
 from flask_login import login_required
 import pandas as pd
-
 
 home_bp = Blueprint('home_bp', __name__)
 
@@ -32,6 +31,14 @@ def render_relatorio():
 @home_bp.route('/login', methods=['GET'])
 def render_login_colaboradores():
     return render_template('login_colaboradores.html')
+
+@home_bp.route('/dashboard_colaborador', methods=['GET'])
+def render_dashboard_colaborador():
+    return render_template('dashboard_colaboradores.html')
+
+@home_bp.route('/performance', methods=['GET'])
+def render_performance():
+    return redirect(url_for('login.render_login_operadores'))
 
 @home_bp.route('/escala', methods=['GET'])
 def render_escala():
