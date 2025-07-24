@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <!-- Script que traz os botões com os nomes dos operadores-->
-<script>
+<!--<script>
 document.addEventListener('DOMContentLoaded', function () {
 
     async function carregarOperadores() {
@@ -103,6 +103,88 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(res => res.json())
         .then(data => {
             if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                console.warn('Nenhuma URL de redirecionamento recebida.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao enviar operador para o backend:', error);
+        });
+    }
+
+    carregarOperadores();
+});
+</script>-->
+
+<!-- Script que traz os botões com os nomes dos operadores-->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    async function carregarOperadores() {
+        try {
+            const response = await fetch('/insights/get/operadores');
+            const data = await response.json();
+
+            if (data.status === "success") {
+                const container = document.getElementById('botoes-operadores');
+
+                const operadoresOrdenados = data.operadores.sort((a, b) => a.localeCompare(b));
+
+                operadoresOrdenados.forEach(operador => {
+                    const botao = document.createElement('button');
+                    botao.className = 'btn btn-outline-primary operador-btn d-flex align-items-center';
+
+                    const icone = document.createElement('i');
+                    icone.className = 'bi bi-pie-chart-fill me-2';
+
+                    const texto = document.createElement('span');
+                    texto.textContent = operador;
+
+                    botao.appendChild(icone);
+                    botao.appendChild(texto);
+                    botao.dataset.operador = operador;
+
+                    botao.onclick = function () {
+                        document.querySelectorAll('.operador-btn').forEach(btn => btn.classList.remove('active'));
+                        this.classList.add('active');
+                        filtrarPorOperador(operador);
+                    };
+
+                    container.appendChild(botao);
+                });
+
+                if (container.firstChild) {
+                    container.firstChild.classList.add('active');
+                }
+            }
+
+        } catch (error) {
+            console.error('Erro ao carregar operadores:', error);
+        }
+    }
+
+    function filtrarPorOperador(operador) {
+        const nomesNivel2 = ['Eduardo', 'Chrysthyanne', 'Fernando', 'Luciano', 'Maria Luiza'];
+
+        // Verificação com nomes case-insensitive
+        const operadorNormalizado = operador.trim().toLowerCase();
+        const rota = nomesNivel2.map(n => n.toLowerCase()).includes(operadorNormalizado)
+            ? '/operadores/performanceColaboradoresRender/n2'
+            : '/operadores/performanceColaboradoresRender';
+
+        console.log(`Nome selecionado: ${operador}`);
+        console.log(`Rota selecionada: ${rota}`);
+
+        fetch(rota, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nome: operador })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.redirect_url) {
+                console.log('Redirecionando para:', data.redirect_url);
                 window.location.href = data.redirect_url;
             } else {
                 console.warn('Nenhuma URL de redirecionamento recebida.');

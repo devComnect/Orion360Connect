@@ -1,7 +1,7 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from flask import Flask
 from flask_login import LoginManager
@@ -49,8 +49,7 @@ app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Slink1205@localhost/data'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'e6c7d4a4b91a46459c8f4d09fc3dff0d5f123abcdeabcd12'
-app.permanent_session_lifetime = timedelta(hours=4)
+app.config['SECRET_KEY'] = os.urandom(24)
 
 class Config:
     SCHEDULER_API_ENABLED = True

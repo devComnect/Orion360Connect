@@ -1,0 +1,9 @@
+header .nav-link {
+        color: #fff !important; /* branco para os links */
+    }
+
+    header .nav-link:hover,
+    header .nav-link.active {
+        background-color: #495057; /* leve cinza no hover/ativo */
+        color: #fff !important;
+    }

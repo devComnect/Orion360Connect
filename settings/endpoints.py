@@ -16,7 +16,7 @@ PERFORMANCE_ATENDENTES = 'http://192.168.10.35:9444/v2/report/attendants_perform
 # Credenciais Del Grande URA
 CREDENTIALS = {
     'username' : 'integracao',
-    'password' : 'Telecom01'
+    'password' : '@Comnect'
 }
 
 # Credenciais do usuário API integração Desk Manager

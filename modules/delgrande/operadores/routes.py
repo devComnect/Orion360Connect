@@ -551,3 +551,22 @@ def listar_p_satisfacao():
         "alternativas": lista_alternativas,
         "comentarios": lista_comentarios
     })
+
+
+@operadores_bp.route('/performanceColaboradoresRender/n2', methods=['POST'])
+def performance_colaboradores_render_n2():
+    session.pop('dados', None)
+    session.pop('nome', None)
+
+    data = request.get_json()
+    nome = data.get('nome')
+
+    session['nome'] = nome
+
+    return jsonify({"redirect_url": url_for('operadores_bp.render_operadores_n2')})
+
+@operadores_bp.route('/colaboradores/n2', methods=['GET'])
+def render_operadores_n2():
+    nome = session.get('nome')
+
+    return render_template('colaboradores_individual_nivel2.html', nome=nome)
