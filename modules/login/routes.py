@@ -44,35 +44,67 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        print(f"Tentando fazer login com: {username} e senha: {password}")
+        # Lista de usuários permitidos
+        usuarios_permitidos = ['fsilva', 'lolegario', 'avaz']
+
+        if username not in usuarios_permitidos:
+            flash('Usuário não autorizado para acessar este sistema.', 'danger')
+            print(f"Tentativa de login não autorizada: {username}")
+            return render_template('login.html')
+
+        print(f"Tentando fazer login com: {username}")
 
         user = User.query.filter_by(username=username).first()
-        
-        if user:
-            print(f"Usuário encontrado: {username}")
-        else:
-            print(f"Usuário {username} não encontrado no banco de dados.")
 
-        if user and user.password == password:
-            print(f"Senha correta para o usuário {username}. Login bem-sucedido.")
-            
-            #session.permanent = True  # 👈 mantém a sessão viva pelo tempo definido em app.py
-            #login_user(user, remember=True)  # 👈 remember=True mantém login mesmo ao fechar navegador
+        if not user:
+            print(f"Usuário {username} não foi encontrado no banco de dados.")
+            flash('Usuário não encontrado.', 'danger')
+            return render_template('login.html')
+
+        if user.password == password:
+            print(f"Login bem-sucedido para o usuário {username}")
+            login_user(user, remember=True)
 
             session['username'] = user.username
-            #logging.info(f'Usuário logado: {current_user.username}')
-
             return render_template('insights.html')
+
         else:
-            print("Credenciais inválidas ou senha incorreta.")
+            print("Senha incorreta.")
             flash('Credenciais inválidas. Tente novamente.', 'danger')
 
-@login_bp.route('/logout', methods=['POST'])
-@login_required
-def logout():
-    session.pop('username', None)  # Remover o 'username' da sessão, se existir
-    logout_user()
     return render_template('login.html')
+
+from flask import current_app
+@login_bp.route('/logout', methods=['POST', 'GET'])
+def logout():
+    try:
+        current_app.logger.info(f"Logout iniciado. Usuário autenticado? {current_user.is_authenticated}")
+        
+        if current_user.is_authenticated:
+            logout_user()
+
+        session.pop('username', None)
+        return redirect(url_for('home_bp.render_login'))
+    
+    except Exception as e:
+        current_app.logger.error(f"Erro no logout: {e}", exc_info=True)
+        return f"Erro interno no logout: {str(e)}", 500
+
+@login_bp.route('/logout/colaboradores', methods=['POST', 'GET'])
+def logout_colaboradores():
+    try:
+        current_app.logger.info(f"Logout iniciado. Usuário autenticado? {current_user.is_authenticated}")
+        
+        if current_user.is_authenticated:
+            logout_user()
+
+        session.pop('username', None)
+        return redirect(url_for('home_bp.render_login_colaboradores'))
+    
+    except Exception as e:
+        current_app.logger.error(f"Erro no logout: {e}", exc_info=True)
+        return f"Erro interno no logout: {str(e)}", 500
+
 
 @login_bp.route('/login/colaboradores', methods=['GET', 'POST'])
 def login_colaboradores():
@@ -175,6 +207,9 @@ def login_colaboradores():
                 "gmelo" : "Raysa",
                 "rragga" : "Renato",
                 "halmeida": "Henrique",
+                "epinheiro": "Eduardo",
+                "fzanella": "Fernando",
+                "crodrigues" : "Chrysthyanne"
             }
 
             session['nome'] = OPERADORES_CONVERSION.get(username)
@@ -190,9 +225,14 @@ def login_colaboradores():
 
 @login_bp.route('/render/colaboradores', methods=['GET'])
 def render_login_operadores():
-   
+    lista_nivel2 = ['Fernando', 'Eduardo', 'Chrysthyanne', 'Luciano']
+
     nome = session.get('nome')
     #total_chamados = session.get('total_chamados', 0)  # Pega da sessão, default 0
 
-    return render_template('colaboradores_individual.html', nome=nome)
+    if nome in lista_nivel2:
+        return render_template('colaboradores_individual_nivel2.html', nome=nome)
+
+    else:
+        return render_template('colaboradores_individual.html', nome=nome)
  

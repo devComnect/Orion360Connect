@@ -583,4 +583,4 @@ def performance_colaboradores_render_n2():
 def render_operadores_n2():
     nome = session.get('nome')
 
-    return render_template('colaboradores_individual_nivel2.html', nome=nome)
+    return render_template('colaboradores_nivel2.html', nome=nome)

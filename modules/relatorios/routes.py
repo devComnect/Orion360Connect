@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, send_file
 from application.models import Chamado, db,  PerformanceColaboradores
 from datetime import datetime, time
+from modules.relatorios.utils import get_turno
 from collections import Counter
 from io import BytesIO
 from fpdf import FPDF
@@ -234,15 +235,6 @@ def extrair_comparativo_relatorios():
 
     filename = f"relatorio_comparativo_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')'''
-
-def get_turno(dt):
-    hora = dt.time()
-    if time(7, 0) <= hora < time(16, 0):
-        return "07:00/16:00"
-    elif time(13, 0) <= hora < time(22, 0):
-        return "13:00/22:00"
-    else:
-        return "22:00/07:00"
 
 @relatorios_bp.route("/extrairComparativoRelatorios", methods=['POST'])
 def extrair_comparativo_relatorios():
