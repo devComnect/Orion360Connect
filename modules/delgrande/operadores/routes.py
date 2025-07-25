@@ -141,11 +141,11 @@ def performance_colaboradores_render():
     if not nome:
         return jsonify({"status": "error", "message": "Nome do operador não fornecido"}), 400
 
-    hoje = date.today()
+    ontem = date.today() - timedelta(days=1)
 
     registros = PerformanceColaboradores.query.filter(
         PerformanceColaboradores.name == nome,
-        PerformanceColaboradores.data == hoje
+        PerformanceColaboradores.data == ontem
     )
 
     acumulado = {
@@ -306,13 +306,19 @@ def chamados_por_operador_periodo():
     try:
         data = request.json
         nome_operador = data.get("nome")
-        dias = int(data.get("dias", 1))
+        dias = int(data.get("dias"))
 
         if not nome_operador:
             return jsonify({"status": "error", "message": "Nome do operador não fornecido."}), 400
 
-        data_hoje = datetime.now().date()
-        data_limite = data_hoje - timedelta(days=dias)
+        hoje = datetime.now().date()
+
+        if dias == 1:
+            data_inicio = hoje - timedelta(days=1)  # apenas ontem
+            data_fim = data_inicio
+        else:
+            data_inicio = hoje - timedelta(days=dias)
+            data_fim = hoje  # até hoje
 
         chamados = db.session.query(
             Chamado.cod_chamado,
@@ -322,8 +328,8 @@ def chamados_por_operador_periodo():
             Chamado.nome_grupo,
             Chamado.nome_status
         ).filter(
-            cast(Chamado.data_criacao, Date) >= data_limite,
-            cast(Chamado.data_criacao, Date) <= data_hoje,
+            cast(Chamado.data_criacao, Date) >= data_inicio,
+            cast(Chamado.data_criacao, Date) <= data_fim,
             Chamado.operador == nome_operador
         ).all()
 
@@ -339,7 +345,7 @@ def chamados_por_operador_periodo():
         return jsonify({
             "status": "success",
             "total_chamados": len(lista_chamados),
-            "data_referencia": f"Últimos {dias} dias",
+            "data_referencia": f"{data_inicio.strftime('%d/%m/%Y')} até {data_fim.strftime('%d/%m/%Y')}",
             "chamados": lista_chamados
         })
 
@@ -352,7 +358,7 @@ def chamados_por_operador_periodo():
 @operadores_bp.route('/ChamadosSuporte/ticketsTelefoneVsAtendidas', methods=['POST'])
 def chamados_telefone_vs_atendidas():
     try:
-        dias_str = str(request.json.get("dias", "1"))
+        dias_str = str(request.json.get("dias"))
         nome_operador = request.json.get("nome", "").strip().title()
 
         if not nome_operador:
@@ -376,7 +382,7 @@ def chamados_telefone_vs_atendidas():
             "180": hoje - timedelta(days=180)
         }
 
-        data_inicial = periodos.get(dias_str, periodos["1"])
+        data_inicial = periodos.get(dias_str)
         data_final = hoje
 
         lista_dias = [
@@ -491,14 +497,23 @@ def get_sla_operador():
 @operadores_bp.route('/pSatisfacaoOperador', methods=['POST'])
 def listar_p_satisfacao():
     data = request.get_json()
-    dias = int(data.get('dias', 1))
+    dias = int(data.get('dias'))
     nome = data.get('nome')
-    data_limite = (datetime.now() - timedelta(days=dias)).date()  # só data, sem hora
 
-    # Filtro base
+    # Define o intervalo correto de datas
+    hoje = datetime.now().date()
+    if dias == 1:
+        data_inicio = hoje - timedelta(days=1)  # Ontem
+        data_fim = data_inicio                  # Também ontem
+    else:
+        data_inicio = hoje - timedelta(days=dias)
+        data_fim = hoje
+
+    # Filtro com intervalo fechado (inclusive)
     filtro_base = [
-        PesquisaSatisfacao.data_resposta >= data_limite,
-        PesquisaSatisfacao.operador.ilike(f"{nome}%")  # ilike = case-insensitive
+        cast(PesquisaSatisfacao.data_resposta, Date) >= data_inicio,
+        cast(PesquisaSatisfacao.data_resposta, Date) <= data_fim,
+        PesquisaSatisfacao.operador.ilike(f"{nome}%")  # case-insensitive
     ]
 
     # Total de pesquisas do operador no período
@@ -524,7 +539,7 @@ def listar_p_satisfacao():
     percentual_respondidas = round((respondidas / total_pesquisas) * 100, 2) if total_pesquisas else 0
     percentual_nao_respondidas = round(100 - percentual_respondidas, 2) if total_pesquisas else 0
 
-    # Lista das alternativas preenchidas para esse operador
+    # Lista das alternativas preenchidas
     alternativas_respondidas = db.session.query(PesquisaSatisfacao.alternativa).filter(
         *filtro_base,
         PesquisaSatisfacao.alternativa.isnot(None),
@@ -551,7 +566,6 @@ def listar_p_satisfacao():
         "alternativas": lista_alternativas,
         "comentarios": lista_comentarios
     })
-
 
 @operadores_bp.route('/performanceColaboradoresRender/n2', methods=['POST'])
 def performance_colaboradores_render_n2():

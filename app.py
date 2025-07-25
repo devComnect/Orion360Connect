@@ -91,14 +91,14 @@ def tarefa_horaria_processar_performance():
         except Exception as e:
             logging.error(f"[AGENDADO] Erro ao importar performance. ")
         
-def tarefa_horaria_processar_performance_vyrtos():
+'''def tarefa_horaria_processar_performance_vyrtos():
     with app.app_context():
         try:
             logging.info("[AGENDADO] Iniciando coleta e armazenamento de performance Vyrtos...")
             resultado2 = processar_e_armazenar_performance_vyrtos_incremental(incremental=True)
             logging.info(f"[AGENDADO] Resultado Vyrtos: {resultado2}")
         except Exception as e:
-            logging.error(f"[AGENDADO] Erro ao importar performance. ")
+            logging.error(f"[AGENDADO] Erro ao importar performance. ")'''
 
 def tarefa_importar_chamados():
     with app.app_context():
@@ -138,12 +138,12 @@ with app.app_context():
         minutes=5
     )
 
-    scheduler.add_job(
+    '''scheduler.add_job(
         id='job_processa_performance_horaria_vyrtos',
         func=tarefa_horaria_processar_performance_vyrtos,
         trigger='interval',
         minutes=5
-    )
+    )'''
 
     scheduler.add_job(
         id='job_importar_chamados',

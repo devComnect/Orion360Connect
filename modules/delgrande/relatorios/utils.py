@@ -6,6 +6,7 @@ from modules.delgrande.auth.utils import authenticate, authenticate_relatorio
 from modules.deskmanager.authenticate.routes import token_desk
 import modules.delgrande.relatorios.utils as utils
 from settings.endpoints import CREDENTIALS
+from flask import jsonify, current_app as app
 import json
 from datetime import timedelta, datetime
 
@@ -320,92 +321,145 @@ def processar_e_armazenar_performance(dias=180, incremental=False):
     return {"status": "success", "message": "Dados inseridos com sucesso (modo incremental)." if incremental else "Carga completa realizada com sucesso."}
 
 def processar_e_armazenar_performance_incremental():
-    hoje = datetime.now().date()
+    try:
+        # Datas: hoje e 2 dias atrás
+        hoje = datetime.now().date()
+        data_inicio = hoje - timedelta(days=2)  # 2 dias atrás
+        
+        # Autenticação para API externa
+        auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
+        if "access_token" not in auth_response:
+            return jsonify({"status": "error", "message": "Falha na autenticação"}), 500
+        access_token = auth_response["access_token"]
 
-    # Autenticação
-    auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
-    if "access_token" not in auth_response:
-        return {"status": "error", "message": "Falha na autenticação"}
-    access_token = auth_response["access_token"]
+        OPERADORES_MAP = {
+            2020: "Renato",
+            2021: "Matheus",
+            2022: "Gustavo",
+            2023: "Raysa",
+            2024: "Lucas",
+            2025: "Danilo",
+            2028: "Henrique",
+            2029: "Rafael"
+        }
 
-    OPERADORES_MAP = {
-        2020: "Renato",
-        2021: "Matheus",
-        2022: "Gustavo",
-        2023: "Raysa",
-        2024: "Lucas",
-        2025: "Danilo",
-        2028: "Henrique",
-        2029: "Rafael"
-    }
+        total_registros = 0
+        dados_encontrados = False
+        
+        for operador_id, nome_operador in OPERADORES_MAP.items():
+            offset = 0
+            
+            while True:
+                params = {
+                    "initial_date": data_inicio.strftime('%Y-%m-%d'),
+                    "final_date": hoje.strftime('%Y-%m-%d'),
+                    "initial_hour": "00:00:00",
+                    "final_hour": "23:59:59",
+                    "fixed": 0,
+                    "week": [],
+                    "agents": [operador_id],
+                    "queues": [1],
+                    "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
+                    "conf": {}
+                }
 
-    total_registros = 0
+                app.logger.info(f"[{nome_operador}] Buscando dados de {data_inicio} a {hoje}, offset {offset}")
+                response = utils.atendentePerformanceData(access_token, params)
+                dados = response.get("result", {}).get("data", [])
 
-    for operador_id, nome_operador in OPERADORES_MAP.items():
-        offset = 0
+                if not dados:
+                    app.logger.info(f"[{nome_operador}] Nenhum dado retornado para o período.")
+                    break
 
-        while True:
-            params = {
-                "initial_date": hoje.strftime('%Y-%m-%d'),
-                "final_date": hoje.strftime('%Y-%m-%d'),
-                "initial_hour": "00:00:00",
-                "final_hour": "23:59:59",
-                "fixed": 0,
-                "week": [],
-                "agents": [operador_id],
-                "queues": [1],
-                "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
-                "conf": {}
-            }
+                dados_encontrados = True
+                for item in dados:
+                    try:
+                        data_raw = item["data"].split("T")[0] if "T" in item["data"] else item["data"]
+                        data_registro = datetime.strptime(data_raw, "%Y-%m-%d").date()
 
-            print(f"[{nome_operador}] Buscando dados de {hoje}, offset {offset}")
-            response = utils.atendentePerformanceData(access_token, params)
-            dados = response.get("result", {}).get("data", [])
+                        # Monta o objeto para merge (update or insert)
+                        registro = PerformanceColaboradores(
+                            operador_id=operador_id,
+                            name=nome_operador,
+                            data=data_registro,
+                            ch_atendidas=item.get("ch_atendidas", 0),
+                            ch_naoatendidas=item.get("ch_naoatendidas", 0),
+                            tempo_online=item.get("tempo_online", 0),
+                            tempo_livre=item.get("tempo_livre", 0),
+                            tempo_servico=item.get("tempo_servico", 0),
+                            pimprod_refeicao=item.get("pimprod_Refeicao", 0),
+                            tempo_minatend=item.get("tempo_minatend"),
+                            tempo_medatend=item.get("tempo_medatend"),
+                            tempo_maxatend=item.get("tempo_maxatend"),
+                            data_importacao=datetime.now()
+                        )
 
-            if not dados:
-                print(f"[{nome_operador}] Nenhum dado retornado.")
-                break
+                        db.session.merge(registro)  # insere ou atualiza automaticamente
+                        total_registros += 1
+                    except Exception as e:
+                        app.logger.error(f"[ERRO] {nome_operador} em {item.get('data')}: {str(e)}")
 
-            registros = []
-            for item in dados:
-                try:
-                    data_raw = item["data"].split("T")[0] if "T" in item["data"] else item["data"]
-                    data_registro = datetime.strptime(data_raw, "%Y-%m-%d").date()
+                offset += 1000
 
-                    # Remove duplicado antes de inserir
-                    PerformanceColaboradores.query.filter_by(
-                        operador_id=operador_id,
-                        data=data_registro
-                    ).delete()
+        # Se não encontrou dados no intervalo maior, tenta pegar só o de hoje (processamento diário normal)
+        if not dados_encontrados:
+            app.logger.info("Nenhum dado encontrado no período extendido. Buscando dados de hoje somente.")
+            for operador_id, nome_operador in OPERADORES_MAP.items():
+                offset = 0
+                while True:
+                    params = {
+                        "initial_date": hoje.strftime('%Y-%m-%d'),
+                        "final_date": hoje.strftime('%Y-%m-%d'),
+                        "initial_hour": "00:00:00",
+                        "final_hour": "23:59:59",
+                        "fixed": 0,
+                        "week": [],
+                        "agents": [operador_id],
+                        "queues": [1],
+                        "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
+                        "conf": {}
+                    }
 
-                    registro = PerformanceColaboradores(
-                        name=nome_operador,
-                        operador_id=operador_id,
-                        data=data_registro,
-                        ch_atendidas=item.get("ch_atendidas", 0),
-                        ch_naoatendidas=item.get("ch_naoatendidas", 0),
-                        tempo_online=item.get("tempo_online", 0),
-                        tempo_livre=item.get("tempo_livre", 0),
-                        tempo_servico=item.get("tempo_servico", 0),
-                        pimprod_refeicao=item.get("pimprod_Refeicao", 0),
-                        tempo_minatend=item.get("tempo_minatend"),
-                        tempo_medatend=item.get("tempo_medatend"),
-                        tempo_maxatend=item.get("tempo_maxatend"),
-                        data_importacao=datetime.now()
-                    )
-                    registros.append(registro)
-                except Exception as e:
-                    print(f"[ERRO] {nome_operador} em {item.get('data')}: {str(e)}")
+                    app.logger.info(f"[{nome_operador}] Buscando dados de hoje, offset {offset}")
+                    response = utils.atendentePerformanceData(access_token, params)
+                    dados = response.get("result", {}).get("data", [])
 
-            if registros:
-                db.session.bulk_save_objects(registros)
-                db.session.commit()
-                print(f"[{nome_operador}] {len(registros)} registros inseridos.")
-                total_registros += len(registros)
+                    if not dados:
+                        break
 
-            offset += 1000  # Próxima página
+                    for item in dados:
+                        try:
+                            data_raw = item["data"].split("T")[0] if "T" in item["data"] else item["data"]
+                            data_registro = datetime.strptime(data_raw, "%Y-%m-%d").date()
 
-    return {"status": "success", "message": f"{total_registros} registros inseridos hoje."}
+                            registro = PerformanceColaboradores(
+                                operador_id=operador_id,
+                                name=nome_operador,
+                                data=data_registro,
+                                ch_atendidas=item.get("ch_atendidas", 0),
+                                ch_naoatendidas=item.get("ch_naoatendidas", 0),
+                                tempo_online=item.get("tempo_online", 0),
+                                tempo_livre=item.get("tempo_livre", 0),
+                                tempo_servico=item.get("tempo_servico", 0),
+                                pimprod_refeicao=item.get("pimprod_Refeicao", 0),
+                                tempo_minatend=item.get("tempo_minatend"),
+                                tempo_medatend=item.get("tempo_medatend"),
+                                tempo_maxatend=item.get("tempo_maxatend"),
+                                data_importacao=datetime.now()
+                            )
+                            db.session.merge(registro)
+                            total_registros += 1
+                        except Exception as e:
+                            app.logger.error(f"[ERRO] {nome_operador} em {item.get('data')}: {str(e)}")
+
+                    offset += 1000
+
+        db.session.commit()
+        return jsonify({"status": "success", "message": f"{total_registros} registros inseridos ou atualizados."})
+
+    except Exception as e:
+        app.logger.error(f"Erro na rota atualizar_performance_incremental: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 def processar_e_armazenar_performance_vyrtos_incremental():
     hoje = datetime.now().date()

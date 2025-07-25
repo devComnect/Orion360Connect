@@ -277,27 +277,46 @@ def extrair_comparativo_relatorios():
     turnos = [get_turno(ch.data_criacao) for ch in chamados]
     turno_counts = Counter(turnos)
 
+    img_pizza_path = None
+    img_barra_path = None
+
     if turno_counts:
-        labels = turno_counts.keys()
-        sizes = turno_counts.values()
+        # Gráfico de Pizza
+        labels = list(turno_counts.keys())
+        sizes = list(turno_counts.values())
         colors = ['#4CAF50', '#2196F3', '#FF5722']
 
-        plt.figure(figsize=(6, 6))
+        plt.figure(figsize=(4.5, 4.5))
         plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=colors)
-        plt.title('Distribuição de Chamados por Turno')
+        plt.title('Distribuição de Chamados por Turno', fontsize=10)
         plt.axis('equal')
 
-        img_buffer = BytesIO()
-        plt.savefig(img_buffer, format='PNG', bbox_inches='tight')
+        img_buffer_pizza = BytesIO()
+        plt.savefig(img_buffer_pizza, format='PNG', bbox_inches='tight')
         plt.close()
 
         import tempfile
-        temp_img = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-        temp_img.write(img_buffer.getbuffer())
-        temp_img.close()
-        img_path = temp_img.name
-    else:
-        img_path = None
+        temp_pizza = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        temp_pizza.write(img_buffer_pizza.getbuffer())
+        temp_pizza.close()
+        img_pizza_path = temp_pizza.name
+
+        # Gráfico de Barras
+        plt.figure(figsize=(4.5, 2.5))
+        plt.bar(labels, sizes, color=colors)
+        plt.title("Chamados por Turno (Barras)", fontsize=10)
+        plt.xlabel("Turno")
+        plt.ylabel("Quantidade")
+        plt.tight_layout()
+
+        img_buffer_barra = BytesIO()
+        plt.savefig(img_buffer_barra, format='PNG', bbox_inches='tight')
+        plt.close()
+
+        temp_barra = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        temp_barra.write(img_buffer_barra.getbuffer())
+        temp_barra.close()
+        img_barra_path = temp_barra.name
 
     # Geração do PDF
     pdf = FPDF()
@@ -312,70 +331,41 @@ def extrair_comparativo_relatorios():
     # Chamados
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, "Chamados:", ln=True)
-
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 10, f"Total de chamados: {total_chamados}", ln=True)
     pdf.ln(2)
 
-    '''pdf.set_font("Arial", "B", 11)
-    pdf.cell(40, 8, "Código", 1)
-    pdf.cell(50, 8, "Status", 1)
-    pdf.cell(60, 8, "Grupo", 1)
-    pdf.cell(40, 8, "Data Criação", 1)
-    pdf.ln()'''
-
-    '''pdf.set_font("Arial", "", 10)
-    if chamados:
-        for chamado in chamados:
-            pdf.cell(40, 8, chamado.cod_chamado or "-", 1)
-            pdf.cell(50, 8, chamado.nome_status or "-", 1)
-            grupo = chamado.nome_grupo or "-"
-            grupo_truncado = grupo[:30] + "..." if len(grupo) > 30 else grupo
-            pdf.cell(60, 8, grupo_truncado, 1)
-            pdf.cell(40, 8, chamado.data_criacao.strftime('%d/%m/%Y %H:%M'), 1)
-            pdf.ln()
-    else:
-        pdf.cell(0, 8, "Nenhum chamado encontrado.", 1, ln=True)'''
-
-    pdf.ln(10)
-
-    # Gráfico de Turnos
-    if img_path and os.path.exists(img_path):
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "Distribuição por Turno:", ln=True)
-        pdf.ln(5)
-        pdf.image(img_path, x=10, w=pdf.w - 20)
-        pdf.ln(10)
-        os.remove(img_path)
-
     # Performance
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, "Performance de Ligações:", ln=True)
-
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 8, f"Total ligações atendidas: {total_ligacoes_atendidas}", ln=True)
     pdf.cell(0, 8, f"Total ligações não atendidas: {total_ligacoes_naoatendidas}", ln=True)
     pdf.ln(2)
 
-    '''pdf.set_font("Arial", "B", 11)
-    pdf.cell(30, 8, "Data", 1)
-    pdf.cell(30, 8, "Atendidas", 1)
-    pdf.cell(40, 8, "Não atendidas", 1)
-    pdf.cell(40, 8, "Tempo Online (s)", 1)
-    pdf.cell(40, 8, "Tempo Serviço (s)", 1)
-    pdf.ln()'''
+    # Gráfico de Pizza
+    if img_pizza_path and os.path.exists(img_pizza_path):
+        current_y = pdf.get_y()
+        if current_y > 220:
+            pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "Distribuição por Turno (Pizza):", ln=True)
+        pdf.ln(2)
+        pdf.image(img_pizza_path, x=pdf.get_x() + 30, w=pdf.w / 2.2)
+        pdf.ln(5)
+        os.remove(img_pizza_path)
 
-    '''pdf.set_font("Arial", "", 10)
-    if performance:
-        for perf in performance:
-            pdf.cell(30, 8, perf.data.strftime('%d/%m/%Y'), 1)
-            pdf.cell(30, 8, str(perf.ch_atendidas), 1)
-            pdf.cell(40, 8, str(perf.ch_naoatendidas), 1)
-            pdf.cell(40, 8, str(perf.tempo_online), 1)
-            pdf.cell(40, 8, str(perf.tempo_servico), 1)
-            pdf.ln()
-    else:
-        pdf.cell(0, 8, "Nenhum dado de performance encontrado.", 1, ln=True)'''
+    '''# Gráfico de Barras
+    if img_barra_path and os.path.exists(img_barra_path):
+        current_y = pdf.get_y()
+        if current_y > 220:
+            pdf.add_page()
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "Distribuição por Turno (Barras):", ln=True)
+        pdf.ln(2)
+        pdf.image(img_barra_path, x=10, w=pdf.w - 20)
+        pdf.ln(10)
+        os.remove(img_barra_path)'''
 
     # Finaliza PDF
     buffer = BytesIO()
