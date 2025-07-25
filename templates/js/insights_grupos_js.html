@@ -1,0 +1,443 @@
+<!-- Bloco que traz os dados da sessão para o template atual -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Recupera grupo da query string (URL)
+    const params = new URLSearchParams(window.location.search);
+    const grupo = params.get("grupo");
+
+    if (grupo) {
+        sessionStorage.setItem("grupoSelecionado", grupo);
+        console.log("✅ Grupo restaurado na sessão:", grupo);
+    } else {
+        console.warn("⚠️ Grupo não encontrado na URL.");
+    }
+});
+</script>
+
+<!-- Bloco que traz os chamados criados para os grupos -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const botoesPeriodo = document.querySelectorAll(".filtro-btn");
+    const campoTotalChamados = document.getElementById("chamados-abertos");
+
+    async function carregarChamados(dias = 1) {
+        const grupoSelecionado = sessionStorage.getItem('grupoSelecionado') || "";
+        console.log("🔎 Grupo selecionado no sessionStorage:", grupoSelecionado);
+
+        if (!grupoSelecionado) {
+            campoTotalChamados.textContent = "Grupo não definido";
+            console.warn("Nenhum grupo selecionado no sessionStorage");
+            return;
+        }
+
+        try {
+            const response = await fetch('/grupos/chamados/grupos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    dias: dias,
+                    grupo: grupoSelecionado
+                })
+            });
+
+            const data = await response.json();
+            console.log("📦 Dados recebidos:", data);
+
+            if (data.status === "success") {
+                campoTotalChamados.textContent = data.total_chamados;
+            } else {
+                campoTotalChamados.textContent = "Erro ao carregar";
+                console.error(data.message);
+            }
+        } catch (error) {
+            campoTotalChamados.textContent = "Erro de conexão";
+            console.error("Erro na requisição:", error);
+        }
+    }
+
+    botoesPeriodo.forEach(button => {
+        button.addEventListener("click", function () {
+            botoesPeriodo.forEach(btn => btn.classList.remove("active"));
+            this.classList.add("active");
+
+            const dias = parseInt(this.getAttribute("data-dias"), 10);
+            carregarChamados(dias);
+        });
+    });
+
+    carregarChamados(); // chamada inicial
+});
+</script>
+
+<!-- Bloco que traz os chamados finalizados para os grupos -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const botoesPeriodo = document.querySelectorAll(".filtro-btn");
+    const campoChamadosFinalizados = document.getElementById("chamados-finalizados");
+
+    async function carregarChamadosFinalizados(dias = 1) {
+        const grupoSelecionado = sessionStorage.getItem('grupoSelecionado') || "";
+        console.log("Grupo selecionado para finalizados:", grupoSelecionado);
+
+        if (!grupoSelecionado) {
+            campoChamadosFinalizados.textContent = "Grupo não definido";
+            console.warn("Nenhum grupo selecionado no sessionStorage para finalizados");
+            return;
+        }
+
+        try {
+            const response = await fetch('/grupos/chamados/grupos/finalizados', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    dias: dias,
+                    grupo: grupoSelecionado
+                })
+            });
+
+            const data = await response.json();
+            console.log("Dados recebidos finalizados:", data);
+
+            if (data.status === "success") {
+                campoChamadosFinalizados.textContent = data.total_chamados;
+            } else {
+                campoChamadosFinalizados.textContent = "Erro ao carregar";
+                console.error(data.message);
+            }
+        } catch (error) {
+            campoChamadosFinalizados.textContent = "Erro de conexão";
+            console.error("Erro na requisição finalizados:", error);
+        }
+    }
+
+    botoesPeriodo.forEach(button => {
+        button.addEventListener("click", function () {
+            botoesPeriodo.forEach(btn => btn.classList.remove("active"));
+            this.classList.add("active");
+
+            const dias = parseInt(this.getAttribute("data-dias"), 10);
+            carregarChamadosFinalizados(dias);
+        });
+    });
+
+    carregarChamadosFinalizados(); // chamada inicial com 1 dia ou o padrão que quiser
+});
+</script>
+
+<!-- Bloco que traz os chamados em aberto com os grupos-->
+ <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const campoTotalChamados = document.getElementById("ChamadosEmAbertoSuporte");
+    let codigosEmAberto = [];
+
+    async function carregarChamadosAbertos(dias = 1) {
+        const grupoSelecionado = sessionStorage.getItem('grupoSelecionado') || "";
+        console.log(" Grupo selecionado para chamados abertos:", grupoSelecionado);
+
+        if (!grupoSelecionado) {
+            campoTotalChamados.textContent = "Grupo não definido";
+            console.warn("Nenhum grupo selecionado no sessionStorage para chamados abertos");
+            return;
+        }
+
+        try {
+            const response = await fetch('/grupos/chamados/grupos/abertos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    dias: dias,
+                    grupo: grupoSelecionado
+                })
+            });
+
+            const data = await response.json();
+            console.log("Dados recebidos chamados abertos:", data);
+
+            if (data.status === "success") {
+                campoTotalChamados.textContent = data.total_chamados;
+                codigosEmAberto = data.codigos || [];
+            } else {
+                campoTotalChamados.textContent = "Erro ao carregar";
+                console.error(data.message);
+                codigosEmAberto = [];
+            }
+        } catch (error) {
+            campoTotalChamados.textContent = "Erro de conexão";
+            console.error("Erro na requisição chamados abertos:", error);
+            codigosEmAberto = [];
+        }
+    }
+
+    window.mostrarCodigosChamadosAbertos = function(titulo, listaCodigos) {
+        const lista = document.getElementById("listaCodigos");
+        const tituloModal = document.getElementById("modalCodigosLabel");
+
+        if (!lista || !tituloModal) {
+            console.warn("Elemento do modal não encontrado.");
+            return;
+        }
+
+        lista.innerHTML = "";
+        tituloModal.textContent = titulo;
+
+        if (!Array.isArray(listaCodigos) || listaCodigos.length === 0) {
+            const item = document.createElement("li");
+            item.className = "text-muted";
+            item.textContent = "Nenhum chamado encontrado.";
+            lista.appendChild(item);
+        } else {
+            listaCodigos.forEach(codigo => {
+                const li = document.createElement("li");
+                li.style.marginBottom = "8px";
+
+                const link = document.createElement("a");
+                link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+                link.target = "_blank";
+                link.textContent = codigo;
+                link.style.color = "#ffc107";
+
+                li.appendChild(link);
+                lista.appendChild(li);
+            });
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+        modal.show();
+    };
+
+    // Se tiver filtros de período, conecte aqui como nos exemplos anteriores
+    carregarChamadosAbertos(1);
+});
+</script>
+
+<!-- Bloco que traz o SLAs dos grupos -->
+<script>
+  let codigosAtendimento = [];
+  let codigosResolucao = [];
+
+  function mostrarCodigosSla(titulo, listaCodigos) {
+    const lista = document.getElementById("listaChamados");
+    const tituloModal = document.getElementById("modalChamadosExpiradosLabel");
+
+    if (!lista || !tituloModal) {
+      console.warn("Elemento do modal não encontrado.");
+      return;
+    }
+
+    lista.innerHTML = "";
+    tituloModal.textContent = titulo;
+
+    if (!Array.isArray(listaCodigos) || listaCodigos.length === 0) {
+      const item = document.createElement("li");
+      item.className = "text-muted";
+      item.textContent = "Nenhum chamado encontrado.";
+      lista.appendChild(item);
+    } else {
+      listaCodigos.forEach(codigo => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "8px";
+
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+        link.target = "_blank";
+        link.textContent = codigo;
+        link.style.color = "#ffc107";
+
+        li.appendChild(link);
+        lista.appendChild(li);
+      });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById("modalChamadosExpirados"));
+    modal.show();
+  }
+
+  async function carregarSlaGrupo(dias = 1) {
+    const grupoSelecionado = sessionStorage.getItem('grupoSelecionado') || "";
+    if (!grupoSelecionado) {
+      document.getElementById("sla-atendimento-expirado").textContent = "Grupo não definido";
+      document.getElementById("sla-atendimento-prazo").textContent = "-";
+      document.getElementById("sla-resolucao-expirado").textContent = "-";
+      document.getElementById("percentual_prazo_resolucao").textContent = "-";
+      codigosAtendimento = [];
+      codigosResolucao = [];
+      return;
+    }
+
+    try {
+      const response = await fetch('/grupos/sla/grupos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias: dias, grupo: grupoSelecionado })
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        document.getElementById("sla-atendimento-expirado").textContent = data.percentual_atendimento.toFixed(2) + "%";
+        document.getElementById("sla-atendimento-prazo").textContent = data.percentual_prazo_atendimento.toFixed(2) + "%";
+        document.getElementById("sla-resolucao-expirado").textContent = data.percentual_resolucao.toFixed(2) + "%";
+        document.getElementById("percentual_prazo_resolucao").textContent = data.percentual_prazo_resolucao.toFixed(2) + "%";
+
+        codigosAtendimento = data.codigos_atendimento || [];
+        codigosResolucao = data.codigos_resolucao || [];
+      } else {
+        document.getElementById("sla-atendimento-expirado").textContent = "Erro";
+        document.getElementById("sla-atendimento-prazo").textContent = "-";
+        document.getElementById("sla-resolucao-expirado").textContent = "Erro";
+        document.getElementById("percentual_prazo_resolucao").textContent = "-";
+
+        codigosAtendimento = [];
+        codigosResolucao = [];
+      }
+    } catch (error) {
+      console.error("Erro ao carregar SLA grupo:", error);
+
+      document.getElementById("sla-atendimento-expirado").textContent = "Erro";
+      document.getElementById("sla-atendimento-prazo").textContent = "-";
+      document.getElementById("sla-resolucao-expirado").textContent = "Erro";
+      document.getElementById("percentual_prazo_resolucao").textContent = "-";
+
+      codigosAtendimento = [];
+      codigosResolucao = [];
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    carregarSlaGrupo(1);
+
+    document.querySelectorAll(".filtro-btn").forEach(button => {
+      button.addEventListener("click", () => {
+        const dias = parseInt(button.getAttribute("data-dias"), 10);
+        carregarSlaGrupo(dias);
+      });
+    });
+  });
+</script>
+
+<!-- Bloco que traz as pesquisas de satisfação-->
+ <script>
+  async function carregarPesquisaSatisfacao(dias = 1) {
+    const grupoSelecionado = sessionStorage.getItem('grupoSelecionado') || "";
+    if (!grupoSelecionado) {
+      document.getElementById("percentual-retorno").textContent = "Grupo não definido";
+      document.getElementById("percentual-null").textContent = "-";
+      return;
+    }
+
+    try {
+      const response = await fetch('/grupos/pSatisfacao/grupos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias, grupo: grupoSelecionado })
+      });
+      const data = await response.json();
+
+      if (data.status === "success") {
+        document.getElementById("percentual-retorno").textContent = `${data.percentual_respondidas}%`;
+        document.getElementById("percentual-null").textContent = `${data.percentual_nao_respondidas}%`;
+      } else {
+        document.getElementById("percentual-retorno").textContent = "Erro";
+        document.getElementById("percentual-null").textContent = "Erro";
+      }
+    } catch (error) {
+      console.error("Erro ao carregar pesquisa de satisfação:", error);
+      document.getElementById("percentual-retorno").textContent = "Erro";
+      document.getElementById("percentual-null").textContent = "Erro";
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    carregarPesquisaSatisfacao(1);
+    document.querySelectorAll(".filtro-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const dias = parseInt(btn.getAttribute("data-dias"), 10);
+        carregarPesquisaSatisfacao(dias);
+      });
+    });
+  });
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  let chartAbertosResolvidos;
+
+  async function carregarGraficoAbertosResolvidos(dias = 7) {
+    const grupoSelecionado = sessionStorage.getItem('grupoSelecionado') || "";
+    if (!grupoSelecionado) {
+      console.warn("Grupo não selecionado.");
+      return;
+    }
+
+    try {
+      const response = await fetch('/grupos/abertos_grupos_resolvido', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias: dias, grupo: grupoSelecionado })
+      });
+
+      const data = await response.json();
+
+      if (data.status !== "success") {
+        console.error("Erro ao carregar dados do gráfico.");
+        return;
+      }
+
+      // Atualiza os resumos abaixo do gráfico
+      document.getElementById("adminTotalAbertos").textContent = data.resumo.abertos;
+      document.getElementById("adminTotalResolvidos").textContent = data.resumo.resolvidos;
+      document.getElementById("adminDiferenca").textContent = data.resumo.diferenca;
+
+      // Renderiza ou atualiza o gráfico
+      const ctx = document.getElementById("LinhaAbertosResolvidosAdminChart").getContext("2d");
+
+      if (chartAbertosResolvidos) {
+        chartAbertosResolvidos.data.labels = data.labels;
+        chartAbertosResolvidos.data.datasets = data.datasets;
+        chartAbertosResolvidos.update();
+      } else {
+        chartAbertosResolvidos = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: data.labels,
+            datasets: data.datasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1
+                }
+              }
+            }
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    carregarGraficoAbertosResolvidos(7); // ou o valor que quiser como padrão
+
+    // Botões de filtro por período (se houver)
+    document.querySelectorAll(".filtro-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const dias = parseInt(btn.getAttribute("data-dias"), 10);
+        carregarGraficoAbertosResolvidos(dias);
+      });
+    });
+  });
+</script>

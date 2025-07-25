@@ -336,7 +336,6 @@ def listar_chamados_aberto():
         "total_chamados": total_chamados,
         "cod_chamados": codigos
     })
-
 # Rota que   
 @insights_bp.route('/get/operadores', methods=['GET'])
 def get_operadores():
@@ -373,11 +372,39 @@ def get_operadores():
             "status": "error",
             "message": str(e)
         }), 500
+    
+    # Rota que   
+
+@insights_bp.route('/get/grupos', methods=['GET'])
+def get_grupos():
+    try:
+        # Consulta grupos distintos, excluindo aqueles que contenham 'n1' ou 'n2'
+        grupos = db.session.query(Chamado.nome_grupo)\
+            .filter(
+                Chamado.nome_grupo.isnot(None),
+                ~Chamado.nome_grupo.ilike('%n1%'),
+                ~Chamado.nome_grupo.ilike('%n2%')
+            )\
+            .distinct()\
+            .all()
+
+        lista_grupos = [gr[0] for gr in grupos]
+
+        return jsonify({
+            "status": "success",
+            "grupos": lista_grupos,
+            "total": len(lista_grupos)
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 @insights_bp.route('/pSatisfacao', methods=['POST'])
 def listar_p_satisfacao():
     data = request.get_json()
-    print(data)
     dias = int(data.get('dias', 1))
     data_limite = (datetime.now() - timedelta(days=dias)).date()  # só data, sem hora
 

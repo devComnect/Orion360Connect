@@ -199,6 +199,91 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<!-- Script que traz os botões de grupos -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    async function carregarGrupos() {
+        try {
+            const response = await fetch('/insights/get/grupos');
+            const data = await response.json();
+
+            if (data.status === "success") {
+                const container = document.getElementById('botoes-grupos');
+
+                const gruposOrdenados = data.grupos.sort((a, b) => a.localeCompare(b));
+
+                gruposOrdenados.forEach(grupo => {
+                    const botao = document.createElement('button');
+                    botao.className = 'btn btn-outline-success grupos-btn d-flex align-items-center';
+
+                    const icone = document.createElement('i');
+                    icone.className = 'bi bi-people-fill me-2';
+
+                    const texto = document.createElement('span');
+                    texto.textContent = grupo;
+
+                    botao.appendChild(icone);
+                    botao.appendChild(texto);
+                    botao.dataset.grupo = grupo;
+
+                    botao.onclick = function () {
+                        // Marca o botão como ativo
+                        document.querySelectorAll('.grupos-btn').forEach(btn => btn.classList.remove('active'));
+                        this.classList.add('active');
+
+                        // ✅ Armazena o grupo selecionado no sessionStorage
+                        sessionStorage.setItem('grupoSelecionado', grupo);
+
+                        // Redireciona via backend
+                        filtrarPorGrupo(grupo);
+                    };
+
+                    container.appendChild(botao);
+                });
+
+                // Define o primeiro como ativo
+                if (container.firstChild) {
+                    container.firstChild.classList.add('active');
+                }
+            }
+
+        } catch (error) {
+            console.error('Erro ao carregar grupos:', error);
+        }
+    }
+
+    function filtrarPorGrupo(grupo) {
+        console.log(`Grupo selecionado: ${grupo}`);
+
+        fetch('/grupos/render/grupos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ grupo: grupo })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.redirect_url) {
+                console.log('Redirecionando para:', data.redirect_url);
+                window.location.href = data.redirect_url;
+            } else {
+                console.warn('Nenhuma URL de redirecionamento recebida.');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao enviar grupo para o backend:', error);
+        });
+    }
+
+    carregarGrupos();
+
+    // (Opcional) Limpa o sessionStorage ao sair da página
+    window.addEventListener("beforeunload", function () {
+        sessionStorage.removeItem('grupoSelecionado');
+    });
+});
+</script>
+
 <!-- Script que traz os chamados finalizados pelo suporte-->
 <script>
 document.addEventListener("DOMContentLoaded", function () {

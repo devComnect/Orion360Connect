@@ -48,9 +48,16 @@
   <!-- Botões de operadores -->
   <div class="row mb-4">
     <div class="col-12">
-      <div class="d-flex flex-wrap gap-2" id="botoes-operadores">
+      <div class="d-flex flex-wrap gap-2 justify-content-center" id="botoes-operadores">
         <button class="btn btn-outline-primary operador-btn active" data-operador="">
           <i class="bi bi-arrow-bar-right"></i>
+        </button>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="d-flex flex-wrap gap-2 justify-content-center" id="botoes-grupos">
+        <button class="btn btn-outline-primary grupos-btn active" data-grupos="">
+          <i class="bi bi-people-fill"></i>
         </button>
       </div>
     </div>
@@ -74,7 +81,7 @@
     <div class="col">
       <div class="card shadow-sm h-100 text-center">
         <div class="card-body">
-          <h6>Chamados Criados (Suporte)</h6>
+          <h6>Chamados Criados</h6>
           <p class="fs-4" id="chamados-abertos">-</p>
         </div>
       </div>
@@ -82,7 +89,7 @@
     <div class="col">
       <div class="card shadow-sm h-100 text-center">
         <div class="card-body">
-          <h6>Chamados Resolvidos (Suporte)</h6>
+          <h6>Chamados Resolvidos</h6>
           <p class="fs-4" id="chamados-finalizados">-</p>
         </div>
       </div>
@@ -90,7 +97,7 @@
     <div class="col">
       <div class="card shadow-sm h-100 text-center">
         <div class="card-body">
-          <h6>Chamados em Aberto (Global)</h6>
+          <h6>Chamados em Aberto</h6>
           <p class="fs-4 mb-1 text-danger">
            <a href="#" onclick="mostrarCodigosChamadosAbertos('Chamados em Aberto', codigosEmAberto)">
                 <span id="ChamadosEmAbertoSuporte">-</span>
@@ -104,7 +111,7 @@
     <div class="col">
       <div class="card shadow-sm h-100 text-center">
         <div class="card-body">
-          <h6>Atendimento (Global)</h6>
+          <h6>Atendimento</h6>
           <p class="fs-6 mb-1 text-danger">
             Expirados: <a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)"><span id="sla-atendimento-expirado">-</span></a>
           </p>
@@ -117,7 +124,7 @@
     <div class="col">
       <div class="card shadow-sm h-100 text-center">
         <div class="card-body">
-          <h6>Resolução (Global)</h6>
+          <h6>Resolução</h6>
           <p class="fs-6 mb-1 text-danger">
             Expirados: <a href="#" onclick="mostrarCodigosSla('Resolução Expirada', codigosResolucao)"><span id="sla-resolucao-expirado">-</span></a>
           </p>
@@ -130,7 +137,7 @@
     <div class="col">
       <div class="card shadow-sm h-100 text-center">
         <div class="card-body">
-          <h6>Pesquisa Satisfação (Global)</h6>
+          <h6>Pesquisa Satisfação</h6>
           <p class="fs-6 mb-1 text-danger">
             Sem retorno: <span id="percentual-null">-</span>
           </p>
