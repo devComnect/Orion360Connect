@@ -383,7 +383,8 @@ def get_grupos():
             .filter(
                 Chamado.nome_grupo.isnot(None),
                 ~Chamado.nome_grupo.ilike('%n1%'),
-                ~Chamado.nome_grupo.ilike('%n2%')
+                ~Chamado.nome_grupo.ilike('%n2%'),
+                ~Chamado.nome_grupo.ilike('%CSM%'),
             )\
             .distinct()\
             .all()

@@ -544,7 +544,6 @@ def parse_tempo(s):
 @grupos_bp.route('/slaAndamentoGrupos', methods=['POST'])
 def listar_sla_andamento_grupos():
     grupo = request.json.get("grupo", "").strip()
-    #grupos_desejados = ['INFOSEC - N2', 'DEV - N2', 'NOC - N2', 'CSM']
     mes_referencia_atual = datetime.now().strftime('%Y-%m')
 
     chamados = Chamado.query.filter(

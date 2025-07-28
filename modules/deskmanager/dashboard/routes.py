@@ -914,7 +914,7 @@ def listar_sla_andamento_grupos():
             sla1_expirado += 1
             codigos_sla1.append(cod)
         elif chamado.sla_atendimento == "N" and restante1 is not None:
-            if timedelta(minutes=0) < restante1 <= timedelta(minutes=10):
+            if timedelta(minutes=0) < restante1 <= timedelta(minutes=5):
                 sla1_quase_estourando += 1
                 codigos_sla1_critico.append(cod)
             elif restante1 > timedelta(minutes=10):
@@ -928,7 +928,7 @@ def listar_sla_andamento_grupos():
             sla2_expirado += 1
             codigos_sla2.append(cod)
         elif chamado.sla_resolucao == "N" and restante2 is not None:
-            if timedelta(minutes=0) < restante2 <= timedelta(minutes=10):
+            if timedelta(minutes=0) < restante2 <= timedelta(minutes=5):
                 sla2_quase_estourando += 1
                 codigos_sla2_critico.append(cod)
             elif restante2 > timedelta(minutes=10):
