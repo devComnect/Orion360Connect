@@ -326,3 +326,329 @@ def get_abertos_resolvidos():
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@grupos_bp.route('/ticketsOperador', methods=['POST'])
+def get_tickets_grupo_operador():
+    try:
+        dias = int(request.json.get("dias"))  
+        grupo = request.json.get("grupo", "").strip()
+        data_limite = datetime.now() - timedelta(days=dias)
+
+        # Consulta todos os chamados criados no período, finalizados ou não
+        resultados = db.session.query(
+            Chamado.operador,
+            func.count(Chamado.id).label('total')
+        ).filter(
+            Chamado.data_criacao >= data_limite,
+            Chamado.nome_grupo == grupo,
+        ).group_by(
+            Chamado.operador
+        ).order_by(
+            func.count(Chamado.id).desc()
+        ).all()
+
+        # Organiza os dados para o gráfico
+        labels = [r[0] if r[0] else 'Sem operador' for r in resultados]
+        dados = [r[1] for r in resultados]
+
+        # Gera cores aleatórias distintas
+        def gerar_cores_hex(n):
+            import random
+            random.seed(42)
+            return [f'#{random.randint(0, 0xFFFFFF):06x}' for _ in range(n)]
+
+        backgroundColor = gerar_cores_hex(len(labels))
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'labels': labels,
+                'datasets': [{
+                    'data': dados,
+                    'backgroundColor': backgroundColor
+                }]
+            },
+            'data_referencia': f'Últimos {dias} dias'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
+@grupos_bp.route('/tickets_grupos_canal', methods=['POST'])
+def get_tickets_grupos_canal():
+    try:
+        dias = int(request.json.get("dias"))
+        grupo = request.json.get("grupo", "").strip()
+        data_limite = datetime.now() - timedelta(days=dias)
+
+        tipos_desejados = ['000003', '000101', '000004', '000060', '000001', '000071']
+        mapeamento_tipos = {
+            '000101': 'Portal Comnect',
+            '000071': 'Interno',
+            '000003': 'E-mail',
+            '000004': 'Telefone',
+            '000001': 'Portal Solicitante',
+            '000060': 'WhatsApp'
+        }
+
+        # Consulta agrupando por tipo e dia
+        resultados = db.session.query(
+            Chamado.cod_solicitacao,
+            func.date(Chamado.data_criacao).label('dia'),
+            func.count(Chamado.id)
+        ).filter(
+            Chamado.cod_solicitacao.in_(tipos_desejados),
+            Chamado.data_criacao >= data_limite,
+            Chamado.nome_grupo == grupo,
+            #Chamado.data_finalizacao.is_(None),
+            Chamado.nome_status.notin_(['Cancelado'])  # caso queira filtrar
+        ).group_by(
+            Chamado.cod_solicitacao,
+            func.date(Chamado.data_criacao)
+        ).order_by(func.date(Chamado.data_criacao)).all()
+
+        # Gerar lista contínua de dias
+        hoje = datetime.now().date()
+        lista_dias = [data_limite.date() + timedelta(days=i) for i in range((hoje - data_limite.date()).days + 1)]
+        labels = [dia.strftime('%d/%m') for dia in lista_dias]
+
+        # Organizar dados por tipo
+        dados_agrupados = {cod: {} for cod in tipos_desejados}
+        for cod, dia, total in resultados:
+            dados_agrupados[cod][dia] = total
+
+        cores = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+
+        datasets = []
+        for i, cod in enumerate(tipos_desejados):
+            dados = [dados_agrupados[cod].get(d, 0) for d in lista_dias]
+            datasets.append({
+                'label': mapeamento_tipos.get(cod, cod),
+                'data': dados,
+                'backgroundColor': cores[i],
+                'borderColor': cores[i],
+                'fill': False,
+                'tension': 0.3,
+                'borderWidth': 2
+            })
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'labels': labels,
+                'datasets': datasets
+            },
+            'data_referencia': f"Últimos {dias} dias"
+        })
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    
+# Rota que traz os top 5 tipos com mais chamados 
+@grupos_bp.route('/topTipoChamadosGrupos', methods=['POST'])
+def top_tipo_chamados():
+    tipo_ocorrencia = {
+        "000150": "GMUD",
+        "000010": "Incidente",
+        "000004": "Problema",
+        "000002": "Dúvida",
+        "000008": "Evento",
+        "000009": "Requisição",
+    }
+
+    data = request.get_json()
+    dias = int(data.get('dias', 1))
+    grupo = request.json.get("grupo", "").strip()
+    data_limite = datetime.now() - timedelta(days=dias)
+
+    # Consulta agrupada por tipo de ocorrência
+    resultados = (
+        db.session.query(
+            Chamado.cod_tipo_ocorrencia,
+            db.func.count().label('quantidade')
+        )
+        .filter(Chamado.data_criacao >= data_limite,
+                Chamado.nome_grupo == grupo,
+                )
+        .group_by(Chamado.cod_tipo_ocorrencia)
+        .order_by(db.desc('quantidade'))
+        .all()
+    )
+
+    top_resultado = []
+    for row in resultados:
+        nome_tipo = tipo_ocorrencia.get(row.cod_tipo_ocorrencia)
+        if nome_tipo:  # Só inclui se estiver mapeado
+            top_resultado.append({
+                "tipo": nome_tipo,
+                "codigo": row.cod_tipo_ocorrencia,
+                "quantidade": row.quantidade
+            })
+
+    # Pega só os 5 mais frequentes
+    top_resultado = top_resultado[:5]
+
+    return jsonify({
+        "status": "success",
+        "dados": top_resultado
+    })
+
+@grupos_bp.route('/topCategoriaGrupos', methods=['POST'])
+def top_categoria():
+    data = request.get_json()
+    dias = int(data.get('dias', 1))
+    grupo = request.json.get("grupo", "").strip()
+    data_limite = datetime.now() - timedelta(days=dias)
+
+    # Join entre Chamado e Categoria pela subcategoria
+    resultados = db.session.query(
+        Chamado.cod_sub_categoria.label('codigo'),
+        Categoria.categoria.label('nome'),
+        func.count(Chamado.id).label('quantidade')
+    ).join(
+        Categoria, Chamado.cod_sub_categoria == Categoria.sequencia
+    ).filter(
+        Chamado.data_criacao >= data_limite,
+        Chamado.nome_grupo == grupo,
+    ).group_by(
+        Chamado.cod_sub_categoria,
+        Categoria.categoria
+    ).order_by(
+        func.count(Chamado.id).desc()
+    ).limit(5).all()
+
+    # Montar a resposta
+    dados = [
+        {
+            "codigo": r.codigo,
+            "nome": r.nome,
+            "quantidade": r.quantidade
+        }
+        for r in resultados
+    ]
+
+    return jsonify({"status": "success", "dados": dados})
+
+def parse_tempo(s):
+    try:
+        negativo = s.startswith('-')
+        h, m, s = map(int, s.replace('-', '').split(':'))
+        delta = timedelta(hours=h, minutes=m, seconds=s)
+        return -delta if negativo else delta
+    except:
+        return None
+
+@grupos_bp.route('/slaAndamentoGrupos', methods=['POST'])
+def listar_sla_andamento_grupos():
+    grupo = request.json.get("grupo", "").strip()
+    #grupos_desejados = ['INFOSEC - N2', 'DEV - N2', 'NOC - N2', 'CSM']
+    mes_referencia_atual = datetime.now().strftime('%Y-%m')
+
+    chamados = Chamado.query.filter(
+    Chamado.nome_status.notin_(['Resolvido', 'Cancelado']),
+    Chamado.nome_prioridade.notin_(['5 - Planejada', '4 - Baixa']),
+    Chamado.nome_grupo.ilike(f"%{grupo}%"),
+    Chamado.sla_atendimento.in_(['S', 'N']),
+    Chamado.sla_resolucao.in_(['S', 'N']),
+    ).all()
+
+    # Contadores
+    sla1_expirado = sla1_nao_expirado = sla1_quase_estourando = 0
+    sla2_expirado = sla2_nao_expirado = sla2_quase_estourando = 0
+
+    # Listas de códigos
+    codigos_sla1 = []
+    codigos_sla2 = []
+    codigos_sla1_critico = []
+    codigos_sla2_critico = []
+
+    for chamado in chamados:
+        restante1_raw = (chamado.restante_p_atendimento or "").strip()
+        restante2_raw = (chamado.restante_s_atendimento or "").strip()
+        restante1 = parse_tempo(restante1_raw)
+        restante2 = parse_tempo(restante2_raw)
+        cod = chamado.cod_chamado
+
+        # SLA Atendimento
+        if chamado.sla_atendimento == "S":
+            sla1_expirado += 1
+            codigos_sla1.append(cod)
+        elif chamado.sla_atendimento == "N" and restante1 is not None:
+            if timedelta(minutes=0) < restante1 <= timedelta(minutes=10):
+                sla1_quase_estourando += 1
+                codigos_sla1_critico.append(cod)
+            elif restante1 > timedelta(minutes=10):
+                sla1_nao_expirado += 1
+            else:
+                sla1_expirado += 1
+                codigos_sla1.append(cod)
+
+        # SLA Resolução
+        if chamado.sla_resolucao == "S":
+            sla2_expirado += 1
+            codigos_sla2.append(cod)
+        elif chamado.sla_resolucao == "N" and restante2 is not None:
+            if timedelta(minutes=0) < restante2 <= timedelta(minutes=10):
+                sla2_quase_estourando += 1
+                codigos_sla2_critico.append(cod)
+            elif restante2 > timedelta(minutes=10):
+                sla2_nao_expirado += 1
+            else:
+                sla2_expirado += 1
+                codigos_sla2.append(cod)
+
+    return jsonify({
+        "status": "success",
+        "sla1_expirado": sla1_expirado,
+        "sla1_nao_expirado": sla1_nao_expirado,
+        "sla1_quase_estourando": sla1_quase_estourando,
+        "sla2_expirado": sla2_expirado,
+        "sla2_nao_expirado": sla2_nao_expirado,
+        "sla2_quase_estourando": sla2_quase_estourando,
+        "codigos_sla1": codigos_sla1,
+        "codigos_sla2": codigos_sla2,
+        "codigos_sla1_critico": codigos_sla1_critico,
+        "codigos_sla2_critico": codigos_sla2_critico,
+        "total": len(chamados),
+        "grupos": grupo,
+        "mes_referencia": mes_referencia_atual
+    })
+
+@grupos_bp.route('/topSubCategoriaGrupos', methods=['POST'])
+def top_sub_categoria():
+    data = request.get_json()
+    dias = int(data.get('dias', 1))
+    grupo = request.json.get("grupo", "").strip()
+    data_limite = datetime.now() - timedelta(days=dias)
+
+    # Join entre Chamado e Categoria pela subcategoria
+    resultados = db.session.query(
+        Chamado.cod_sub_categoria.label('codigo'),
+        Categoria.sub_categoria.label('nome'),
+        func.count(Chamado.id).label('quantidade')
+    ).join(
+        Categoria, Chamado.cod_sub_categoria == Categoria.sequencia
+    ).filter(
+        Chamado.data_criacao >= data_limite,
+        Chamado.nome_grupo == grupo,
+    ).group_by(
+        Chamado.cod_sub_categoria,
+        Categoria.sub_categoria
+    ).order_by(
+        func.count(Chamado.id).desc()
+    ).limit(5).all()
+
+    # Montar a resposta
+    dados = [
+        {
+            "codigo": r.codigo,
+            "nome": r.nome,
+            "quantidade": r.quantidade
+        }
+        for r in resultados
+    ]
+
+    return jsonify({"status": "success", "dados": dados})

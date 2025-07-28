@@ -510,6 +510,75 @@ def relacao_admin_abertos_vs_resolvido_periodo():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# Rota que traz os tickets por canal pelos períodos de 7, 15, 30 e 90 dias  
+@insights_bp.route('/ticketsCanal', methods=['POST'])
+def chamados_tickets_canal():
+    try:
+        dias = int(request.json.get("dias", 7))  # valor padrão: últimos 30 dias
+        data_limite = datetime.now() - timedelta(days=dias)
+
+        tipos_desejados = ['000003', '000101', '000004', '000060', '000001', '000071']
+        mapeamento_tipos = {
+            '000101': 'Portal Comnect',
+            '000071': 'Interno',
+            '000003': 'E-mail',
+            '000004': 'Telefone',
+            '000001': 'Portal Solicitante',
+            '000060': 'WhatsApp'
+        }
+
+        # Consulta agrupando por tipo e dia
+        resultados = db.session.query(
+            Chamado.cod_solicitacao,
+            func.date(Chamado.data_criacao).label('dia'),
+            func.count(Chamado.id)
+        ).filter(
+            Chamado.cod_solicitacao.in_(tipos_desejados),
+            Chamado.data_criacao >= data_limite,
+            #Chamado.data_finalizacao.is_(None),
+            Chamado.nome_status.notin_(['Cancelado'])  # caso queira filtrar
+        ).group_by(
+            Chamado.cod_solicitacao,
+            func.date(Chamado.data_criacao)
+        ).order_by(func.date(Chamado.data_criacao)).all()
+
+        # Gerar lista contínua de dias
+        hoje = datetime.now().date()
+        lista_dias = [data_limite.date() + timedelta(days=i) for i in range((hoje - data_limite.date()).days + 1)]
+        labels = [dia.strftime('%d/%m') for dia in lista_dias]
+
+        # Organizar dados por tipo
+        dados_agrupados = {cod: {} for cod in tipos_desejados}
+        for cod, dia, total in resultados:
+            dados_agrupados[cod][dia] = total
+
+        cores = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+
+        datasets = []
+        for i, cod in enumerate(tipos_desejados):
+            dados = [dados_agrupados[cod].get(d, 0) for d in lista_dias]
+            datasets.append({
+                'label': mapeamento_tipos.get(cod, cod),
+                'data': dados,
+                'backgroundColor': cores[i],
+                'borderColor': cores[i],
+                'fill': False,
+                'tension': 0.3,
+                'borderWidth': 2
+            })
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'labels': labels,
+                'datasets': datasets
+            },
+            'data_referencia': f"Últimos {dias} dias"
+        })
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 # Rota traz os chamados abertos atualmente
 '''@insights_bp.route('/ChamadosEmAbertoSuporte', methods=['POST'])
 def listar_chamados_aberto():

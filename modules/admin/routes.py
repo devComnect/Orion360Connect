@@ -432,7 +432,7 @@ def chamados_tickets_canal():
             Chamado.cod_solicitacao.in_(tipos_desejados),
             Chamado.data_criacao >= data_limite,
             #Chamado.data_finalizacao.is_(None),
-            #Chamado.nome_status.notin_(['Cancelado', 'Resolvido'])  # caso queira filtrar
+            Chamado.nome_status.notin_(['Cancelado'])  # caso queira filtrar
         ).group_by(
             Chamado.cod_solicitacao,
             func.date(Chamado.data_criacao)

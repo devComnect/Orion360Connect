@@ -941,7 +941,7 @@ document.addEventListener("DOMContentLoaded", function () {
 <!--Script que traz os dados de Ticket por Canal-->
 <script>
     function carregarTicketsPorCanal(dias = 30) {
-        fetch('/admin/ChamadosSuporte/ticketsCanal', {
+        fetch('/insights/ticketsCanal', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ dias: dias })
