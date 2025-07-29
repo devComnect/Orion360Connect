@@ -33201,3 +33201,520 @@
 2025-07-29 16:49:11,551 - INFO - 192.168.13.106 - - [29/Jul/2025 16:49:11] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
 2025-07-29 16:49:11,573 - INFO - 192.168.13.106 - - [29/Jul/2025 16:49:11] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
 2025-07-29 16:49:11,588 - INFO - 192.168.13.106 - - [29/Jul/2025 16:49:11] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:49:42,995 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-07-29 16:49:42,996 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-07-29 16:49:42,996 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-07-29 16:49:42,997 - INFO - Added job "job_processa_performance_horaria" to job store "default"
+2025-07-29 16:49:42,998 - INFO - Added job "job_importar_chamados" to job store "default"
+2025-07-29 16:49:42,998 - INFO - Added job "job_importar_psatisfacao" to job store "default"
+2025-07-29 16:49:42,998 - INFO - Scheduler started
+2025-07-29 16:49:42,998 - INFO - Tarefas agendadas iniciadas.
+2025-07-29 16:49:43,007 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:9000
+ * Running on http://192.168.10.180:9000
+2025-07-29 16:49:43,007 - INFO - [33mPress CTRL+C to quit[0m
+2025-07-29 16:49:43,171 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "GET /insights HTTP/1.1" 200 -
+2025-07-29 16:49:43,248 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "[36mGET /static/css/style_colaboradores.css HTTP/1.1[0m" 304 -
+2025-07-29 16:49:43,249 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "[36mGET /static/css/style_admin.css HTTP/1.1[0m" 304 -
+2025-07-29 16:49:43,250 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:49:43,252 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "[36mGET /static/css/style_header.css HTTP/1.1[0m" 304 -
+2025-07-29 16:49:43,329 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:49:43,344 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:49:43,347 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:49:43,355 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:49:43,360 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "GET /insights/get/operadores HTTP/1.1" 200 -
+2025-07-29 16:49:43,378 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:49:43,380 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "GET /insights/get/grupos HTTP/1.1" 200 -
+2025-07-29 16:49:43,384 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:49:43,394 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:49:43,396 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:49:43,423 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:49:43,430 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:49:43,431 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:49:43,436 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:49:43,442 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:49:43,444 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:49:43,455 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:49:43,459 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:49:43,460 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:49:43,462 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:49:43,467 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2025-07-29 16:49:43,503 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "GET /insights/tma_tms?dias=30 HTTP/1.1" 200 -
+2025-07-29 16:49:43,616 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:43] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:49:46,538 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:49:46,539 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:49:46,546 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:49:46,549 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:49:46,569 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:49:46,570 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:49:46,577 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:49:46,578 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:49:46,582 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:49:46,584 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:49:46,605 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:49:46,608 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:49:46,619 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:49:46,621 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:49:46,622 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:49:46,622 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:49:46,640 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:46] "GET /insights/tma_tms?dias=15 HTTP/1.1" 200 -
+2025-07-29 16:49:47,456 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:49:47,460 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:49:47,464 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:49:47,465 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:49:47,467 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:49:47,475 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:49:47,481 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:49:47,499 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:49:47,501 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:49:47,503 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:49:47,508 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:49:47,514 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:49:47,514 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:49:47,529 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:49:47,530 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:49:47,531 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:49:47,543 - INFO - 192.168.10.157 - - [29/Jul/2025 16:49:47] "GET /insights/tma_tms?dias=7 HTTP/1.1" 200 -
+2025-07-29 16:51:18,103 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:51:18,110 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:51:18,112 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:51:18,124 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:51:18,156 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:51:18,163 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:51:18,166 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:51:18,171 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:51:18,173 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:51:18,176 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:51:18,190 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:51:18,210 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:51:18,211 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:51:18,214 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:51:18,216 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:51:18,221 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:51:18,370 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:18] "GET /insights/tma_tms?dias=30 HTTP/1.1" 200 -
+2025-07-29 16:51:19,735 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:51:19,741 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:51:19,748 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:51:19,820 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:51:19,848 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:51:19,850 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:51:19,883 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:51:19,885 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:51:19,885 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:51:19,888 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:51:19,898 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:51:19,900 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:19] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:51:20,036 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:20] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:51:20,039 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:20] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:51:20,080 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:20] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:51:20,118 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:20] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:51:20,138 - INFO - 192.168.10.157 - - [29/Jul/2025 16:51:20] "GET /insights/tma_tms?dias=90 HTTP/1.1" 200 -
+2025-07-29 16:51:31,331 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "GET /dashboard HTTP/1.1" 200 -
+2025-07-29 16:51:31,359 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:51:31,389 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:51:31,390 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:51:31,391 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:51:31,398 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:51:31,431 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:51:31,433 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:51:31,441 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:51:31,443 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:51:31,467 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:51:31,489 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:31] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:51:32,294 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:32] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:51:32,311 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:32] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:51:32,324 - INFO - 192.168.13.106 - - [29/Jul/2025 16:51:32] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:51:33,862 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:33] "GET /dashboard HTTP/1.1" 200 -
+2025-07-29 16:51:33,896 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:33] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:51:34,052 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:51:34,054 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:51:34,061 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:51:34,062 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:51:34,087 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:51:34,087 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:51:34,091 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:51:34,103 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:51:34,266 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:51:34,415 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:51:34,994 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:51:34,999 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:34] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:51:35,009 - INFO - 192.168.10.121 - - [29/Jul/2025 16:51:35] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:53:45,825 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "GET /dashboard HTTP/1.1" 200 -
+2025-07-29 16:53:45,845 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:53:45,875 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:53:45,875 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:53:45,881 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:53:45,883 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:53:45,928 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:53:45,933 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:53:45,938 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:53:45,939 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:53:45,960 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:53:45,994 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:45] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:53:46,634 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:46] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:53:46,680 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:46] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:53:46,721 - INFO - 192.168.16.6 - - [29/Jul/2025 16:53:46] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:53:52,577 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "GET /dashboard HTTP/1.1" 200 -
+2025-07-29 16:53:52,640 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:53:52,691 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:53:52,691 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:53:52,694 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:53:52,698 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:53:52,751 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:53:52,751 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:53:52,755 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:53:52,761 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:53:52,803 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:53:52,862 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:52] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:53:53,490 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:53] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:53:53,492 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:53] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:53:53,498 - INFO - 192.168.13.102 - - [29/Jul/2025 16:53:53] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:54:07,393 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "GET /dashboard_colaborador HTTP/1.1" 200 -
+2025-07-29 16:54:07,418 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:54:07,420 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "[36mGET /static/css/style_colaboradores_individual.css HTTP/1.1[0m" 304 -
+2025-07-29 16:54:07,421 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2025-07-29 16:54:07,455 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:54:07,456 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:54:07,462 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:54:07,471 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:54:07,504 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:54:07,505 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:54:07,513 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:54:07,544 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:54:07,554 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:54:07,588 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:07] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:54:07,735 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "GET /dashboard HTTP/1.1" 200 -
+2025-07-29 16:54:07,763 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:54:07,800 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:54:07,800 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:54:07,802 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:54:07,804 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:54:07,857 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:54:07,864 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:54:07,867 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:54:07,871 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:54:07,907 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:54:07,925 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:07] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:54:08,631 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:08] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:54:08,658 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:08] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:54:08,689 - INFO - 192.168.16.4 - - [29/Jul/2025 16:54:08] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:54:08,794 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:08] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:54:08,929 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:08] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:54:08,945 - INFO - 192.168.13.106 - - [29/Jul/2025 16:54:08] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:54:42,988 - DEBUG - Looking for jobs to run
+2025-07-29 16:54:42,988 - DEBUG - Next wakeup is due at 2025-07-29 16:54:42.995448-03:00 (in 0.006489 seconds)
+2025-07-29 16:54:43,004 - DEBUG - Looking for jobs to run
+2025-07-29 16:54:43,004 - INFO - Running job "job_processa_performance_horaria (trigger: interval[0:05:00], next run at: 2025-07-29 16:54:42 -03)" (scheduled at 2025-07-29 16:54:42.995448-03:00)
+2025-07-29 16:54:43,005 - INFO - [AGENDADO] Iniciando coleta e armazenamento de performance padrão...
+2025-07-29 16:54:43,005 - INFO - Running job "job_importar_chamados (trigger: interval[0:05:00], next run at: 2025-07-29 16:59:42 -03)" (scheduled at 2025-07-29 16:54:42.995955-03:00)
+2025-07-29 16:54:43,006 - INFO - Running job "job_importar_psatisfacao (trigger: interval[0:05:00], next run at: 2025-07-29 16:59:42 -03)" (scheduled at 2025-07-29 16:54:42.996192-03:00)
+2025-07-29 16:54:43,006 - DEBUG - Next wakeup is due at 2025-07-29 16:59:42.995448-03:00 (in 299.988803 seconds)
+2025-07-29 16:54:43,228 - INFO - [Renato] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:54:43,675 - INFO - [Renato] Nenhum dado retornado para o período.
+2025-07-29 16:54:43,676 - INFO - [Matheus] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:54:44,096 - INFO - [Matheus] Nenhum dado retornado para o período.
+2025-07-29 16:54:44,096 - INFO - [Gustavo] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:54:44,546 - INFO - [Gustavo] Nenhum dado retornado para o período.
+2025-07-29 16:54:44,546 - INFO - [Raysa] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:54:44,907 - INFO - [AGENDADO] None chamados importados com sucesso.
+2025-07-29 16:54:44,908 - INFO - Job "job_importar_psatisfacao (trigger: interval[0:05:00], next run at: 2025-07-29 16:59:42 -03)" executed successfully
+2025-07-29 16:54:44,967 - INFO - [Raysa] Nenhum dado retornado para o período.
+2025-07-29 16:54:44,967 - INFO - [Lucas] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:54:45,429 - INFO - [Lucas] Nenhum dado retornado para o período.
+2025-07-29 16:54:45,429 - INFO - [Danilo] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:54:45,862 - INFO - [Danilo] Nenhum dado retornado para o período.
+2025-07-29 16:54:45,862 - INFO - [Henrique] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:54:46,285 - INFO - [Henrique] Nenhum dado retornado para o período.
+2025-07-29 16:54:46,285 - INFO - [Rafael] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:54:46,718 - INFO - [Rafael] Nenhum dado retornado para o período.
+2025-07-29 16:54:46,718 - INFO - Nenhum dado encontrado no período extendido. Buscando dados de hoje somente.
+2025-07-29 16:54:46,718 - INFO - [Renato] Buscando dados de hoje, offset 0
+2025-07-29 16:54:47,161 - INFO - [Matheus] Buscando dados de hoje, offset 0
+2025-07-29 16:54:47,593 - INFO - [Gustavo] Buscando dados de hoje, offset 0
+2025-07-29 16:54:48,027 - INFO - [Raysa] Buscando dados de hoje, offset 0
+2025-07-29 16:54:48,463 - INFO - [Lucas] Buscando dados de hoje, offset 0
+2025-07-29 16:54:48,928 - INFO - [Danilo] Buscando dados de hoje, offset 0
+2025-07-29 16:54:49,405 - INFO - [Henrique] Buscando dados de hoje, offset 0
+2025-07-29 16:54:49,840 - INFO - [Rafael] Buscando dados de hoje, offset 0
+2025-07-29 16:54:50,279 - INFO - [AGENDADO] Resultado padrão: <Response 71 bytes [200 OK]>
+2025-07-29 16:54:50,279 - INFO - Job "job_processa_performance_horaria (trigger: interval[0:05:00], next run at: 2025-07-29 16:59:42 -03)" executed successfully
+2025-07-29 16:54:56,219 - INFO - [AGENDADO] {'total_api': 3000, 'inseridos': 2, 'atualizados': 2998} chamados importados com sucesso.
+2025-07-29 16:54:56,220 - INFO - Job "job_importar_chamados (trigger: interval[0:05:00], next run at: 2025-07-29 16:59:42 -03)" executed successfully
+2025-07-29 16:56:30,846 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:56:30,851 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:30,852 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:56:30,882 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:30,882 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:30,885 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:30,912 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:56:30,924 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:30,925 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:56:30,942 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:56:30,946 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:56:30,956 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:56:30,965 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:56:30,968 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:30,974 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:56:30,989 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:30] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:56:31,016 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:31] "GET /insights/tma_tms?dias=30 HTTP/1.1" 200 -
+2025-07-29 16:56:31,864 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:31] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:56:31,868 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:31] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:56:31,879 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:31] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:31,893 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:31] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:31,898 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:31] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:31,907 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:31] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:31,927 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:31] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:56:31,948 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:31] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:32,017 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:32] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:56:32,046 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:32] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:56:32,070 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:32] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:56:32,085 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:32] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:32,340 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:32] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:56:32,342 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:32] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:56:32,362 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:32] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:56:32,395 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:32] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:56:32,471 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:32] "GET /insights/tma_tms?dias=180 HTTP/1.1" 200 -
+2025-07-29 16:56:34,381 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:56:34,381 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:34,383 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:56:34,408 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:34,411 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:34,413 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:34,424 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:56:34,425 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:56:34,427 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:56:34,439 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:56:34,450 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:56:34,454 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:56:34,460 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:34,464 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:56:34,466 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:56:34,467 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:34,484 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:34] "GET /insights/tma_tms?dias=15 HTTP/1.1" 200 -
+2025-07-29 16:56:34,875 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:34] "GET /dashboard HTTP/1.1" 200 -
+2025-07-29 16:56:34,900 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:34] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:56:34,977 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:34] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:56:34,981 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:34] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:56:34,985 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:34] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:56:34,987 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:34] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:56:35,011 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:35] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:56:35,016 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:35] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:56:35,019 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:35] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:56:35,027 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:35] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:56:35,049 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:35] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:56:35,235 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:35] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:56:35,714 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:35] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:56:35,756 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:35] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:56:35,799 - INFO - 192.168.10.121 - - [29/Jul/2025 16:56:35] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:56:35,996 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:35] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:56:35,997 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:35] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:56:36,001 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:56:36,013 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:56:36,017 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:56:36,023 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:36,027 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:36,027 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:36,034 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:56:36,038 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:36,050 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:56:36,052 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:36,062 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:56:36,066 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:56:36,081 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:36,082 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:56:36,087 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:36] "GET /insights/tma_tms?dias=7 HTTP/1.1" 200 -
+2025-07-29 16:56:37,243 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:56:37,244 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:37,253 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:56:37,267 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:37,269 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:37,283 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:37,300 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:56:37,305 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:56:37,315 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:37,342 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:56:37,345 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:56:37,351 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:56:37,356 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:56:37,357 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:37,371 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:56:37,383 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:56:37,409 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:37] "GET /insights/tma_tms?dias=30 HTTP/1.1" 200 -
+2025-07-29 16:56:38,439 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:56:38,441 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:38,446 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:56:38,474 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:38,475 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:38,482 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:38,502 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:56:38,529 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:38,539 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:56:38,568 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:56:38,595 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:38,625 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:56:38,632 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:56:38,643 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:56:38,685 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:56:38,697 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:56:38,734 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:38] "GET /insights/tma_tms?dias=90 HTTP/1.1" 200 -
+2025-07-29 16:56:39,094 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/topGruposChamados HTTP/1.1" 200 -
+2025-07-29 16:56:39,097 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/topSubCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:39,106 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/topTipoChamados HTTP/1.1" 200 -
+2025-07-29 16:56:39,126 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/ChamadosSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:39,130 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:39,134 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/topCategoria HTTP/1.1" 200 -
+2025-07-29 16:56:39,162 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/ChamadosSuporte/finalizado HTTP/1.1" 200 -
+2025-07-29 16:56:39,179 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/ChamadosEmAbertoSuporte HTTP/1.1" 200 -
+2025-07-29 16:56:39,236 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/abertos_vs_admin_resolvido_periodo HTTP/1.1" 200 -
+2025-07-29 16:56:39,259 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /admin/ChamadosSuporte/ticketsOperador HTTP/1.1" 200 -
+2025-07-29 16:56:39,290 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/pSatisfacao HTTP/1.1" 200 -
+2025-07-29 16:56:39,306 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/ticketsCanal HTTP/1.1" 200 -
+2025-07-29 16:56:39,519 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/sla HTTP/1.1" 200 -
+2025-07-29 16:56:39,584 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/topStatusChamados HTTP/1.1" 200 -
+2025-07-29 16:56:39,618 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/abertos/status HTTP/1.1" 200 -
+2025-07-29 16:56:39,646 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "POST /insights/topClientesChamados HTTP/1.1" 200 -
+2025-07-29 16:56:39,708 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:39] "GET /insights/tma_tms?dias=180 HTTP/1.1" 200 -
+2025-07-29 16:56:55,229 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:55] "GET /escala HTTP/1.1" 200 -
+2025-07-29 16:56:55,277 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:55] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:56:55,278 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:55] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2025-07-29 16:56:55,279 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:55] "[36mGET /static/css/style_header.css HTTP/1.1[0m" 304 -
+2025-07-29 16:56:55,295 - INFO - 192.168.10.157 - - [29/Jul/2025 16:56:55] "[36mGET /static/css/style_escala.css HTTP/1.1[0m" 304 -
+2025-07-29 16:58:46,825 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "GET /dashboard HTTP/1.1" 200 -
+2025-07-29 16:58:46,849 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:58:46,874 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:58:46,880 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:58:46,890 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:58:46,891 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:58:46,922 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:58:46,928 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:58:46,928 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:58:46,939 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:58:46,971 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:58:46,999 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:46] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:58:47,649 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:47] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:58:47,652 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:47] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:58:47,678 - INFO - 192.168.16.6 - - [29/Jul/2025 16:58:47] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:58:53,583 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:53] "GET /dashboard HTTP/1.1" 200 -
+2025-07-29 16:58:53,633 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:53] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:58:53,705 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:53] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:58:53,708 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:53] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:58:53,709 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:53] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:58:53,715 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:53] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:58:53,749 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:53] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:58:53,753 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:53] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:58:53,762 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:53] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:58:53,768 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:53] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:58:54,066 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:54] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:58:54,293 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:54] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:58:54,440 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:54] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:58:54,441 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:54] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:58:54,806 - INFO - 192.168.13.102 - - [29/Jul/2025 16:58:54] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:59:07,453 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "GET /dashboard_colaborador HTTP/1.1" 200 -
+2025-07-29 16:59:07,474 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:59:07,477 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "[36mGET /static/css/style_colaboradores_individual.css HTTP/1.1[0m" 304 -
+2025-07-29 16:59:07,479 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2025-07-29 16:59:07,502 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:59:07,503 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:59:07,504 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:59:07,506 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:59:07,557 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:59:07,561 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:59:07,565 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:59:07,575 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:59:07,607 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:59:07,644 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:07] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:59:08,503 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:08] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:59:08,541 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:08] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:59:08,545 - INFO - 192.168.16.4 - - [29/Jul/2025 16:59:08] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:59:08,659 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "GET /dashboard HTTP/1.1" 200 -
+2025-07-29 16:59:08,690 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 16:59:08,752 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 16:59:08,753 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 16:59:08,756 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:59:08,759 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 16:59:08,798 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 16:59:08,802 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 16:59:08,803 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 16:59:08,813 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 16:59:08,843 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:59:08,968 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:08] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 16:59:09,477 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:09] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 16:59:09,482 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:09] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 16:59:09,510 - INFO - 192.168.13.106 - - [29/Jul/2025 16:59:09] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 16:59:42,994 - DEBUG - Looking for jobs to run
+2025-07-29 16:59:42,994 - DEBUG - Next wakeup is due at 2025-07-29 16:59:42.995448-03:00 (in 0.001130 seconds)
+2025-07-29 16:59:42,996 - DEBUG - Looking for jobs to run
+2025-07-29 16:59:42,996 - DEBUG - Next wakeup is due at 2025-07-29 16:59:42.996192-03:00 (in 0.000000 seconds)
+2025-07-29 16:59:42,996 - INFO - Running job "job_importar_chamados (trigger: interval[0:05:00], next run at: 2025-07-29 17:04:42 -03)" (scheduled at 2025-07-29 16:59:42.995955-03:00)
+2025-07-29 16:59:42,996 - INFO - Running job "job_processa_performance_horaria (trigger: interval[0:05:00], next run at: 2025-07-29 17:04:42 -03)" (scheduled at 2025-07-29 16:59:42.995448-03:00)
+2025-07-29 16:59:42,996 - DEBUG - Looking for jobs to run
+2025-07-29 16:59:42,997 - INFO - [AGENDADO] Iniciando coleta e armazenamento de performance padrão...
+2025-07-29 16:59:42,998 - DEBUG - Next wakeup is due at 2025-07-29 17:04:42.995448-03:00 (in 299.997360 seconds)
+2025-07-29 16:59:42,998 - INFO - Running job "job_importar_psatisfacao (trigger: interval[0:05:00], next run at: 2025-07-29 17:04:42 -03)" (scheduled at 2025-07-29 16:59:42.996192-03:00)
+2025-07-29 16:59:43,419 - INFO - [Renato] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:59:43,867 - INFO - [Renato] Nenhum dado retornado para o período.
+2025-07-29 16:59:43,867 - INFO - [Matheus] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:59:44,297 - INFO - [Matheus] Nenhum dado retornado para o período.
+2025-07-29 16:59:44,297 - INFO - [Gustavo] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:59:44,753 - INFO - [Gustavo] Nenhum dado retornado para o período.
+2025-07-29 16:59:44,753 - INFO - [Raysa] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:59:44,853 - INFO - [AGENDADO] None chamados importados com sucesso.
+2025-07-29 16:59:44,854 - INFO - Job "job_importar_psatisfacao (trigger: interval[0:05:00], next run at: 2025-07-29 17:04:42 -03)" executed successfully
+2025-07-29 16:59:45,161 - INFO - [Raysa] Nenhum dado retornado para o período.
+2025-07-29 16:59:45,162 - INFO - [Lucas] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:59:45,665 - INFO - [Lucas] Nenhum dado retornado para o período.
+2025-07-29 16:59:45,665 - INFO - [Danilo] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:59:46,213 - INFO - [Danilo] Nenhum dado retornado para o período.
+2025-07-29 16:59:46,213 - INFO - [Henrique] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:59:46,649 - INFO - [Henrique] Nenhum dado retornado para o período.
+2025-07-29 16:59:46,650 - INFO - [Rafael] Buscando dados de 2025-07-27 a 2025-07-29, offset 0
+2025-07-29 16:59:47,103 - INFO - [Rafael] Nenhum dado retornado para o período.
+2025-07-29 16:59:47,103 - INFO - Nenhum dado encontrado no período extendido. Buscando dados de hoje somente.
+2025-07-29 16:59:47,103 - INFO - [Renato] Buscando dados de hoje, offset 0
+2025-07-29 16:59:47,525 - INFO - [Matheus] Buscando dados de hoje, offset 0
+2025-07-29 16:59:47,985 - INFO - [Gustavo] Buscando dados de hoje, offset 0
+2025-07-29 16:59:48,406 - INFO - [Raysa] Buscando dados de hoje, offset 0
+2025-07-29 16:59:48,869 - INFO - [Lucas] Buscando dados de hoje, offset 0
+2025-07-29 16:59:49,281 - INFO - [Danilo] Buscando dados de hoje, offset 0
+2025-07-29 16:59:49,731 - INFO - [Henrique] Buscando dados de hoje, offset 0
+2025-07-29 16:59:50,125 - INFO - [Rafael] Buscando dados de hoje, offset 0
+2025-07-29 16:59:50,544 - INFO - [AGENDADO] Resultado padrão: <Response 71 bytes [200 OK]>
+2025-07-29 16:59:50,545 - INFO - Job "job_processa_performance_horaria (trigger: interval[0:05:00], next run at: 2025-07-29 17:04:42 -03)" executed successfully
+2025-07-29 16:59:56,353 - INFO - [AGENDADO] {'total_api': 3000, 'inseridos': 0, 'atualizados': 3000} chamados importados com sucesso.
+2025-07-29 16:59:56,353 - INFO - Job "job_importar_chamados (trigger: interval[0:05:00], next run at: 2025-07-29 17:04:42 -03)" executed successfully
+2025-07-29 17:01:35,869 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:35] "GET /dashboard HTTP/1.1" 200 -
+2025-07-29 17:01:35,916 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:35] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 17:01:36,015 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:36] "POST /dashboard/call/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-07-29 17:01:36,020 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:36] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-07-29 17:01:36,020 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:36] "POST /dashboard/call/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-07-29 17:01:36,026 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:36] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-07-29 17:01:36,038 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:36] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-07-29 17:01:36,040 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:36] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-07-29 17:01:36,047 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:36] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-07-29 17:01:36,051 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:36] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-07-29 17:01:36,097 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:36] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 17:01:36,215 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:36] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 17:01:37,875 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:37] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-07-29 17:01:37,888 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:37] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-07-29 17:01:37,890 - INFO - 192.168.10.121 - - [29/Jul/2025 17:01:37] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
+2025-07-29 17:02:27,510 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-07-29 17:02:27,510 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-07-29 17:02:27,510 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-07-29 17:02:27,512 - INFO - Added job "job_processa_performance_horaria" to job store "default"
+2025-07-29 17:02:27,512 - INFO - Added job "job_importar_chamados" to job store "default"
+2025-07-29 17:02:27,512 - INFO - Added job "job_importar_psatisfacao" to job store "default"
+2025-07-29 17:02:27,512 - INFO - Scheduler started
+2025-07-29 17:02:27,513 - INFO - Tarefas agendadas iniciadas.
+2025-07-29 17:02:27,524 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:9000
+ * Running on http://192.168.10.180:9000
+2025-07-29 17:02:27,524 - INFO - [33mPress CTRL+C to quit[0m
+2025-07-29 17:02:28,447 - INFO - 192.168.10.157 - - [29/Jul/2025 17:02:28] "GET /escala HTTP/1.1" 200 -
+2025-07-29 17:02:28,503 - INFO - 192.168.10.157 - - [29/Jul/2025 17:02:28] "[36mGET /static/css/style_escala.css HTTP/1.1[0m" 304 -
+2025-07-29 17:02:28,506 - INFO - 192.168.10.157 - - [29/Jul/2025 17:02:28] "[36mGET /static/css/style_home.css HTTP/1.1[0m" 304 -
+2025-07-29 17:02:28,513 - INFO - 192.168.10.157 - - [29/Jul/2025 17:02:28] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2025-07-29 17:02:28,514 - INFO - 192.168.10.157 - - [29/Jul/2025 17:02:28] "[36mGET /static/css/style_header.css HTTP/1.1[0m" 304 -
+2025-07-29 17:02:28,933 - INFO - 192.168.10.157 - - [29/Jul/2025 17:02:28] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-07-29 17:02:28,954 - INFO - 192.168.10.157 - - [29/Jul/2025 17:02:28] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
