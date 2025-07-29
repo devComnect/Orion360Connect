@@ -1498,4 +1498,38 @@ function carregarTopCategorias(dias = 1) {
   }
 </script>
 
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Define dias padrão
+    let diasSelecionados = 30;
+    carregarTmaTms(diasSelecionados);
 
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        // Remove classe active
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        // Adiciona active no clicado
+        this.classList.add('active');
+
+        diasSelecionados = parseInt(this.getAttribute('data-dias'), 10);
+        carregarTmaTms(diasSelecionados);
+      });
+    });
+  });
+
+  function carregarTmaTms(dias) {
+    fetch(`/insights/tma_tms?dias=${dias}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "success") {
+          document.getElementById("percentual-tma").innerText = data.mediana_tma;
+          document.getElementById("percentual-tms").innerText = data.mediana_tms;
+        } else {
+          console.error("Erro ao carregar TMA/TMS:", data.message);
+        }
+      })
+      .catch(err => {
+        console.error("Erro na requisição TMA/TMS:", err);
+      });
+  }
+</script>

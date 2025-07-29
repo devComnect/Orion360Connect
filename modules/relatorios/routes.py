@@ -329,7 +329,7 @@ def extrair_comparativo_relatorios():
 
     # Performance
     pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, "Performance de Ligações:", ln=True)
+    pdf.cell(0, 10, "Ligações:", ln=True)
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 8, f"Total ligações atendidas: {total_ligacoes_atendidas}", ln=True)
     pdf.cell(0, 8, f"Total ligações não atendidas: {total_ligacoes_naoatendidas}", ln=True)
@@ -341,7 +341,7 @@ def extrair_comparativo_relatorios():
         if current_y > 220:
             pdf.add_page()
         pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "Distribuição por Turno (Pizza):", ln=True)
+        pdf.cell(0, 10, "Distribuição de chamados por turno:", ln=True)
         pdf.ln(2)
         pdf.image(img_pizza_path, x=pdf.get_x() + 30, w=pdf.w / 2.2)
         pdf.ln(5)

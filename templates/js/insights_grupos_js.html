@@ -932,3 +932,60 @@ document.addEventListener("DOMContentLoaded", () => {
     .catch(e => console.error('Erro na requisição SLA por grupo:', e));
 });
 </script>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    let diasSelecionados = 30;
+    carregarTmaTms(diasSelecionados);
+
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        diasSelecionados = parseInt(this.getAttribute('data-dias'), 10);
+        carregarTmaTms(diasSelecionados);
+      });
+    });
+  });
+
+  async function carregarTmaTms(dias) {
+    const grupoSelecionado = sessionStorage.getItem('grupoSelecionado') || "";
+
+    if (!grupoSelecionado) {
+      console.warn("Nenhum grupo selecionado no sessionStorage");
+      document.getElementById("percentual-tma").innerText = "-";
+      document.getElementById("percentual-tms").innerText = "-";
+      return;
+    }
+
+    try {
+      const response = await fetch('/grupos/tma_tms_grupos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          dias: dias,
+          grupo: grupoSelecionado
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        document.getElementById("percentual-tma").innerText = data.mediana_tma;
+        document.getElementById("percentual-tms").innerText = data.mediana_tms;
+      } else {
+        console.error("Erro ao carregar TMA/TMS:", data.message);
+        document.getElementById("percentual-tma").innerText = "-";
+        document.getElementById("percentual-tms").innerText = "-";
+      }
+    } catch (err) {
+      console.error("Erro na requisição TMA/TMS:", err);
+      document.getElementById("percentual-tma").innerText = "-";
+      document.getElementById("percentual-tms").innerText = "-";
+    }
+  }
+</script>

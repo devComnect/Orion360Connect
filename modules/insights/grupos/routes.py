@@ -5,7 +5,10 @@ from datetime import datetime, timedelta
 from application.models import Chamado, db, Categoria, PesquisaSatisfacao
 from collections import Counter
 from sqlalchemy import func, and_, or_
+from modules.insights.utils import parse_tempo
 import re
+import numpy as np
+
 
 
 grupos_bp = Blueprint('grupos_bp', __name__, url_prefix='/grupos')
@@ -532,15 +535,6 @@ def top_categoria():
 
     return jsonify({"status": "success", "dados": dados})
 
-def parse_tempo(s):
-    try:
-        negativo = s.startswith('-')
-        h, m, s = map(int, s.replace('-', '').split(':'))
-        delta = timedelta(hours=h, minutes=m, seconds=s)
-        return -delta if negativo else delta
-    except:
-        return None
-
 @grupos_bp.route('/slaAndamentoGrupos', methods=['POST'])
 def listar_sla_andamento_grupos():
     grupo = request.json.get("grupo", "").strip()
@@ -651,3 +645,98 @@ def top_sub_categoria():
     ]
 
     return jsonify({"status": "success", "dados": dados})
+
+@grupos_bp.route('/tma_tms_grupos', methods=['POST'])
+def tma_e_tms_grupos():
+    try:
+        json_data = request.get_json(force=True)
+        dias = json_data.get('dias', 30)  # padrão 30 dias
+        grupo = json_data.get("grupo", "").strip()
+        data_limite = datetime.utcnow() - timedelta(days=dias)
+
+        chamados_validos = db.session.query(Chamado).filter(
+            Chamado.data_criacao >= data_limite,
+            Chamado.data_criacao.isnot(None),
+            Chamado.nome_grupo == grupo,
+            Chamado.restante_p_atendimento.isnot(None),
+            Chamado.restante_s_atendimento.isnot(None),
+            Chamado.nome_status.ilike('%Resolvido%')
+        ).all()
+
+        tma_list = []
+        tms_list = []
+        erros = []
+
+        for chamado in chamados_validos:
+            try:
+                tempo_p = chamado.restante_p_atendimento.strip()
+                sinal_p = -1 if tempo_p.startswith("-") else 1
+                partes_p = tempo_p.replace("-", "").split(":")
+                h, m, s = (list(map(int, partes_p)) + [0, 0, 0])[:3]
+                restante_p = timedelta(hours=h, minutes=m, seconds=s) * sinal_p
+
+                tempo_s = chamado.restante_s_atendimento.strip()
+                sinal_s = -1 if tempo_s.startswith("-") else 1
+                partes_s = tempo_s.replace("-", "").split(":")
+                hs, ms, ss = (list(map(int, partes_s)) + [0, 0, 0])[:3]
+                restante_s = timedelta(hours=hs, minutes=ms, seconds=ss) * sinal_s
+
+                if restante_p.total_seconds() < 0 or restante_s.total_seconds() < 0:
+                    continue
+
+                tms_individual = restante_s - restante_p
+                if tms_individual.total_seconds() < 0 or tms_individual > timedelta(days=30):
+                    continue
+
+                tma_list.append(restante_p.total_seconds())
+                tms_list.append(tms_individual.total_seconds())
+
+            except Exception as e:
+                erros.append({
+                    "cod_chamado": chamado.cod_chamado,
+                    "restante_p_atendimento": chamado.restante_p_atendimento,
+                    "restante_s_atendimento": chamado.restante_s_atendimento,
+                    "erro": str(e)
+                })
+                continue
+
+        if not tma_list or not tms_list:
+            return jsonify({
+                "status": "success",
+                "media_tma": "Sem dados",
+                "mediana_tma": "Sem dados",
+                "media_tms": "Sem dados",
+                "mediana_tms": "Sem dados",
+                "chamados_processados": 0,
+                "erros_amostragem": erros[:10]
+            })
+
+
+        media_tma = np.mean(tma_list) / 60
+        mediana_tma = np.median(tma_list) / 60
+        media_tms = np.mean(tms_list) / 60
+        mediana_tms = np.median(tms_list) / 60
+
+        def formatar_tempo(minutos: float) -> str:
+            if minutos < 60:
+                return f"{round(minutos)} min"
+            elif minutos < 1440:
+                return f"{minutos / 60:.1f} h"
+            else:
+                return f"{minutos / 1440:.2f} dias"
+
+        return jsonify({
+            "status": "success",
+            "media_tma": formatar_tempo(media_tma),
+            "mediana_tma": formatar_tempo(mediana_tma),
+            "media_tms": formatar_tempo(media_tms),
+            "mediana_tms": formatar_tempo(mediana_tms),
+            "chamados_processados": len(tma_list),
+            "erros_amostragem": erros[:10]
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500

@@ -814,6 +814,7 @@ def importar_chamados():
                     existente.cod_sub_categoria = chamado.get('CodSubCategoria'),
                     existente.restante_p_atendimento = chamado.get('TempoRestantePrimeiroAtendimento'),
                     existente.restante_s_atendimento = chamado.get('TempoRestanteSegundoAtendimento'),
+                    
                     existente.data_finalizacao = data_finalizacao
                     existente.mes_referencia = f"{data_criacao.year}-{data_criacao.month:02d}"
                     existente.data_importacao = datetime.now()

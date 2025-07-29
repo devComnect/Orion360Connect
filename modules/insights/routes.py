@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, render_template, request, url_for
 import requests
 from modules.deskmanager.authenticate.routes import token_desk
+from modules.insights.utils import formatar_tempo
 from datetime import datetime, timedelta
 from application.models import Chamado, db, Categoria, PesquisaSatisfacao
 from collections import Counter
 from sqlalchemy import func, and_, or_
+import numpy as np
 import re
 
 
@@ -580,87 +582,158 @@ def chamados_tickets_canal():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# Rota traz os chamados abertos atualmente
-'''@insights_bp.route('/ChamadosEmAbertoSuporte', methods=['POST'])
-def listar_chamados_aberto():
-    token_response = token_desk()
-    
+'''@insights_bp.route('/tma', methods=['GET'])
+def tempo_medio_atendimento():
     try:
-        # Faz a requisição para a API de chamados
-        response = requests.post(
-            'https://api.desk.ms/ChamadosSuporte/lista',
-            headers={
-                'Authorization': f'{token_response}',
-                'Content-Type': 'application/json'
-            },
-            json={
-                "Pesquisa":"", 	#Pesquisa por Assunto,Código,Descrição,Solicitante,Status,Operador ou Dados do Cliente
-            "Tatual":"", 	#Opcional para uso com mais de 3000 registros, define a partir de qual registro exibir
-            "Ativo":"EmAberto",	#Pode usar um texto pré definido ou o código do Status*
-            "StatusSLA":"S", #S: Apenas com SLA, A: Apenas sem SLA, N: Com e Sem SLA (todos)
-            "Colunas": 	#Colunas a serem exibidas, Caso não seja enviado trará todas
-            {
-                "Chave":"on",		#Chave do chamado
-                "CodChamado":"on",	#Código de referência do chamado (mmaa-000000)
-                "NomePrioridade":"on",	#Prioridade do chamado
-                "DataCriacao":"on",	#Data da criação
-                "HoraCriacao":"on",	#Hora da criação
-                "DataFinalizacao":"on",	#Data da finalização
-                "HoraFinalizacao":"on", #Hora da finalização
-                "DataAlteracao":"on", 	#Data da Ultima Alteração
-                "HoraAlteracao":"on", 	#Hora da Ultima Alteração
-                "NomeStatus":"on",	#Nome do Status atual do chamado
-                "Assunto":"on",	
-                "Descricao":"on",
-                "ChaveUsuario":"on",	#Código do Solicitante	
-                "NomeUsuario":"on",		#Primeiro nome do Solicitante
-                "SobrenomeUsuario":"on",	#Sobrenome do Solicitante
-                "NomeCompletoSolicitante":"on", #Nome Completo do Solicitante
-                "SolicitanteEmail":"on",	#Email do Solicitante
-                "NomeOperador":"on",		#Primeiro nome do Operador
-                "SobrenomeOperador":"on",	#Sobrenome do Operador
-                "TotalAcoes":"on",		#Quantidade de ações realizadas no chamado
-                "TotalAnexos":"on",
-                "Sla":"on",			#Exibe as informações sobre o SLA (várias colunas serão exibidas)
-                "CodGrupo":"on",		#Código do grupo de atendimento do chamado
-                "NomeGrupo":"on",		#Nome do grupo de atendimento do chamado
-                "CodSolicitacao":"on", 		#Código de Solicitação
-                "CodSubCategoria":"on", 	#Código de Sub Categoria
-                "CodTipoOcorrencia":"on", 	#Código do Tipo de Ocorrência
-                "CodCategoriaTipo":"on", 	#Código do Tipo de Categoria
-                "CodPrioridadeAtual":"on", 	#Código da Prioridade
-                "CodStatusAtual":"on"	#Código do Status Atual
-            },
-            "Ordem": [	#Colunas para ordenação
-                {
-                "Coluna": "Chave",
-                "Direcao": "true"	#true:ASC e false:DESC	
-                }
-            ]
-            }
-            )
-        
-        # Verifica se a requisição foi bem sucedida
-        if response.status_code == 200:
-            data = response.json()
-            
-            # Captura apenas o total do retorno
-            total_chamados = data.get("total", "0")
-            
-            return jsonify({
-                "status": "success",
-                "total_chamados": total_chamados
-            })
+        chamados_validos = db.session.query(Chamado).filter(
+            Chamado.data_criacao.isnot(None),
+            Chamado.restante_p_atendimento.isnot(None),
+            Chamado.nome_status.ilike('%Resolvido%')
+        ).all()
+
+        total_tempo = timedelta()
+        contador = 0
+        erros = []
+
+        for chamado in chamados_validos:
+            try:
+                tempo_str = chamado.restante_p_atendimento.strip()
+
+                sinal = -1 if tempo_str.startswith("-") else 1
+                tempo_limpo = tempo_str.replace("-", "")
+
+                partes = tempo_limpo.split(":")
+                partes = list(map(int, partes))
+
+                if len(partes) == 3:
+                    h, m, s = partes
+                elif len(partes) == 2:
+                    h = 0
+                    m, s = partes
+                else:
+                    raise ValueError(f"Formato inválido: {tempo_str}")
+
+                tempo = timedelta(hours=h, minutes=m, seconds=s) * sinal
+                total_tempo += tempo
+                contador += 1
+
+            except Exception as parse_err:
+                erros.append({
+                    "cod_chamado": chamado.cod_chamado,
+                    "restante_p_atendimento": chamado.restante_p_atendimento,
+                    "erro": str(parse_err)
+                })
+                continue
+
+        if contador == 0:
+            media_em_minutos = "Sem dados válidos"
         else:
-            return jsonify({
-                "status": "error",
-                "message": "Erro na requisição",
-                "status_code": response.status_code
-            }), response.status_code
-            
-    except requests.exceptions.RequestException as e:
+            media_td = total_tempo / contador
+            media_em_minutos = round(media_td.total_seconds() / 60, 2)
+
+        return jsonify({
+            "status": "success",
+            "media_tempo_ate_atendimento_minutos": media_em_minutos,
+            "chamados_processados": contador,
+            "amostra_erros": erros[:10]
+        })
+
+    except Exception as e:
         return jsonify({
             "status": "error",
-            "message": "Erro ao conectar com o servidor",
-            "details": str(e)
+            "message": str(e)
         }), 500'''
+
+@insights_bp.route('/tma_tms', methods=['GET'])
+def tma_e_tms():
+    try:
+        dias = request.args.get('dias', default=1, type=int)  # padrão 30 dias
+        data_limite = datetime.utcnow() - timedelta(days=dias)
+
+        chamados_validos = db.session.query(Chamado).filter(
+            Chamado.data_criacao >= data_limite,
+            Chamado.data_criacao.isnot(None),
+            Chamado.restante_p_atendimento.isnot(None),
+            Chamado.restante_s_atendimento.isnot(None),
+            Chamado.nome_status.ilike('%Resolvido%')
+        ).all()
+
+        tma_list = []
+        tms_list = []
+        erros = []
+
+        for chamado in chamados_validos:
+            try:
+                tempo_p = chamado.restante_p_atendimento.strip()
+                sinal_p = -1 if tempo_p.startswith("-") else 1
+                partes_p = tempo_p.replace("-", "").split(":")
+                h, m, s = (list(map(int, partes_p)) + [0, 0, 0])[:3]
+                restante_p = timedelta(hours=h, minutes=m, seconds=s) * sinal_p
+
+                tempo_s = chamado.restante_s_atendimento.strip()
+                sinal_s = -1 if tempo_s.startswith("-") else 1
+                partes_s = tempo_s.replace("-", "").split(":")
+                hs, ms, ss = (list(map(int, partes_s)) + [0, 0, 0])[:3]
+                restante_s = timedelta(hours=hs, minutes=ms, seconds=ss) * sinal_s
+
+                if restante_p.total_seconds() < 0 or restante_s.total_seconds() < 0:
+                    continue
+
+                tms_individual = restante_s - restante_p
+                if tms_individual.total_seconds() < 0 or tms_individual > timedelta(days=30):
+                    continue
+
+                tma_list.append(restante_p.total_seconds())
+                tms_list.append(tms_individual.total_seconds())
+
+            except Exception as e:
+                erros.append({
+                    "cod_chamado": chamado.cod_chamado,
+                    "restante_p_atendimento": chamado.restante_p_atendimento,
+                    "restante_s_atendimento": chamado.restante_s_atendimento,
+                    "erro": str(e)
+                })
+                continue
+
+        if not tma_list or not tms_list:
+            return jsonify({
+                "status": "success",
+                "media_tma": "Sem dados",
+                "mediana_tma": "Sem dados",
+                "media_tms": "Sem dados",
+                "mediana_tms": "Sem dados",
+                "chamados_processados": 0,
+                "erros_amostragem": erros[:10]
+            })
+
+        import numpy as np
+
+        media_tma = np.mean(tma_list) / 60
+        mediana_tma = np.median(tma_list) / 60
+        media_tms = np.mean(tms_list) / 60
+        mediana_tms = np.median(tms_list) / 60
+
+        def formatar_tempo(minutos: float) -> str:
+            if minutos < 60:
+                return f"{round(minutos)} min"
+            elif minutos < 1440:
+                return f"{minutos / 60:.1f} h"
+            else:
+                return f"{minutos / 1440:.2f} dias"
+
+        return jsonify({
+            "status": "success",
+            "media_tma": formatar_tempo(media_tma),
+            "mediana_tma": formatar_tempo(mediana_tma),
+            "media_tms": formatar_tempo(media_tms),
+            "mediana_tms": formatar_tempo(mediana_tms),
+            "chamados_processados": len(tma_list),
+            "erros_amostragem": erros[:10]
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
