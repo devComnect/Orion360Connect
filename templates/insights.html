@@ -92,26 +92,19 @@
   <!-- Cards principais -->
   <div class="row g-3">
     <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Chamados Criados</h6>
-          <p class="fs-4" id="chamados-abertos">-</p>
+    <div class="card shadow-sm h-100">
+      <div class="card-body p-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Chamados Criados</h6>
+          <p class="fs-6 mb-0" id="chamados-abertos">-</p>
         </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Chamados Resolvidos</h6>
-          <p class="fs-4" id="chamados-finalizados">-</p>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Chamados Resolvidos</h6>
+          <p class="fs-6 mb-0" id="chamados-finalizados">-</p>
         </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Chamados em Aberto</h6>
-          <p class="fs-4 mb-1 text-danger">
+        <div class="d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">Chamados em Aberto</h6>
+          <p class="fs-6 mb-0 text-danger mb-0">
             <a href="#" onclick="mostrarCodigosChamadosAbertos('Chamados em Aberto', codigosEmAberto)">
               <span id="ChamadosEmAbertoSuporte">-</span>
             </a>
@@ -119,6 +112,7 @@
         </div>
       </div>
     </div>
+  </div>
 
     <!-- SLA Atendimento -->
     <div class="col">
@@ -399,36 +393,6 @@
     </div>
   </div>
 </div>
-
-<!-- Script do botão mestre (não interfere nos demais scripts) -->
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const toggleBtn = document.getElementById("toggle-botoes");
-    const botoesOperadores = document.getElementById("botoes-operadores");
-    const botoesGrupos = document.getElementById("botoes-grupos");
-
-    let visiveis = false; // começam visíveis
-
-    toggleBtn.addEventListener("click", function () {
-      visiveis = !visiveis;
-
-      // Alterna apenas a visibilidade, sem mexer no layout geral
-      if (visiveis) {
-        botoesOperadores.classList.remove("d-none");
-        botoesOperadores.classList.add("d-flex");
-        botoesGrupos.classList.remove("d-none");
-        botoesGrupos.classList.add("d-flex");
-        this.innerHTML = '<i class="bi bi-eye-slash me-1"></i> Ocultar botões';
-      } else {
-        botoesOperadores.classList.remove("d-flex");
-        botoesOperadores.classList.add("d-none");
-        botoesGrupos.classList.remove("d-flex");
-        botoesGrupos.classList.add("d-none");
-        this.innerHTML = '<i class="bi bi-eye me-1"></i> Mostrar botões';
-      }
-    });
-  });
-</script>
 
 <!-- Includes JavaScript -->
 {% include 'js/colaboradores_js.html' %}

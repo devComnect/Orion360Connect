@@ -76,33 +76,27 @@
   <!-- Cards principais -->
   <div class="row g-3">
     <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Chamados Criados</h6>
-          <p class="fs-4" id="chamados-abertos">-</p>
+    <div class="card shadow-sm h-100">
+      <div class="card-body p-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Chamados Criados</h6>
+          <p class="fs-6 mb-0" id="chamados-abertos">-</p>
         </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Chamados Resolvidos</h6>
-          <p class="fs-4" id="chamados-finalizados">-</p>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Chamados Resolvidos</h6>
+          <p class="fs-6 mb-0" id="chamados-finalizados">-</p>
         </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Chamados em Aberto</h6>
-          <p class="fs-4 mb-1 text-danger">
-           <a href="#" onclick="mostrarCodigosChamadosAbertos('Chamados em Aberto', codigosEmAberto)">
-                <span id="ChamadosEmAbertoSuporte">-</span>
+        <div class="d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">Chamados em Aberto</h6>
+          <p class="fs-6 mb-0 text-danger mb-0">
+            <a href="#" onclick="mostrarCodigosChamadosAbertos('Chamados em Aberto', codigosEmAberto)">
+              <span id="ChamadosEmAbertoSuporte">-</span>
             </a>
           </p>
         </div>
       </div>
     </div>
+  </div>
 
     <!-- SLA Atendimento -->
     <div class="col">

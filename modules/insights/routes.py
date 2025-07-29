@@ -338,6 +338,7 @@ def listar_chamados_aberto():
         "total_chamados": total_chamados,
         "cod_chamados": codigos
     })
+
 # Rota que   
 @insights_bp.route('/get/operadores', methods=['GET'])
 def get_operadores():
@@ -737,3 +738,62 @@ def tma_e_tms():
             "message": str(e)
         }), 500
 
+@insights_bp.route('/abertos/status', methods=['POST'])
+def estatisticas_chamados_periodos():
+    try:
+        dados = request.get_json(force=True)
+        dias = int(dados.get("dias", 1))  
+        data_limite = datetime.now() - timedelta(days=dias)
+
+        chamados_abertos = db.session.query(
+            Chamado.chave, 
+            Chamado.nome_status,
+            Chamado.nome_grupo,
+            Chamado.data_criacao
+        ).filter(
+            Chamado.data_criacao >= data_limite,
+            ~Chamado.nome_status.in_(["Cancelado"])
+        ).all()
+
+        status_counts = {}
+        grupos = set()
+
+        for chamado in chamados_abertos:
+            status = chamado.nome_status
+            grupo = chamado.nome_grupo
+            grupos.add(grupo)
+            if status not in status_counts:
+                status_counts[status] = 0
+            status_counts[status] += 1
+
+        labels = list(status_counts.keys())
+        dados = list(status_counts.values())
+
+        return jsonify({
+            "status": "success",
+            "data": {
+                "labels": labels,
+                "datasets": [{
+                    "data": dados,
+                    "backgroundColor": [
+                        '#FF6384', '#36A2EB', '#FFCE56',
+                        '#4BC0C0', '#9966FF', '#FF9F40'
+                    ]
+                }],
+                "total": sum(dados),
+                "grupos": list(grupos)
+            },
+            "chamados_abertos": [
+                {
+                    "chave": chamado.chave,
+                    "nome_status": chamado.nome_status,
+                    "nome_grupo": chamado.nome_grupo
+                } for chamado in chamados_abertos
+            ]
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+        }), 500

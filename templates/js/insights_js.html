@@ -886,7 +886,7 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             if (!verificarCanvas()) return;
 
-            const response = await fetch('/admin/ChamadosSuporte/estatisticas_mensais', {
+            const response = await fetch('/insights/abertos/status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ dias: dias })
@@ -1498,6 +1498,7 @@ function carregarTopCategorias(dias = 1) {
   }
 </script>
 
+<!-- Script que traz o TMA eo TMS -->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     // Define dias padrão
@@ -1532,4 +1533,35 @@ function carregarTopCategorias(dias = 1) {
         console.error("Erro na requisição TMA/TMS:", err);
       });
   }
+</script>
+
+
+<!-- Script do botão mestre (não interfere nos demais scripts) -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const toggleBtn = document.getElementById("toggle-botoes");
+    const botoesOperadores = document.getElementById("botoes-operadores");
+    const botoesGrupos = document.getElementById("botoes-grupos");
+
+    let visiveis = false; // começam visíveis
+
+    toggleBtn.addEventListener("click", function () {
+      visiveis = !visiveis;
+
+      // Alterna apenas a visibilidade, sem mexer no layout geral
+      if (visiveis) {
+        botoesOperadores.classList.remove("d-none");
+        botoesOperadores.classList.add("d-flex");
+        botoesGrupos.classList.remove("d-none");
+        botoesGrupos.classList.add("d-flex");
+        this.innerHTML = '<i class="bi bi-eye-slash me-1"></i> Ocultar botões';
+      } else {
+        botoesOperadores.classList.remove("d-flex");
+        botoesOperadores.classList.add("d-none");
+        botoesGrupos.classList.remove("d-flex");
+        botoesGrupos.classList.add("d-none");
+        this.innerHTML = '<i class="bi bi-eye me-1"></i> Mostrar botões';
+      }
+    });
+  });
 </script>

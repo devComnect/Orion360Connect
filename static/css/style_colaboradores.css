@@ -67,5 +67,40 @@ body {
     border-color: #0d6efd;
   }
 
+.card-body-compact {
+      padding: 0.75rem;
+      font-size: 1rem;
+    }
 
+    .card-body-compact .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .card-body-compact .info-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .card-body-compact .info-item span.value {
+      font-weight: 400;
+    }
+
+    .card-body-center {
+      padding: 0.75rem;
+      text-align: center;
+      font-size: 1rem;
+    }
+
+    .card-body-center h6 {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .card-body-center p {
+      font-weight: 500;
+      margin-bottom: 0;
+    }
   

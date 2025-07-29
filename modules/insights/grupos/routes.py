@@ -9,8 +9,6 @@ from modules.insights.utils import parse_tempo
 import re
 import numpy as np
 
-
-
 grupos_bp = Blueprint('grupos_bp', __name__, url_prefix='/grupos')
 
 @grupos_bp.route('/render/grupos', methods=['POST'])
