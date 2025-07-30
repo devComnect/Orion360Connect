@@ -447,21 +447,21 @@ document.addEventListener("DOMContentLoaded", function () {
     .then(response => response.json())
     .then(data => {
       if (data.status === "success") {
-        document.getElementById("sla-atendimento-expirado").textContent = data.percentual_atendimento + "%";
-        document.getElementById("sla-atendimento-prazo").textContent = data.percentual_prazo_atendimento + "%";
-        document.getElementById("sla-resolucao-expirado").textContent = data.percentual_resolucao + "%";
+        document.getElementById("sla_atendimento_expirado").textContent = data.percentual_atendimento + "%";
+        document.getElementById("sla_atendimento_prazo").textContent = data.percentual_prazo_atendimento + "%";
+        document.getElementById("sla_resolucao_expirado").textContent = data.percentual_resolucao + "%";
         document.getElementById("percentual_prazo_resolucao").textContent = data.percentual_prazo_resolucao + "%";
 
         codigosAtendimento = data.codigos_atendimento || [];
         codigosResolucao = data.codigos_resolucao || [];
       } else {
-        document.getElementById("sla-atendimento-expirado").textContent = "Erro";
-        document.getElementById("sla-resolucao-expirado").textContent = "Erro";
+        document.getElementById("sla_atendimento_expirado").textContent = "Erro";
+        document.getElementById("sla_resolucao_expirado").textContent = "Erro";
       }
     })
     .catch(() => {
-      document.getElementById("sla-atendimento-expirado").textContent = "Erro";
-      document.getElementById("sla-resolucao-expirado").textContent = "Erro";
+      document.getElementById("sla_atendimento_expirado").textContent = "Erro";
+      document.getElementById("sla_resolucao_expirado").textContent = "Erro";
     });
   }
 
@@ -1554,13 +1554,13 @@ function carregarTopCategorias(dias = 1) {
         botoesOperadores.classList.add("d-flex");
         botoesGrupos.classList.remove("d-none");
         botoesGrupos.classList.add("d-flex");
-        this.innerHTML = '<i class="bi bi-eye-slash me-1"></i> Ocultar botões';
+        this.innerHTML = '<i class="bi bi-eye-slash me-1"></i>';
       } else {
         botoesOperadores.classList.remove("d-flex");
         botoesOperadores.classList.add("d-none");
         botoesGrupos.classList.remove("d-flex");
         botoesGrupos.classList.add("d-none");
-        this.innerHTML = '<i class="bi bi-eye me-1"></i> Mostrar botões';
+        this.innerHTML = '<i class="bi bi-eye me-1"></i>';
       }
     });
   });

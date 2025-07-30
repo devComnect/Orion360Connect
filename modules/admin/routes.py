@@ -178,44 +178,6 @@ def importar_ligacoes_atendidas():
             "details": str(e)
         }), 500
 
-# Rota que   
-'''@admin_bp.route('/get/operadores', methods=['GET'])
-def get_operadores():
-    try:
-        # Consulta apenas operadores do grupo 'SUPORTE B2B - COMNECT'
-        operadores = db.session.query(
-            Chamado.operador
-        ).filter(
-            Chamado.operador.isnot(None),
-            Chamado.operador != '',
-            Chamado.operador != 'Fabio',
-            Chamado.operador != 'API',
-            Chamado.operador != 'Caio',
-            Chamado.operador != 'Paulo',
-            Chamado.operador != 'Luciano',
-            Chamado.operador != 'Alexandre',
-            Chamado.operador != 'Chrysthyanne',
-            Chamado.operador != 'Suporte',
-            Chamado.nome_grupo == 'SUPORTE COMNEcT - N1'
-        ).distinct().order_by(
-            Chamado.operador
-        ).all()
-
-        # Extrai apenas os nomes dos operadores
-        lista_operadores = [op[0] for op in operadores if op[0]]
-
-        return jsonify({
-            "status": "success",
-            "operadores": lista_operadores,
-            "total": len(lista_operadores)
-        })
-
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500'''
-
 # Rota que traz total de chamados abertos no período de uma semana
 @admin_bp.route('/ChamadosSuporteSemanal', methods=['POST'])
 def listar_chamados_aberto_semanal():

@@ -42,18 +42,69 @@
   <div class="row g-3">
     <div class="col">
       <div class="card shadow-sm h-100">
-        <div class="card-body text-center">
-          <h6>Chamados Atendidos</h6>
-          <p class="fs-4" id="total_chamados">-</p>
+        <div class="card-body card-body-compact">
+           <div class="card-body card-body-center">
+          <h6>Chamados</h6></div>
+          <div class="info-item">
+            <span>Atendidos</span>
+            <span class="value" id="total_chamados">-</span>
+          </div>
+          <div class="info-item">
+            <span>Abertos</span>
+            <span class="value" id="ch_naoatendidas">-</span>
+          </div>
+          <div class="info-item">
+            <span>Reabertos</span>
+            <span class="value" id="ch-transferidas">-</span>
+          </div>
+          <div class="info-item">
+            <span>FCR</span>
+            <span class="value" id="ch-transferidas">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body card-body-compact">
+           <div class="card-body card-body-center">
+          <h6>Tempo</h6></div>
+          <div class="info-item">
+            <span>TMA</span>
+            <span class="value" id="">-</span>
+          </div>
+          <div class="info-item">
+            <span>TMS</span>
+            <span class="value" id="">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body card-body-compact">
+           <div class="card-body card-body-center">
+          <h6>SLA</h6></div>
+          <div class="info-item">
+            <span>Atendimento</span>
+            <span class="value" id="">-</span>
+          </div>
+          <div class="info-item">
+            <span>Solução</span>
+            <span class="value" id="">-</span>
+          </div>
         </div>
       </div>
     </div>
      <!-- SLA Resolução -->
     <!-- Card com link para abrir o modal -->
-    <idv class="col">
+    <div class="col">
       <div class="card shadow-sm h-100 text-center">
         <div class="card-body">
-          <h6>Pesquisa Satisfação</h6>
+          <h6>CSAT</h6>
           <p class="fs-6 mb-1 text-danger">
             Sem retorno: <span id="percentual-null">-</span> / <span id="nao-respondidas"></span>
           </p>

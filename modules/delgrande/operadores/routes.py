@@ -579,6 +579,206 @@ def performance_colaboradores_render_n2():
 
     return jsonify({"redirect_url": url_for('operadores_bp.render_operadores_n2')})
 
+@operadores_bp.route('/getChamadosAbertos', methods=['POST'])
+def get_chamados_abertos():
+    try:
+        data = request.get_json()
+        nome = data.get('nome')
+        dias = int(data.get('dias', 1))  # padrão 1 dia
+
+        if not nome:
+            return jsonify({"status": "error", "message": "Nome do operador não fornecido."}), 400
+
+        hoje = datetime.now().date()
+        data_inicio = hoje - timedelta(days=dias)
+
+        # Limites de data com horário completo
+        inicio = datetime.combine(data_inicio, datetime.min.time())
+        fim = datetime.combine(hoje, datetime.max.time())
+
+        # Filtra chamados abertos para o operador
+        chamados = Chamado.query.filter(
+            Chamado.nome_status.notin_(['Cancelado', 'Resolvido']),
+            Chamado.data_criacao >= inicio,
+            Chamado.data_criacao <= fim,
+            Chamado.operador == nome
+        ).all()
+
+        total_chamados = len(chamados)
+        codigos = [c.cod_chamado for c in chamados]
+
+        return jsonify({
+            "status": "success",
+            "total_chamados": total_chamados,
+            "cod_chamados": codigos
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@operadores_bp.route('/tma_tms/colaboradores', methods=['POST'])
+def tma_e_tms_colaboradores():
+    try:
+        data = request.get_json()
+        dias = int(data.get("dias", 1))
+        nome = data.get("nome", "").strip()
+
+        data_limite = datetime.utcnow() - timedelta(days=dias)
+
+        query = db.session.query(Chamado).filter(
+            Chamado.data_criacao >= data_limite,
+            Chamado.data_criacao.isnot(None),
+            Chamado.restante_p_atendimento.isnot(None),
+            Chamado.restante_s_atendimento.isnot(None),
+            Chamado.nome_status.ilike('%Resolvido%')
+        )
+
+        if nome:
+            query = query.filter(Chamado.operador.ilike(f'%{nome}%'))
+
+        chamados_validos = query.all()
+
+        tma_list = []
+        tms_list = []
+        erros = []
+
+        for chamado in chamados_validos:
+            try:
+                tempo_p = chamado.restante_p_atendimento.strip()
+                sinal_p = -1 if tempo_p.startswith("-") else 1
+                partes_p = tempo_p.replace("-", "").split(":")
+                h, m, s = (list(map(int, partes_p)) + [0, 0, 0])[:3]
+                restante_p = timedelta(hours=h, minutes=m, seconds=s) * sinal_p
+
+                tempo_s = chamado.restante_s_atendimento.strip()
+                sinal_s = -1 if tempo_s.startswith("-") else 1
+                partes_s = tempo_s.replace("-", "").split(":")
+                hs, ms, ss = (list(map(int, partes_s)) + [0, 0, 0])[:3]
+                restante_s = timedelta(hours=hs, minutes=ms, seconds=ss) * sinal_s
+
+                if restante_p.total_seconds() < 0 or restante_s.total_seconds() < 0:
+                    continue
+
+                tms_individual = restante_s - restante_p
+                if tms_individual.total_seconds() < 0 or tms_individual > timedelta(days=30):
+                    continue
+
+                tma_list.append(restante_p.total_seconds())
+                tms_list.append(tms_individual.total_seconds())
+
+            except Exception as e:
+                erros.append({
+                    "cod_chamado": chamado.cod_chamado,
+                    "restante_p_atendimento": chamado.restante_p_atendimento,
+                    "restante_s_atendimento": chamado.restante_s_atendimento,
+                    "erro": str(e)
+                })
+                continue
+
+        if not tma_list or not tms_list:
+            return jsonify({
+                "status": "success",
+                "media_tma": "Sem dados",
+                "mediana_tma": "Sem dados",
+                "media_tms": "Sem dados",
+                "mediana_tms": "Sem dados",
+                "chamados_processados": 0,
+                "erros_amostragem": erros[:10]
+            })
+
+        import numpy as np
+
+        media_tma = np.mean(tma_list) / 60
+        mediana_tma = np.median(tma_list) / 60
+        media_tms = np.mean(tms_list) / 60
+        mediana_tms = np.median(tms_list) / 60
+
+        def formatar_tempo(minutos: float) -> str:
+            if minutos < 60:
+                return f"{round(minutos)} min"
+            elif minutos < 1440:
+                return f"{minutos / 60:.1f} h"
+            else:
+                return f"{minutos / 1440:.2f} dias"
+
+        return jsonify({
+            "status": "success",
+            "media_tma": formatar_tempo(media_tma),
+            "mediana_tma": formatar_tempo(mediana_tma),
+            "media_tms": formatar_tempo(media_tms),
+            "mediana_tms": formatar_tempo(mediana_tms),
+            "chamados_processados": len(tma_list),
+            "erros_amostragem": erros[:10]
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+@operadores_bp.route('/slaColaboradores', methods=['POST'])
+def sla_colaboradores():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 1))
+        nome = data.get('nome', '').strip().lower()
+
+        hoje = datetime.now()
+        data_inicio = hoje - timedelta(days=dias)
+
+        # Consulta base
+        query = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.data_criacao >= datetime.combine(data_inicio.date(), datetime.min.time()),
+            Chamado.data_criacao <= datetime.combine(hoje.date(), datetime.max.time())
+        )
+
+        # Aplica filtro de nome, se fornecido
+        if nome:
+            query = query.filter(Chamado.operador.ilike(f"%{nome}%"))  # 👈 filtro aplicado
+
+        chamados = query.all()
+
+        expirados_atendimento = sum(1 for c in chamados if c.sla_atendimento == 'S')
+        expirados_resolucao = sum(1 for c in chamados if c.sla_resolucao == 'S')
+        chamados_atendimento_prazo = sum(1 for c in chamados if c.sla_atendimento == 'N')
+        chamados_finalizado_prazo = sum(1 for c in chamados if c.sla_resolucao == 'N')
+
+        chamados_expirados = [
+            c for c in chamados if c.sla_atendimento == 'S' or c.sla_resolucao == 'S'
+        ]
+
+        total_chamados = len(chamados)
+
+        percentual_atendimento = round((expirados_atendimento / total_chamados) * 100, 2) if total_chamados else 0
+        percentual_resolucao = round((expirados_resolucao / total_chamados) * 100, 2) if total_chamados else 0
+        percentual_prazo_atendimento = round((chamados_atendimento_prazo / total_chamados) * 100, 2) if total_chamados else 0
+        percentual_prazo_resolucao = round((chamados_finalizado_prazo / total_chamados) * 100, 2) if total_chamados else 0
+
+        return jsonify({
+            "status": "success",
+            "total_chamados": total_chamados,
+            "prazo_atendimento": chamados_atendimento_prazo,
+            "percentual_prazo_atendimento": percentual_prazo_atendimento,
+            "percentual_prazo_resolucao": percentual_prazo_resolucao,
+            "expirados_atendimento": expirados_atendimento,
+            "prazos_resolucao": chamados_finalizado_prazo,
+            "expirados_resolucao": expirados_resolucao,
+            "percentual_atendimento": percentual_atendimento,
+            "percentual_resolucao": percentual_resolucao,
+            "codigos_atendimento": [c.cod_chamado for c in chamados_expirados if c.sla_atendimento == 'S'],
+            "codigos_resolucao": [c.cod_chamado for c in chamados_expirados if c.sla_resolucao == 'S'],
+            "codigos_prazo_atendimento": [c.cod_chamado for c in chamados if c.sla_atendimento == 'N'],
+            "codigos_prazo_resolucao": [c.cod_chamado for c in chamados if c.sla_resolucao == 'N']
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
 @operadores_bp.route('/colaboradores/n2', methods=['GET'])
 def render_operadores_n2():
     nome = session.get('nome')

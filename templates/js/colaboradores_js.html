@@ -227,7 +227,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
-
 <!-- Bloco que traz os SLAs por operador -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -437,4 +436,199 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 </script>
 
+<!-- Script que me traz os chamados abertos -->
+<script>
+  let chamadosAbertosCodigos = [];
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const nomeOperador = document.getElementById("colaboradorNome").textContent.trim();
+    carregarChamadosDoOperador(1, nomeOperador);
+
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const dias = parseInt(this.getAttribute('data-dias'));
+        carregarChamadosDoOperador(dias, nomeOperador);
+      });
+    });
+  });
+
+  function carregarChamadosDoOperador(dias = 1, nome = "") {
+    fetch('/operadores/getChamadosAbertos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias, nome })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === "success") {
+        document.getElementById("chamado_aberto").textContent = data.total_chamados;
+        chamadosAbertosCodigos = data.cod_chamados || [];
+      } else {
+        document.getElementById("chamado_aberto").textContent = "Erro";
+        chamadosAbertosCodigos = [];
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar chamados abertos:", error);
+      document.getElementById("chamado_aberto").textContent = "Erro";
+      chamadosAbertosCodigos = [];
+    });
+  }
+
+  function mostrarChamadosOperador(titulo, codigos) {
+    const lista = document.getElementById("listaCodigos");
+    const tituloModal = document.getElementById("modalCodigosLabel");
+
+    if (!lista || !tituloModal) return;
+
+    lista.innerHTML = "";
+    tituloModal.textContent = titulo;
+
+    if (!Array.isArray(codigos) || codigos.length === 0) {
+      const item = document.createElement("li");
+      item.className = "text-muted";
+      item.textContent = "Nenhum chamado encontrado.";
+      lista.appendChild(item);
+    } else {
+      codigos.forEach(codigo => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "8px";
+
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+        link.target = "_blank";
+        link.textContent = codigo;
+        link.style.color = "#ffc107";
+
+        li.appendChild(link);
+        lista.appendChild(li);
+      });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+    modal.show();
+  }
+</script>
+
+<!-- Script que traz o TMA eo TMS -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    let diasSelecionados = 30;
+    const nomeColaborador = document.getElementById("colaboradorNome").textContent.trim();
+
+    carregarTmaTms(diasSelecionados, nomeColaborador);
+
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        diasSelecionados = parseInt(this.getAttribute('data-dias'), 10);
+        carregarTmaTms(diasSelecionados, nomeColaborador);
+      });
+    });
+  });
+
+  function carregarTmaTms(dias, nome) {
+    fetch('/operadores/tma_tms/colaboradores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias, nome })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === "success") {
+        document.getElementById("percentual-tma").innerText = data.mediana_tma || "-";
+        document.getElementById("percentual-tms").innerText = data.mediana_tms || "-";
+      } else {
+        console.error("Erro ao carregar TMA/TMS:", data.message);
+      }
+    })
+    .catch(err => {
+      console.error("Erro na requisição TMA/TMS:", err);
+    });
+  }
+</script>
+
+<!-- Script que traz o SLA -->
+<script>
+  let codigosAtendimento = [];
+  let codigosResolucao = [];
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const nomeColaborador = document.getElementById("colaboradorNome").textContent.trim();
+    carregarSlaGlobal(1, nomeColaborador);
+
+    document.querySelectorAll(".filtro-btn").forEach(button => {
+      button.addEventListener("click", () => {
+        const dias = parseInt(button.getAttribute("data-dias"), 10);
+        carregarSlaGlobal(dias, nomeColaborador);
+      });
+    });
+  });
+
+  function carregarSlaGlobal(dias = 1, nome = "") {
+    fetch('/operadores/slaColaboradores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias, nome })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === "success") {
+        document.getElementById("sla-atendimento-expirado").textContent = data.percentual_atendimento + "%";
+        document.getElementById("sla-atendimento-prazo").textContent = data.percentual_prazo_atendimento + "%";
+        document.getElementById("sla-resolucao-expirado").textContent = data.percentual_resolucao + "%";
+        document.getElementById("percentual_prazo_resolucao").textContent = data.percentual_prazo_resolucao + "%";
+
+        codigosAtendimento = data.codigos_atendimento || [];
+        codigosResolucao = data.codigos_resolucao || [];
+      } else {
+        document.getElementById("sla-atendimento-expirado").textContent = "Erro";
+        document.getElementById("sla-resolucao-expirado").textContent = "Erro";
+      }
+    })
+    .catch(() => {
+      document.getElementById("sla-atendimento-expirado").textContent = "Erro";
+      document.getElementById("sla-resolucao-expirado").textContent = "Erro";
+    });
+  }
+
+  function mostrarCodigosSla(titulo, listaCodigos) {
+    const lista = document.getElementById("listaCodigos");
+    const tituloModal = document.getElementById("modalCodigosLabel");
+
+    if (!lista || !tituloModal) {
+      console.warn("Elemento do modal não encontrado.");
+      return;
+    }
+
+    lista.innerHTML = "";
+    tituloModal.textContent = titulo;
+
+    if (!Array.isArray(listaCodigos) || listaCodigos.length === 0) {
+      const item = document.createElement("li");
+      item.className = "text-muted";
+      item.textContent = "Nenhum chamado encontrado.";
+      lista.appendChild(item);
+    } else {
+      listaCodigos.forEach(codigo => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "8px";
+
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+        link.target = "_blank";
+        link.textContent = codigo;
+        link.style.color = "#ffc107";
+
+        li.appendChild(link);
+        lista.appendChild(li);
+      });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+    modal.show();
+  }
+</script>
 

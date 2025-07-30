@@ -22,6 +22,25 @@
 {% include 'header/model-header.html' %}
 
 <style>
+.tempo-medio-card .info-item,
+.csat-card .info-item {
+  display: block;         /* empilha verticalmente */
+  text-align: center;     /* centraliza o texto */
+  padding: 6px 0;         /* espaçamento entre itens */
+}
+
+.info-item {
+  margin-bottom: 1rem; /* ajuste para um espaçamento menor que o padrão */
+}
+
+.tempo-medio-card .info-item .value,
+.csat-card .info-item .value {
+  display: block;         /* valor embaixo do texto */
+  margin-top: 0.25rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
   .carousel-control-prev,
   .carousel-control-next {
     width: 5%; /* ou 3% se quiser mais estreito */
@@ -35,16 +54,92 @@
   #carouselGraficos { width: 100%; }
 
   .grupo-container {
-      overflow: hidden;
-      transition: max-width 0.5s ease-in-out, padding-left 0.5s ease-in-out;
-      max-width: 0;
-      padding-left: 0;
-    }
+    overflow: hidden;
+    transition: max-width 0.5s ease-in-out, padding-left 0.5s ease-in-out;
+    max-width: 0;
+    padding-left: 0;
+  }
 
-    .grupo-container.expandido {
-      max-width: 1000px;
-      padding-left: 10px;
-    }
+  .grupo-container.expandido {
+    max-width: 1000px;
+    padding-left: 10px;
+  }
+
+  /* Ajuste meio termo para os cards principais que você enviou */
+  .row.g-3 > .col > .card {
+    font-size: 0.85rem !important; /* leve redução da fonte geral */
+  }
+
+  .row.g-3 > .col > .card > .card-body.card-body-compact {
+    padding: 0.45rem 0.75rem !important; /* padding mais confortável */
+  }
+
+  .row.g-3 > .col > .card .card-body-center h6,
+  .row.g-3 > .col > .card h6.text-center {
+    font-size: 0.85rem !important; /* títulos mais legíveis */
+    margin-top: 0.3rem !important;
+    margin-bottom: 0.3rem !important;
+  }
+
+  .row.g-3 > .col > .card .info-item {
+    margin-bottom: 0.2rem !important; /* espaçamento ajustado */
+    font-size: 0.85rem !important;
+    line-height: 1.2;
+  }
+
+  .row.g-3 > .col > .card .value {
+    font-weight: 500;
+    font-size: 0.85rem !important;
+  }
+
+  .row.g-3 > .col > .card .value a {
+    font-size: 0.85rem !important;
+  }
+
+  .row.g-3 > .col > .card .info-item:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  /* Estilos originais mantidos para o restante */
+  .card-body-compact {
+    padding: 0.8rem !important;
+  }
+
+  .card-body-center {
+    text-align: center;
+    padding-bottom: 0.5rem;
+  }
+
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+    font-size: 0.95rem;
+  }
+
+  .info-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .value {
+    font-weight: 500;
+    font-size: 0.95rem;
+  }
+
+  h6 {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .card h6.text-center {
+    margin-bottom: 0.3rem;
+    margin-top: 0.6rem;
+  }
+
+  .card {
+    font-size: 0.94rem;
+  }
 </style>
 
 <div class="container-fluid my-4 px-5">
@@ -53,7 +148,7 @@
   <div class="row mb-2">
     <div class="col-12 text-center">
       <button class="btn btn-outline-light btn-sm" id="toggle-botoes">
-        <i class="bi bi-eye-slash me-1"></i> Ocultar botões
+        <i class="bi bi-eye-slash me-1"></i>
       </button>
     </div>
   </div>
@@ -92,79 +187,159 @@
   <!-- Cards principais -->
   <div class="row g-3">
     <div class="col">
-    <div class="card shadow-sm h-100">
-      <div class="card-body p-2">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="mb-0">Chamados Criados</h6>
-          <p class="fs-6 mb-0" id="chamados-abertos">-</p>
+      <div class="card shadow-sm h-100">
+        <div class="card-body card-body-compact">
+           <div class="card-body card-body-center">
+              <h6>Chamados</h6></div>
+                <div class="info-item">
+                  <span>Criados</span>
+                    <span class="value" id="chamados-abertos">-</span>
+                </div>
+                <div class="info-item">
+                  <span>Resolvidos</span>
+                <span class="value" id="chamados-finalizados">-</span>
+              </div>
+              <div class="info-item">
+                <span>Abertos</span>
+                <span class="value text-danger">
+                  <a href="#" onclick="mostrarCodigosChamadosAbertos('Chamados em Aberto', codigosEmAberto)">
+                    <span id="ChamadosEmAbertoSuporte">-</span>
+                  </a>
+                </span>
+              </div>
+              <div class="info-item">
+                <span>Reabertos</span>
+                <span class="value" id="chamados-reabertos">-</span>
+              </div>
+              <div class="info-item">
+                <span>FCR</span>
+                <span class="value" id="chamados-fcr">-</span>
+              </div>
+
+            </div>
+          </div>
         </div>
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="mb-0">Chamados Resolvidos</h6>
-          <p class="fs-6 mb-0" id="chamados-finalizados">-</p>
-        </div>
-        <div class="d-flex justify-content-between align-items-center">
-          <h6 class="mb-0">Chamados em Aberto</h6>
-          <p class="fs-6 mb-0 text-danger mb-0">
-            <a href="#" onclick="mostrarCodigosChamadosAbertos('Chamados em Aberto', codigosEmAberto)">
-              <span id="ChamadosEmAbertoSuporte">-</span>
-            </a>
-          </p>
+
+
+
+  <!-- Ligações -->
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body card-body-compact">
+          <div class="card-body card-body-center">
+          <h6>Ligações</h6></div>
+          <div class="info-item">
+            <span>Atendidas</span>
+            <span class="value" id="ch_atendidas">-</span>
+          </div>
+          <div class="info-item">
+            <span>Efetuadas</span>
+            <span class="value" id="ch-transferidas">-</span>
+          </div>
+          <div class="info-item">
+            <span>Não Atendidas</span>
+            <span class="value" id="ch_naoatendidas">-</span>
+          </div>
         </div>
       </div>
+    </div>
+
+  <!-- TMA TMS -->
+<div class="col">
+  <div class="card shadow-sm h-100 tempo-medio-card">
+    <div class="card-body card-body-compact">
+
+      <!-- Título principal -->
+      <div class="card-body card-body-center">
+        <h6>Tempo Médio</h6>
+      </div>
+
+      <div class="info-item">
+        <span class="text-warning">TMA</span><br>
+        <span class="value" id="percentual-tma">-</span>
+      </div>
+      <div class="info-item">
+        <span class="text-success">TMS</span><br>
+        <span class="value" id="percentual-tms">-</span>
+      </div>
+
     </div>
   </div>
+</div>
 
-    <!-- SLA Atendimento -->
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Atendimento</h6>
-          <p class="fs-6 mb-1 text-danger">
-            Expirados: <a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)"><span id="sla-atendimento-expirado">-</span></a>
-          </p>
-          <p class="fs-6 mb-0 text-success">No Prazo: <span id="sla-atendimento-prazo">-</span></p>
-        </div>
+<!-- Card SLA Unificado (Estilo Ligações) -->
+<div class="col">
+  <div class="card shadow-sm h-100">
+    <div class="card-body card-body-compact">
+      
+      <!-- Título principal -->
+      <div class="card-body card-body-center">
+        <h6>SLA</h6>
       </div>
-    </div>
 
-    <!-- SLA Resolução -->
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Resolução</h6>
-          <p class="fs-6 mb-1 text-danger">
-            Expirados: <a href="#" onclick="mostrarCodigosSla('Resolução Expirada', codigosResolucao)"><span id="sla-resolucao-expirado">-</span></a>
-          </p>
-          <p class="fs-6 mb-0 text-success">No Prazo: <span id="percentual_prazo_resolucao">-</span></p>
-        </div>
+      <!-- Atendimento -->
+      <h6 class="text-center mb-2">Atendimento</h6>
+      <div class="info-item">
+        <span class="text-danger">Expirados</span>
+        <span class="value">
+          <a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)">
+            <span id="sla_atendimento_expirado">-</span>
+          </a>
+        </span>
       </div>
+      <div class="info-item">
+        <span class="text-success">No Prazo</span>
+        <span class="value" id="sla_atendimento_prazo">-</span>
+      </div>
+
+      <!-- Resolução -->
+      <h6 class="text-center mt-3 mb-2">Resolução</h6>
+      <div class="info-item">
+        <span class="text-danger">Expirados</span>
+        <span class="value">
+          <a href="#" onclick="mostrarCodigosSla('Resolução Expirada', codigosResolucao)">
+            <span id="sla_resolucao_expirado">-</span>
+          </a>
+        </span>
+      </div>
+      <div class="info-item">
+        <span class="text-success">No Prazo</span>
+        <span class="value" id="percentual_prazo_resolucao">-</span>
+      </div>
+
     </div>
+  </div>
+</div>
+
+
+
 
     <!-- Pesquisa Satisfação -->
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Pesquisa Satisfação</h6>
-          <p class="fs-6 mb-1 text-danger">
-            Sem retorno: <span id="percentual-null">-</span>
-          </p>
-          <p class="fs-6 mb-0 text-success">Retorno: <span id="percentual-retorno">-</span></p>
-        </div>
-      </div>
-    </div>
+<div class="col">
+  <div class="card shadow-sm h-100 csat-card">
+    <div class="card-body card-body-compact">
 
-    <!-- TMA TMS -->
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Tempo Médio</h6>
-          <p class="fs-6 mb-1 text-warning">
-            TMA: <span id="percentual-tma">-</span>
-          </p>
-          <p class="fs-6 mb-0 text-success">TMS: <span id="percentual-tms">-</span></p>
-        </div>
+      <!-- Título principal -->
+      <div class="card-body card-body-center">
+        <h6>CSAT</h6>
       </div>
+
+      <div class="info-item">
+        <span class="text-danger">Sem retorno</span>
+        <span class="value" id="percentual-null">-</span>
+      </div>
+      <div class="info-item">
+        <span class="text-success">Retorno</span>
+        <span class="value" id="percentual-retorno">-</span>
+      </div>
+
     </div>
+  </div>
+</div>
+
+
+
+    
 
     <!-- Carrossel de Gráficos -->
     <div class="row mt-3 gx-4">
@@ -395,7 +570,7 @@
 </div>
 
 <!-- Includes JavaScript -->
-{% include 'js/colaboradores_js.html' %}
+
 {% include 'js/insights_js.html' %}
 
 </body>
