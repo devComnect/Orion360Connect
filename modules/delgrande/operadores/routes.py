@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, session
 import modules.delgrande.relatorios.utils as utils
-from application.models import db, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, PesquisaSatisfacao
+from application.models import db, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, PesquisaSatisfacao, RelatorioColaboradores 
 from modules.delgrande.auth.utils import authenticate, authenticate_relatorio
 from application.models import Chamado
 from settings.endpoints import CREDENTIALS
@@ -771,6 +771,74 @@ def sla_colaboradores():
             "codigos_resolucao": [c.cod_chamado for c in chamados_expirados if c.sla_resolucao == 'S'],
             "codigos_prazo_atendimento": [c.cod_chamado for c in chamados if c.sla_atendimento == 'N'],
             "codigos_prazo_resolucao": [c.cod_chamado for c in chamados if c.sla_resolucao == 'N']
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+@operadores_bp.route('/fcrColaboradores', methods=['POST'])
+def fcr_colaboradores():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 1))
+        nome = data.get('nome', '').strip().lower()
+
+        hoje = datetime.utcnow()
+        data_limite = hoje - timedelta(days=dias)
+
+        # Todos os chamados do operador
+        total_registros = RelatorioColaboradores.query.filter(
+            RelatorioColaboradores.operador.ilike(nome),
+            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+        ).all()
+
+        # Chamados com FCR
+        fcr_registros = [r for r in total_registros if r.first_call == 'S']
+        codigos_fcr = [r.cod_chamado for r in fcr_registros if r.cod_chamado]
+
+        return jsonify({
+            "status": "success",
+            "total_fcr": len(codigos_fcr),
+            "percentual_fcr": round((len(codigos_fcr) / len(total_registros)) * 100, 2) if total_registros else 0,
+            "cod_chamados": codigos_fcr
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+@operadores_bp.route('/reabertosColaboradores', methods=['POST'])
+def reabertos_colaboradores():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 1))
+        nome = data.get('nome', '').strip().lower()
+
+        hoje = datetime.utcnow()
+        data_limite = hoje - timedelta(days=dias)
+
+        # Todos os chamados do operador no período
+        total_registros = RelatorioColaboradores.query.filter(
+            RelatorioColaboradores.operador.ilike(nome),
+            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+        ).all()
+
+        total_chamados = len(total_registros)
+
+        # Apenas os reabertos
+        reabertos = [r for r in total_registros if r.reaberto == 'Reaberto']
+        codigos = [r.cod_chamado for r in reabertos if r.cod_chamado]
+
+        return jsonify({
+            "status": "success",
+            "total_reabertos": len(codigos),
+            "cod_chamados": codigos,
+            "total_chamados": total_chamados
         })
 
     except Exception as e:

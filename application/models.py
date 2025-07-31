@@ -183,3 +183,29 @@ class PesquisaSatisfacao(db.Model):
     questao = db.Column(db.Text)
     alternativa = db.Column(db.String(255))
     resposta_dissertativa = db.Column(db.Text)
+
+class RelatorioColaboradores(db.Model):
+    __tablename__ = 'relatorio_colaboradores'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+
+    chave = db.Column(db.String(20))
+    nome_status = db.Column(db.String(50))
+    operador = db.Column(db.String(20))
+    reaberto = db.Column(db.String(50))
+    first_call = db.Column(db.String(1))
+    tempo_sem_interacao = db.Column(db.String(50))
+    sla1_expirado = db.Column(db.String(20))
+    nome_sla1_status = db.Column(db.String(50))
+    sla2_expirado = db.Column(db.String(20))
+    nome_sla2_status = db.Column(db.String(50))
+    pesquisa_satisfacao_respondido = db.Column(db.String(1))
+    nome_solicitacao = db.Column(db.String(100))
+    fantasia = db.Column(db.String(100))
+    nome_completo_solicitante = db.Column(db.String(100))
+    cod_chamado = db.Column(db.String(20))
+    data_criacao = db.Column(db.String(20))  # ou db.Date se quiser como data
+    data_finalizacao = db.Column(db.String(20))  # ou db.Date se quiser como data
+    possui_ps = db.Column(db.String(1))
+    ps_expirou = db.Column(db.String(1))

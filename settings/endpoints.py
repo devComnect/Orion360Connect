@@ -32,3 +32,5 @@ AUTHENTICATE_DESK = 'https://api.desk.ms/Login/autenticar'
 LISTACHAMADOS = 'https://api.desk.ms/Chamados/lista'
 
 LISTA_CHAMADOS_SUPORTE = 'https://api.desk.ms/ChamadosSuporte/lista'
+
+RELATORIO_CHAMADOS_SUPORTE = 'https://api.desk.ms/Relatorios/imprimir'

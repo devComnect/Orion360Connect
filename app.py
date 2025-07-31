@@ -29,7 +29,8 @@ from modules.delgrande.relatorios.utils import (
     importar_chamados,
     processar_e_armazenar_performance_incremental,
     processar_e_armazenar_performance_vyrtos_incremental,
-    importar_pSatisfacao
+    importar_pSatisfacao, 
+    importar_fcr_reabertos
 )
 
 # ----------------- LOGGING CONFIG -----------------
@@ -118,6 +119,14 @@ def tarefa_importar_psatisfacao():
         except Exception as e:
             logging.error(f"[AGENDADO] Erro ao importar chamados: {e}")
 
+def tarefa_importar_fcr_reabertos():
+    with app.app_context():
+        try:
+            importar_fcr_reabertos()
+            logging.info("[AGENDADO] FCR e reabertos importados com sucesso.")
+        except Exception as e:
+            logging.error(f"[AGENDADO] Erro ao importar FCR e reabertos: {e}")
+
 # APScheduler
 scheduler = APScheduler()
 
@@ -157,6 +166,13 @@ with app.app_context():
     scheduler.add_job(
         id='job_importar_psatisfacao',
         func=tarefa_importar_psatisfacao,
+        trigger='interval',
+        minutes=5
+    )
+
+    scheduler.add_job(
+        id='job_importar_fcr_reabertos',
+        func=tarefa_importar_fcr_reabertos,
         trigger='interval',
         minutes=5
     )

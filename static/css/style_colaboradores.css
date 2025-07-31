@@ -104,3 +104,19 @@ body {
       margin-bottom: 0;
     }
   
+    .csat-card .info-item {
+  display: block;         /* empilha verticalmente */
+  text-align: center;     /* centraliza o texto */
+  padding: 6px 0;         /* espaçamento entre itens */
+}
+
+.info-item {
+  margin-bottom: 1rem; /* ajuste para um espaçamento menor que o padrão */
+}
+
+.csat-card .info-item .value {
+  display: block;         /* valor embaixo do texto */
+  margin-top: 0.25rem;
+  font-weight: 600;
+  font-size: 1rem;
+}

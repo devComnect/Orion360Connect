@@ -10,25 +10,6 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style_colaboradores.css')}}">
 </head>
 
-<style>
-  .csat-card .info-item {
-  display: block;         /* empilha verticalmente */
-  text-align: center;     /* centraliza o texto */
-  padding: 6px 0;         /* espaçamento entre itens */
-}
-
-.info-item {
-  margin-bottom: 1rem; /* ajuste para um espaçamento menor que o padrão */
-}
-
-.csat-card .info-item .value {
-  display: block;         /* valor embaixo do texto */
-  margin-top: 0.25rem;
-  font-weight: 600;
-  font-size: 1rem;
-}
-</style>
-
 <body>
 {% include 'header/model-header.html' %}
 
@@ -109,16 +90,21 @@
             </span>
           </div>
 
-          <!-- Reabertos -->
           <div class="info-item">
             <span>Reabertos</span>
-            <span class="value" id="chamado_reaberto">-</span>
+            <span class="value text-white">
+              <a href="#" onclick="mostrarChamadosOperador('Chamados Reabertos do Operador', chamadosReabertosCodigos)">
+                <span id="chamado_reaberto">-</span></a> / <span id="percentual_reaberto">-</span>
+            </span>
           </div>
 
           <!-- FCR -->
           <div class="info-item">
             <span>FCR</span>
-            <span class="value" id="chamado_fcr">-</span>
+            <span class="value text-white">
+              <a href="#" onclick="mostrarChamadosOperador('Chamados com FCR do Operador', chamadosFcrCodigos)">
+            <span id="chamado_fcr">-</span></a> / <span id="percentual_fcr">-</span>
+            </span>
           </div>
         </div>
       </div>
@@ -194,30 +180,29 @@
     </div>
     
     <!-- Pesquisa de Satisfação -->
-<div class="col">
-  <div class="card shadow-sm h-100 csat-card">
-    <div class="card-body card-body-compact card-body-center">
-      <h6>CSAT</h6>
+    <div class="col">
+      <div class="card shadow-sm h-100 csat-card">
+        <div class="card-body card-body-compact card-body-center">
+          <h6>CSAT</h6>
 
-      <div class="info-item">
-        <span class="text-danger">Sem retorno</span>
-        <span class="value">
-          <span id="percentual-null">-</span> / <span id="nao-respondidas">-</span>
-        </span>
+          <div class="info-item">
+            <span class="text-danger">Sem retorno</span>
+            <span class="value">
+              <span id="percentual-null">-</span> / <span id="nao-respondidas">-</span>
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="text-success">Retorno</span>
+            <span class="value">
+              <a href="#" id="link-retorno" data-bs-toggle="modal" data-bs-target="#modalComentariosPesquisa">
+                <span id="percentual-retorno">-</span> / <span id="respondidas">-</span>
+              </a>
+            </span>
+          </div>
+        </div>
       </div>
-
-      <div class="info-item">
-        <span class="text-success">Retorno</span>
-        <span class="value">
-          <a href="#" id="link-retorno" data-bs-toggle="modal" data-bs-target="#modalComentariosPesquisa">
-            <span id="percentual-retorno">-</span> / <span id="respondidas">-</span>
-          </a>
-        </span>
-      </div>
-
     </div>
-  </div>
-</div>
 
 
   <!-- Gráficos -->

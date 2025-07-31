@@ -1,11 +1,11 @@
 import requests, json
 import settings.endpoints as endpoints
 from urllib.parse import urlencode
-from application.models import db, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Chamado, Categoria, PesquisaSatisfacao
+from application.models import db, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Chamado, Categoria, PesquisaSatisfacao, RelatorioColaboradores
 from modules.delgrande.auth.utils import authenticate, authenticate_relatorio
 from modules.deskmanager.authenticate.routes import token_desk
 import modules.delgrande.relatorios.utils as utils
-from settings.endpoints import CREDENTIALS
+from settings.endpoints import CREDENTIALS, RELATORIO_CHAMADOS_SUPORTE
 from flask import jsonify, current_app as app
 import json
 from datetime import timedelta, datetime
@@ -936,6 +936,106 @@ def importar_pSatisfacao():
         print(f"{len(novos)} registros inseridos.")
     else:
         print("Nenhum novo registro para inserir.")
+
+def importar_fcr_reabertos():
+    print("Tarefa em execução!")
+
+    token = token_desk()
+    url = RELATORIO_CHAMADOS_SUPORTE
+    headers = {
+        'Authorization': token,
+        'Content-Type': 'application/json'
+    }
+
+    cod_colaboradores = {
+        'Gustavo': '77',
+        'Danilo': '78',
+        'Henrique': '76',
+        'Lucas': '75',
+        'Matheus': '74',
+        'Rafael': '73',
+        'Raysa': '72',
+        'Renato': '71',
+    }
+
+    if not token:
+        raise Exception('Falha na autenticação')
+
+    for nome, codigo in cod_colaboradores.items():
+        payload = {
+            "Chave": codigo,
+            "APartirDe": "0",
+            "Total": "50000"
+        }
+
+        response = requests.post(url, headers=headers, json=payload)
+
+        if response.status_code != 200:
+            print(f"[ERRO] Falha na requisição de {nome} ({codigo}): {response.status_code}")
+            continue
+
+        try:
+            resposta = response.json()
+        except json.JSONDecodeError:
+            print(f"[ERRO] Resposta inválida de {nome}: não é JSON.")
+            continue
+
+        chamados = resposta.get("root", [])
+
+        if not isinstance(chamados, list):
+            print(f"[ERRO] Resposta inesperada para {nome}. Esperava lista em 'root'.")
+            print("Resposta bruta:", resposta)
+            continue
+
+        print(f"{nome} ({codigo}) retornou {len(chamados)} chamados.")
+
+        for item in chamados:
+            if not isinstance(item, dict):
+                print(f"[ERRO] Item malformado em {nome}: {item}")
+                continue
+
+            cod_chamado = item.get("CodChamado")
+            if not cod_chamado:
+                continue
+
+            registro = RelatorioColaboradores.query.filter_by(cod_chamado=cod_chamado).first()
+
+            dados = {
+                "chave": codigo,
+                "operador": nome,  # <=== operador (nome do colaborador)
+                "nome_status": item.get("NomeStatus"),
+                "reaberto": item.get("Reaberto"),
+                "first_call": item.get("FirstCall"),
+                "tempo_sem_interacao": item.get("TempoSemInteracao"),
+                "sla1_expirado": item.get("Sla1Expirado"),
+                "nome_sla1_status": item.get("NomeSla1Status"),
+                "sla2_expirado": item.get("Sla2Expirado"),
+                "nome_sla2_status": item.get("NomeSla2Status"),
+                "pesquisa_satisfacao_respondido": item.get("PesquisaSatisfacaoRespondido"),
+                "nome_solicitacao": item.get("NomeSolicitacao"),
+                "fantasia": item.get("Fantasia"),
+                "nome_completo_solicitante": item.get("NomeCompletoSolicitante"),
+                "cod_chamado": cod_chamado,
+                "data_criacao": item.get("DataCriacao"),
+                "data_finalizacao": item.get("DataFinalizacao"),
+                "possui_ps": item.get("PossuiPS"),
+                "ps_expirou": item.get("PSExpirou")
+            }
+
+            if registro:
+                atualizou = False
+                for campo, valor in dados.items():
+                    if getattr(registro, campo) != valor:
+                        setattr(registro, campo, valor)
+                        atualizou = True
+                if atualizou:
+                    db.session.commit()
+            else:
+                novo_registro = RelatorioColaboradores(**dados)
+                db.session.add(novo_registro)
+                db.session.commit()
+
+    print("Tarefa finalizada.")
 
 def importar_categorias():
     token = token_desk()
