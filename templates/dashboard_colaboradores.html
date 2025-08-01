@@ -17,35 +17,9 @@
 </head>
 
 <body>
-     <!-- Header -->
-    <header>
-    <div class="container">
-        <div class="header-container">
-            <!-- Logo à esquerda -->
-            <div class="logo">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo do Projeto" class="logo-img">
-            </div>
 
-            <!-- Links centralizados -->
-            <nav class="nav-links-wrapper">
-                <ul class="nav-links">
-                    <li><a href="/performance">Performance</a></li>
-                    <li><a href="/dashboard_colaborador">Dashboard</a></li>
-                </ul>
-            </nav>
+    {% include 'header/model-header-individual.html' %}
 
-            <!-- Botão de logout à direita -->
-            <div class="logout-container">
-                <form action="/logout" method="POST" style="display:inline;">
-                    <button type="submit" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Sair
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</header>
    
 <div class="container-fluid mt-2">
     <!--<button id="toggle-theme" class="btn btn-light mb-1"> Modo Escuro</button>-->
