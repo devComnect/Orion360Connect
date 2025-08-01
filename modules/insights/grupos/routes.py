@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, render_template, request, url_for
 import requests
 from modules.deskmanager.authenticate.routes import token_desk
 from datetime import datetime, timedelta
-from application.models import Chamado, db, Categoria, PesquisaSatisfacao
+from application.models import Chamado, db, Categoria, PesquisaSatisfacao, RelatorioColaboradores
 from collections import Counter
 from sqlalchemy import func, and_, or_
 from modules.insights.utils import parse_tempo
@@ -136,7 +136,8 @@ def get_chamados_grupos_abertos():
 
         return jsonify({
                 "status": "success",
-                "total_chamados": total_chamados
+                "total_chamados": total_chamados,
+                "cod_chamados": codigos
             })
     
     except Exception as e:
@@ -644,6 +645,73 @@ def top_sub_categoria():
 
     return jsonify({"status": "success", "dados": dados})
 
+@grupos_bp.route('/fcrGrupos', methods=['POST'])
+def fcr_grupos():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 1))
+        grupo = request.json.get("grupo", "").strip()
+
+        hoje = datetime.utcnow()
+        data_limite = hoje - timedelta(days=dias)
+
+        # Todos os chamados do operador
+        total_registros = RelatorioColaboradores.query.filter(
+            RelatorioColaboradores.grupo.ilike(grupo),
+            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+        ).all()
+
+        # Chamados com FCR
+        fcr_registros = [r for r in total_registros if r.first_call == 'S']
+        codigos_fcr = [r.cod_chamado for r in fcr_registros if r.cod_chamado]
+
+        return jsonify({
+            "status": "success",
+            "total_fcr": len(codigos_fcr),
+            "percentual_fcr": round((len(codigos_fcr) / len(total_registros)) * 100, 2) if total_registros else 0,
+            "cod_chamados": codigos_fcr
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+@grupos_bp.route('/reabertosGrupos', methods=['POST'])
+def reabertos_grupos():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 1))
+        grupo = request.json.get("grupo", "").strip()
+
+        hoje = datetime.utcnow()
+        data_limite = hoje - timedelta(days=dias)
+
+        total_registros = RelatorioColaboradores.query.filter(
+            RelatorioColaboradores.grupo.ilike(grupo),
+            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+        ).all()
+
+        total_chamados = len(total_registros)
+
+        # Apenas os reabertos
+        reabertos = [r for r in total_registros if r.reaberto == 'Reaberto']
+        codigos = [r.cod_chamado for r in reabertos if r.cod_chamado]
+
+        return jsonify({
+            "status": "success",
+            "total_reabertos": len(codigos),
+            "cod_chamados": codigos,
+            "total_chamados": total_chamados
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+    
 @grupos_bp.route('/tma_tms_grupos', methods=['POST'])
 def tma_e_tms_grupos():
     try:

@@ -948,14 +948,19 @@ def importar_fcr_reabertos():
     }
 
     cod_colaboradores = {
-        'Gustavo': '77',
-        'Danilo': '78',
-        'Henrique': '76',
-        'Lucas': '75',
-        'Matheus': '74',
-        'Rafael': '73',
-        'Raysa': '72',
-        'Renato': '71',
+        'Gustavo': '90',
+        'Danilo': '91',
+        'Henrique': '89',
+        'Lucas': '88',
+        'Matheus': '87',
+        'Rafael': '86',
+        'Raysa': '85',
+        'Renato': '84',
+        'Fernando': '94',
+        'Luciano': '95',
+        'Eduardo': '93',
+        'Chrysthyanne': '92',
+
     }
 
     if not token:
@@ -1003,6 +1008,7 @@ def importar_fcr_reabertos():
             dados = {
                 "chave": codigo,
                 "operador": nome,  # <=== operador (nome do colaborador)
+                "grupo" : item.get("NomeGrupo"),
                 "nome_status": item.get("NomeStatus"),
                 "reaberto": item.get("Reaberto"),
                 "first_call": item.get("FirstCall"),

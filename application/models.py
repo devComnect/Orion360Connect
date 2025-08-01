@@ -193,6 +193,7 @@ class RelatorioColaboradores(db.Model):
     chave = db.Column(db.String(20))
     nome_status = db.Column(db.String(50))
     operador = db.Column(db.String(20))
+    grupo = db.Column(db.String(20))
     reaberto = db.Column(db.String(50))
     first_call = db.Column(db.String(1))
     tempo_sem_interacao = db.Column(db.String(50))
