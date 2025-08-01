@@ -76,78 +76,136 @@
   <!-- Cards principais -->
   <div class="row g-3">
     <div class="col">
-    <div class="card shadow-sm h-100">
-      <div class="card-body p-2">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="mb-0">Chamados Criados</h6>
-          <p class="fs-6 mb-0" id="chamados-abertos">-</p>
+      <div class="card shadow-sm h-100">
+        <div class="card-body card-body-compact">
+           <div class="card-body card-body-center">
+              <h6>Chamados</h6></div>
+                <div class="info-item">
+                  <span>Criados</span>
+                    <span class="value" id="chamados-abertos">0</span>
+                </div>
+                <div class="info-item">
+                  <span>Resolvidos</span>
+                <span class="value" id="chamados-finalizados">0</span>
+              </div>
+              <div class="info-item">
+                <span>Abertos</span>
+                <span class="value text-danger">
+                  <a href="#" onclick="mostrarCodigosChamadosAbertos('Chamados em Aberto', codigosEmAberto)">
+                    <span id="ChamadosEmAbertoSuporte">0</span>
+                  </a>
+                </span>
+              </div>
+
+              <div class="info-item">
+                <span>Reabertos</span>
+                <span class="value text-white">
+                  <a href="#" onclick="mostrarChamadosOperador('Chamados Reabertos do Operador', chamadosReabertosCodigos)">
+                    <span id="chamado_reaberto">0</span></a> / <span id="percentual_reaberto">0</span>
+                </span>
+              </div>
+
+              <div class="info-item">
+                <span>FCR</span>
+                <span class="value text-white">
+                  <a href="#" onclick="mostrarChamadosOperador('Chamados com FCR do Operador', chamadosFcrCodigos)">
+                <span id="chamado_fcr">0</span></a> / <span id="percentual_fcr">0</span>
+                </span>
+              </div>
+
+            </div>
+          </div>
         </div>
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <h6 class="mb-0">Chamados Resolvidos</h6>
-          <p class="fs-6 mb-0" id="chamados-finalizados">-</p>
-        </div>
-        <div class="d-flex justify-content-between align-items-center">
-          <h6 class="mb-0">Chamados em Aberto</h6>
-          <p class="fs-6 mb-0 text-danger mb-0">
-            <a href="#" onclick="mostrarCodigosChamadosAbertos('Chamados em Aberto', codigosEmAberto)">
-              <span id="ChamadosEmAbertoSuporte">-</span>
-            </a>
-          </p>
-        </div>
+
+    <!-- Card SLA Unificado -->
+<div class="col">
+  <div class="card shadow-sm h-100">
+    <div class="card-body card-body-compact">
+      
+      <!-- Título principal -->
+      <div class="card-body card-body-center">
+        <h6>SLA</h6>
       </div>
+
+      <!-- Atendimento -->
+      <h6 class="text-center mb-2">Atendimento</h6>
+      <div class="info-item">
+        <span class="text-danger">Expirados</span>
+        <span class="value">
+          <a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)">
+            <span id="sla_atendimento_expirado">0</span>
+          </a>
+        </span>
+      </div>
+      <div class="info-item">
+        <span class="text-success">No Prazo</span>
+        <span class="value" id="sla_atendimento_prazo">0</span>
+      </div>
+
+      <!-- Resolução -->
+      <h6 class="text-center mt-3 mb-2">Resolução</h6>
+      <div class="info-item">
+        <span class="text-danger">Expirados</span>
+        <span class="value">
+          <a href="#" onclick="mostrarCodigosSla('Resolução Expirada', codigosResolucao)">
+            <span id="sla_resolucao_expirado">-</span>
+          </a>
+        </span>
+      </div>
+      <div class="info-item">
+        <span class="text-success">No Prazo</span>
+        <span class="value" id="percentual_prazo_resolucao">0</span>
+      </div>
+
     </div>
   </div>
+</div>
 
-    <!-- SLA Atendimento -->
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Atendimento</h6>
-          <p class="fs-6 mb-1 text-danger">
-            Expirados: <a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)"><span id="sla-atendimento-expirado">-</span></a>
-          </p>
-          <p class="fs-6 mb-0 text-success">No Prazo: <span id="sla-atendimento-prazo">-</span></p>
-        </div>
-      </div>
-    </div>
+        <!-- Pesquisa Satisfação -->
+<div class="col">
+  <div class="card shadow-sm h-100 csat-card">
+    <div class="card-body card-body-compact">
 
-    <!-- SLA Resolução -->
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Resolução</h6>
-          <p class="fs-6 mb-1 text-danger">
-            Expirados: <a href="#" onclick="mostrarCodigosSla('Resolução Expirada', codigosResolucao)"><span id="sla-resolucao-expirado">-</span></a>
-          </p>
-          <p class="fs-6 mb-0 text-success">No Prazo: <span id="percentual_prazo_resolucao">-</span></p>
-        </div>
+      <!-- Título principal -->
+      <div class="card-body card-body-center">
+        <h6>CSAT</h6>
       </div>
-    </div>
 
-    <!-- SLA Resolução -->
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Pesquisa Satisfação</h6>
-          <p class="fs-6 mb-1 text-danger">
-            Sem retorno: <span id="percentual-null">-</span>
-          </p>
-          <p class="fs-6 mb-0 text-success">Retorno: <span id="percentual-retorno">-</span></p>
-        </div>
+      <div class="info-item">
+        <span class="text-danger">Sem retorno</span>
+        <span class="value" id="percentual-null">0</span>
       </div>
-    </div>
+      <div class="info-item">
+        <span class="text-success">Retorno</span>
+        <span class="value" id="percentual-retorno">0</span>
+      </div>
 
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Tempo Médio</h6>
-          <p class="fs-6 mb-1 text-warning">
-            TMA: <span id="percentual-tma">-</span>
-          </p>
-          <p class="fs-6 mb-0 text-success">TMS: <span id="percentual-tms">-</span></p>
-        </div>
-      </div>
     </div>
+  </div>
+</div>
+
+    <!-- TMA TMS -->
+<div class="col">
+  <div class="card shadow-sm h-100 tempo-medio-card">
+    <div class="card-body card-body-compact">
+
+      <!-- Título principal -->
+      <div class="card-body card-body-center">
+        <h6>Tempo Médio</h6>
+      </div>
+
+      <div class="info-item">
+        <span class="text-warning">TMA</span><br>
+        <span class="value" id="percentual-tma">0</span>
+      </div>
+      <div class="info-item">
+        <span class="text-success">TMS</span><br>
+        <span class="value" id="percentual-tms">0</span>
+      </div>
+
+    </div>
+  </div>
+</div>
 
   <!-- Gráficos Principais -->
 <!-- Carrossel de Gráficos -->

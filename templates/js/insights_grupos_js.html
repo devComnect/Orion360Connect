@@ -261,9 +261,9 @@ document.addEventListener("DOMContentLoaded", function () {
   async function carregarSlaGrupo(dias = 1) {
     const grupoSelecionado = sessionStorage.getItem('grupoSelecionado') || "";
     if (!grupoSelecionado) {
-      document.getElementById("sla-atendimento-expirado").textContent = "Grupo não definido";
-      document.getElementById("sla-atendimento-prazo").textContent = "-";
-      document.getElementById("sla-resolucao-expirado").textContent = "-";
+      document.getElementById("sla_atendimento_expirado").textContent = "Grupo não definido";
+      document.getElementById("sla_atendimento_prazo").textContent = "-";
+      document.getElementById("sla_resolucao_expirado").textContent = "-";
       document.getElementById("percentual_prazo_resolucao").textContent = "-";
       codigosAtendimento = [];
       codigosResolucao = [];
@@ -280,17 +280,17 @@ document.addEventListener("DOMContentLoaded", function () {
       const data = await response.json();
 
       if (data.status === "success") {
-        document.getElementById("sla-atendimento-expirado").textContent = data.percentual_atendimento.toFixed(2) + "%";
-        document.getElementById("sla-atendimento-prazo").textContent = data.percentual_prazo_atendimento.toFixed(2) + "%";
-        document.getElementById("sla-resolucao-expirado").textContent = data.percentual_resolucao.toFixed(2) + "%";
+        document.getElementById("sla_atendimento_expirado").textContent = data.percentual_atendimento.toFixed(2) + "%";
+        document.getElementById("sla_atendimento_prazo").textContent = data.percentual_prazo_atendimento.toFixed(2) + "%";
+        document.getElementById("sla_resolucao_expirado").textContent = data.percentual_resolucao.toFixed(2) + "%";
         document.getElementById("percentual_prazo_resolucao").textContent = data.percentual_prazo_resolucao.toFixed(2) + "%";
 
         codigosAtendimento = data.codigos_atendimento || [];
         codigosResolucao = data.codigos_resolucao || [];
       } else {
-        document.getElementById("sla-atendimento-expirado").textContent = "Erro";
-        document.getElementById("sla-atendimento-prazo").textContent = "-";
-        document.getElementById("sla-resolucao-expirado").textContent = "Erro";
+        document.getElementById("sla_atendimento_expirado").textContent = "Erro";
+        document.getElementById("sla_atendimento_prazo").textContent = "-";
+        document.getElementById("sla_resolucao_expirado").textContent = "Erro";
         document.getElementById("percentual_prazo_resolucao").textContent = "-";
 
         codigosAtendimento = [];
@@ -299,9 +299,9 @@ document.addEventListener("DOMContentLoaded", function () {
     } catch (error) {
       console.error("Erro ao carregar SLA grupo:", error);
 
-      document.getElementById("sla-atendimento-expirado").textContent = "Erro";
-      document.getElementById("sla-atendimento-prazo").textContent = "-";
-      document.getElementById("sla-resolucao-expirado").textContent = "Erro";
+      document.getElementById("sla_atendimento_expirado").textContent = "Erro";
+      document.getElementById("sla_atendimento_prazo").textContent = "-";
+      document.getElementById("sla_resolucao_expirado").textContent = "Erro";
       document.getElementById("percentual_prazo_resolucao").textContent = "-";
 
       codigosAtendimento = [];
