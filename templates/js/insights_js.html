@@ -46,78 +46,6 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <!-- Script que traz os botões com os nomes dos operadores-->
-<!--<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    async function carregarOperadores() {
-        try {
-            const response = await fetch('/insights/get/operadores');
-            const data = await response.json();
-
-            if (data.status === "success") {
-                const container = document.getElementById('botoes-operadores');
-
-                const operadoresOrdenados = data.operadores.sort((a, b) => a.localeCompare(b));
-
-                operadoresOrdenados.forEach(operador => {
-                    const botao = document.createElement('button');
-                    botao.className = 'btn btn-outline-primary operador-btn d-flex align-items-center';
-
-                    const icone = document.createElement('i');
-                    icone.className = 'bi bi-pie-chart-fill me-2';
-
-                    const texto = document.createElement('span');
-                    texto.textContent = operador;
-
-                    botao.appendChild(icone);
-                    botao.appendChild(texto);
-                    botao.dataset.operador = operador;
-
-                    botao.onclick = function () {
-                        document.querySelectorAll('.operador-btn').forEach(btn => btn.classList.remove('active'));
-                        this.classList.add('active');
-                        filtrarPorOperador(operador);
-                    };
-
-                    container.appendChild(botao);
-                });
-
-                if (container.firstChild) {
-                    container.firstChild.classList.add('active');
-                }
-            }
-
-        } catch (error) {
-            console.error('Erro ao carregar operadores:', error);
-        }
-    }
-
-    function filtrarPorOperador(operador) {
-        console.log('Enviando operador para o backend:', operador);
-
-        fetch('/operadores/performanceColaboradoresRender', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome: operador })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.redirect_url) {
-                window.location.href = data.redirect_url;
-            } else {
-                console.warn('Nenhuma URL de redirecionamento recebida.');
-            }
-        })
-        .catch(error => {
-            console.error('Erro ao enviar operador para o backend:', error);
-        });
-    }
-
-    carregarOperadores();
-});
-</script>-->
-
-<!-- Script que traz os botões com os nomes dos operadores-->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -1535,7 +1463,6 @@ function carregarTopCategorias(dias = 1) {
   }
 </script>
 
-
 <!-- Script do botão mestre (não interfere nos demais scripts) -->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -1564,4 +1491,180 @@ function carregarTopCategorias(dias = 1) {
       }
     });
   });
+</script>
+
+<!-- Script que busca os chamados FCR -->
+<script>
+  let chamadosFcrCodigos = [];
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Botões de filtro por período
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarFCR(dias);
+      });
+    });
+  });
+
+  function atualizarFCR(dias, nomeOperador) {
+    fetch('/insights/fcr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias })
+    })
+    .then(response => response.json())
+    .then(data => {
+      const fcrSpan = document.getElementById("chamado_fcr");
+      const percentualSpan = document.getElementById("percentual_fcr");
+
+      if (data.status === "success") {
+        const totalFcr = data.total_fcr || 0;
+        const percentual = data.percentual_fcr ?? "-";
+
+        fcrSpan.textContent = totalFcr;
+        percentualSpan.textContent = typeof percentual === "number" ? percentual.toFixed(1) + "%" : percentual;
+
+        chamadosFcrCodigos = data.cod_chamados || [];
+      } else {
+        fcrSpan.textContent = "Erro";
+        percentualSpan.textContent = "-";
+        chamadosFcrCodigos = [];
+        console.error("Erro na resposta:", data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar FCR:", error);
+      document.getElementById("chamado_fcr").textContent = "Erro";
+      document.getElementById("percentual_fcr").textContent = "-";
+      chamadosFcrCodigos = [];
+    });
+  }
+
+  function mostrarChamadosOperador(titulo, codigos) {
+    const lista = document.getElementById("listaCodigos");
+    const tituloModal = document.getElementById("modalCodigosLabel");
+
+    if (!lista || !tituloModal) return;
+
+    lista.innerHTML = "";
+    tituloModal.textContent = titulo;
+
+    if (!Array.isArray(codigos) || codigos.length === 0) {
+      const item = document.createElement("li");
+      item.className = "text-muted";
+      item.textContent = "Nenhum chamado encontrado.";
+      lista.appendChild(item);
+    } else {
+      codigos.forEach(codigo => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "8px";
+
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+        link.target = "_blank";
+        link.textContent = codigo;
+        link.style.color = "#ffc107";
+
+        li.appendChild(link);
+        lista.appendChild(li);
+      });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+    modal.show();
+  }
+</script>
+
+
+<!-- Script que me traz a relação de chamados reabertos-->
+<script>
+  let chamadosReabertosCodigos = [];
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Atualiza ao clicar no botão de filtro de dias
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarReabertos(dias);
+      });
+    });
+  });
+
+  function atualizarReabertos(dias, nomeOperador) {
+    fetch('/insights/reabertos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias })
+    })
+    .then(response => response.json())
+    .then(data => {
+      const reabertosSpan = document.getElementById("chamado_reaberto");
+      const percentualSpan = document.getElementById("percentual_reaberto");
+
+      if (data.status === "success") {
+        const total = data.total_chamados || 0;
+        const reabertos = data.total_reabertos || 0;
+        chamadosReabertosCodigos = data.cod_chamados || [];
+
+        reabertosSpan.textContent = reabertos;
+
+        // Cálculo do percentual
+        let percentual = "-";
+        if (total > 0) {
+          percentual = ((reabertos / total) * 100).toFixed(1) + "%";
+        }
+
+        percentualSpan.textContent = percentual;
+      } else {
+        reabertosSpan.textContent = "Erro";
+        percentualSpan.textContent = "-";
+        chamadosReabertosCodigos = [];
+        console.error("Erro na resposta:", data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar reabertos:", error);
+      document.getElementById("chamado_reaberto").textContent = "Erro";
+      document.getElementById("percentual_reaberto").textContent = "-";
+      chamadosReabertosCodigos = [];
+    });
+  }
+
+  // Essa função já serve para qualquer lista de chamados (FCR, Reabertos, etc.)
+  function mostrarChamadosOperador(titulo, codigos) {
+    const lista = document.getElementById("listaCodigos");
+    const tituloModal = document.getElementById("modalCodigosLabel");
+
+    if (!lista || !tituloModal) return;
+
+    lista.innerHTML = "";
+    tituloModal.textContent = titulo;
+
+    if (!Array.isArray(codigos) || codigos.length === 0) {
+      const item = document.createElement("li");
+      item.className = "text-muted";
+      item.textContent = "Nenhum chamado encontrado.";
+      lista.appendChild(item);
+    } else {
+      codigos.forEach(codigo => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "8px";
+
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+        link.target = "_blank";
+        link.textContent = codigo;
+        link.style.color = "#ffc107";
+
+        li.appendChild(link);
+        lista.appendChild(li);
+      });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+    modal.show();
+  }
 </script>

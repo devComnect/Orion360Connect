@@ -3,7 +3,7 @@ import requests
 from modules.deskmanager.authenticate.routes import token_desk
 from modules.insights.utils import formatar_tempo
 from datetime import datetime, timedelta
-from application.models import Chamado, db, Categoria, PesquisaSatisfacao
+from application.models import Chamado, db, Categoria, PesquisaSatisfacao, RelatorioColaboradores
 from collections import Counter
 from sqlalchemy import func, and_, or_
 import numpy as np
@@ -583,68 +583,6 @@ def chamados_tickets_canal():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-'''@insights_bp.route('/tma', methods=['GET'])
-def tempo_medio_atendimento():
-    try:
-        chamados_validos = db.session.query(Chamado).filter(
-            Chamado.data_criacao.isnot(None),
-            Chamado.restante_p_atendimento.isnot(None),
-            Chamado.nome_status.ilike('%Resolvido%')
-        ).all()
-
-        total_tempo = timedelta()
-        contador = 0
-        erros = []
-
-        for chamado in chamados_validos:
-            try:
-                tempo_str = chamado.restante_p_atendimento.strip()
-
-                sinal = -1 if tempo_str.startswith("-") else 1
-                tempo_limpo = tempo_str.replace("-", "")
-
-                partes = tempo_limpo.split(":")
-                partes = list(map(int, partes))
-
-                if len(partes) == 3:
-                    h, m, s = partes
-                elif len(partes) == 2:
-                    h = 0
-                    m, s = partes
-                else:
-                    raise ValueError(f"Formato inválido: {tempo_str}")
-
-                tempo = timedelta(hours=h, minutes=m, seconds=s) * sinal
-                total_tempo += tempo
-                contador += 1
-
-            except Exception as parse_err:
-                erros.append({
-                    "cod_chamado": chamado.cod_chamado,
-                    "restante_p_atendimento": chamado.restante_p_atendimento,
-                    "erro": str(parse_err)
-                })
-                continue
-
-        if contador == 0:
-            media_em_minutos = "Sem dados válidos"
-        else:
-            media_td = total_tempo / contador
-            media_em_minutos = round(media_td.total_seconds() / 60, 2)
-
-        return jsonify({
-            "status": "success",
-            "media_tempo_ate_atendimento_minutos": media_em_minutos,
-            "chamados_processados": contador,
-            "amostra_erros": erros[:10]
-        })
-
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500'''
-
 @insights_bp.route('/tma_tms', methods=['GET'])
 def tma_e_tms():
     try:
@@ -730,6 +668,70 @@ def tma_e_tms():
             "mediana_tms": formatar_tempo(mediana_tms),
             "chamados_processados": len(tma_list),
             "erros_amostragem": erros[:10]
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+@insights_bp.route('/reabertos', methods=['POST'])
+def reabertos():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 1))
+
+        hoje = datetime.utcnow()
+        data_limite = hoje - timedelta(days=dias)
+
+        # Todos os chamados do operador no período
+        total_registros = RelatorioColaboradores.query.filter(
+            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+        ).all()
+
+        total_chamados = len(total_registros)
+
+        # Apenas os reabertos
+        reabertos = [r for r in total_registros if r.reaberto == 'Reaberto']
+        codigos = [r.cod_chamado for r in reabertos if r.cod_chamado]
+
+        return jsonify({
+            "status": "success",
+            "total_reabertos": len(codigos),
+            "cod_chamados": codigos,
+            "total_chamados": total_chamados
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+@insights_bp.route('/fcr', methods=['POST'])
+def fcr():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 1))
+
+        hoje = datetime.utcnow()
+        data_limite = hoje - timedelta(days=dias)
+
+        # Todos os chamados do operador
+        total_registros = RelatorioColaboradores.query.filter(
+            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+        ).all()
+
+        # Chamados com FCR
+        fcr_registros = [r for r in total_registros if r.first_call == 'S']
+        codigos_fcr = [r.cod_chamado for r in fcr_registros if r.cod_chamado]
+
+        return jsonify({
+            "status": "success",
+            "total_fcr": len(codigos_fcr),
+            "percentual_fcr": round((len(codigos_fcr) / len(total_registros)) * 100, 2) if total_registros else 0,
+            "cod_chamados": codigos_fcr
         })
 
     except Exception as e:

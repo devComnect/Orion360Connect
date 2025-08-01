@@ -193,27 +193,35 @@
               <h6>Chamados</h6></div>
                 <div class="info-item">
                   <span>Criados</span>
-                    <span class="value" id="chamados-abertos">-</span>
+                    <span class="value" id="chamados-abertos">0</span>
                 </div>
                 <div class="info-item">
                   <span>Resolvidos</span>
-                <span class="value" id="chamados-finalizados">-</span>
+                <span class="value" id="chamados-finalizados">0</span>
               </div>
               <div class="info-item">
                 <span>Abertos</span>
                 <span class="value text-danger">
                   <a href="#" onclick="mostrarCodigosChamadosAbertos('Chamados em Aberto', codigosEmAberto)">
-                    <span id="ChamadosEmAbertoSuporte">-</span>
+                    <span id="ChamadosEmAbertoSuporte">0</span>
                   </a>
                 </span>
               </div>
+
               <div class="info-item">
                 <span>Reabertos</span>
-                <span class="value" id="chamados-reabertos">-</span>
+                <span class="value text-white">
+                  <a href="#" onclick="mostrarChamadosOperador('Chamados Reabertos do Operador', chamadosReabertosCodigos)">
+                    <span id="chamado_reaberto">0</span></a> / <span id="percentual_reaberto">0</span>
+                </span>
               </div>
+
               <div class="info-item">
                 <span>FCR</span>
-                <span class="value" id="chamados-fcr">-</span>
+                <span class="value text-white">
+                  <a href="#" onclick="mostrarChamadosOperador('Chamados com FCR do Operador', chamadosFcrCodigos)">
+                <span id="chamado_fcr">0</span></a> / <span id="percentual_fcr">0</span>
+                </span>
               </div>
 
             </div>
@@ -230,15 +238,15 @@
           <h6>Ligações</h6></div>
           <div class="info-item">
             <span>Atendidas</span>
-            <span class="value" id="ch_atendidas">-</span>
+            <span class="value" id="ch_atendidas">0</span>
           </div>
           <div class="info-item">
             <span>Efetuadas</span>
-            <span class="value" id="ch-transferidas">-</span>
+            <span class="value" id="ch-transferidas">0</span>
           </div>
           <div class="info-item">
             <span>Não Atendidas</span>
-            <span class="value" id="ch_naoatendidas">-</span>
+            <span class="value" id="ch_naoatendidas">0</span>
           </div>
         </div>
       </div>
@@ -256,11 +264,11 @@
 
       <div class="info-item">
         <span class="text-warning">TMA</span><br>
-        <span class="value" id="percentual-tma">-</span>
+        <span class="value" id="percentual-tma">0</span>
       </div>
       <div class="info-item">
         <span class="text-success">TMS</span><br>
-        <span class="value" id="percentual-tms">-</span>
+        <span class="value" id="percentual-tms">0</span>
       </div>
 
     </div>
@@ -283,13 +291,13 @@
         <span class="text-danger">Expirados</span>
         <span class="value">
           <a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)">
-            <span id="sla_atendimento_expirado">-</span>
+            <span id="sla_atendimento_expirado">0</span>
           </a>
         </span>
       </div>
       <div class="info-item">
         <span class="text-success">No Prazo</span>
-        <span class="value" id="sla_atendimento_prazo">-</span>
+        <span class="value" id="sla_atendimento_prazo">0</span>
       </div>
 
       <!-- Resolução -->
@@ -304,7 +312,7 @@
       </div>
       <div class="info-item">
         <span class="text-success">No Prazo</span>
-        <span class="value" id="percentual_prazo_resolucao">-</span>
+        <span class="value" id="percentual_prazo_resolucao">0</span>
       </div>
 
     </div>
@@ -326,11 +334,11 @@
 
       <div class="info-item">
         <span class="text-danger">Sem retorno</span>
-        <span class="value" id="percentual-null">-</span>
+        <span class="value" id="percentual-null">0</span>
       </div>
       <div class="info-item">
         <span class="text-success">Retorno</span>
-        <span class="value" id="percentual-retorno">-</span>
+        <span class="value" id="percentual-retorno">0</span>
       </div>
 
     </div>
@@ -356,9 +364,9 @@
                     <div class="card-body d-flex flex-column align-items-center" style="height: 300px;">
                       <canvas id="LinhaAbertosResolvidosAdminChart"></canvas>
                       <div id="resumoAdminAbertosResolvidos" class="text-center text-white small d-flex gap-3 mb-0">
-                        <p class="mb-1"><strong>Total Abertos:</strong> <span id="adminTotalAbertos">-</span></p>
-                        <p class="mb-1"><strong>Total Resolvidos:</strong> <span id="adminTotalResolvidos">-</span></p>
-                        <p class="mb-1"><strong>Diferença:</strong> <span id="adminDiferenca">-</span></p>
+                        <p class="mb-1"><strong>Total Abertos:</strong> <span id="adminTotalAbertos">0</span></p>
+                        <p class="mb-1"><strong>Total Resolvidos:</strong> <span id="adminTotalResolvidos">0</span></p>
+                        <p class="mb-1"><strong>Diferença:</strong> <span id="adminDiferenca">0</span></p>
                       </div>
                     </div>
                   </div>
