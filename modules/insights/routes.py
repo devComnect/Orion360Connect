@@ -160,6 +160,11 @@ def top_clientes_chamados():
 
     data_limite = datetime.now() - timedelta(days=dias)
 
+    # Domínios comuns a serem ignorados
+    dominios_ignorados = {
+        "gmail", "outlook", "hotmail", "yahoo", "icloud", "bol", "uol", "live", "aol", "msn", "foradeescopo", "foradoescopo"
+    }
+
     # Consulta os chamados no período
     chamados = Chamado.query.with_entities(Chamado.solicitante_email)\
         .filter(Chamado.data_criacao >= data_limite)\
@@ -170,8 +175,9 @@ def top_clientes_chamados():
     for c in chamados:
         email = c[0]
         if email and "@" in email:
-            dominio = re.sub(r"^.*@", "", email).split('.')[0].upper()  # exemplo: fiserv.com → fiserv
-            dominios.append(dominio)
+            dominio = re.sub(r"^.*@", "", email).split('.')[0].lower()  # pega só o nome principal
+            if dominio not in dominios_ignorados:
+                dominios.append(dominio.upper())  # padroniza visualmente para maiúsculo
 
     contagem = Counter(dominios).most_common(5)
 

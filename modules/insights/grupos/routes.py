@@ -149,62 +149,84 @@ def get_chamados_grupos_abertos():
 @grupos_bp.route('/sla/grupos', methods=['POST'])
 def get_sla_grupos():
     try:
-        dias = int(request.json.get("dias", 1))  # padrão: 1 dia
-        grupo = request.json.get("grupo", "").strip()  # novo campo enviado pelo JS
+        dias = int(request.json.get("dias", 1))
+        grupo = request.json.get("grupo", "").strip()
 
         hoje = datetime.now().date()
         data_inicio = hoje - timedelta(days=dias)
 
-        # Combina datas com hora mínima e máxima do dia
         inicio = datetime.combine(data_inicio, datetime.min.time())
         fim = datetime.combine(hoje, datetime.max.time())
 
-        # Filtro: status diferente de cancelado e dentro do período
         chamados = Chamado.query.filter(
             Chamado.nome_status != 'Cancelado',
             Chamado.nome_grupo == grupo,
-            Chamado.data_criacao >= datetime.combine(data_inicio, datetime.min.time()),
-            Chamado.data_criacao <= datetime.combine(hoje, datetime.max.time())
+            Chamado.data_criacao >= inicio,
+            Chamado.data_criacao <= fim
         ).all()
 
-        # Filtra os com SLA expirado
-        expirados_atendimento = sum(1 for c in chamados if c.sla_atendimento == 'S')
-        expirados_resolucao = sum(1 for c in chamados if c.sla_resolucao == 'S')
-        chamados_atendimento_prazo = sum(1 for c in chamados if c.sla_atendimento == 'N')
-        chamados_finalizado_prazo = sum(1 for c in chamados if c.sla_resolucao == 'N')
+        expirados_atendimento = 0
+        expirados_resolucao = 0
+        chamados_atendimento_prazo = 0
+        chamados_resolucao_prazo = 0
 
-        chamados_prazo = [
-            c for c in chamados if c.sla_atendimento == 'N' or c.sla_resolucao == 'N'
-        ]
+        quase_estourando_atendimento = 0
+        quase_estourando_resolucao = 0
 
-        # Lista completa de expirados para retornar os códigos
-        chamados_expirados = [
-            c for c in chamados if c.sla_atendimento == 'S' or c.sla_resolucao == 'S'
-        ]
+        codigos_atendimento = []
+        codigos_resolucao = []
+        codigos_prazo_atendimento = []
+        codigos_prazo_resolucao = []
+        codigos_quase_estourando_atendimento = []
+        codigos_quase_estourando_resolucao = []
+
+        for c in chamados:
+            restante1 = parse_tempo((c.restante_p_atendimento or "").strip())
+            restante2 = parse_tempo((c.restante_s_atendimento or "").strip())
+
+            if c.sla_atendimento == 'S':
+                expirados_atendimento += 1
+                codigos_atendimento.append(c.cod_chamado)
+            elif c.sla_atendimento == 'N':
+                if restante1 is not None and restante1 <= timedelta(minutes=5):
+                    quase_estourando_atendimento += 1
+                    codigos_quase_estourando_atendimento.append(c.cod_chamado)
+                else:
+                    chamados_atendimento_prazo += 1
+                    codigos_prazo_atendimento.append(c.cod_chamado)
+
+            if c.sla_resolucao == 'S':
+                expirados_resolucao += 1
+                codigos_resolucao.append(c.cod_chamado)
+            elif c.sla_resolucao == 'N':
+                if restante2 is not None and restante2 <= timedelta(minutes=5):
+                    quase_estourando_resolucao += 1
+                    codigos_quase_estourando_resolucao.append(c.cod_chamado)
+                else:
+                    chamados_resolucao_prazo += 1
+                    codigos_prazo_resolucao.append(c.cod_chamado)
 
         total_chamados = len(chamados)
-
-        percentual_atendimento = round((expirados_atendimento / total_chamados) * 100, 2) if total_chamados else 0
-        percentual_resolucao = round((expirados_resolucao / total_chamados) * 100, 2) if total_chamados else 0
-
-        percentual_prazo_atendimento = round((chamados_atendimento_prazo/total_chamados) * 100, 2) if total_chamados else 0
-        percentual_prazo_resolucao = round((chamados_finalizado_prazo/total_chamados) * 100, 2) if total_chamados else 0
 
         return jsonify({
             "status": "success",
             "total_chamados": total_chamados,
             "prazo_atendimento": chamados_atendimento_prazo,
-            "percentual_prazo_atendimento" : percentual_prazo_atendimento,
-            "percentual_prazo_resolucao": percentual_prazo_resolucao,
+            "quase_estourando_atendimento": quase_estourando_atendimento,
             "expirados_atendimento": expirados_atendimento,
-            "prazos_resolucao": chamados_finalizado_prazo,
+            "prazo_resolucao": chamados_resolucao_prazo,
+            "quase_estourando_resolucao": quase_estourando_resolucao,
             "expirados_resolucao": expirados_resolucao,
-            "percentual_atendimento": percentual_atendimento,
-            "percentual_resolucao": percentual_resolucao,
-            "codigos_atendimento": [c.cod_chamado for c in chamados_expirados if c.sla_atendimento == 'S'],
-            "codigos_resolucao": [c.cod_chamado for c in chamados_expirados if c.sla_resolucao == 'S'],
-            "codigos_prazo_atendimento": [c.cod_chamado for c in chamados if c.sla_atendimento == 'N'],
-            "codigos_prazo_resolucao": [c.cod_chamado for c in chamados if c.sla_resolucao == 'N']
+            "percentual_prazo_atendimento": round((chamados_atendimento_prazo / total_chamados) * 100, 2) if total_chamados else 0,
+            "percentual_prazo_resolucao": round((chamados_resolucao_prazo / total_chamados) * 100, 2) if total_chamados else 0,
+            "percentual_atendimento": round((expirados_atendimento / total_chamados) * 100, 2) if total_chamados else 0,
+            "percentual_resolucao": round((expirados_resolucao / total_chamados) * 100, 2) if total_chamados else 0,
+            "codigos_atendimento": codigos_atendimento,
+            "codigos_resolucao": codigos_resolucao,
+            "codigos_prazo_atendimento": codigos_prazo_atendimento,
+            "codigos_prazo_resolucao": codigos_prazo_resolucao,
+            "codigos_quase_estourando_atendimento": codigos_quase_estourando_atendimento,
+            "codigos_quase_estourando_resolucao": codigos_quase_estourando_resolucao
         })
 
     except Exception as e:
@@ -212,6 +234,7 @@ def get_sla_grupos():
             "status": "error",
             "message": str(e)
         }), 500
+
 
 @grupos_bp.route('/pSatisfacao/grupos', methods=['POST'])
 def get_psatisfacao_grupos():

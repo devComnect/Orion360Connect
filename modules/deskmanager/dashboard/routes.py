@@ -93,130 +93,7 @@ def listar_chamados_fila():
             "details": str(e)
         }), 500
 
-'''@dashboard_bp.route('/ChamadosSuporte/sla_andamento', methods=['POST'])
-def listar_sla_andamento():
-    token_response = token_desk()
-    url = endpoints.LISTA_CHAMADOS_SUPORTE
 
-    payload = {
-        "Pesquisa": "",
-        "Tatual": "",
-        "Ativo": "EmAberto",
-        "StatusSLA": "S",
-        "Colunas": {
-            "Chave": "on",
-            "CodChamado": "on",
-            "NomePrioridade": "on",
-            "DataCriacao": "on",
-            "HoraCriacao": "on",
-            "DataFinalizacao": "on",
-            "HoraFinalizacao": "on",
-            "DataAlteracao": "on",
-            "HoraAlteracao": "on",
-            "NomeStatus": "on",
-            "Assunto": "on",
-            "Descricao": "on",
-            "ChaveUsuario": "on",
-            "NomeUsuario": "on",
-            "SobrenomeUsuario": "on",
-            "NomeCompletoSolicitante": "on",
-            "SolicitanteEmail": "on",
-            "NomeOperador": "on",
-            "SobrenomeOperador": "on",
-            "TotalAcoes": "on",
-            "TotalAnexos": "on",
-            "Sla": "on",
-            "CodGrupo": "on",
-            "NomeGrupo": "on",
-            "Sla1Expirado": "on",
-            "Sla2Expirado": "on",
-            "CodSolicitacao": "off",
-            "CodSubCategoria": "off",
-            "CodTipoOcorrencia": "off",
-            "CodCategoriaTipo": "off",
-            "CodPrioridadeAtual": "off",
-            "CodStatusAtual": "off"
-        },
-        "Ordem": [{
-            "Coluna": "Chave",
-            "Direcao": "true"
-        }]
-    }
-
-    try:
-        response = requests.post(
-            url,
-            headers={
-                'Authorization': f'{token_response}',
-                'Content-Type': 'application/json'
-            },
-            json=payload
-        )
-
-        if response.status_code == 200:
-            data = response.json()
-            chamados = data.get("root", [])
-
-            chamados_suporte = [
-                c for c in chamados 
-                if c.get("NomeGrupo", "").strip().upper() == "SUPORTE COMNECT - N1"
-
-            ]
-
-            hoje = datetime.now()
-
-            sla1_expirado = 0
-            sla1_nao_expirado = 0
-            sla2_expirado = 0
-            sla2_nao_expirado = 0
-
-            codigos_sla1 = []
-            codigos_sla2 = []
-
-            for chamado in chamados_suporte:
-                data_criacao = chamado.get("DataCriacao")
-                if data_criacao and datetime.strptime(data_criacao, "%Y-%m-%d").month == hoje.month:
-                    sla1 = chamado.get("Sla1Expirado", "").upper()
-                    sla2 = chamado.get("Sla2Expirado", "").upper()
-                    cod_chamado = chamado.get("CodChamado")
-
-                    if sla1 == "S":
-                        sla1_expirado += 1
-                        codigos_sla1.append(cod_chamado)
-                    elif sla1 == "N":
-                        sla1_nao_expirado += 1
-
-                    if sla2 == "S":
-                        sla2_expirado += 1
-                        codigos_sla2.append(cod_chamado)
-                    elif sla2 == "N":
-                        sla2_nao_expirado += 1
-
-            return jsonify({
-                "status": "success",
-                "sla1_expirado": sla1_expirado,
-                "sla1_nao_expirado": sla1_nao_expirado,
-                "sla2_expirado": sla2_expirado,
-                "sla2_nao_expirado": sla2_nao_expirado,
-                "total": len(chamados_suporte),
-                "codigos_sla1": codigos_sla1,
-                "codigos_sla2": codigos_sla2,
-                "grupo_filtrado": "SUPORTE",
-                "mes_referencia": hoje.strftime("%Y-%m")
-            })
-
-        return jsonify({
-            "status": "error",
-            "message": "Erro na requisição",
-            "status_code": response.status_code
-        }), response.status_code
-
-    except requests.exceptions.RequestException as e:
-        return jsonify({
-            "status": "error",
-            "message": "Erro ao conectar com o servidor",
-            "details": str(e)
-        }), 500'''
 
 def parse_tempo(s):
     try:
@@ -233,8 +110,6 @@ def listar_sla_andamento():
         hoje = datetime.now()
 
         chamados = Chamado.query.filter(
-            db.extract('month', Chamado.data_criacao) == hoje.month,
-            db.extract('year', Chamado.data_criacao) == hoje.year,
             Chamado.nome_grupo.ilike('%SUPORTE%'),
             ~Chamado.nome_status.in_(["Resolvido", "Cancelado"])
         ).all()
@@ -621,7 +496,92 @@ def listar_sla_andamento_grupos():
         "mes_referencia": mes_referencia_atual
     })
 
+'''@dashboard_bp.route('/sla/suporte', methods=['POST'])
+def get_sla_grupos():
+    try:
+        dias = int(request.json.get("dias", 1))
+        grupo = request.json.get("grupo", "").strip()
 
+        hoje = datetime.now().date()
+        data_inicio = hoje - timedelta(days=dias)
+
+        inicio = datetime.combine(data_inicio, datetime.min.time())
+        fim = datetime.combine(hoje, datetime.max.time())
+
+        chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.nome_grupo == grupo,
+            Chamado.data_criacao >= inicio,
+            Chamado.data_criacao <= fim
+        ).all()
+
+        expirados_atendimento = 0
+        expirados_resolucao = 0
+        chamados_atendimento_prazo = 0
+        chamados_resolucao_prazo = 0
+
+        quase_estourando_atendimento = 0
+        quase_estourando_resolucao = 0
+
+        codigos_atendimento = []
+        codigos_resolucao = []
+        codigos_prazo_atendimento = []
+        codigos_prazo_resolucao = []
+        codigos_quase_estourando_atendimento = []
+        codigos_quase_estourando_resolucao = []
+
+        for c in chamados:
+            restante1 = parse_tempo((c.restante_p_atendimento or "").strip())
+            restante2 = parse_tempo((c.restante_s_atendimento or "").strip())
+
+            if c.sla_atendimento == 'S':
+                expirados_atendimento += 1
+                codigos_atendimento.append(c.cod_chamado)
+            elif c.sla_atendimento == 'N':
+                if restante1 is not None and restante1 <= timedelta(minutes=5):
+                    quase_estourando_atendimento += 1
+                    codigos_quase_estourando_atendimento.append(c.cod_chamado)
+                else:
+                    chamados_atendimento_prazo += 1
+                    codigos_prazo_atendimento.append(c.cod_chamado)
+
+            if c.sla_resolucao == 'S':
+                expirados_resolucao += 1
+                codigos_resolucao.append(c.cod_chamado)
+            elif c.sla_resolucao == 'N':
+                if restante2 is not None and restante2 <= timedelta(minutes=5):
+                    quase_estourando_resolucao += 1
+                    codigos_quase_estourando_resolucao.append(c.cod_chamado)
+                else:
+                    chamados_resolucao_prazo += 1
+                    codigos_prazo_resolucao.append(c.cod_chamado)
+
+        total_chamados = len(chamados)
+
+        return jsonify({
+            "status": "success",
+            "total_chamados": total_chamados,
+            "prazo_atendimento": chamados_atendimento_prazo,
+            "quase_estourando_atendimento": quase_estourando_atendimento,
+            "expirados_atendimento": expirados_atendimento,
+            "prazo_resolucao": chamados_resolucao_prazo,
+            "quase_estourando_resolucao": quase_estourando_resolucao,
+            "expirados_resolucao": expirados_resolucao,
+            "percentual_prazo_atendimento": round((chamados_atendimento_prazo / total_chamados) * 100, 2) if total_chamados else 0,
+            "percentual_prazo_resolucao": round((chamados_resolucao_prazo / total_chamados) * 100, 2) if total_chamados else 0,
+            "codigos_atendimento": codigos_atendimento,
+            "codigos_resolucao": codigos_resolucao,
+            "codigos_prazo_atendimento": codigos_prazo_atendimento,
+            "codigos_prazo_resolucao": codigos_prazo_resolucao,
+            "codigos_quase_estourando_atendimento": codigos_quase_estourando_atendimento,
+            "codigos_quase_estourando_resolucao": codigos_quase_estourando_resolucao
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500'''
 
 
 
