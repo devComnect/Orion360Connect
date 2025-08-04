@@ -810,7 +810,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    async function carregarDados(dias = 7) {
+    async function carregarDados(dias = 1) {
         try {
             if (!verificarCanvas()) return;
 
@@ -857,7 +857,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         // Carregamento inicial com 7 dias
-        carregarDados(7);
+        carregarDados(1);
 
         // Atualiza o gráfico se redimensionar a tela
         window.addEventListener('resize', () => {
@@ -868,7 +868,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <!--Script que traz os dados de Ticket por Canal-->
 <script>
-    function carregarTicketsPorCanal(dias = 30) {
+    function carregarTicketsPorCanal(dias = 1) {
         fetch('/insights/ticketsCanal', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -951,7 +951,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         // Carrega o gráfico inicialmente com 30 dias (ou o que desejar)
-        carregarTicketsPorCanal(30);
+        carregarTicketsPorCanal(1);
     });
 </script>
 

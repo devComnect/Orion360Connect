@@ -95,8 +95,6 @@ class PerformanceColaboradores(db.Model):
     tempo_maxatend = db.Column(db.Integer, nullable=True)
     data_importacao = db.Column(db.DateTime)
 
-    def __repr__(self):
-        return f"<PerformanceColaboradores operador_id={self.operador_id} data={self.data}>"    
 
 class Chamado(db.Model):
     __tablename__ = 'chamados'
@@ -142,6 +140,14 @@ class Chamado(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint('chave', 'mes_referencia', name='uq_chave_mes'),
+    )
+
+    # Relacionamento com PerformanceColaboradores (somente leitura)
+    performance = db.relationship(
+        "PerformanceColaboradores",
+        primaryjoin="Chamado.operador == foreign(PerformanceColaboradores.name)",
+        viewonly=True,
+        uselist=False
     )
 
     def to_dict(self):

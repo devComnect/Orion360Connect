@@ -93,8 +93,6 @@ def listar_chamados_fila():
             "details": str(e)
         }), 500
 
-
-
 def parse_tempo(s):
     try:
         negativo = s.startswith('-')
@@ -496,92 +494,7 @@ def listar_sla_andamento_grupos():
         "mes_referencia": mes_referencia_atual
     })
 
-'''@dashboard_bp.route('/sla/suporte', methods=['POST'])
-def get_sla_grupos():
-    try:
-        dias = int(request.json.get("dias", 1))
-        grupo = request.json.get("grupo", "").strip()
 
-        hoje = datetime.now().date()
-        data_inicio = hoje - timedelta(days=dias)
-
-        inicio = datetime.combine(data_inicio, datetime.min.time())
-        fim = datetime.combine(hoje, datetime.max.time())
-
-        chamados = Chamado.query.filter(
-            Chamado.nome_status != 'Cancelado',
-            Chamado.nome_grupo == grupo,
-            Chamado.data_criacao >= inicio,
-            Chamado.data_criacao <= fim
-        ).all()
-
-        expirados_atendimento = 0
-        expirados_resolucao = 0
-        chamados_atendimento_prazo = 0
-        chamados_resolucao_prazo = 0
-
-        quase_estourando_atendimento = 0
-        quase_estourando_resolucao = 0
-
-        codigos_atendimento = []
-        codigos_resolucao = []
-        codigos_prazo_atendimento = []
-        codigos_prazo_resolucao = []
-        codigos_quase_estourando_atendimento = []
-        codigos_quase_estourando_resolucao = []
-
-        for c in chamados:
-            restante1 = parse_tempo((c.restante_p_atendimento or "").strip())
-            restante2 = parse_tempo((c.restante_s_atendimento or "").strip())
-
-            if c.sla_atendimento == 'S':
-                expirados_atendimento += 1
-                codigos_atendimento.append(c.cod_chamado)
-            elif c.sla_atendimento == 'N':
-                if restante1 is not None and restante1 <= timedelta(minutes=5):
-                    quase_estourando_atendimento += 1
-                    codigos_quase_estourando_atendimento.append(c.cod_chamado)
-                else:
-                    chamados_atendimento_prazo += 1
-                    codigos_prazo_atendimento.append(c.cod_chamado)
-
-            if c.sla_resolucao == 'S':
-                expirados_resolucao += 1
-                codigos_resolucao.append(c.cod_chamado)
-            elif c.sla_resolucao == 'N':
-                if restante2 is not None and restante2 <= timedelta(minutes=5):
-                    quase_estourando_resolucao += 1
-                    codigos_quase_estourando_resolucao.append(c.cod_chamado)
-                else:
-                    chamados_resolucao_prazo += 1
-                    codigos_prazo_resolucao.append(c.cod_chamado)
-
-        total_chamados = len(chamados)
-
-        return jsonify({
-            "status": "success",
-            "total_chamados": total_chamados,
-            "prazo_atendimento": chamados_atendimento_prazo,
-            "quase_estourando_atendimento": quase_estourando_atendimento,
-            "expirados_atendimento": expirados_atendimento,
-            "prazo_resolucao": chamados_resolucao_prazo,
-            "quase_estourando_resolucao": quase_estourando_resolucao,
-            "expirados_resolucao": expirados_resolucao,
-            "percentual_prazo_atendimento": round((chamados_atendimento_prazo / total_chamados) * 100, 2) if total_chamados else 0,
-            "percentual_prazo_resolucao": round((chamados_resolucao_prazo / total_chamados) * 100, 2) if total_chamados else 0,
-            "codigos_atendimento": codigos_atendimento,
-            "codigos_resolucao": codigos_resolucao,
-            "codigos_prazo_atendimento": codigos_prazo_atendimento,
-            "codigos_prazo_resolucao": codigos_prazo_resolucao,
-            "codigos_quase_estourando_atendimento": codigos_quase_estourando_atendimento,
-            "codigos_quase_estourando_resolucao": codigos_quase_estourando_resolucao
-        })
-
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500'''
 
 
 

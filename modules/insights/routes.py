@@ -146,7 +146,8 @@ def top_grupos_chamados():
         db.func.count(Chamado.id).label('total')
     ).filter(
         Chamado.data_criacao >= data_inicio,
-        Chamado.data_criacao <= data_fim
+        Chamado.data_criacao <= data_fim,
+        Chamado.nome_status != 'Cancelado',
     ).group_by(Chamado.nome_grupo).order_by(db.desc('total')).limit(5).all()
 
     dados = [{"grupo": grupo or "Não informado", "total": total} for grupo, total in resultados]
@@ -524,7 +525,7 @@ def relacao_admin_abertos_vs_resolvido_periodo():
 @insights_bp.route('/ticketsCanal', methods=['POST'])
 def chamados_tickets_canal():
     try:
-        dias = int(request.json.get("dias", 7))  # valor padrão: últimos 30 dias
+        dias = int(request.json.get("dias", 1))  # valor padrão: últimos 30 dias
         data_limite = datetime.now() - timedelta(days=dias)
 
         tipos_desejados = ['000003', '000101', '000004', '000060', '000001', '000071']

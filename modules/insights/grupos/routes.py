@@ -127,8 +127,6 @@ def get_chamados_grupos_abertos():
                 Chamado.nome_grupo == grupo,
                 Chamado.nome_status != 'Cancelado',
                 Chamado.nome_status != 'Resolvido',
-                Chamado.data_criacao >= inicio,
-                Chamado.data_criacao <= fim
             )
 
         total_chamados = query.count()
