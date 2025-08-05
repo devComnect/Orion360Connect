@@ -649,7 +649,7 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.addEventListener('click', function () {
         document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        const dias = parseInt(this.getAttribute('data-dias'));
         atualizarFCR(dias, nomeOperador);
       });
     });

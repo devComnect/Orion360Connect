@@ -783,16 +783,16 @@ def sla_colaboradores():
 def fcr_colaboradores():
     try:
         data = request.get_json()
-        dias = int(data.get('dias', 1))
+        dias = int(data.get('dias'))
         nome = data.get('nome', '').strip().lower()
 
-        hoje = datetime.utcnow()
+        hoje = datetime.utcnow().date()
         data_limite = hoje - timedelta(days=dias)
 
         # Todos os chamados do operador
         total_registros = RelatorioColaboradores.query.filter(
-            RelatorioColaboradores.operador.ilike(nome),
-            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+            func.lower(RelatorioColaboradores.operador) == nome,
+            RelatorioColaboradores.data_criacao >= data_limite
         ).all()
 
         # Chamados com FCR
@@ -802,7 +802,7 @@ def fcr_colaboradores():
         return jsonify({
             "status": "success",
             "total_fcr": len(codigos_fcr),
-            "percentual_fcr": round((len(codigos_fcr) / len(total_registros)) * 100, 2) if total_registros else 0,
+            "percentual_fcr": round((len(fcr_registros) / len(total_registros)) * 100, 2) if total_registros else 0,
             "cod_chamados": codigos_fcr
         })
 
@@ -816,16 +816,17 @@ def fcr_colaboradores():
 def reabertos_colaboradores():
     try:
         data = request.get_json()
-        dias = int(data.get('dias', 1))
+        dias = int(data.get('dias'))
         nome = data.get('nome', '').strip().lower()
 
         hoje = datetime.utcnow()
         data_limite = hoje - timedelta(days=dias)
 
+
         # Todos os chamados do operador no período
         total_registros = RelatorioColaboradores.query.filter(
             RelatorioColaboradores.operador.ilike(nome),
-            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+            func.date(RelatorioColaboradores.data_criacao) >= data_limite
         ).all()
 
         total_chamados = len(total_registros)

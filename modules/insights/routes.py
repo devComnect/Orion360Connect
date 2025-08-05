@@ -694,7 +694,7 @@ def reabertos():
 
         # Todos os chamados do operador no período
         total_registros = RelatorioColaboradores.query.filter(
-            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+            func.date(RelatorioColaboradores.data_criacao) >= data_limite
         ).all()
 
         total_chamados = len(total_registros)
@@ -727,7 +727,7 @@ def fcr():
 
         # Todos os chamados do operador
         total_registros = RelatorioColaboradores.query.filter(
-            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+            RelatorioColaboradores.data_criacao >= data_limite
         ).all()
 
         # Chamados com FCR

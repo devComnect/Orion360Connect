@@ -212,7 +212,7 @@ class RelatorioColaboradores(db.Model):
     fantasia = db.Column(db.String(100))
     nome_completo_solicitante = db.Column(db.String(100))
     cod_chamado = db.Column(db.String(20))
-    data_criacao = db.Column(db.String(20))  # ou db.Date se quiser como data
+    data_criacao = db.Column(db.Date)  # ou db.Date se quiser como data
     data_finalizacao = db.Column(db.String(20))  # ou db.Date se quiser como data
     possui_ps = db.Column(db.String(1))
     ps_expirou = db.Column(db.String(1))

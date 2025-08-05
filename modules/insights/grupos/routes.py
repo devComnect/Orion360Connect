@@ -158,6 +158,7 @@ def get_sla_grupos():
 
         chamados = Chamado.query.filter(
             Chamado.nome_status != 'Cancelado',
+            Chamado.nome_status != 'Finalizado',
             Chamado.nome_grupo == grupo,
             Chamado.data_criacao >= inicio,
             Chamado.data_criacao <= fim
@@ -182,27 +183,37 @@ def get_sla_grupos():
             restante1 = parse_tempo((c.restante_p_atendimento or "").strip())
             restante2 = parse_tempo((c.restante_s_atendimento or "").strip())
 
+            # SLA Atendimento
             if c.sla_atendimento == 'S':
                 expirados_atendimento += 1
                 codigos_atendimento.append(c.cod_chamado)
             elif c.sla_atendimento == 'N':
-                if restante1 is not None and restante1 <= timedelta(minutes=5):
-                    quase_estourando_atendimento += 1
-                    codigos_quase_estourando_atendimento.append(c.cod_chamado)
-                else:
-                    chamados_atendimento_prazo += 1
-                    codigos_prazo_atendimento.append(c.cod_chamado)
+                if restante1 is not None:
+                    if restante1 <= timedelta(seconds=0):
+                        expirados_atendimento += 1
+                        codigos_atendimento.append(c.cod_chamado)
+                    elif restante1 <= timedelta(minutes=5):
+                        quase_estourando_atendimento += 1
+                        codigos_quase_estourando_atendimento.append(c.cod_chamado)
+                    else:
+                        chamados_atendimento_prazo += 1
+                        codigos_prazo_atendimento.append(c.cod_chamado)
 
+            # SLA Resolução
             if c.sla_resolucao == 'S':
                 expirados_resolucao += 1
                 codigos_resolucao.append(c.cod_chamado)
             elif c.sla_resolucao == 'N':
-                if restante2 is not None and restante2 <= timedelta(minutes=5):
-                    quase_estourando_resolucao += 1
-                    codigos_quase_estourando_resolucao.append(c.cod_chamado)
-                else:
-                    chamados_resolucao_prazo += 1
-                    codigos_prazo_resolucao.append(c.cod_chamado)
+                if restante2 is not None:
+                    if restante2 <= timedelta(seconds=0):
+                        expirados_resolucao += 1
+                        codigos_resolucao.append(c.cod_chamado)
+                    elif restante2 <= timedelta(minutes=5):
+                        quase_estourando_resolucao += 1
+                        codigos_quase_estourando_resolucao.append(c.cod_chamado)
+                    else:
+                        chamados_resolucao_prazo += 1
+                        codigos_prazo_resolucao.append(c.cod_chamado)
 
         total_chamados = len(chamados)
 
@@ -679,7 +690,7 @@ def fcr_grupos():
         # Todos os chamados do operador
         total_registros = RelatorioColaboradores.query.filter(
             RelatorioColaboradores.grupo.ilike(grupo),
-            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+            RelatorioColaboradores.data_criacao >= data_limite
         ).all()
 
         # Chamados com FCR
@@ -711,7 +722,7 @@ def reabertos_grupos():
 
         total_registros = RelatorioColaboradores.query.filter(
             RelatorioColaboradores.grupo.ilike(grupo),
-            RelatorioColaboradores.data_criacao >= data_limite.strftime('%d-%m-%Y')
+            func.date(RelatorioColaboradores.data_criacao) >= data_limite
         ).all()
 
         total_chamados = len(total_registros)
