@@ -377,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    // Evento que preenche o modal no momento em que ele é exibido
+    // Evento que preenche o modal com os comentários
     const modalElement = document.getElementById("modalComentariosPesquisa");
     modalElement.addEventListener("shown.bs.modal", function () {
       const lista = document.getElementById("listaComentarios");
@@ -409,28 +409,25 @@ document.addEventListener("DOMContentLoaded", () => {
     .then(data => {
       console.log("Dados recebidos:", data);
 
-      const naoRespondidasEl = document.getElementById("percentual-null");
-      const respondidasEl = document.getElementById("percentual-retorno");
-      const naoRespondidas = document.getElementById("nao-respondidas");
-      const respondidas = document.getElementById("respondidas")
-
+      const csatPercentualEl = document.getElementById("csat-percentual");
+      const totalAvaliadoEl = document.getElementById("total-avaliado");
 
       if (data.status === 'success') {
-        naoRespondidasEl.textContent = data.percentual_nao_respondidas + '%';
-        respondidasEl.textContent = data.percentual_respondidas + '%';
-        respondidas.textContent = data.respondidas;
-        naoRespondidas.textContent = data.nao_respondidas
-        comentariosPesquisa = data.alternativas || [];
+        csatPercentualEl.textContent = data.csat + '%';
+        totalAvaliadoEl.textContent = data.total_respondidas;
+
+        // Se quiser exibir comentários no modal, descomente isso se adicionar esse campo no back-end:
+        // comentariosPesquisa = data.alternativas || [];
       } else {
-        naoRespondidasEl.textContent = '-';
-        respondidasEl.textContent = '-';
+        csatPercentualEl.textContent = '0%';
+        totalAvaliadoEl.textContent = '0';
         comentariosPesquisa = [];
       }
     })
     .catch(error => {
       console.error("Erro ao buscar dados:", error);
-      document.getElementById("percentual-null").textContent = '-';
-      document.getElementById("percentual-retorno").textContent = '-';
+      document.getElementById("csat-percentual").textContent = '0%';
+      document.getElementById("total-avaliado").textContent = '0';
       comentariosPesquisa = [];
     });
   }

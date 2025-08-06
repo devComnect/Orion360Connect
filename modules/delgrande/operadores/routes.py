@@ -500,71 +500,57 @@ def listar_p_satisfacao():
     dias = int(data.get('dias'))
     nome = data.get('nome')
 
-    # Define o intervalo correto de datas
-    hoje = datetime.now().date()
-    if dias == 1:
-        data_inicio = hoje - timedelta(days=1)  # Ontem
-        data_fim = data_inicio                  # Também ontem
-    else:
-        data_inicio = hoje - timedelta(days=dias)
-        data_fim = hoje
+    data_limite = (datetime.now() - timedelta(days=dias)).date()
 
-    # Filtro com intervalo fechado (inclusive)
-    filtro_base = [
-        cast(PesquisaSatisfacao.data_resposta, Date) >= data_inicio,
-        cast(PesquisaSatisfacao.data_resposta, Date) <= data_fim,
-        PesquisaSatisfacao.operador.ilike(f"{nome}%")  # case-insensitive
-    ]
+    CSAT_MAP = {
+        'Péssimo': 1,
+        'Discordo Totalmente': 2,
+        'Discordo Parcialmente': 3,
+        'Neutro': 4,
+        'Concordo Parcialmente': 5,
+        'Regular': 6,
+        'Bom': 7,
+        'Concordo': 8,
+        'Concordo Plenamente': 9,
+        'Ótimo': 10
+    }
 
-    # Total de pesquisas do operador no período
-    total_pesquisas = db.session.query(func.count()).filter(*filtro_base).scalar()
-
-    # Total de respondidas (alternativa OU dissertativa)
-    respondidas = db.session.query(func.count()).filter(
-        *filtro_base,
-        or_(
-            and_(
-                PesquisaSatisfacao.alternativa.isnot(None),
-                func.length(PesquisaSatisfacao.alternativa) > 0
-            ),
-            and_(
-                PesquisaSatisfacao.resposta_dissertativa.isnot(None),
-                func.length(PesquisaSatisfacao.resposta_dissertativa) > 0
+    # Buscar todas as alternativas preenchidas no período
+    alternativas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
+        and_(
+            PesquisaSatisfacao.data_resposta >= data_limite,
+            PesquisaSatisfacao.alternativa.isnot(None),
+            func.length(PesquisaSatisfacao.alternativa) > 0,
+            PesquisaSatisfacao.operador.ilike(f"{nome}%")
             )
-        )
-    ).scalar()
-
-    nao_respondidas = total_pesquisas - respondidas
-
-    percentual_respondidas = round((respondidas / total_pesquisas) * 100, 2) if total_pesquisas else 0
-    percentual_nao_respondidas = round(100 - percentual_respondidas, 2) if total_pesquisas else 0
-
-    # Lista das alternativas preenchidas
-    alternativas_respondidas = db.session.query(PesquisaSatisfacao.alternativa).filter(
-        *filtro_base,
-        PesquisaSatisfacao.alternativa.isnot(None),
-        func.length(PesquisaSatisfacao.alternativa) > 0
     ).all()
-    lista_alternativas = [alt[0] for alt in alternativas_respondidas]
 
-    # Lista de comentários dissertativos
-    comentarios = db.session.query(PesquisaSatisfacao.resposta_dissertativa).filter(
-        *filtro_base,
-        PesquisaSatisfacao.resposta_dissertativa.isnot(None),
-        func.length(PesquisaSatisfacao.resposta_dissertativa) > 0
-    ).all()
-    lista_comentarios = [c[0] for c in comentarios]
+    respostas_convertidas = []
+
+    for alt in alternativas_brutas:
+        valor = alt[0].strip()
+        # Se for número direto (ex: '8', '10')
+        if valor.isdigit():
+            numero = int(valor)
+            if 0 <= numero <= 10:
+                respostas_convertidas.append(numero)
+        # Se for texto mapeado (ex: 'Concordo')
+        elif valor in CSAT_MAP:
+            respostas_convertidas.append(CSAT_MAP[valor])
+
+    total_respondidas = len(respostas_convertidas)
+
+    # Considerar como satisfatórias as notas 8 a 10
+    respostas_satisfatorias = sum(1 for nota in respostas_convertidas if nota >= 7)
+
+    # Cálculo do CSAT
+    csat = round((respostas_satisfatorias / total_respondidas) * 100, 2) if total_respondidas else 0
 
     return jsonify({
         "status": "success",
-        "operador": nome,
-        "total": total_pesquisas,
-        "respondidas": respondidas,
-        "nao_respondidas": nao_respondidas,
-        "percentual_respondidas": percentual_respondidas,
-        "percentual_nao_respondidas": percentual_nao_respondidas,
-        "alternativas": lista_alternativas,
-        "comentarios": lista_comentarios
+        "total_respondidas": total_respondidas,
+        "respostas_satisfatorias": respostas_satisfatorias,
+        "csat": csat
     })
 
 @operadores_bp.route('/performanceColaboradoresRender/n2', methods=['POST'])
@@ -792,8 +778,23 @@ def fcr_colaboradores():
         # Todos os chamados do operador
         total_registros = RelatorioColaboradores.query.filter(
             func.lower(RelatorioColaboradores.operador) == nome,
-            RelatorioColaboradores.data_criacao >= data_limite
+            RelatorioColaboradores.data_criacao >= data_limite,
+            RelatorioColaboradores.nome_status == 'Resolvido',
         ).all()
+
+        data_inicio = hoje - timedelta(days=dias)
+
+        inicio = datetime.combine(data_inicio, datetime.min.time())
+        fim = datetime.combine(hoje, datetime.max.time())
+
+        total_chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.nome_status == 'Resolvido',
+            Chamado.data_finalizacao != None,
+            Chamado.data_finalizacao >= inicio,
+            Chamado.data_finalizacao <= fim,
+            Chamado.operador == nome
+        ).count()
 
         # Chamados com FCR
         fcr_registros = [r for r in total_registros if r.first_call == 'S']
@@ -802,8 +803,9 @@ def fcr_colaboradores():
         return jsonify({
             "status": "success",
             "total_fcr": len(codigos_fcr),
-            "percentual_fcr": round((len(fcr_registros) / len(total_registros)) * 100, 2) if total_registros else 0,
-            "cod_chamados": codigos_fcr
+            "percentual_fcr": round((len(fcr_registros) / total_chamados) * 100, 2) if total_registros else 0,
+            "cod_chamados": codigos_fcr,
+            "total_chamados": total_chamados
         })
 
     except Exception as e:
@@ -829,7 +831,19 @@ def reabertos_colaboradores():
             func.date(RelatorioColaboradores.data_criacao) >= data_limite
         ).all()
 
-        total_chamados = len(total_registros)
+        data_inicio = hoje - timedelta(days=dias)
+
+        inicio = datetime.combine(data_inicio, datetime.min.time())
+        fim = datetime.combine(hoje, datetime.max.time())
+
+        total_chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.nome_status == 'Resolvido',
+            Chamado.data_finalizacao != None,
+            Chamado.data_finalizacao >= inicio,
+            Chamado.data_finalizacao <= fim,
+            Chamado.operador == nome
+        ).count()
 
         # Apenas os reabertos
         reabertos = [r for r in total_registros if r.reaberto == 'Reaberto']

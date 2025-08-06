@@ -532,8 +532,6 @@ def nps():
         "detratores": detratores
     }), 200
 
-
-
 @insights_bp.route('/abertos_vs_admin_resolvido_periodo', methods=['POST'])
 def relacao_admin_abertos_vs_resolvido_periodo():
     try:
@@ -907,7 +905,6 @@ def ces():
         "ces_percentual": ces_percentual,
         "total_respostas_ces": total_respostas_ces
     })
-
 
 @insights_bp.route('/abertos/status', methods=['POST'])
 def estatisticas_chamados_periodos():

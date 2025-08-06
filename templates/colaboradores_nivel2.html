@@ -142,24 +142,30 @@
       </div>
     </div>
 
-    <!-- Card com link para abrir o modal -->
+    <!-- Pesquisa de Satisfação -->
     <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
+      <div class="card shadow-sm h-100 csat-card">
+        <div class="card-body card-body-compact card-body-center">
           <h6>CSAT</h6>
-          <p class="fs-6 mb-1 text-danger">
-            Sem retorno: <span id="percentual-null">-</span> / <span id="nao-respondidas"></span>
-          </p>
-          <p class="fs-6 mb-0 text-success">
-            Retorno:
-            <a href="#" id="link-retorno" data-bs-toggle="modal" data-bs-target="#modalComentariosPesquisa">
-              <span id="percentual-retorno">-</span> / <span id="respondidas"></span>
-            </a>
-          </p>
+
+          <div class="info-item">
+            <span class="text-success d-block">Satisfação</span>
+            <span class="value">
+              <span class="value" id="csat-percentual">0%</span>
+            </span>
+          </div>
+
+          <div class="info-item">
+           <span class="text-primary d-block">Total Avaliado</span>
+            <span class="value">
+              <a href="#" id="link-retorno" data-bs-toggle="modal" data-bs-target="#modalComentariosPesquisa">
+                <span class="value" id="total-avaliado">0</span>
+              </a>
+            </span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
  
 

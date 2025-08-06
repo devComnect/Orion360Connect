@@ -52,6 +52,10 @@ def render_performance_n2():
 def render_guardians():
     return render_template('guardians.html')
 
+@home_bp.route('/guardiansIndividual', methods=['GET'])
+def render_guardians_individual():
+    return render_template('guardians_individual.html')
+
 @home_bp.route('/escala', methods=['GET'])
 def render_escala():
     caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte 2026.xlsm'
