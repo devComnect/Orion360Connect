@@ -1372,7 +1372,7 @@ function carregarTopCategorias(dias = 1) {
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     // Carrega o card com o valor padrão 30 dias
-    atualizarCardPesquisaSatisfacao(7);
+    atualizarCardPesquisaSatisfacao(1);
 
     // Seleciona todos os botões de filtro
     document.querySelectorAll('.filtro-btn').forEach(btn => {
@@ -1390,40 +1390,41 @@ function carregarTopCategorias(dias = 1) {
   });
 
   function atualizarCardPesquisaSatisfacao(dias) {
-    fetch('/insights/pSatisfacao', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ dias })
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log("Dados recebidos:", data);
+  fetch('/insights/pSatisfacao', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ dias })
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log("Dados recebidos:", data);
 
-      const naoRespondidasEl = document.getElementById("percentual-null");
-      const respondidasEl = document.getElementById("percentual-retorno");
+    const csatPercentualEl = document.getElementById("csat-percentual");
+    const totalAvaliadoEl = document.getElementById("total-avaliado");
 
-      if (!naoRespondidasEl || !respondidasEl) {
-        console.warn("Elementos do card não encontrados.");
-        return;
-      }
+    if (!csatPercentualEl || !totalAvaliadoEl) {
+      console.warn("Elementos do card de CSAT não encontrados.");
+      return;
+    }
 
-      if (data.status === 'success') {
-        naoRespondidasEl.textContent = data.percentual_nao_respondidas + '%';
-        respondidasEl.textContent = data.percentual_respondidas + '%';
-      } else {
-        naoRespondidasEl.textContent = '-';
-        respondidasEl.textContent = '-';
-        console.error("Erro ao buscar dados da pesquisa:", data);
-      }
-    })
-    .catch(error => {
-      document.getElementById("percentual-null").textContent = '-';
-      document.getElementById("percentual-retorno").textContent = '-';
-      console.error("Erro de conexão com a API de pesquisa:", error);
-    });
-  }
+    if (data.status === 'success') {
+      csatPercentualEl.textContent = `${data.csat}%`;
+      totalAvaliadoEl.textContent = data.total_respondidas;
+    } else {
+      csatPercentualEl.textContent = '-';
+      totalAvaliadoEl.textContent = '-';
+      console.error("Erro ao buscar dados da pesquisa:", data);
+    }
+  })
+  .catch(error => {
+    document.getElementById("csat-percentual").textContent = '-';
+    document.getElementById("total-avaliado").textContent = '-';
+    console.error("Erro de conexão com a API de pesquisa:", error);
+  });
+}
+
 </script>
 
 <!-- Script que traz o TMA eo TMS -->
@@ -1576,6 +1577,143 @@ function carregarTopCategorias(dias = 1) {
     const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
     modal.show();
   }
+</script>
+
+
+<!-- Script que traz a relação de CES-->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const botoesFiltro = document.querySelectorAll(".filtro-btn");
+    const campoCesRetorno = document.getElementById("ces-retorno");
+    const campoCesNull = document.getElementById("ces-null");
+
+    async function carregarCES(dias = 1) {
+        try {
+            const response = await fetch('/insights/ces', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ dias: dias })
+            });
+
+            const data = await response.json();
+
+            if (data.status === "success") {
+                campoCesRetorno.textContent = data.ces_percentual + '%';
+                campoCesNull.textContent = data.total_respostas_ces;
+            } else {
+                campoCesRetorno.textContent = "Erro";
+                campoCesNull.textContent = "Erro";
+                console.error(data.message);
+            }
+        } catch (error) {
+            campoCesRetorno.textContent = "Erro";
+            campoCesNull.textContent = "Erro";
+            console.error(error);
+        }
+    }
+
+    botoesFiltro.forEach(button => {
+        button.addEventListener("click", function () {
+            botoesFiltro.forEach(btn => btn.classList.remove("active"));
+            this.classList.add("active");
+
+            const dias = parseInt(this.getAttribute("data-dias"), 10);
+            carregarCES(dias);
+        });
+    });
+
+    carregarCES(1);
+});
+</script>
+
+<!--Script que retorna a relação de NPS-->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+  // Carrega o card NPS com valor padrão 1 dia
+  atualizarNps(1);
+
+  // Seleciona todos os botões de filtro
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      // Remove classe active de todos os botões
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+      // Adiciona classe active no botão clicado
+      this.classList.add('active');
+
+      // Pega número de dias do atributo data-dias
+      const dias = parseInt(this.getAttribute('data-dias'), 10);
+      atualizarNps(dias);
+    });
+  });
+});
+
+function atualizarNps(dias) {
+  fetch('/insights/nps', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dias })
+  })
+  .then(res => res.json())
+  .then(data => {
+    const npsNullEl = document.getElementById("nps-null");
+    const npsRetornoEl = document.getElementById("nps-retorno");
+
+    if (!npsNullEl || !npsRetornoEl) {
+      console.warn("Elementos NPS não encontrados no DOM.");
+      return;
+    }
+
+    if (data.status && data.status !== "Sem dados suficientes") {
+      // Atualiza texto
+      npsNullEl.textContent = data.status;
+      npsRetornoEl.textContent = data.nps + "%";
+
+      // Remove classes antigas e adiciona nova classe conforme status
+      npsNullEl.className = 'value';       // reseta classes
+      npsRetornoEl.className = 'value';
+
+      switch (data.status) {
+        case 'Excelente':
+          npsNullEl.classList.add('text-success');
+          
+          break;
+        case 'Muito bom':
+          npsNullEl.classList.add('text-primary');
+          
+          break;
+        case 'Razoável':
+          npsNullEl.classList.add('text-warning');
+          
+          break;
+        case 'Ruim':
+          npsNullEl.classList.add('text-danger');
+          
+          break;
+        default:
+          // Sem estilo extra
+          break;
+      }
+
+    } else {
+      npsNullEl.textContent = "-";
+      npsRetornoEl.textContent = "0%";
+      npsNullEl.className = 'value';
+      npsRetornoEl.className = 'value';
+    }
+  })
+  .catch(err => {
+    console.error("Erro ao buscar dados do NPS:", err);
+    const npsNullEl = document.getElementById("nps-null");
+    const npsRetornoEl = document.getElementById("nps-retorno");
+    npsNullEl.textContent = "-";
+    npsRetornoEl.textContent = "0%";
+    npsNullEl.className = 'value';
+    npsRetornoEl.className = 'value';
+  });
+}
+
 </script>
 
 <!-- Script que me traz a relação de chamados reabertos-->

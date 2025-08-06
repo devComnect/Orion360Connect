@@ -417,45 +417,122 @@ def get_grupos():
 def listar_p_satisfacao():
     data = request.get_json()
     dias = int(data.get('dias', 1))
-    data_limite = (datetime.now() - timedelta(days=dias)).date()  # só data, sem hora
+    data_limite = (datetime.now() - timedelta(days=dias)).date()
 
-    # Total de pesquisas no período
-    total_pesquisas = db.session.query(func.count()).filter(
-        PesquisaSatisfacao.data_resposta >= data_limite
-    ).scalar()
+    CSAT_MAP = {
+        'Péssimo': 1,
+        'Discordo Totalmente': 2,
+        'Discordo Parcialmente': 3,
+        'Neutro': 4,
+        'Concordo Parcialmente': 5,
+        'Regular': 6,
+        'Bom': 7,
+        'Concordo': 8,
+        'Concordo Plenamente': 9,
+        'Ótimo': 10
+    }
 
-    # Total de pesquisas respondidas (com alternativa OU dissertativa preenchida)
-    respondidas = db.session.query(func.count()).filter(
+    # Buscar todas as alternativas preenchidas no período
+    alternativas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
         and_(
             PesquisaSatisfacao.data_resposta >= data_limite,
-            or_(
-                and_(
-                    PesquisaSatisfacao.alternativa.isnot(None),
-                    func.length(PesquisaSatisfacao.alternativa) > 0
-                ),
-                and_(
-                    PesquisaSatisfacao.resposta_dissertativa.isnot(None),
-                    func.length(PesquisaSatisfacao.resposta_dissertativa) > 0
-                )
-            )
+            PesquisaSatisfacao.alternativa.isnot(None),
+            func.length(PesquisaSatisfacao.alternativa) > 0
         )
-    ).scalar()
+    ).all()
 
-    # Total não respondidas
-    nao_respondidas = total_pesquisas - respondidas
+    respostas_convertidas = []
 
-    # Cálculo dos percentuais
-    percentual_respondidas = round((respondidas / total_pesquisas) * 100, 2) if total_pesquisas else 0
-    percentual_nao_respondidas = round(100 - percentual_respondidas, 2) if total_pesquisas else 0
+    for alt in alternativas_brutas:
+        valor = alt[0].strip()
+        # Se for número direto (ex: '8', '10')
+        if valor.isdigit():
+            numero = int(valor)
+            if 0 <= numero <= 10:
+                respostas_convertidas.append(numero)
+        # Se for texto mapeado (ex: 'Concordo')
+        elif valor in CSAT_MAP:
+            respostas_convertidas.append(CSAT_MAP[valor])
+
+    total_respondidas = len(respostas_convertidas)
+
+    # Considerar como satisfatórias as notas 8 a 10
+    respostas_satisfatorias = sum(1 for nota in respostas_convertidas if nota >= 7)
+
+    # Cálculo do CSAT
+    csat = round((respostas_satisfatorias / total_respondidas) * 100, 2) if total_respondidas else 0
 
     return jsonify({
         "status": "success",
-        "total": total_pesquisas,
-        "respondidas": respondidas,
-        "nao_respondidas": nao_respondidas,
-        "percentual_respondidas": percentual_respondidas,
-        "percentual_nao_respondidas": percentual_nao_respondidas
+        "total_respondidas": total_respondidas,
+        "respostas_satisfatorias": respostas_satisfatorias,
+        "csat": csat
     })
+
+@insights_bp.route('/nps', methods=['POST'])
+def nps():
+    data = request.get_json()
+    dias = int(data.get('dias', 1))
+    data_limite = (datetime.now() - timedelta(days=dias)).date()
+
+    NPS_MAP = {
+        'Péssimo': 1,
+        'Discordo Totalmente': 2,
+        'Discordo Parcialmente': 3,
+        'Neutro': 4,
+        'Concordo Parcialmente': 5,
+        'Regular': 6,
+        'Bom': 7,
+        'Concordo': 8,
+        'Concordo Plenamente': 9,
+        'Ótimo': 10
+    }
+
+    # Buscar todas as alternativas preenchidas no período
+    alternativas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
+        and_(
+            PesquisaSatisfacao.data_resposta >= data_limite,
+            PesquisaSatisfacao.alternativa.isnot(None),
+            func.length(PesquisaSatisfacao.alternativa) > 0
+        )
+    ).all()
+
+    # Converter para escala numérica
+    notas = [NPS_MAP.get(alt[0], 0) for alt in alternativas_brutas if NPS_MAP.get(alt[0])]
+
+    total = len(notas)
+    if total == 0:
+        return jsonify({"nps": 0, "status": "Sem dados suficientes"}), 200
+
+    # Classificar em promotores, neutros e detratores
+    promotores = sum(1 for n in notas if n >= 9)
+    neutros = sum(1 for n in notas if 7 <= n <= 8)
+    detratores = sum(1 for n in notas if n <= 6)
+
+    # Cálculo do NPS
+    nps_valor = ((promotores - detratores) / total) * 100
+    nps_valor = round(nps_valor, 2)
+
+    # Classificação
+    if nps_valor >= 75:
+        status = "Excelente"
+    elif nps_valor >= 50:
+        status = "Muito bom"
+    elif nps_valor >= 40:
+        status = "Razoável"
+    else:
+        status = "Ruim"
+
+    return jsonify({
+        "nps": nps_valor,
+        "status": status,
+        "total_respostas": total,
+        "promotores": promotores,
+        "neutros": neutros,
+        "detratores": detratores
+    }), 200
+
+
 
 @insights_bp.route('/abertos_vs_admin_resolvido_periodo', methods=['POST'])
 def relacao_admin_abertos_vs_resolvido_periodo():
@@ -697,7 +774,20 @@ def reabertos():
             func.date(RelatorioColaboradores.data_criacao) >= data_limite
         ).all()
 
-        total_chamados = len(total_registros)
+        #total_chamados = len(total_registros)
+
+        data_inicio = hoje - timedelta(days=dias)
+
+        inicio = datetime.combine(data_inicio, datetime.min.time())
+        fim = datetime.combine(hoje, datetime.max.time())
+
+        total_chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.nome_status == 'Resolvido',
+            Chamado.data_finalizacao != None,
+            Chamado.data_finalizacao >= inicio,
+            Chamado.data_finalizacao <= fim
+        ).count()
 
         # Apenas os reabertos
         reabertos = [r for r in total_registros if r.reaberto == 'Reaberto']
@@ -727,8 +817,22 @@ def fcr():
 
         # Todos os chamados do operador
         total_registros = RelatorioColaboradores.query.filter(
-            RelatorioColaboradores.data_criacao >= data_limite
+            RelatorioColaboradores.data_criacao >= data_limite, 
+            RelatorioColaboradores.nome_status == 'Resolvido',
         ).all()
+
+        data_inicio = hoje - timedelta(days=dias)
+
+        inicio = datetime.combine(data_inicio, datetime.min.time())
+        fim = datetime.combine(hoje, datetime.max.time())
+
+        total_chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.nome_status == 'Resolvido',
+            Chamado.data_finalizacao != None,
+            Chamado.data_finalizacao >= inicio,
+            Chamado.data_finalizacao <= fim
+        ).count()
 
         # Chamados com FCR
         fcr_registros = [r for r in total_registros if r.first_call == 'S']
@@ -737,8 +841,9 @@ def fcr():
         return jsonify({
             "status": "success",
             "total_fcr": len(codigos_fcr),
-            "percentual_fcr": round((len(codigos_fcr) / len(total_registros)) * 100, 2) if total_registros else 0,
-            "cod_chamados": codigos_fcr
+            "percentual_fcr": round((len(codigos_fcr) / total_chamados) * 100, 2) if total_chamados else 0,
+            "cod_chamados": codigos_fcr,
+            "total_chamados": total_chamados
         })
 
     except Exception as e:
@@ -746,6 +851,63 @@ def fcr():
             "status": "error",
             "message": str(e)
         }), 500
+
+@insights_bp.route('/ces', methods=['POST'])
+def ces():
+    data = request.get_json()
+    dias = int(data.get('dias', 1))
+    data_limite = (datetime.now() - timedelta(days=dias)).date()
+
+    CES_MAP = {
+        'Péssimo': 1,
+        'Discordo Totalmente': 2,
+        'Discordo Parcialmente': 3,
+        'Neutro': 4,
+        'Concordo Parcialmente': 5,
+        'Regular': 6,
+        'Bom': 7,
+        'Concordo': 8,
+        'Concordo Plenamente': 9,
+        'Ótimo': 10
+    }
+
+    # Buscar todas as alternativas não nulas no período
+    respostas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
+        and_(
+            PesquisaSatisfacao.data_resposta >= data_limite,
+            PesquisaSatisfacao.alternativa.isnot(None),
+            func.length(PesquisaSatisfacao.alternativa) > 0
+        )
+    ).all()
+
+    valores_convertidos = []
+
+    for resp in respostas_brutas:
+        valor = resp[0].strip()
+        # Se for número direto (ex: '8'), converte
+        if valor.isdigit():
+            numero = int(valor)
+            if 0 <= numero <= 10:
+                valores_convertidos.append(numero)
+        # Se for texto mapeado
+        elif valor in CES_MAP:
+            valores_convertidos.append(CES_MAP[valor])
+
+    total_respostas_ces = len(valores_convertidos)
+
+    if total_respostas_ces > 0:
+        soma_ponderada = sum(valores_convertidos)
+        ces_final = round(soma_ponderada / total_respostas_ces, 2)
+        ces_percentual = round((ces_final / 10) * 100, 2)
+    else:
+        ces_percentual = 0
+
+    return jsonify({
+        "status": "success",
+        "ces_percentual": ces_percentual,
+        "total_respostas_ces": total_respostas_ces
+    })
+
 
 @insights_bp.route('/abertos/status', methods=['POST'])
 def estatisticas_chamados_periodos():

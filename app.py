@@ -1,9 +1,9 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from flask import Flask
+from flask import Flask, session
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_apscheduler import APScheduler
@@ -53,6 +53,10 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Slink1205@local
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'LjKbe9TBQKXExJw'
 
+#  Sessão e login persistente
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=7)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+
 class Config:
     SCHEDULER_API_ENABLED = True
 
@@ -92,16 +96,7 @@ def tarefa_horaria_processar_performance():
             resultado1 = processar_e_armazenar_performance_incremental()
             logging.info(f"[AGENDADO] Resultado padrão: {resultado1}")
         except Exception as e:
-            logging.error(f"[AGENDADO] Erro ao importar performance. ")
-        
-'''def tarefa_horaria_processar_performance_vyrtos():
-    with app.app_context():
-        try:
-            logging.info("[AGENDADO] Iniciando coleta e armazenamento de performance Vyrtos...")
-            resultado2 = processar_e_armazenar_performance_vyrtos_incremental(incremental=True)
-            logging.info(f"[AGENDADO] Resultado Vyrtos: {resultado2}")
-        except Exception as e:
-            logging.error(f"[AGENDADO] Erro ao importar performance. ")'''
+            logging.error(f"[AGENDADO] Erro ao importar performance.")
 
 def tarefa_importar_chamados():
     with app.app_context():
@@ -148,13 +143,6 @@ with app.app_context():
         trigger='interval',
         minutes=5
     )
-
-    '''scheduler.add_job(
-        id='job_processa_performance_horaria_vyrtos',
-        func=tarefa_horaria_processar_performance_vyrtos,
-        trigger='interval',
-        minutes=5
-    )'''
 
     scheduler.add_job(
         id='job_importar_chamados',
