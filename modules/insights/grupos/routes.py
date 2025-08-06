@@ -244,52 +244,63 @@ def get_sla_grupos():
             "message": str(e)
         }), 500
 
-
 @grupos_bp.route('/pSatisfacao/grupos', methods=['POST'])
 def get_psatisfacao_grupos():
-    try:
-        dias = int(request.json.get("dias", 1))
-        grupo = request.json.get("grupo", "").strip()
-        data_limite = (datetime.now() - timedelta(days=dias)).date()
+    
+    dias = int(request.json.get("dias", 1))
+    grupo = request.json.get("grupo", "").strip()
+    data_limite = (datetime.now() - timedelta(days=dias)).date()
 
-        filtro = [
+    CSAT_MAP = {
+        'Péssimo': 1,
+        'Discordo Totalmente': 2,
+        'Discordo Parcialmente': 3,
+        'Neutro': 4,
+        'Concordo Parcialmente': 5,
+        'Regular': 6,
+        'Bom': 7,
+        'Concordo': 8,
+        'Concordo Plenamente': 9,
+        'Ótimo': 10
+    }
+
+        # Buscar todas as alternativas preenchidas no período
+    alternativas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
+        and_(
             PesquisaSatisfacao.data_resposta >= data_limite,
-            PesquisaSatisfacao.grupo.like(f"{grupo}%")
-        ]
-
-        total_pesquisas = db.session.query(func.count()).filter(*filtro).scalar()
-
-        respondidas = db.session.query(func.count()).filter(
-            *filtro,
-            or_(
-                and_(
-                    PesquisaSatisfacao.alternativa.isnot(None),
-                    func.length(PesquisaSatisfacao.alternativa) > 0
-                ),
-                and_(
-                    PesquisaSatisfacao.resposta_dissertativa.isnot(None),
-                    func.length(PesquisaSatisfacao.resposta_dissertativa) > 0
-                )
+            PesquisaSatisfacao.alternativa.isnot(None),
+            func.length(PesquisaSatisfacao.alternativa) > 0,
+            PesquisaSatisfacao.grupo.ilike(f"{grupo}%")
             )
-        ).scalar()
+    ).all()
 
-        nao_respondidas = total_pesquisas - respondidas
+    respostas_convertidas = []
 
-        percentual_respondidas = round((respondidas / total_pesquisas) * 100, 2) if total_pesquisas else 0
-        percentual_nao_respondidas = round(100 - percentual_respondidas, 2) if total_pesquisas else 0
+    for alt in alternativas_brutas:
+        valor = alt[0].strip()
+        # Se for número direto (ex: '8', '10')
+        if valor.isdigit():
+            numero = int(valor)
+            if 0 <= numero <= 10:
+                respostas_convertidas.append(numero)
+        # Se for texto mapeado (ex: 'Concordo')
+        elif valor in CSAT_MAP:
+            respostas_convertidas.append(CSAT_MAP[valor])
 
-        return jsonify({
-            "status": "success",
-            "grupo": grupo,
-            "total": total_pesquisas,
-            "respondidas": respondidas,
-            "nao_respondidas": nao_respondidas,
-            "percentual_respondidas": percentual_respondidas,
-            "percentual_nao_respondidas": percentual_nao_respondidas
-        })
+    total_respondidas = len(respostas_convertidas)
 
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    # Considerar como satisfatórias as notas 8 a 10
+    respostas_satisfatorias = sum(1 for nota in respostas_convertidas if nota >= 7)
+
+    # Cálculo do CSAT
+    csat = round((respostas_satisfatorias / total_respondidas) * 100, 2) if total_respondidas else 0
+
+    return jsonify({
+        "status": "success",
+        "total_respondidas": total_respondidas,
+        "respostas_satisfatorias": respostas_satisfatorias,
+        "csat": csat
+    })
     
 @grupos_bp.route('/abertos_grupos_resolvido', methods=['POST'])
 def get_abertos_resolvidos():
@@ -690,8 +701,23 @@ def fcr_grupos():
         # Todos os chamados do operador
         total_registros = RelatorioColaboradores.query.filter(
             RelatorioColaboradores.grupo.ilike(grupo),
-            RelatorioColaboradores.data_criacao >= data_limite
+            RelatorioColaboradores.data_criacao >= data_limite,
+            RelatorioColaboradores.nome_status == 'Resolvido',
         ).all()
+
+        data_inicio = hoje - timedelta(days=dias)
+
+        inicio = datetime.combine(data_inicio, datetime.min.time())
+        fim = datetime.combine(hoje, datetime.max.time())
+
+        total_chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.nome_status == 'Resolvido',
+            Chamado.data_finalizacao != None,
+            Chamado.data_finalizacao >= inicio,
+            Chamado.data_finalizacao <= fim,
+            Chamado.nome_grupo.ilike(f'{grupo}')
+        ).count()
 
         # Chamados com FCR
         fcr_registros = [r for r in total_registros if r.first_call == 'S']
@@ -700,8 +726,9 @@ def fcr_grupos():
         return jsonify({
             "status": "success",
             "total_fcr": len(codigos_fcr),
-            "percentual_fcr": round((len(codigos_fcr) / len(total_registros)) * 100, 2) if total_registros else 0,
-            "cod_chamados": codigos_fcr
+            "percentual_fcr": round((len(codigos_fcr) / total_chamados) * 100, 2) if total_chamados else 0,
+            "cod_chamados": codigos_fcr,
+            "total_chamados": total_chamados
         })
 
     except Exception as e:
@@ -725,7 +752,19 @@ def reabertos_grupos():
             func.date(RelatorioColaboradores.data_criacao) >= data_limite
         ).all()
 
-        total_chamados = len(total_registros)
+        data_inicio = hoje - timedelta(days=dias)
+
+        inicio = datetime.combine(data_inicio, datetime.min.time())
+        fim = datetime.combine(hoje, datetime.max.time())
+
+        total_chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.nome_status == 'Resolvido',
+            Chamado.data_finalizacao != None,
+            Chamado.data_finalizacao >= inicio,
+            Chamado.data_finalizacao <= fim,
+            Chamado.nome_grupo.ilike(f'{grupo}')
+        ).count()
 
         # Apenas os reabertos
         reabertos = [r for r in total_registros if r.reaberto == 'Reaberto']

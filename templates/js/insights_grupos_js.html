@@ -321,13 +321,13 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 </script>
 
-<!-- Bloco que traz as pesquisas de satisfação-->
- <script>
+<!-- Bloco que me traz a pesquisa de satisfação para grupos-->
+<script>
   async function carregarPesquisaSatisfacao(dias = 1) {
     const grupoSelecionado = sessionStorage.getItem('grupoSelecionado') || "";
     if (!grupoSelecionado) {
-      document.getElementById("percentual-retorno").textContent = "Grupo não definido";
-      document.getElementById("percentual-null").textContent = "-";
+      document.getElementById("csat-percentual").textContent = "Grupo não definido";
+      document.getElementById("total-avaliado").textContent = "-";
       return;
     }
 
@@ -337,19 +337,20 @@ document.addEventListener("DOMContentLoaded", function () {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dias, grupo: grupoSelecionado })
       });
+
       const data = await response.json();
 
       if (data.status === "success") {
-        document.getElementById("percentual-retorno").textContent = `${data.percentual_respondidas}%`;
-        document.getElementById("percentual-null").textContent = `${data.percentual_nao_respondidas}%`;
+        document.getElementById("csat-percentual").textContent = `${data.csat}%`;
+        document.getElementById("total-avaliado").textContent = data.total_respondidas;
       } else {
-        document.getElementById("percentual-retorno").textContent = "Erro";
-        document.getElementById("percentual-null").textContent = "Erro";
+        document.getElementById("csat-percentual").textContent = "Erro";
+        document.getElementById("total-avaliado").textContent = "-";
       }
     } catch (error) {
       console.error("Erro ao carregar pesquisa de satisfação:", error);
-      document.getElementById("percentual-retorno").textContent = "Erro";
-      document.getElementById("percentual-null").textContent = "Erro";
+      document.getElementById("csat-percentual").textContent = "Erro";
+      document.getElementById("total-avaliado").textContent = "-";
     }
   }
 
@@ -363,6 +364,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 </script>
+
 
 <!-- Bloco que traz os abertos vs resolvidos -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
