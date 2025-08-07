@@ -1,12 +1,12 @@
 from flask import Blueprint, jsonify, request
 import requests
-import modules.delgrande.relatorios.utils as utils
+import modules.tasks.relatorios.utils as utils
 from modules.deskmanager.authenticate.routes import token_desk
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_date
 from application.models import db, Chamado, DesempenhoAtendente
 from sqlalchemy import extract, func
-from modules.delgrande.auth.utils import authenticate, authenticate_relatorio
+from modules.auth.utils import authenticate, authenticate_relatorio
 from settings.endpoints import CREDENTIALS
 
 

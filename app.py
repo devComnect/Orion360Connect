@@ -13,17 +13,16 @@ from application.models import db, User
 from modules.home.routes import home_bp
 from modules.login.routes import login_bp
 from modules.deskmanager.authenticate.routes import auth_bp
-from modules.delgrande.filas.routes import filas_bp
-from modules.delgrande.relatorios.routes import relatorio_bp
-from modules.deskmanager.auth.routes import auth_desk_bp
-from modules.deskmanager.dashboard.routes import dashboard_bp
+from modules.filas.routes import filas_bp
+from modules.tasks.relatorios.routes import relatorio_bp
+from modules.dashboard.routes import dashboard_bp
 from modules.admin.routes import admin_bp
-from modules.delgrande.operadores.routes import operadores_bp
+from modules.operadores.routes import operadores_bp
 from modules.insights.routes import insights_bp
 from modules.relatorios.routes import relatorios_bp
 from modules.escala.routes import escala_bp
 from modules.insights.grupos.routes import grupos_bp
-from modules.delgrande.relatorios.utils import (
+from modules.tasks.relatorios.utils import (
     processar_e_armazenar_performance,
     processar_e_armazenar_performance_vyrtos,
     importar_chamados,
@@ -68,7 +67,6 @@ app.register_blueprint(login_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(filas_bp)
 app.register_blueprint(relatorio_bp)
-app.register_blueprint(auth_desk_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(operadores_bp)

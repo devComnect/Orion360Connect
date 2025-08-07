@@ -95,7 +95,6 @@ class PerformanceColaboradores(db.Model):
     tempo_maxatend = db.Column(db.Integer, nullable=True)
     data_importacao = db.Column(db.DateTime)
 
-
 class Chamado(db.Model):
     __tablename__ = 'chamados'
 
@@ -216,3 +215,63 @@ class RelatorioColaboradores(db.Model):
     data_finalizacao = db.Column(db.String(20))  # ou db.Date se quiser como data
     possui_ps = db.Column(db.String(1))
     ps_expirou = db.Column(db.String(1))
+
+class Guardians(db.Model):
+    __tablename__ = 'guardians'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    # Informações pessoais
+    nome = db.Column(db.String(100)) 
+    email = db.Column(db.String(255), unique=True)
+    grupo = db.Column(db.String(100))  # Equivale a department_name
+
+    # Pontuação e ranking
+    score_atual = db.Column(db.Integer, default=0)
+    level_id = db.Column(db.Integer)  # Ref para SecurityLevels.level_id
+    level_nome = db.Column(db.String(50))  # Nome do nível ("Recruta", etc.)
+    badge_icon_url = db.Column(db.String(255))  # Ícone do nível
+    opt_in_real_name_ranking = db.Column(db.Boolean, default=False)
+
+    # Dados do departamento (embutidos)
+    departamento_id = db.Column(db.Integer)  # Departments.department_id
+    departamento_nome = db.Column(db.String(100))  # Departments.department_name
+    departamento_score = db.Column(db.Integer, default=0)
+
+    # Últimas atividades
+    ultima_atividade = db.Column(db.DateTime)
+    total_insignias = db.Column(db.Integer, default=0)
+    total_acoes = db.Column(db.Integer, default=0)
+    total_treinamentos = db.Column(db.Integer, default=0)
+    total_quizzes = db.Column(db.Integer, default=0)
+
+    # Treinamentos
+    modulos_concluidos = db.Column(db.Text)  # Lista ou JSON de módulos
+    pontuacao_quizzes = db.Column(db.Integer, default=0)
+    score_on_quiz = db.Column(db.Integer)  # Última pontuação no quiz
+
+    # Dados adicionais
+    avatar_url = db.Column(db.String(255))  # Imagem/avatar do colaborador
+    badges_desbloqueadas = db.Column(db.Text)  # JSON ou string com nomes das insígnias
+    acoes_json = db.Column(db.Text)  # JSON de ações realizadas
+    treinamentos_json = db.Column(db.Text)  # JSON de treinamentos feitos
+
+    # Controle de criação/atualização
+    criado_em = db.Column(db.DateTime, default=db.func.current_timestamp())
+    atualizado_em = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+class Grupos(db.Model):
+    __tablename__ = 'grupos'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    chave = db.Column(db.String(10), unique=True, nullable=False)  # Ex: "000005"
+    nome = db.Column(db.String(100), nullable=False)               # Ex: "CSM"
+    email = db.Column(db.String(255), nullable=False)              # Ex: "csm@dominio.com.br"
+    opcoes = db.Column(db.Text)                                    # HTML com os ícones e tooltips
+    bloqueado = db.Column(db.String(20))               # Campo pode vir vazio, tratado como False
+    qtd_operadores = db.Column(db.Integer, default=0)              # Ex: 1
+    smtp_ativo = db.Column(db.String(10))              # "N" ou "S" convertido em Boolean
+
+    criado_em = db.Column(db.DateTime, default=db.func.current_timestamp())
+    atualizado_em = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())

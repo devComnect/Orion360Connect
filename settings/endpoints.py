@@ -34,3 +34,7 @@ LISTACHAMADOS = 'https://api.desk.ms/Chamados/lista'
 LISTA_CHAMADOS_SUPORTE = 'https://api.desk.ms/ChamadosSuporte/lista'
 
 RELATORIO_CHAMADOS_SUPORTE = 'https://api.desk.ms/Relatorios/imprimir'
+
+LISTA_OPERADORES = 'https://api.desk.ms/Operadores/lista'
+
+LISTA_GRUPOS = 'https://api.desk.ms/Grupos/lista'

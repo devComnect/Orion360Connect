@@ -1,0 +1,12 @@
+Header: Authorization: Token da API
+
+{
+  "Pesquisa": "",
+  "Ativo": "1",
+  "Ordem": [
+    {
+      "Coluna": "Nome",
+      "Direcao": "true"
+    }
+  ]
+}

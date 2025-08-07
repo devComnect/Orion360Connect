@@ -1,0 +1,34 @@
+Header: Authorization: Token da API
+
+{
+  "Colunas": {
+    "Chave": "on",
+    "Nome": "on",
+    "Sobrenome": "on",
+    "Email": "on",
+    "OnOff": "on",
+    "GrupoPrincipal": "on",
+    "EmailGrupo": "on",
+    "CodGrupo": "on"
+  },  
+  "Pesquisa": "",
+  "Ativo": "S",
+  "Filtro":	//Campos para filtragem dos dados
+  {
+  "Ramal":[""], //Número do ramal do operador
+	"GrupoPrincipal":[""], //Código do grupo principal do operador
+	"Perfil":[""], //Código do Perfil ao qual o operador está associado
+	"Online":[""], //S ou N (Se operador está online ou offline)
+	"LicencaDMS":[""], //S ou N (Se possui licença de operador)
+	"LicencaCHAT":[""], //S ou N (Se possui licença de chat)
+	"LicencaRCS":[""], //S ou N (Se possui licença de Acesso Remoto)
+	"LicencaFornecedor":[""] //S ou N (Se é licença de Fornecedor)
+  },
+  "Ordem": //Colunas para ordenação
+  [ 
+    {
+      "Coluna": "Nome", 
+      "Direcao": "true" //true:ASC e false:DESC
+    }
+  ]
+}

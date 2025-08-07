@@ -388,6 +388,7 @@ def get_operadores():
 @insights_bp.route('/get/grupos', methods=['GET'])
 def get_grupos():
     try:
+        
         # Consulta grupos distintos, excluindo aqueles que contenham 'n1' ou 'n2'
         grupos = db.session.query(Chamado.nome_grupo)\
             .filter(
