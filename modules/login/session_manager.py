@@ -7,7 +7,7 @@ class SessionManager:
         Armazena informações do usuário na sessão para indicar que está logado.
         """
         session['user_id'] = user.id
-        session['username'] = user.username
+        session['username'] = user.username.strip().lower()
         session['logged_in'] = True
 
     @staticmethod
@@ -32,3 +32,7 @@ class SessionManager:
         if SessionManager.is_authenticated():
             return session.get('username')
         return None
+    
+    @staticmethod
+    def get(key, default=None):
+        return session.get(key, default)
