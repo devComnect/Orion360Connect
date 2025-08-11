@@ -218,19 +218,21 @@
     </div>
 
     <!-- Ligações vs Tickets -->
-    <div class="col-md-5">
-      <div class="card shadow-sm card-grafico-pequeno">
-        <div class="card-header text-center">Ligações vs Chamados</div>
-        <div class="card-body">
-          <div id="resumoChamados" class="mb-3 text-center text-white small">
-            <p><strong>Total de Chamados:</strong> <span id="totalTickets">-</span></p>
-            <p><strong>Total de Ligações:</strong> <span id="totalLigacoes">-</span></p>
-            <p><strong>Não Registrados:</strong> <span id="diferencaChamados">-</span></p>
-          </div>
-          <canvas id="atendidasVsTickets"></canvas>
+  <div class="col-md-5">
+    <div class="card shadow-sm card-grafico-pequeno">
+      <div class="card-header text-center">Ligações vs Chamados</div>
+      <div class="card-body">
+        <div id="resumoChamados" 
+            class="mb-3 text-white small d-flex justify-content-center gap-4 flex-wrap">
+          <div><strong>Total de Chamados:</strong> <span id="totalTickets">-</span></div>
+          <div><strong>Total de Ligações:</strong> <span id="totalLigacoes">-</span></div>
+          <div><strong>Não Registrados:</strong> <span id="diferencaChamados">-</span></div>
         </div>
+        <canvas id="atendidasVsTickets"></canvas>
       </div>
     </div>
+  </div>
+
 
     <!-- SLA -->
     <div class="col-md-4">
