@@ -13,6 +13,8 @@ CHAMADA_SAIDA = 'http://192.168.10.35:9444/v2/report/call_detailing_outgoing'
 
 PERFORMANCE_ATENDENTES = 'http://192.168.10.35:9444/v2/report/attendants_performance'
 
+EVENTOS_ATENDENTES = 'http://192.168.10.35:9444/v2/report/attendants_events'
+
 # Credenciais Del Grande URA
 CREDENTIALS = {
     'username' : 'integracao',

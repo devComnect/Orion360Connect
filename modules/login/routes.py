@@ -1,21 +1,21 @@
-from flask import Blueprint, request, render_template, redirect, flash, url_for, session, jsonify
-from flask_login import login_user, logout_user, login_required
-from application.models import db 
-from application.models import User
+from flask import Blueprint, request, render_template, redirect, flash, url_for, current_app, session
+from flask_login import login_user, logout_user, login_required, current_user
+from application.models import db, User, PerformanceColaboradores
 from datetime import datetime
-from application.models import db, PerformanceColaboradores
+from modules.login.session_manager import SessionManager
 import logging
-from flask_login import current_user
 
 login_bp = Blueprint('login', __name__)
-# Crie o objeto admin
 
 ## ------------------------------------------- Bloco Rotas Login -------------------------------------------------------------------------------------------- ##
 
 @login_bp.route('/', methods=['GET', 'POST'])
-@login_required
 def home():
+    # Protege a rota com SessionManager
+    if not SessionManager.is_authenticated():
+        return redirect(url_for('login.login'))
     return render_template('dashboard.html')
+
 
 @login_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -26,17 +26,18 @@ def register():
 
         if User.query.filter_by(email=email).first():
             flash('E-mail já cadastrado!', 'danger')
-            return redirect(url_for('authenticate.register'))
+            return redirect(url_for('login.register'))
 
         user = User(username=username, email=email)
-        user.set_password(password)
+        user.set_password(password)  # Assumindo que set_password faz hash
         db.session.add(user)
         db.session.commit()
 
         flash('Conta criada com sucesso!', 'success')
-        return redirect(url_for('authenticate.login'))
+        return redirect(url_for('login.login'))
 
     return render_template('register.html')
+
 
 @login_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -44,63 +45,31 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # Lista de usuários permitidos
         usuarios_permitidos = ['fsilva', 'lolegario', 'avaz']
-
         if username not in usuarios_permitidos:
             flash('Usuário não autorizado para acessar este sistema.', 'danger')
-            print(f"Tentativa de login não autorizada: {username}")
             return render_template('login.html')
 
-        print(f"Tentando fazer login com: {username}")
-
         user = User.query.filter_by(username=username).first()
-
         if not user:
-            print(f"Usuário {username} não foi encontrado no banco de dados.")
             flash('Usuário não encontrado.', 'danger')
             return render_template('login.html')
 
         if user.password == password:
-            print(f"Login bem-sucedido para o usuário {username}")
-            login_user(user, remember=True)
-
-            session['username'] = user.username
-            return render_template('insights.html')
-
+            SessionManager.login_user(user)
+            return redirect(url_for('home_bp.render_insights'))
         else:
-            print("Senha incorreta.")
             flash('Credenciais inválidas. Tente novamente.', 'danger')
 
     return render_template('login.html')
 
-from flask import current_app
-@login_bp.route('/logout', methods=['POST', 'GET'])
+
+@login_bp.route('/logout', methods=['GET', 'POST'])
 def logout():
     try:
-        current_app.logger.info(f"Logout iniciado. Usuário autenticado? {current_user.is_authenticated}")
-        
-        if current_user.is_authenticated:
-            logout_user()
-
-        session.pop('username', None)
-        return redirect(url_for('home_bp.render_login'))
-    
-    except Exception as e:
-        current_app.logger.error(f"Erro no logout: {e}", exc_info=True)
-        return f"Erro interno no logout: {str(e)}", 500
-
-@login_bp.route('/logout/colaboradores', methods=['POST', 'GET'])
-def logout_colaboradores():
-    try:
-        current_app.logger.info(f"Logout iniciado. Usuário autenticado? {current_user.is_authenticated}")
-        
-        if current_user.is_authenticated:
-            logout_user()
-
-        session.pop('username', None)
-        return redirect(url_for('home_bp.render_login_colaboradores'))
-    
+        current_app.logger.info(f"Logout iniciado.")
+        SessionManager.logout_user()
+        return redirect(url_for('login.login'))
     except Exception as e:
         current_app.logger.error(f"Erro no logout: {e}", exc_info=True)
         return f"Erro interno no logout: {str(e)}", 500
@@ -223,6 +192,7 @@ def login_colaboradores():
 
     return render_template('login_colaboradores.html')
 
+
 @login_bp.route('/render/colaboradores', methods=['GET'])
 def render_login_operadores():
     lista_nivel2 = ['Fernando', 'Eduardo', 'Chrysthyanne', 'Luciano']
@@ -235,4 +205,19 @@ def render_login_operadores():
 
     else:
         return render_template('colaboradores_individual.html', nome=nome)
- 
+
+
+@login_bp.route('/logout/colaboradores', methods=['POST', 'GET'])
+def logout_colaboradores():
+    try:
+        current_app.logger.info(f"Logout iniciado. Usuário autenticado? {current_user.is_authenticated}")
+        
+        if current_user.is_authenticated:
+            logout_user()
+
+        session.pop('username', None)
+        return redirect(url_for('home_bp.render_login_colaboradores'))
+    
+    except Exception as e:
+        current_app.logger.error(f"Erro no logout: {e}", exc_info=True)
+        return f"Erro interno no logout: {str(e)}", 500

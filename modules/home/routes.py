@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, render_template, request, redirect, url_for
-from flask_login import login_required
+#from flask_login import login_required
+from modules.login.decorators import login_required
 import pandas as pd
 
 home_bp = Blueprint('home_bp', __name__)
 
 @home_bp.route('/dashboard', methods=['GET'])
+@login_required
 def render_home():
     return render_template('dashboard.html')
 
@@ -17,14 +19,17 @@ def render_admin():
     return render_template('admin.html')
 
 @home_bp.route('/colaboradores', methods=['GET'])
+@login_required
 def render_operadores():
     return render_template('colaboradores.html')
 
 @home_bp.route('/insights', methods=['GET'])
+@login_required
 def render_insights():
     return render_template('insights.html')
 
 @home_bp.route('/relatorios', methods=['GET'])
+@login_required
 def render_relatorio():
     return render_template('relatorios.html')
 
@@ -33,6 +38,7 @@ def render_login_colaboradores():
     return render_template('login_colaboradores.html')
 
 @home_bp.route('/okrs', methods=['GET'])
+@login_required
 def render_okrs():
     return render_template('okrs.html')
 
@@ -49,6 +55,7 @@ def render_performance_n2():
     return render_template('colaboradores_individual_nivel2.html')
 
 @home_bp.route('/guardians', methods=['GET'])
+@login_required
 def render_guardians():
     return render_template('guardians.html')
 
@@ -57,6 +64,7 @@ def render_guardians_individual():
     return render_template('guardians_individual.html')
 
 @home_bp.route('/escala', methods=['GET'])
+@login_required
 def render_escala():
     caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte 2026.xlsm'
 

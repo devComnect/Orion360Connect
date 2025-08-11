@@ -79,8 +79,10 @@ app.register_blueprint(grupos_bp)
 db.init_app(app)
 migrate = Migrate(app, db)
 
-login_manager = LoginManager(app)
-login_manager.login_view = 'login.login'
+# Configuração do LoginManager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login.login'  # nome do blueprint.nome_da_funcao
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -95,6 +97,15 @@ def tarefa_horaria_processar_performance():
             logging.info(f"[AGENDADO] Resultado padrão: {resultado1}")
         except Exception as e:
             logging.error(f"[AGENDADO] Erro ao importar performance.")
+
+def tarefa_horaria_processar_performance_vyrtos():
+    with app.app_context():
+        try:
+            logging.info("[AGENDADO] Iniciando coleta e armazenamento de performance Vyrtos padrão...")
+            resultado1 = processar_e_armazenar_performance_vyrtos_incremental()
+            logging.info(f"[AGENDADO] Resultado padrão: {resultado1}")
+        except Exception as e:
+            logging.error(f"[AGENDADO] Erro ao importar performance vyrtos.")
 
 def tarefa_importar_chamados():
     with app.app_context():
@@ -138,6 +149,13 @@ with app.app_context():
     scheduler.add_job(
         id='job_processa_performance_horaria',
         func=tarefa_horaria_processar_performance,
+        trigger='interval',
+        minutes=5
+    )
+
+    scheduler.add_job(
+        id='job_processa_performance_horaria_vyrtos',
+        func=tarefa_horaria_processar_performance_vyrtos,
         trigger='interval',
         minutes=5
     )

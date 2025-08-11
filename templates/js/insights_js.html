@@ -1805,3 +1805,68 @@ function atualizarNps(dias) {
     modal.show();
   }
 </script>
+
+<!-- Script que retorna as ligações atendidas-->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Atualiza ao clicar no botão de filtro de dias
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const dias = parseInt(this.getAttribute('data-dias'), 10);
+      atualizarLigacoes(dias);
+    });
+  });
+});
+
+function atualizarLigacoes(dias) {
+  fetch('/insights/ligacoesAtendidas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dias })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === "success") {
+      document.getElementById("ch_atendidas").textContent = data.total_ligacoes;
+    } else {
+      console.error("Erro ao buscar ligações atendidas:", data.message);
+    }
+  })
+  .catch(error => {
+    console.error("Erro na requisição de ligações atendidas:", error);
+  });
+}
+</script>
+
+
+<!-- Script que retorna as ligações atendidas-->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Atualiza ao clicar no botão de filtro de dias
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const dias = parseInt(this.getAttribute('data-dias'), 10);
+      atualizarLigacoesPerdidas(dias);
+    });
+  });
+});
+
+function atualizarLigacoesPerdidas(dias) {
+  fetch('/insights/ligacoesPerdidas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dias })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === "success") {
+      document.getElementById("ch_naoatendidas").textContent = data.total_ligacoes;
+    } else {
+      console.error("Erro ao buscar ligações não atendidas:", data.message);
+    }
+  })
+  .catch(error => {
+    console.error("Erro na requisição de ligações não atendidas:", error);
+  });
+}
+</script>

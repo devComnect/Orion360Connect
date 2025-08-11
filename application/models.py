@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
+from sqlalchemy import UniqueConstraint
 
 # Inicializa o db, que será importado no app.py
 db = SQLAlchemy()
@@ -12,7 +13,6 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    #name = db.Column(db.String(50))
     is_admin = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.TIMESTAMP, server_default=db.func.now())
@@ -48,6 +48,7 @@ class DesempenhoAtendenteVyrtos(db.Model):
     tempo_minatend = db.Column(db.Integer, nullable=True)
     tempo_medatend = db.Column(db.Float, nullable=True)
     tempo_maxatend = db.Column(db.Integer, nullable=True)
+    data_importacao = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Fila(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -84,16 +85,23 @@ class PerformanceColaboradores(db.Model):
     name = db.Column(db.String(20))
     operador_id = db.Column(db.Integer, nullable=False, index=True)
     data = db.Column(db.Date, nullable=False, index=True)
+
     ch_atendidas = db.Column(db.Integer, default=0)
     ch_naoatendidas = db.Column(db.Integer, default=0)
     tempo_online = db.Column(db.Integer, default=0)
     tempo_livre = db.Column(db.Integer, default=0)
     tempo_servico = db.Column(db.Integer, default=0)
     pimprod_refeicao = db.Column(db.Integer, default=0)
+
     tempo_minatend = db.Column(db.Integer, nullable=True)
     tempo_medatend = db.Column(db.Float, nullable=True)
     tempo_maxatend = db.Column(db.Integer, nullable=True)
-    data_importacao = db.Column(db.DateTime)
+
+    data_importacao = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('operador_id', 'data', name='uq_operador_data'),
+    )
 
 class Chamado(db.Model):
     __tablename__ = 'chamados'
@@ -275,3 +283,25 @@ class Grupos(db.Model):
 
     criado_em = db.Column(db.DateTime, default=db.func.current_timestamp())
     atualizado_em = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+class EventosAtendentes(db.Model):
+    __tablename__ = 'eventos'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    data = db.Column(db.Date, nullable=False, index=True)  # "2025/08/08"
+    atendente = db.Column(db.Integer, nullable=False, index=True)  # ID do atendente
+    nome_atendente = db.Column(db.String(100), nullable=False)  # "Renato Ragga"
+    evento = db.Column(db.String(50), nullable=False)  # "Pausa"
+    parametro = db.Column(db.String(10), nullable=True)  # "1"
+    nome_pausa = db.Column(db.String(50), nullable=True)  # "Toalete"
+    data_inicio = db.Column(db.DateTime, nullable=False)  # "2025-08-08 08:18:31"
+    data_fim = db.Column(db.DateTime, nullable=False)  # "2025-08-08 08:22:00"
+    sinaliza_duracao = db.Column(db.Boolean, nullable=False, default=False)  # 0 -> False
+    duracao = db.Column(db.Interval, nullable=True)  # "00:03:29"
+    complemento = db.Column(db.String(255), nullable=True)
+    data_importacao = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<Evento {self.evento} - {self.nome_atendente} ({self.data})>"
+
+

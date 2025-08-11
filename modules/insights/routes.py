@@ -3,7 +3,7 @@ import requests
 from modules.deskmanager.authenticate.routes import token_desk
 from modules.insights.utils import formatar_tempo
 from datetime import datetime, timedelta
-from application.models import Chamado, db, Categoria, PesquisaSatisfacao, RelatorioColaboradores
+from application.models import Chamado, db, Categoria, PesquisaSatisfacao, RelatorioColaboradores, PerformanceColaboradores, DesempenhoAtendenteVyrtos
 from collections import Counter
 from sqlalchemy import func, and_, or_
 import numpy as np
@@ -906,6 +906,74 @@ def ces():
         "ces_percentual": ces_percentual,
         "total_respostas_ces": total_respostas_ces
     })
+
+@insights_bp.route('/ligacoesAtendidas', methods=['POST'])
+def get_ligacoes_atendidas():
+    try:
+        dias = int(request.json.get("dias", 1))  # padrão: 1 dia
+        hoje = datetime.now().date()
+        data_inicio = hoje - timedelta(days=dias)
+
+        total_ligacoes = db.session.query(
+            func.sum(PerformanceColaboradores.ch_atendidas)
+        ).filter(
+            PerformanceColaboradores.ch_atendidas != 0,
+            PerformanceColaboradores.data >= data_inicio,
+            PerformanceColaboradores.data <= hoje
+        ).scalar() or 0  # garante que não seja None
+
+        total_ligacoes_vyrtos = db.session.query(
+            func.sum(DesempenhoAtendenteVyrtos.ch_atendidas)
+        ).filter(
+            DesempenhoAtendenteVyrtos.ch_atendidas != 0,
+            DesempenhoAtendenteVyrtos.data >= data_inicio,
+            DesempenhoAtendenteVyrtos.data <= hoje
+        ).scalar() or 0  # garante que não seja None
+
+        return jsonify({
+            "status": "success",
+            "total_ligacoes": total_ligacoes + total_ligacoes_vyrtos
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+@insights_bp.route('/ligacoesPerdidas', methods=['POST'])
+def get_ligacoes_noa_atendidas():
+    try:
+        dias = int(request.json.get("dias", 1))  # padrão: 1 dia
+        hoje = datetime.now().date()
+        data_inicio = hoje - timedelta(days=dias)
+
+        total_ligacoes = db.session.query(
+            func.sum(PerformanceColaboradores.ch_naoatendidas)
+        ).filter(
+            PerformanceColaboradores.ch_naoatendidas != 0,
+            PerformanceColaboradores.data >= data_inicio,
+            PerformanceColaboradores.data <= hoje
+        ).scalar() or 0  # garante que não seja None
+
+        total_ligacoes_vyrtos = db.session.query(
+            func.sum(DesempenhoAtendenteVyrtos.ch_naoatendidas)
+        ).filter(
+            DesempenhoAtendenteVyrtos.ch_naoatendidas != 0,
+            DesempenhoAtendenteVyrtos.data >= data_inicio,
+            DesempenhoAtendenteVyrtos.data <= hoje
+        ).scalar() or 0  # garante que não seja None
+
+        return jsonify({
+            "status": "success",
+            "total_ligacoes": total_ligacoes + total_ligacoes_vyrtos
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 @insights_bp.route('/abertos/status', methods=['POST'])
 def estatisticas_chamados_periodos():
