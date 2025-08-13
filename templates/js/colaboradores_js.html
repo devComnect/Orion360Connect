@@ -817,3 +817,48 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 </script>
 
+<!--Bloco que traz as chamadas efetuadas internamente -->
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const nomeOperador = document.getElementById("colaboradorNome")?.textContent?.trim();
+    if (!nomeOperador) return;
+
+    // Chamada inicial
+    atualizarChamadasEfetuadas(7, nomeOperador); // ou 1, se quiser começar por 1 dia
+
+    // Atualiza ao clicar no botão de filtro de dias
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarChamadasEfetuadas(dias, nomeOperador);
+      });
+    });
+  });
+
+  function atualizarChamadasEfetuadas(dias, nomeOperador) {
+    fetch('/operadores/chamadasEfetuadasColaboradores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias, nome: nomeOperador })
+    })
+    .then(response => response.json())
+    .then(data => {
+      const spanEfetuadas = document.getElementById("ch-efetuadas");
+
+      if (data.status === "success") {
+        spanEfetuadas.textContent = data.total_ligacoes || 0;
+      } else {
+        spanEfetuadas.textContent = "Erro";
+        console.error("Erro na resposta:", data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar chamadas efetuadas:", error);
+      document.getElementById("ch-efetuadas").textContent = "Erro";
+    });
+  }
+</script>

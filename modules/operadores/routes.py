@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, session
 import modules.tasks.relatorios.utils as utils
-from application.models import db, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, PesquisaSatisfacao, RelatorioColaboradores 
+from application.models import db, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, PesquisaSatisfacao, RelatorioColaboradores, RegistroChamadas
 from modules.auth.utils import authenticate, authenticate_relatorio
 from application.models import Chamado
 from settings.endpoints import CREDENTIALS
@@ -616,11 +616,9 @@ def tma_e_tms_colaboradores():
             Chamado.data_criacao.isnot(None),
             Chamado.restante_p_atendimento.isnot(None),
             Chamado.restante_s_atendimento.isnot(None),
-            Chamado.nome_status.ilike('%Resolvido%')
+            Chamado.nome_status.ilike('%Resolvido%'), 
+            Chamado.operador == nome
         )
-
-        if nome:
-            query = query.filter(Chamado.operador.ilike(f'%{nome}%'))
 
         chamados_validos = query.all()
 
@@ -674,10 +672,25 @@ def tma_e_tms_colaboradores():
 
         import numpy as np
 
-        media_tma = np.mean(tma_list) / 60
-        mediana_tma = np.median(tma_list) / 60
-        media_tms = np.mean(tms_list) / 60
-        mediana_tms = np.median(tms_list) / 60
+        def zscore_clip(values, lower=-3, upper=3):
+            media = np.mean(values)
+            std = np.std(values)
+            if std == 0:
+                return values
+            zscores = (values - media) / std
+            zscores_clipped = np.clip(zscores, lower, upper)
+            return media + zscores_clipped * std
+
+        tma_array = np.array(tma_list)
+        tms_array = np.array(tms_list)
+
+        tma_normalizado = zscore_clip(tma_array)
+        tms_normalizado = zscore_clip(tms_array)
+
+        media_tma = np.mean(tma_normalizado) / 60
+        mediana_tma = np.median(tma_normalizado) / 60
+        media_tms = np.mean(tms_normalizado) / 60
+        mediana_tms = np.median(tms_normalizado) / 60
 
         def formatar_tempo(minutos: float) -> str:
             if minutos < 60:
@@ -867,3 +880,30 @@ def render_operadores_n2():
     nome = session.get('nome')
 
     return render_template('colaboradores_nivel2.html', nome=nome)
+
+@operadores_bp.route('/chamadasEfetuadasColaboradores', methods=['POST'])
+def get_ligacoes_efetuadas_colaboradores():
+    try:
+        data = request.get_json(force=True)
+        nome = data.get('nome', '').strip().lower()
+        dias = int(data.get("dias", 1))  
+        data_limite = datetime.now() - timedelta(days=dias)
+
+        total_ligacoes = db.session.query(
+            func.count()
+        ).filter(
+            RegistroChamadas.status == 'Atendida',
+            RegistroChamadas.data_hora >= data_limite,
+            RegistroChamadas.nome_atendente.ilike(f'%{nome}%')  # busca parcial
+        ).scalar() or 0
+
+        return jsonify({
+            "status": "success",
+            "total_ligacoes": total_ligacoes
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500

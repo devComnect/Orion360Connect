@@ -304,4 +304,21 @@ class EventosAtendentes(db.Model):
     def __repr__(self):
         return f"<Evento {self.evento} - {self.nome_atendente} ({self.data})>"
 
+class RegistroChamadas(db.Model):
+    __tablename__= 'registro_chamadas'
 
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    data_hora = db.Column(db.DateTime)
+    unique_id = db.Column(db.String(100))
+    status = db.Column(db.String(20))
+    numero = db.Column(db.String(20))
+    tempo_espera = db.Column(db.String(20))
+    tempo_atendimento = db.Column(db.String(20))
+    nome_atendente = db.Column(db.String(50))
+    motivo = db.Column(db.String(20))
+    sub_motivo = db.Column(db.String(20))
+    desconexao_local = db.Column(db.String(20))
+    data_importacao = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    

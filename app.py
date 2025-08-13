@@ -28,6 +28,7 @@ from modules.tasks.relatorios.utils import (
     importar_chamados,
     processar_e_armazenar_performance_incremental,
     processar_e_armazenar_performance_vyrtos_incremental,
+    importar_registro_chamadas_saida_incremental,
     importar_pSatisfacao, 
     importar_fcr_reabertos
 )
@@ -131,6 +132,15 @@ def tarefa_importar_fcr_reabertos():
         except Exception as e:
             logging.error(f"[AGENDADO] Erro ao importar FCR e reabertos: {e}")
 
+def tarefa_importar_registro_chamadas_saida_incremental():
+    with app.app_context():
+        try:
+            importar_registro_chamadas_saida_incremental()
+            logging.info("[AGENDADO] Registro chamadas de saída com sucesso.")
+        except Exception as e:
+            logging.error(f"[AGENDADO] Erro ao importar registro de chamadas de saída: {e}")
+    
+
 # APScheduler
 scheduler = APScheduler()
 
@@ -149,6 +159,13 @@ with app.app_context():
     scheduler.add_job(
         id='job_processa_performance_horaria',
         func=tarefa_horaria_processar_performance,
+        trigger='interval',
+        minutes=5
+    )
+
+    scheduler.add_job(
+        id='job_processa_registro_chamadas_saida',
+        func=tarefa_importar_registro_chamadas_saida_incremental,
         trigger='interval',
         minutes=5
     )

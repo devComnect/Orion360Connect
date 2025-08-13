@@ -1870,3 +1870,45 @@ function atualizarLigacoesPerdidas(dias) {
   });
 }
 </script>
+
+
+
+<script>
+  const botoesPeriodo = document.querySelectorAll(".filtro-btn");
+
+  botoesPeriodo.forEach(button => {
+    button.addEventListener("click", function () {
+      botoesPeriodo.forEach(btn => btn.classList.remove("active"));
+      this.classList.add("active");
+
+      const dias = parseInt(this.getAttribute("data-dias"), 10);
+      carregarChamadasEfetuadas(dias);
+    });
+  });
+
+  // chamada inicial
+  carregarChamadasEfetuadas(1);
+
+  async function carregarChamadasEfetuadas(dias) {
+    try {
+      const response = await fetch('/insights/chamadasEfetuadas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ dias })
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        const total = data.total_ligacoes || 0;
+        document.getElementById("ch-efetuadas").textContent = total;
+      } else {
+        console.error("Erro na resposta:", data.message);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar chamadas efetuadas:", error);
+    }
+  }
+</script>

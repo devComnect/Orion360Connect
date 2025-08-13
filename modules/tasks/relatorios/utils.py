@@ -1,7 +1,7 @@
 import requests, json
 import settings.endpoints as endpoints
 from urllib.parse import urlencode
-from application.models import db, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Grupos, Chamado, Categoria, PesquisaSatisfacao, EventosAtendentes, RelatorioColaboradores
+from application.models import db, RegistroChamadas, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Grupos, Chamado, Categoria, PesquisaSatisfacao, EventosAtendentes, RelatorioColaboradores
 from modules.auth.utils import authenticate, authenticate_relatorio
 from modules.deskmanager.authenticate.routes import token_desk
 import modules.tasks.relatorios.utils as utils
@@ -163,41 +163,6 @@ def atendentePerformance(token, params):
             "status_code": getattr(e.response, "status_code", 500),
             "url": base_url
         }
-
-'''def atendentePerformanceVyrtos(token, params):
-    base_url = endpoints.PERFORMANCE_ATENDENTES
-
-    query_params = {
-        "initial_date": params.initial_date,
-        "initial_hour": params.initial_hour,
-        "final_date": params.final_date,
-        "final_hour": params.final_hour,
-        "week": params.week,
-        "fixed": params.fixed,
-        "agents": params.agents,  # NÃO em JSON
-        "queues": params.queues,  # NÃO em JSON
-        "options": params.options,
-        "conf": params.conf
-    }
-
-    # Somente `options` e `conf` são enviados como JSON strings
-    for key in ["options", "conf"]:
-        if isinstance(query_params[key], (dict, list)):
-            query_params[key] = json.dumps(query_params[key])
-
-    headers = {
-        "Authorization": f"Bearer {token}"
-    }
-
-    try:
-        response = requests.get(base_url, headers=headers, params=query_params)
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        return {
-            "error": str(e),
-            "status_code": getattr(e.response, "status_code", 500),
-            "url": base_url
-        }'''
 
 def gerar_intervalos(data_inicial, data_final, tamanho=15):
     """
@@ -753,7 +718,41 @@ def atendentePerformanceData(token, params: dict):
             "status_code": getattr(e.response, "status_code", 500),
             "url": base_url
         }
-    
+
+def registroChamadas(token, params: dict):
+    base_url = endpoints.CHAMADA_SAIDA
+
+    # Faz uma cópia do dicionário para evitar mutações externas
+    query_params = params.copy()
+
+    print("-> Query Params (antes do ajuste):", query_params)
+
+    # Converte listas/dicionários de forma adequada para query string
+    for key in ["options", "conf"]:
+        if key in query_params and isinstance(query_params[key], (dict, list)):
+            query_params[key] = json.dumps(query_params[key])
+
+    for key in ["agents", "queues", "week"]:
+        if key in query_params and isinstance(query_params[key], list):
+            query_params[key] = ",".join(map(str, query_params[key]))
+
+    print("-> Query Params (após o ajuste):", query_params)
+
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    try:
+        response = requests.get(base_url, headers=headers, params=query_params)
+        response.raise_for_status()  # levanta erro se status != 200
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        return {
+            "error": str(e),
+            "status_code": getattr(e.response, "status_code", 500),
+            "url": base_url
+        }
+
 def atendenteEventosData(token, params: dict):
     base_url = endpoints.EVENTOS_ATENDENTES
 
@@ -1468,3 +1467,150 @@ def importar_categorias():
         "total_api": len(categorias_api),
         "inseridos": total_inseridos,
     }
+
+def importar_registro_chamadas_saida_incremental():
+    hoje = datetime.now().date()
+    data_inicial = hoje
+    data_final = hoje  # apenas o dia atual
+
+    # Autenticação
+    auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
+    if "access_token" not in auth_response:
+        return {"status": "error", "message": "Falha na autenticação"}
+
+    access_token = auth_response["access_token"]
+
+    for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=1):
+        offset = 0
+
+        while True:
+            params = {
+                "initial_date": inicio.strftime('%d/%m/%Y'),
+                "final_date": fim.strftime('%d/%m/%Y'),
+                "initial_hour": "00:00:00",
+                "final_hour": "23:59:59",
+                "options": json.dumps({
+                    "sort": {"data": -1},
+                    "offset": offset,
+                    "count": 100
+                })
+            }
+
+            response = utils.registroChamadas(access_token, params)
+            dados = response.get("result", {}).get("data", [])
+
+            if not dados:
+                break  # fim dos dados
+
+            novos_registros = 0
+
+            for item in dados:
+                try:
+                    unique_id = item.get("uniqueID")
+                    
+                    # Verifica se o registro já existe
+                    existe = RegistroChamadas.query.filter_by(unique_id=unique_id).first()
+                    if existe:
+                        continue  # pula duplicados
+
+                    registro = RegistroChamadas(
+                        data_hora=datetime.strptime(item["dataHora"], "%Y-%m-%d %H:%M:%S"),
+                        unique_id=unique_id,
+                        status=item.get("status"),
+                        numero=item.get("numero"),
+                        tempo_espera=item.get("tempoEspera"),
+                        tempo_atendimento=item.get("tempoAtendimento"),
+                        nome_atendente=item.get("nomeAtendente"),
+                        motivo=item.get("motivo"),
+                        sub_motivo=item.get("subMotivo"),
+                        desconexao_local=item.get("desconexaoLocal"),
+                        data_importacao=datetime.utcnow()
+                    )
+                    db.session.add(registro)
+                    novos_registros += 1
+
+                except Exception as e:
+                    print(f"Erro ao processar registro: {e}")
+                    continue
+
+            db.session.commit()
+            offset += 100  # próxima página
+
+            if novos_registros == 0:
+                break  # se não adicionou nada novo, evita loop desnecessário
+
+    return {"status": "success", "message": "Importação incremental concluída com sucesso"}
+
+def importar_registro_chamadas_incremental():
+    hoje = datetime.now().date()
+    data_inicial = hoje
+    data_final = hoje  # apenas o dia atual
+
+    # Autenticação
+    auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
+    if "access_token" not in auth_response:
+        return {"status": "error", "message": "Falha na autenticação"}
+
+    access_token = auth_response["access_token"]
+
+    for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=1):
+        offset = 0
+
+        while True:
+            params = {
+                "initial_date": inicio.strftime('%d/%m/%Y'),
+                "final_date": fim.strftime('%d/%m/%Y'),
+                "initial_hour": "00:00:00",
+                "final_hour": "23:59:59",
+                "options": json.dumps({
+                    "sort": {"data": -1},
+                    "offset": offset,
+                    "count": 100
+                })
+            }
+
+            response = utils.registroChamadas(access_token, params)
+            dados = response.get("result", {}).get("data", [])
+
+            if not dados:
+                break  # fim dos dados
+
+            novos_registros = 0
+
+            for item in dados:
+                try:
+                    unique_id = item.get("uniqueID")
+
+                    # Verifica se já existe no banco
+                    existe = RegistroChamadas.query.filter_by(unique_id=unique_id).first()
+                    if existe:
+                        continue  # pula se já existe
+
+                    registro = RegistroChamadas(
+                        data_hora=datetime.strptime(item["dataHora"], "%Y-%m-%d %H:%M:%S"),
+                        unique_id=unique_id,
+                        status=item.get("status"),
+                        numero=item.get("numero"),
+                        tempo_espera=item.get("tempoEspera"),
+                        tempo_atendimento=item.get("tempoAtendimento"),
+                        nome_atendente=item.get("nomeAtendente"),
+                        motivo=item.get("motivo"),
+                        sub_motivo=item.get("subMotivo"),
+                        desconexao_local=item.get("desconexaoLocal"),
+                        data_importacao=datetime.utcnow()
+                    )
+                    db.session.add(registro)
+                    novos_registros += 1
+
+                except Exception as e:
+                    print(f"Erro ao processar registro: {e}")
+                    continue
+
+            db.session.commit()
+            offset += 100
+
+            # Se nenhum novo registro foi adicionado, pode parar
+            if novos_registros == 0:
+                break
+
+    return {"status": "success", "message": "Importação incremental concluída com sucesso"}
