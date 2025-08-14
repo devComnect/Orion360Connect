@@ -323,4 +323,43 @@ class RegistroChamadas(db.Model):
     desconexao_local = db.Column(db.String(20))
     data_importacao = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     
-    
+
+class ChamadasDetalhes(db.Model):
+    __tablename__ = 'detalhes_chamadas'
+
+    id = db.Column(db.Integer, primary_key=True)  # ID interno da tabela
+    idFila = db.Column(db.Integer)
+    nomeFila = db.Column(db.String(100))
+    uniqueID = db.Column(db.String(50))
+    data = db.Column(db.Date)
+    tipo = db.Column(db.String(20))
+    numero = db.Column(db.String(20))
+    origem = db.Column(db.String(20))
+    tipoOrigem = db.Column(db.String(50))
+    filaOrigem = db.Column(db.String(100))
+    horaEntradaPos = db.Column(db.String(20))
+    horaAtendimento = db.Column(db.Time)
+    horaTerminoPos = db.Column(db.String(20))
+    tempoEspera = db.Column(db.String(10))  # Pode ser convertido para intervalo
+    tempoAtendimento = db.Column(db.String(10))  # Pode ser convertido também
+    numeroAtendente = db.Column(db.String(10))
+    nomeAtendente = db.Column(db.String(100))
+    desconexaoLocal = db.Column(db.String(10))  # 'Sim' ou 'Não'
+    transferencia = db.Column(db.String(100))
+    motivo = db.Column(db.String(100))
+    rotuloSubMotivo = db.Column(db.String(100))
+    subMotivo = db.Column(db.String(100))
+    isAtendida = db.Column(db.Boolean)
+    isAbandonada = db.Column(db.Boolean)
+    isTransbordoPorTempo = db.Column(db.Boolean)
+    isTransbordoPorTecla = db.Column(db.Boolean)
+    isIncompleta = db.Column(db.Boolean)
+    numeroSemFormato = db.Column(db.String(20))
+    tipoAbandonada = db.Column(db.String(50), nullable=True)
+    Nome = db.Column(db.String(100))
+    protocolo = db.Column(db.String(50))
+    retentativaSucesso = db.Column(db.Integer)  # Pode ser -1, 0, 1
+
+    def __repr__(self):
+        return f'<Chamada {self.uniqueID} - {self.numero}>'
+

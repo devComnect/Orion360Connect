@@ -4,4 +4,4 @@ from modules.tasks.relatorios.utils import importar_registro_chamadas_incrementa
 
 with app.app_context():
     print("Tarefa em execução!")
-    importar_registro_chamadas_incremental()
+    importar_eventos()

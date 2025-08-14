@@ -30,7 +30,8 @@ from modules.tasks.relatorios.utils import (
     processar_e_armazenar_performance_vyrtos_incremental,
     importar_registro_chamadas_saida_incremental,
     importar_pSatisfacao, 
-    importar_fcr_reabertos
+    importar_fcr_reabertos,
+    importar_eventos
 )
 
 # ----------------- LOGGING CONFIG -----------------
@@ -139,6 +140,14 @@ def tarefa_importar_registro_chamadas_saida_incremental():
             logging.info("[AGENDADO] Registro chamadas de saída com sucesso.")
         except Exception as e:
             logging.error(f"[AGENDADO] Erro ao importar registro de chamadas de saída: {e}")
+
+def tarefa_importar_eventos():
+    with app.app_context():
+        try:
+            importar_eventos()
+            logging.info("[AGENDADO] Import de eventos realizado com sucesso.")
+        except Exception as e:
+            logging.error(f"[AGENDADO] Erro ao importar eventos: {e}")
     
 
 # APScheduler
@@ -159,6 +168,13 @@ with app.app_context():
     scheduler.add_job(
         id='job_processa_performance_horaria',
         func=tarefa_horaria_processar_performance,
+        trigger='interval',
+        minutes=5
+    )
+
+    scheduler.add_job(
+        id='job_import_eventos',
+        func=tarefa_importar_eventos,
         trigger='interval',
         minutes=5
     )
