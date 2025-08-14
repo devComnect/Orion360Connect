@@ -853,59 +853,98 @@ def fcr():
 
 @insights_bp.route('/ces', methods=['POST'])
 def ces():
-    data = request.get_json()
-    dias = int(data.get('dias', 1))
-    data_limite = (datetime.now() - timedelta(days=dias)).date()
+    try:
+        data = request.get_json()
 
-    CES_MAP = {
-        'Péssimo': 1,
-        'Discordo Totalmente': 2,
-        'Discordo Parcialmente': 3,
-        'Neutro': 4,
-        'Concordo Parcialmente': 5,
-        'Regular': 6,
-        'Bom': 7,
-        'Concordo': 8,
-        'Concordo Plenamente': 9,
-        'Ótimo': 10
-    }
+        # Garantir que 'dias' seja um inteiro válido
+        try:
+            dias = int(data.get('dias', 1))
+        except (ValueError, TypeError):
+            dias = 1
 
-    # Buscar todas as alternativas não nulas no período
-    respostas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
-        and_(
-            PesquisaSatisfacao.data_resposta >= data_limite,
-            PesquisaSatisfacao.alternativa.isnot(None),
-            func.length(PesquisaSatisfacao.alternativa) > 0
-        )
-    ).all()
+        data_limite = (datetime.now() - timedelta(days=dias)).date()
 
-    valores_convertidos = []
+        CES_MAP = {
+            'Péssimo': 1,
+            'Discordo Totalmente': 2,
+            'Discordo Parcialmente': 3,
+            'Neutro': 4,
+            'Concordo Parcialmente': 5,
+            'Regular': 6,
+            'Bom': 7,
+            'Concordo': 8,
+            'Concordo Plenamente': 9,
+            'Ótimo': 10
+        }
 
-    for resp in respostas_brutas:
-        valor = resp[0].strip()
-        # Se for número direto (ex: '8'), converte
-        if valor.isdigit():
-            numero = int(valor)
-            if 0 <= numero <= 10:
-                valores_convertidos.append(numero)
-        # Se for texto mapeado
-        elif valor in CES_MAP:
-            valores_convertidos.append(CES_MAP[valor])
+        respostas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
+            and_(
+                PesquisaSatisfacao.data_resposta >= data_limite,
+                PesquisaSatisfacao.alternativa.isnot(None),
+                func.length(PesquisaSatisfacao.alternativa) > 0
+            )
+        ).all()
 
-    total_respostas_ces = len(valores_convertidos)
+        valores_convertidos = []
 
-    if total_respostas_ces > 0:
-        soma_ponderada = sum(valores_convertidos)
-        ces_final = round(soma_ponderada / total_respostas_ces, 2)
-        ces_percentual = round((ces_final / 10) * 100, 2)
-    else:
-        ces_percentual = 0
+        for resp in respostas_brutas:
+            valor = resp[0].strip()
+            if valor.isdigit():
+                numero = int(valor)
+                if 0 <= numero <= 10:
+                    valores_convertidos.append(numero)
+            elif valor in CES_MAP:
+                valores_convertidos.append(CES_MAP[valor])
 
-    return jsonify({
-        "status": "success",
-        "ces_percentual": ces_percentual,
-        "total_respostas_ces": total_respostas_ces
-    })
+        total_respostas_ces = len(valores_convertidos)
+
+        if total_respostas_ces > 0:
+            soma_ponderada = sum(valores_convertidos)
+            ces_final = round(soma_ponderada / total_respostas_ces, 2)
+            ces_percentual = round((ces_final / 10) * 100, 2)
+
+            # Definir nota e descrição com base no percentual
+            if ces_percentual == 0:
+                nota = 1
+                descricao = 'Alto esforço'
+            elif ces_percentual < 16.3:
+                nota = 1
+                descricao = 'Alto esforço'
+            elif ces_percentual < 33.3:
+                nota = 2
+                descricao = 'Alto esforço'
+            elif ces_percentual < 50:
+                nota = 3
+                descricao = 'Alto esforço'
+            elif ces_percentual < 66.7:
+                nota = 4
+                descricao = 'Esforço moderado'
+            elif ces_percentual < 83:
+                nota = 5
+                descricao = 'Esforço moderado'
+            elif ces_percentual < 92:
+                nota = 6
+                descricao = 'Baixo esforço'
+            else:
+                nota = 7
+                descricao = 'Baixo esforço'
+        else:
+            nota = 0
+            descricao = 'Sem dados'
+            ces_percentual = 0.0
+
+        return jsonify({
+            "status": "success",
+            "nota": nota,
+            "descricao": descricao,
+            "total_respostas_ces": total_respostas_ces,
+            "ces_percentual": ces_percentual
+        })
+
+    except Exception as e:
+        # Log no servidor (opcional: enviar para monitoramento)
+        print(f"[ERRO /ces] {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @insights_bp.route('/ligacoesAtendidas', methods=['POST'])
 def get_ligacoes_atendidas():

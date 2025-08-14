@@ -51,6 +51,8 @@ class DesempenhoAtendenteVyrtos(db.Model):
     data_importacao = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Fila(db.Model):
+    __tablename__ = 'fila_suporte'
+
     id = db.Column(db.Integer, primary_key=True)
     numero = db.Column(db.Integer)
     nome = db.Column(db.String(50))
@@ -285,7 +287,7 @@ class Grupos(db.Model):
     atualizado_em = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
 class EventosAtendentes(db.Model):
-    __tablename__ = 'eventos'
+    __tablename__ = 'eventos_atendente'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     data = db.Column(db.Date, nullable=False, index=True)  # "2025/08/08"
@@ -305,7 +307,7 @@ class EventosAtendentes(db.Model):
         return f"<Evento {self.evento} - {self.nome_atendente} ({self.data})>"
 
 class RegistroChamadas(db.Model):
-    __tablename__= 'registro_chamadas'
+    __tablename__= 'registro_chamadas_saida'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 

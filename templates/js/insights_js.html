@@ -1579,13 +1579,12 @@ function carregarTopCategorias(dias = 1) {
   }
 </script>
 
-
-<!-- Script que traz a relação de CES-->
+<!--Script que retorna a relação de CES-->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const botoesFiltro = document.querySelectorAll(".filtro-btn");
-    const campoCesRetorno = document.getElementById("ces-retorno");
-    const campoCesNull = document.getElementById("ces-null");
+    const campoNota = document.getElementById("ces-nota");
+    const campoDescricao = document.getElementById("ces-descricao");
 
     async function carregarCES(dias = 1) {
         try {
@@ -1600,16 +1599,38 @@ document.addEventListener("DOMContentLoaded", function () {
             const data = await response.json();
 
             if (data.status === "success") {
-                campoCesRetorno.textContent = data.ces_percentual + '%';
-                campoCesNull.textContent = data.total_respostas_ces;
+                campoNota.textContent = data.nota;
+                campoDescricao.textContent = data.descricao;
+
+                // Limpa classes de cor anteriores
+                campoDescricao.classList.remove("text-primary", "text-warning", "text-danger");
+
+                // Adiciona a classe conforme a descrição
+                switch (data.descricao) {
+                    case 'Baixo esforço':
+                        campoDescricao.classList.add('text-primary'); // azul
+                        break;
+                    case 'Esforço moderado':
+                        campoDescricao.classList.add('text-warning'); // amarelo
+                        break;
+                    case 'Alto esforço':
+                        campoDescricao.classList.add('text-danger'); // vermelho
+                        break;
+                    default:
+                        // sem estilo extra
+                        break;
+                }
+
             } else {
-                campoCesRetorno.textContent = "Erro";
-                campoCesNull.textContent = "Erro";
+                campoNota.textContent = "Erro";
+                campoDescricao.textContent = "Erro";
+                campoDescricao.classList.remove("text-primary", "text-warning", "text-danger");
                 console.error(data.message);
             }
         } catch (error) {
-            campoCesRetorno.textContent = "Erro";
-            campoCesNull.textContent = "Erro";
+            campoNota.textContent = "Erro";
+            campoDescricao.textContent = "Erro";
+            campoDescricao.classList.remove("text-primary", "text-warning", "text-danger");
             console.error(error);
         }
     }
@@ -1626,6 +1647,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     carregarCES(1);
 });
+
 </script>
 
 <!--Script que retorna a relação de NPS-->
@@ -1871,8 +1893,7 @@ function atualizarLigacoesPerdidas(dias) {
 }
 </script>
 
-
-
+<!-- Script que retorna as ligações efetuadas-->
 <script>
   const botoesPeriodo = document.querySelectorAll(".filtro-btn");
 

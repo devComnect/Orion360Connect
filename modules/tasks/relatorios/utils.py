@@ -1200,7 +1200,7 @@ def importar_grupos():
 def importar_eventos():
     try:
         hoje = datetime.now().date()
-        data_inicio = hoje - timedelta(days=1)
+        data_inicio = hoje - timedelta(days=180)
 
         # Autenticação
         auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
@@ -1543,7 +1543,7 @@ def importar_registro_chamadas_saida_incremental():
 
 def importar_registro_chamadas_incremental():
     hoje = datetime.now().date()
-    data_inicial = hoje
+    data_inicial = hoje - timedelta(days=180)
     data_final = hoje  # apenas o dia atual
 
     # Autenticação
