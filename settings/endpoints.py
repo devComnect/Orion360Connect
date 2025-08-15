@@ -5,7 +5,7 @@ AUTHENTICATE = "http://192.168.10.35:9444/v2/auth"
 
 QUEUES = 'http://192.168.10.35:9444/v2/queues/'
 
-REPORT = 'http://192.168.10.35:9444/v2/report/call_detailing'
+DETALHE_CHAMADAS = 'http://192.168.10.35:9444/v2/report/call_detailing'
 
 LOGIN_LOGOFF = 'http://192.168.10.35:9444/v2/report/login_logoff'
 

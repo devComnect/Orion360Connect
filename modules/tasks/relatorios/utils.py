@@ -1,7 +1,7 @@
 import requests, json
 import settings.endpoints as endpoints
 from urllib.parse import urlencode
-from application.models import db, RegistroChamadas, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Grupos, Chamado, Categoria, PesquisaSatisfacao, EventosAtendentes, RelatorioColaboradores
+from application.models import db, RegistroChamadas, ChamadasDetalhes, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Grupos, Chamado, Categoria, PesquisaSatisfacao, EventosAtendentes, RelatorioColaboradores
 from modules.auth.utils import authenticate, authenticate_relatorio
 from modules.deskmanager.authenticate.routes import token_desk
 import modules.tasks.relatorios.utils as utils
@@ -752,6 +752,40 @@ def registroChamadas(token, params: dict):
             "status_code": getattr(e.response, "status_code", 500),
             "url": base_url
         }
+    
+def detalhesChamadas(token, params: dict):
+    base_url = endpoints.DETALHE_CHAMADAS
+
+    # Faz uma cópia do dicionário para evitar mutações externas
+    query_params = params.copy()
+
+    print("-> Query Params (antes do ajuste):", query_params)
+
+    # Converte listas/dicionários de forma adequada para query string
+    for key in ["conf"]:
+        if key in query_params and isinstance(query_params[key], (dict, list)):
+            query_params[key] = json.dumps(query_params[key])
+
+    for key in ["agents", "queues", "week"]:
+        if key in query_params and isinstance(query_params[key], list):
+            query_params[key] = ",".join(map(str, query_params[key]))
+
+    print("-> Query Params (após o ajuste):", query_params)
+
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    try:
+        response = requests.get(base_url, headers=headers, params=query_params)
+        response.raise_for_status()  # levanta erro se status != 200
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        return {
+            "error": str(e),
+            "status_code": getattr(e.response, "status_code", 500),
+            "url": base_url
+        }
 
 def atendenteEventosData(token, params: dict):
     base_url = endpoints.EVENTOS_ATENDENTES
@@ -1148,6 +1182,18 @@ def parse_data(data_str):
                 return None
     return None
 
+def parse_hora(hora_str):
+    """
+    Converte uma string de hora 'HH:MM:SS' em datetime.time.
+    Retorna None se o valor for vazio ou inválido.
+    """
+    if hora_str and hora_str not in ["-", ""]:
+        try:
+            return datetime.strptime(hora_str, "%H:%M:%S").time()
+        except ValueError:
+            return None
+    return None
+
 def importar_grupos():
     token = token_desk()
 
@@ -1197,7 +1243,7 @@ def importar_grupos():
         "total_api": len(grupos_api),
     }
 
-def importar_eventos():
+'''def importar_eventos():
     try:
         hoje = datetime.now().date()
         data_inicio = hoje - timedelta(days=1)
@@ -1235,7 +1281,7 @@ def importar_eventos():
                     "week": [],
                     "agents": [operador_id],
                     "queues": [1],
-                    "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
+                    "options": {"sort": {"data": 1}, "offset": offset, "count": -1},
                     "conf": {}
                 }
 
@@ -1315,9 +1361,9 @@ def importar_eventos():
 
     except Exception as e:
         app.logger.error(f"Erro na tarefa importar_eventos: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": str(e)}), 500'''
 
-def processar_e_armazenar_eventos(dias=30, incremental=False):
+'''def processar_e_armazenar_eventos(dias=1, incremental=False):
     hoje = datetime.now().date()
     ontem = hoje - timedelta(days=1)
 
@@ -1328,7 +1374,7 @@ def processar_e_armazenar_eventos(dias=30, incremental=False):
     access_token = auth_response["access_token"]
 
     # Intervalo de datas para busca
-    data_inicial = hoje - timedelta(days=dias - 1)
+    data_inicial = hoje #- timedelta(days=dias)
     data_final = hoje
 
     # Mapeamento operadores
@@ -1355,6 +1401,39 @@ def processar_e_armazenar_eventos(dias=30, incremental=False):
             db.session.rollback()
             return {"status": "error", "message": f"Erro ao limpar a tabela: {str(e)}"}
 
+    # Funções auxiliares internas para parsing seguro
+    def parse_data(data_str):
+        if not data_str or data_str.strip() in ["-", ""]:
+            return None
+        for fmt in ["%d/%m/%Y", "%Y/%m/%d", "%Y-%m-%d"]:
+            try:
+                return datetime.strptime(data_str, fmt).date()
+            except ValueError:
+                continue
+        return None
+
+    def parse_datetime(dt_str):
+        if not dt_str or dt_str.strip() in ["-", ""]:
+            return None
+        for fmt in ["%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M:%S", "%Y/%m/%d %H:%M:%S"]:
+            try:
+                return datetime.strptime(dt_str, fmt)
+            except ValueError:
+                continue
+        return None
+
+    def parse_timedelta(valor):
+        if not valor or valor.strip() in ["-", ""]:
+            return None
+        try:
+            h, m, s = map(int, valor.split(":"))
+            return timedelta(hours=h, minutes=m, seconds=s)
+        except ValueError:
+            return None
+
+    def parse_bool(valor):
+        return str(valor).strip() in ["1", "True", "true"]
+
     for operador_id in operadores_ids:
         nome_operador = OPERADORES_MAP.get(operador_id, "Desconhecido")
 
@@ -1370,7 +1449,7 @@ def processar_e_armazenar_eventos(dias=30, incremental=False):
                     "final_hour": "23:59:59",
                     "fixed": 0,
                     "week": [],
-                    "agents": [operador_id],  # sem join, só converte para string
+                    "agents": [operador_id],
                     "queues": [1],
                     "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
                     "conf": {}
@@ -1385,28 +1464,152 @@ def processar_e_armazenar_eventos(dias=30, incremental=False):
 
                 for item in dados:
                     try:
-                        data_raw = item["data"]
-                        data_registro = datetime.strptime(data_raw, "%d/%m/%Y").date() if "/" in data_raw else datetime.strptime(data_raw, "%Y-%m-%d").date()
-
-                        duracao_str = item.get("duracao")
-                        duracao = None
-                        if duracao_str:
-                            h, m, s = map(int, duracao_str.split(":"))
-                            duracao = timedelta(hours=h, minutes=m, seconds=s)
-
                         registro = EventosAtendentes(
-                            data=data_registro,
+                            data=parse_data(item.get("data")),
                             atendente=operador_id,
                             nome_atendente=nome_operador,
-                            evento=item.get("evento", ""),
-                            parametro=item.get("parametro"),
-                            nome_pausa=item.get("nomePausa"),
-                            data_inicio=datetime.strptime(item["dataInicio"], "%Y-%m-%d %H:%M:%S"),
-                            data_fim=datetime.strptime(item["dataFim"], "%Y-%m-%d %H:%M:%S"),
-                            sinaliza_duracao=bool(item.get("sinalizaDuracao", 0)),
-                            duracao=duracao,
-                            complemento=item.get("complemento"),
-                            data_importacao=datetime.now()
+                            evento=item.get("evento") or "-",
+                            parametro=item.get("parametro") or None,
+                            nome_pausa=item.get("nomePausa") or None,
+                            data_inicio=parse_datetime(item.get("dataInicio")),
+                            data_fim=parse_datetime(item.get("dataFim")),
+                            sinaliza_duracao=parse_bool(item.get("sinalizaDuracao")),
+                            duracao=parse_timedelta(item.get("duracao")),
+                            complemento=item.get("complemento") or None,
+                            data_importacao=datetime.utcnow()
+                        )
+                        db.session.add(registro)
+                        total_registros += 1
+
+                    except Exception as e:
+                        print(f"[ERRO] {nome_operador} em {item.get('dataInicio')}: {str(e)}")
+
+                db.session.flush()
+                offset += 1000
+
+            print(f"[{nome_operador}] Total eventos inseridos de {inicio} a {fim}: {total_registros}")
+
+        db.session.commit()
+
+    return {"status": "success", "message": "Eventos importados com sucesso."}'''
+
+def processar_e_armazenar_eventos(dias=1):
+    hoje = datetime.now().date()
+    ontem = hoje - timedelta(days=1)
+
+    # Autenticação
+    auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
+    if "access_token" not in auth_response:
+        return {"status": "error", "message": "Falha na autenticação"}
+    access_token = auth_response["access_token"]
+
+    # Intervalo de datas para busca
+    data_inicial = hoje
+    data_final = hoje
+
+    # Mapeamento operadores
+    OPERADORES_MAP = {
+        2020: "Renato Ragga",
+        2021: "Matheus",
+        2022: "Gustavo",
+        2023: "Raysa",
+        2024: "Lucas",
+        2025: "Danilo",
+        2028: "Henrique",
+        2029: "Rafael"
+    }
+
+    operadores_ids = list(OPERADORES_MAP.keys())
+
+    # Funções auxiliares internas para parsing seguro
+    def parse_data(data_str):
+        if not data_str or data_str.strip() in ["-", ""]:
+            return None
+        for fmt in ["%d/%m/%Y", "%Y/%m/%d", "%Y-%m-%d"]:
+            try:
+                return datetime.strptime(data_str, fmt).date()
+            except ValueError:
+                continue
+        return None
+
+    def parse_datetime(dt_str):
+        if not dt_str or dt_str.strip() in ["-", ""]:
+            return None
+        for fmt in ["%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M:%S", "%Y/%m/%d %H:%M:%S"]:
+            try:
+                return datetime.strptime(dt_str, fmt)
+            except ValueError:
+                continue
+        return None
+
+    def parse_timedelta(valor):
+        if not valor or valor.strip() in ["-", ""]:
+            return None
+        try:
+            h, m, s = map(int, valor.split(":"))
+            return timedelta(hours=h, minutes=m, seconds=s)
+        except ValueError:
+            return None
+
+    def parse_bool(valor):
+        return str(valor).strip() in ["1", "True", "true"]
+
+    for operador_id in operadores_ids:
+        nome_operador = OPERADORES_MAP.get(operador_id, "Desconhecido")
+
+        for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):
+            offset = 0
+            total_registros = 0
+
+            while True:
+                params = {
+                    "initial_date": inicio.strftime('%d/%m/%Y'),
+                    "final_date": fim.strftime('%d/%m/%Y'),
+                    "initial_hour": "00:00:00",
+                    "final_hour": "23:59:59",
+                    "fixed": 0,
+                    "week": [],
+                    "agents": [operador_id],
+                    "queues": [1],
+                    "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
+                    "conf": {}
+                }
+
+                print(f"[{nome_operador}] Buscando eventos de {inicio} até {fim}, offset {offset}")
+                response = utils.atendenteEventosData(access_token, params)
+                dados = response.get("result", {}).get("data", [])
+
+                if not dados:
+                    break
+
+                for item in dados:
+                    try:
+                        # Verifica se o registro já existe antes de adicionar
+                        data_evento = parse_data(item.get("data"))
+                        data_inicio = parse_datetime(item.get("dataInicio"))
+
+                        existe = EventosAtendentes.query.filter_by(
+                            atendente=operador_id,
+                            data_inicio=data_inicio,
+                            evento=item.get("evento")
+                        ).first()
+
+                        if existe:
+                            continue  # pula registro já existente
+
+                        registro = EventosAtendentes(
+                            data=data_evento,
+                            atendente=operador_id,
+                            nome_atendente=nome_operador,
+                            evento=item.get("evento") or "-",
+                            parametro=item.get("parametro") or None,
+                            nome_pausa=item.get("nomePausa") or None,
+                            data_inicio=data_inicio,
+                            data_fim=parse_datetime(item.get("dataFim")),
+                            sinaliza_duracao=parse_bool(item.get("sinalizaDuracao")),
+                            duracao=parse_timedelta(item.get("duracao")),
+                            complemento=item.get("complemento") or None,
+                            data_importacao=datetime.utcnow()
                         )
                         db.session.add(registro)
                         total_registros += 1
@@ -1614,3 +1817,105 @@ def importar_registro_chamadas_incremental():
                 break
 
     return {"status": "success", "message": "Importação incremental concluída com sucesso"}
+
+def importar_detalhes_chamadas():
+    hoje = datetime.now().date()
+    data_inicial = hoje - timedelta(days=1)
+    data_final = hoje
+
+    OPERADORES_MAP = {
+        2020: "Renato Ragga",
+        2021: "Matheus",
+        2022: "Gustavo",
+        2023: "Raysa",
+        2024: "Lucas",
+        2025: "Danilo",
+        2028: "Henrique",
+        2029: "Rafael"
+    }
+
+    auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
+    if "access_token" not in auth_response:
+        return {"status": "error", "message": "Falha na autenticação"}
+
+    access_token = auth_response["access_token"]
+    total_registros = 0
+    data_importacao_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    for operador_id, nome_operador in OPERADORES_MAP.items():
+        for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):
+            offset = 0
+            while True:
+                params = {
+                    "week": "1,2,3,4,5",
+                    "initial_hour": "00:00:00",
+                    "final_hour": "23:59:59",
+                    "initial_date": inicio.strftime('%d/%m/%Y'),
+                    "final_date": fim.strftime('%d/%m/%Y'),
+                    "transfer_display": "1",
+                    "fixed": "1",
+                    "queues": "1",
+                    "agents": str(operador_id),
+                    "conf": json.dumps({"call_answered": 1, "call_abandoned": 0}),
+                    "options": json.dumps({"sort": {"data": -1}, "offset": offset, "count": 100})
+                }
+
+                api_response = detalhesChamadas(access_token, params)
+                if not api_response or "result" not in api_response:
+                    break
+
+                result = api_response["result"]
+                if "data" not in result or not result["data"]:
+                    break
+
+                registros = []
+                for item in result["data"]:
+                    if db.session.query(ChamadasDetalhes).filter_by(uniqueID=item.get("uniqueID")).first():
+                        continue
+
+                    registros.append(ChamadasDetalhes(
+                        idFila=str(item.get("idFila") or ""),
+                        nomeFila=str(item.get("nomeFila") or ""),
+                        uniqueID=str(item.get("uniqueID") or ""),
+                        data=str(item.get("data") or ""),
+                        tipo=str(item.get("tipo") or ""),
+                        numero=str(item.get("numero") or ""),
+                        origem=str(item.get("origem") or ""),
+                        tipoOrigem=str(item.get("tipoOrigem") or ""),
+                        filaOrigem=str(item.get("filaOrigem") or ""),
+                        horaEntradaPos=str(item.get("horaEntradaPos") or ""),
+                        horaAtendimento=str(item.get("horaAtendimento") or ""),
+                        horaTerminoPos=str(item.get("horaTerminoPos") or ""),
+                        tempoEspera=str(item.get("tempoEspera") or ""),
+                        tempoAtendimento=str(item.get("tempoAtendimento") or ""),
+                        numeroAtendente=str(item.get("numeroAtendente") or ""),
+                        nomeAtendente=str(item.get("nomeAtendente") or ""),
+                        desconexaoLocal=str(item.get("desconexaoLocal") or ""),
+                        transferencia=str(item.get("transferencia") or ""),
+                        motivo=str(item.get("motivo") or ""),
+                        rotuloSubMotivo=str(item.get("rotuloSubMotivo") or ""),
+                        subMotivo=str(item.get("subMotivo") or ""),
+                        isAtendida=str(item.get("isAtendida") or ""),
+                        isAbandonada=str(item.get("isAbandonada") or ""),
+                        isTransbordoPorTempo=str(item.get("isTransbordoPorTempo") or ""),
+                        isTransbordoPorTecla=str(item.get("isTransbordoPorTecla") or ""),
+                        isIncompleta=str(item.get("isIncompleta") or ""),
+                        numeroSemFormato=str(item.get("numeroSemFormato") or ""),
+                        tipoAbandonada=str(item.get("tipoAbandonada") or ""),
+                        Nome=str(item.get("Nome") or ""),
+                        protocolo=str(item.get("protocolo") or ""),
+                        retentativaSucesso=str(item.get("retentativaSucesso") or ""),
+                        dataImportacao=data_importacao_str
+                    ))
+
+                if registros:
+                    db.session.bulk_save_objects(registros)
+                    db.session.commit()
+                    total_registros += len(registros)
+
+                offset += 100
+
+    return {"status": "success", "total_registros": total_registros}
+
+
+

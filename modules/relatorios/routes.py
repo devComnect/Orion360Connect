@@ -1,15 +1,17 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, send_file
-from application.models import Chamado, db,  PerformanceColaboradores
+from application.models import Chamado, db,  PerformanceColaboradores, RegistroChamadas
 from datetime import datetime, time
 from modules.relatorios.utils import get_turno
 from collections import Counter
 from io import BytesIO
 from fpdf import FPDF
 import matplotlib.pyplot as plt
+from sqlalchemy import func
 import os
 
 
 relatorios_bp = Blueprint('relatorios_bp', __name__, url_prefix='/relatorios')
+
 
 @relatorios_bp.route("/extrairRelatorios", methods=['POST'])
 def extrair_relatorios():
@@ -28,16 +30,15 @@ def extrair_relatorios():
     except ValueError:
         return {"status": "error", "message": "Formato de data/hora inválido"}, 400
 
-    # Consulta chamados com data e hora
+    # Consulta chamados
     chamados = Chamado.query.filter(
         Chamado.operador == operador,
         Chamado.data_criacao >= dt_inicio,
         Chamado.data_criacao <= dt_final
     ).order_by(Chamado.data_criacao).all()
-
     total_chamados = len(chamados)
 
-    # Consulta performance (por data apenas)
+    # Consulta performance (por data)
     performance = PerformanceColaboradores.query.filter(
         PerformanceColaboradores.name == operador,
         PerformanceColaboradores.data >= dt_inicio.date(),
@@ -47,9 +48,20 @@ def extrair_relatorios():
     total_ligacoes_atendidas = sum(p.ch_atendidas or 0 for p in performance)
     total_ligacoes_naoatendidas = sum(p.ch_naoatendidas or 0 for p in performance)
 
+    # Total ligações efetuadas no período
+    total_ligacoes_efetuadas = db.session.query(
+        func.count()
+    ).filter(
+        RegistroChamadas.status == 'Atendida',
+        RegistroChamadas.data_hora >= dt_inicio,
+        RegistroChamadas.data_hora <= dt_final,
+        RegistroChamadas.nome_atendente.ilike(f'%{operador}%')
+    ).scalar() or 0
+
     # Geração do PDF
     pdf = FPDF()
     pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.set_font("Arial", "B", 16)
     pdf.cell(0, 10, f"Relatório do Operador: {operador}", ln=True, align="C")
 
@@ -60,7 +72,6 @@ def extrair_relatorios():
     # Chamados
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, "Chamados:", ln=True)
-
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 10, f"Total de chamados: {total_chamados}", ln=True)
     pdf.ln(2)
@@ -84,37 +95,56 @@ def extrair_relatorios():
             pdf.ln()
     else:
         pdf.cell(0, 8, "Nenhum chamado encontrado.", 1, ln=True)
-
     pdf.ln(10)
 
     # Performance
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, "Performance de Ligações:", ln=True)
 
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 8, f"Total ligações atendidas: {total_ligacoes_atendidas}", ln=True)
-    pdf.cell(0, 8, f"Total ligações não atendidas: {total_ligacoes_naoatendidas}", ln=True)
-    pdf.ln(2)
-
+    # Cabeçalho da tabela de performance ajustado
     pdf.set_font("Arial", "B", 11)
-    pdf.cell(30, 8, "Data", 1)
-    pdf.cell(30, 8, "Atendidas", 1)
-    pdf.cell(40, 8, "Não atendidas", 1)
-    pdf.cell(40, 8, "Tempo Online (s)", 1)
-    pdf.cell(40, 8, "Tempo Serviço (s)", 1)
+    pdf.cell(22, 8, "Data", 1)
+    pdf.cell(22, 8, "Atendidas", 1)
+    pdf.cell(28, 8, "Não atendidas", 1)
+    pdf.cell(22, 8, "Efetuadas", 1)
+    pdf.cell(28, 8, "Transferidas", 1)
+    pdf.cell(28, 8, "Tempo Online", 1)
+    pdf.cell(29, 8, "Tempo Serviço", 1)
     pdf.ln()
 
     pdf.set_font("Arial", "", 10)
     if performance:
         for perf in performance:
-            pdf.cell(30, 8, perf.data.strftime('%d/%m/%Y'), 1)
-            pdf.cell(30, 8, str(perf.ch_atendidas), 1)
-            pdf.cell(40, 8, str(perf.ch_naoatendidas), 1)
-            pdf.cell(40, 8, str(perf.tempo_online), 1)
-            pdf.cell(40, 8, str(perf.tempo_servico), 1)
+            # Ligações efetuadas e transferidas por dia
+            ligacoes_efetuadas_dia = db.session.query(func.count()).filter(
+                RegistroChamadas.status == 'Atendida',
+                func.date(RegistroChamadas.data_hora) == perf.data,
+                RegistroChamadas.nome_atendente.ilike(f'%{operador}%')
+            ).scalar() or 0
+
+            ligacoes_transferidas_dia = db.session.query(func.count()).filter(
+                RegistroChamadas.status == 'Transferida',
+                func.date(RegistroChamadas.data_hora) == perf.data,
+                RegistroChamadas.nome_atendente.ilike(f'%{operador}%')
+            ).scalar() or 0
+
+            pdf.cell(22, 8, perf.data.strftime('%d/%m/%Y'), 1)
+            pdf.cell(22, 8, str(perf.ch_atendidas or 0), 1)
+            pdf.cell(28, 8, str(perf.ch_naoatendidas or 0), 1)
+            pdf.cell(22, 8, str(ligacoes_efetuadas_dia), 1)
+            pdf.cell(28, 8, str(ligacoes_transferidas_dia), 1)
+            pdf.cell(28, 8, str(perf.tempo_online or 0), 1)
+            pdf.cell(29, 8, str(perf.tempo_servico or 0), 1)
             pdf.ln()
     else:
         pdf.cell(0, 8, "Nenhum dado de performance encontrado.", 1, ln=True)
+
+    pdf.set_font("Arial", "B", 14)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 8, f"Total ligações atendidas: {total_ligacoes_atendidas}", ln=True)
+    pdf.cell(0, 8, f"Total ligações não atendidas: {total_ligacoes_naoatendidas}", ln=True)
+    pdf.cell(0, 8, f"Total ligações efetuadas: {ligacoes_efetuadas_dia}", ln=True)
+    pdf.ln(2)
 
     # Finalização
     buffer = BytesIO()
@@ -124,6 +154,8 @@ def extrair_relatorios():
 
     filename = f"relatorio_{operador}_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
+
+
 
 '''@relatorios_bp.route("/extrairComparativoRelatorios", methods=['POST'])
 def extrair_comparativo_relatorios():

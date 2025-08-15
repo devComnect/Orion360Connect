@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, session
 import modules.tasks.relatorios.utils as utils
-from application.models import db, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, PesquisaSatisfacao, RelatorioColaboradores, RegistroChamadas
+from application.models import db, ChamadasDetalhes, DesempenhoAtendenteVyrtos, PerformanceColaboradores, PesquisaSatisfacao, RelatorioColaboradores, RegistroChamadas
 from modules.auth.utils import authenticate, authenticate_relatorio
 from application.models import Chamado
 from settings.endpoints import CREDENTIALS
@@ -880,6 +880,36 @@ def render_operadores_n2():
     nome = session.get('nome')
 
     return render_template('colaboradores_nivel2.html', nome=nome)
+
+@operadores_bp.route('/chamadastransferidasColaboradores', methods=['POST'])
+def get_ligacoes_transferidas_colaboradores():
+    try:
+        data = request.get_json(force=True)
+        nome = data.get('nome', '').strip().lower()
+        dias = int(data.get("dias", 1))
+
+        # Calcula a data limite (apenas data, sem hora)
+        data_limite = (datetime.now() - timedelta(days=dias)).date()
+
+        total_ligacoes = db.session.query(
+            func.count()
+        ).filter(
+            ChamadasDetalhes.transferencia.ilike('%Ramal%'),
+            ChamadasDetalhes.data >= data_limite,  # comparação entre date e date
+            ChamadasDetalhes.nomeAtendente.ilike(f'%{nome}%')
+        ).scalar() or 0
+
+        return jsonify({
+            "status": "success",
+            "total_ligacoes": total_ligacoes
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
 
 @operadores_bp.route('/chamadasEfetuadasColaboradores', methods=['POST'])
 def get_ligacoes_efetuadas_colaboradores():

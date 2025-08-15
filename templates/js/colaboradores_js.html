@@ -861,3 +861,51 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 </script>
+
+
+<!--Script que me traz as chamadas trasnferidas -->
+
+<!-- Bloco que traz as chamadas transferidas -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const nomeOperador = document.getElementById("colaboradorNome")?.textContent?.trim();
+    if (!nomeOperador) return;
+
+    // Chamada inicial para 7 dias (pode mudar para 1)
+    atualizarChamadasTransferidas(7, nomeOperador);
+
+    // Atualiza ao clicar no botão de filtro de dias
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarChamadasTransferidas(dias, nomeOperador);
+      });
+    });
+  });
+
+  function atualizarChamadasTransferidas(dias, nomeOperador) {
+    fetch('/operadores/chamadastransferidasColaboradores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias, nome: nomeOperador })
+    })
+    .then(response => response.json())
+    .then(data => {
+      const spanTransferidas = document.getElementById("ch-transferidas");
+
+      if (data.status === "success") {
+        spanTransferidas.textContent = data.total_ligacoes || 0;
+      } else {
+        spanTransferidas.textContent = "Erro";
+        console.error("Erro na resposta:", data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar chamadas transferidas:", error);
+      document.getElementById("ch-transferidas").textContent = "Erro";
+    });
+  }
+</script>

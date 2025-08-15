@@ -291,14 +291,14 @@ class EventosAtendentes(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     data = db.Column(db.Date, nullable=False, index=True)  # "2025/08/08"
-    atendente = db.Column(db.Integer, nullable=False, index=True)  # ID do atendente
-    nome_atendente = db.Column(db.String(100), nullable=False)  # "Renato Ragga"
-    evento = db.Column(db.String(50), nullable=False)  # "Pausa"
-    parametro = db.Column(db.String(10), nullable=True)  # "1"
-    nome_pausa = db.Column(db.String(50), nullable=True)  # "Toalete"
-    data_inicio = db.Column(db.DateTime, nullable=False)  # "2025-08-08 08:18:31"
-    data_fim = db.Column(db.DateTime, nullable=False)  # "2025-08-08 08:22:00"
-    sinaliza_duracao = db.Column(db.Boolean, nullable=False, default=False)  # 0 -> False
+    atendente = db.Column(db.Integer, nullable=True, index=True)  # ID do atendente (NULL se inválido)
+    nome_atendente = db.Column(db.String(100), nullable=True)  # Nome pode ser NULL
+    evento = db.Column(db.String(50), nullable=True)  # Tipo de evento
+    parametro = db.Column(db.String(10), nullable=True)  # "1" ou "-"
+    nome_pausa = db.Column(db.String(50), nullable=True)  # "Toalete" ou NULL
+    data_inicio = db.Column(db.DateTime, nullable=True)  # Pode ser NULL se horário inválido
+    data_fim = db.Column(db.DateTime, nullable=True)  # Pode ser NULL se horário inválido
+    sinaliza_duracao = db.Column(db.Boolean, nullable=False, default=False)
     duracao = db.Column(db.Interval, nullable=True)  # "00:03:29"
     complemento = db.Column(db.String(255), nullable=True)
     data_importacao = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -323,43 +323,59 @@ class RegistroChamadas(db.Model):
     desconexao_local = db.Column(db.String(20))
     data_importacao = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     
-
 class ChamadasDetalhes(db.Model):
     __tablename__ = 'detalhes_chamadas'
 
-    id = db.Column(db.Integer, primary_key=True)  # ID interno da tabela
-    idFila = db.Column(db.Integer)
-    nomeFila = db.Column(db.String(100))
-    uniqueID = db.Column(db.String(50))
-    data = db.Column(db.Date)
-    tipo = db.Column(db.String(20))
-    numero = db.Column(db.String(20))
-    origem = db.Column(db.String(20))
-    tipoOrigem = db.Column(db.String(50))
-    filaOrigem = db.Column(db.String(100))
-    horaEntradaPos = db.Column(db.String(20))
-    horaAtendimento = db.Column(db.Time)
-    horaTerminoPos = db.Column(db.String(20))
-    tempoEspera = db.Column(db.String(10))  # Pode ser convertido para intervalo
-    tempoAtendimento = db.Column(db.String(10))  # Pode ser convertido também
-    numeroAtendente = db.Column(db.String(10))
-    nomeAtendente = db.Column(db.String(100))
-    desconexaoLocal = db.Column(db.String(10))  # 'Sim' ou 'Não'
-    transferencia = db.Column(db.String(100))
-    motivo = db.Column(db.String(100))
-    rotuloSubMotivo = db.Column(db.String(100))
-    subMotivo = db.Column(db.String(100))
-    isAtendida = db.Column(db.Boolean)
-    isAbandonada = db.Column(db.Boolean)
-    isTransbordoPorTempo = db.Column(db.Boolean)
-    isTransbordoPorTecla = db.Column(db.Boolean)
-    isIncompleta = db.Column(db.Boolean)
-    numeroSemFormato = db.Column(db.String(20))
-    tipoAbandonada = db.Column(db.String(50), nullable=True)
-    Nome = db.Column(db.String(100))
-    protocolo = db.Column(db.String(50))
-    retentativaSucesso = db.Column(db.Integer)  # Pode ser -1, 0, 1
+    id = db.Column(db.Integer, primary_key=True)
+    idFila = db.Column(db.String(50))
+    nomeFila = db.Column(db.String(255))
+    uniqueID = db.Column(db.String(100))
+    data = db.Column(db.String(50))
+    tipo = db.Column(db.String(50))
+    numero = db.Column(db.String(50))
+    origem = db.Column(db.String(50))
+    tipoOrigem = db.Column(db.String(100))
+    filaOrigem = db.Column(db.String(255))
+    horaEntradaPos = db.Column(db.String(50))
+    horaAtendimento = db.Column(db.String(50))
+    horaTerminoPos = db.Column(db.String(50))
+    tempoEspera = db.Column(db.String(50))
+    tempoAtendimento = db.Column(db.String(50))
+    numeroAtendente = db.Column(db.String(50))
+    nomeAtendente = db.Column(db.String(255))
+    desconexaoLocal = db.Column(db.String(50))
+    transferencia = db.Column(db.String(255))
+    motivo = db.Column(db.String(255))
+    rotuloSubMotivo = db.Column(db.String(255))
+    subMotivo = db.Column(db.String(255))
+    isAtendida = db.Column(db.String(10))
+    isAbandonada = db.Column(db.String(10))
+    isTransbordoPorTempo = db.Column(db.String(10))
+    isTransbordoPorTecla = db.Column(db.String(10))
+    isIncompleta = db.Column(db.String(10))
+    numeroSemFormato = db.Column(db.String(50))
+    tipoAbandonada = db.Column(db.String(50))
+    Nome = db.Column(db.String(255))
+    protocolo = db.Column(db.String(100))
+    retentativaSucesso = db.Column(db.String(50))
+    dataImportacao = db.Column(db.String(50))  # NOVA COLUNA
 
-    def __repr__(self):
-        return f'<Chamada {self.uniqueID} - {self.numero}>'
+    
 
+class DoorAccessLogs(db.Model):
+    __bind_key__ = 'door_access'
+    __tablename__ = 'door_access_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    device_id = db.Column(db.Integer)
+    time = db.Column(db.Integer)
+    event = db.Column(db.Integer)
+    hw_device_id = db.Column(db.BigInteger)
+    identifier_id = db.Column(db.BigInteger)
+    user_id = db.Column(db.Integer)
+    portal_id = db.Column(db.Integer)
+    identification_rule_id = db.Column(db.Integer)
+    card_value = db.Column(db.String(50))
+    qrcode_value = db.Column(db.String(50))
+    log_type_id = db.Column(db.Integer)
+    updated_at = db.Column(db.DateTime)

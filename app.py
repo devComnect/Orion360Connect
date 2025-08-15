@@ -31,7 +31,8 @@ from modules.tasks.relatorios.utils import (
     importar_registro_chamadas_saida_incremental,
     importar_pSatisfacao, 
     importar_fcr_reabertos,
-    importar_eventos
+    processar_e_armazenar_eventos,
+    importar_detalhes_chamadas
 )
 
 # ----------------- LOGGING CONFIG -----------------
@@ -51,6 +52,9 @@ app_logger.addHandler(handler)
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Slink1205@localhost/data'
+app.config['SQLALCHEMY_BINDS'] = {
+    'door_access': 'mysql+pymysql://sec_report:%40Comnect2025@172.16.30.50/AccessDoors'
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'LjKbe9TBQKXExJw'
 
@@ -144,10 +148,19 @@ def tarefa_importar_registro_chamadas_saida_incremental():
 def tarefa_importar_eventos():
     with app.app_context():
         try:
-            importar_eventos()
+            processar_e_armazenar_eventos()
             logging.info("[AGENDADO] Import de eventos realizado com sucesso.")
         except Exception as e:
             logging.error(f"[AGENDADO] Erro ao importar eventos: {e}")
+
+def tarefa_importar_detalhes_chamadas():
+    with app.app_context():
+        try:
+            logging.info("[AGENDADO] Iniciando coleta e armazenamento de detalhes de chamadas...")
+            resultado1 = importar_detalhes_chamadas()
+            logging.info(f"[AGENDADO] Resultado padrão: {resultado1}")
+        except Exception as e:
+            logging.error(f"[AGENDADO] Erro ao importar detalhes de chamadas.")
     
 
 # APScheduler
@@ -169,28 +182,35 @@ with app.app_context():
         id='job_processa_performance_horaria',
         func=tarefa_horaria_processar_performance,
         trigger='interval',
-        minutes=5
+        minutes=15
+    )
+
+    scheduler.add_job(
+        id='job_processa_detalhes_chamadas',
+        func=tarefa_importar_detalhes_chamadas,
+        trigger='interval',
+        minutes=15
     )
 
     scheduler.add_job(
         id='job_import_eventos',
         func=tarefa_importar_eventos,
         trigger='interval',
-        minutes=5
+        minutes=15
     )
 
     scheduler.add_job(
         id='job_processa_registro_chamadas_saida',
         func=tarefa_importar_registro_chamadas_saida_incremental,
         trigger='interval',
-        minutes=5
+        minutes=15
     )
 
     scheduler.add_job(
         id='job_processa_performance_horaria_vyrtos',
         func=tarefa_horaria_processar_performance_vyrtos,
         trigger='interval',
-        minutes=5
+        minutes=15
     )
 
     scheduler.add_job(
