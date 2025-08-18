@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, send_file
-from application.models import Chamado, db,  PerformanceColaboradores, RegistroChamadas
+from application.models import Chamado, db,  PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes
 from datetime import datetime, time
 from modules.relatorios.utils import get_turno
 from collections import Counter
@@ -156,124 +156,13 @@ def extrair_relatorios():
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
 
 
-
-'''@relatorios_bp.route("/extrairComparativoRelatorios", methods=['POST'])
-def extrair_comparativo_relatorios():
-    data_inicio = request.form.get('data_inicio_comp')  # yyyy-mm-dd
-    hora_inicio = request.form.get('hora_inicio_comp')  # HH:MM
-    data_final = request.form.get('data_final_comp')
-    hora_final = request.form.get('hora_final_comp')
-
-    if not all([data_inicio, hora_inicio, data_final, hora_final]):
-        return {"status": "error", "message": "Parâmetros ausentes"}, 400
-
-    try:
-        dt_inicio = datetime.strptime(f"{data_inicio} {hora_inicio}", '%Y-%m-%d %H:%M')
-        dt_final = datetime.strptime(f"{data_final} {hora_final}", '%Y-%m-%d %H:%M')
-    except ValueError:
-        return {"status": "error", "message": "Formato de data/hora inválido"}, 400
-
-    # Consulta chamados com data e hora
-    chamados = Chamado.query.filter(
-        Chamado.data_criacao >= dt_inicio,
-        Chamado.data_criacao <= dt_final
-    ).order_by(Chamado.data_criacao).all()
-
-    total_chamados = len(chamados)
-
-    # Consulta performance (por data apenas)
-    performance = PerformanceColaboradores.query.filter(
-        PerformanceColaboradores.data >= dt_inicio.date(),
-        PerformanceColaboradores.data <= dt_final.date()
-    ).order_by(PerformanceColaboradores.data).all()
-
-    total_ligacoes_atendidas = sum(p.ch_atendidas or 0 for p in performance)
-    total_ligacoes_naoatendidas = sum(p.ch_naoatendidas or 0 for p in performance)
-
-    # Geração do PDF
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, f"Relatório Comparativo:", ln=True, align="C")
-
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Período: {dt_inicio.strftime('%d/%m/%Y %H:%M')} a {dt_final.strftime('%d/%m/%Y %H:%M')}", ln=True)
-    pdf.ln(5)
-
-    # Chamados
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, "Chamados:", ln=True)
-
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Total de chamados: {total_chamados}", ln=True)
-    pdf.ln(2)
-
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(40, 8, "Código", 1)
-    pdf.cell(50, 8, "Status", 1)
-    pdf.cell(60, 8, "Grupo", 1)
-    pdf.cell(40, 8, "Data Criação", 1)
-    pdf.ln()
-
-    pdf.set_font("Arial", "", 10)
-    if chamados:
-        for chamado in chamados:
-            pdf.cell(40, 8, chamado.cod_chamado or "-", 1)
-            pdf.cell(50, 8, chamado.nome_status or "-", 1)
-            grupo = chamado.nome_grupo or "-"
-            grupo_truncado = grupo[:30] + "..." if len(grupo) > 30 else grupo
-            pdf.cell(60, 8, grupo_truncado, 1)
-            pdf.cell(40, 8, chamado.data_criacao.strftime('%d/%m/%Y %H:%M'), 1)
-            pdf.ln()
-    else:
-        pdf.cell(0, 8, "Nenhum chamado encontrado.", 1, ln=True)
-
-    pdf.ln(10)
-
-    # Performance
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, "Performance de Ligações:", ln=True)
-
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 8, f"Total ligações atendidas: {total_ligacoes_atendidas}", ln=True)
-    pdf.cell(0, 8, f"Total ligações não atendidas: {total_ligacoes_naoatendidas}", ln=True)
-    pdf.ln(2)
-
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(30, 8, "Data", 1)
-    pdf.cell(30, 8, "Atendidas", 1)
-    pdf.cell(40, 8, "Não atendidas", 1)
-    pdf.cell(40, 8, "Tempo Online (s)", 1)
-    pdf.cell(40, 8, "Tempo Serviço (s)", 1)
-    pdf.ln()
-
-    pdf.set_font("Arial", "", 10)
-    if performance:
-        for perf in performance:
-            pdf.cell(30, 8, perf.data.strftime('%d/%m/%Y'), 1)
-            pdf.cell(30, 8, str(perf.ch_atendidas), 1)
-            pdf.cell(40, 8, str(perf.ch_naoatendidas), 1)
-            pdf.cell(40, 8, str(perf.tempo_online), 1)
-            pdf.cell(40, 8, str(perf.tempo_servico), 1)
-            pdf.ln()
-    else:
-        pdf.cell(0, 8, "Nenhum dado de performance encontrado.", 1, ln=True)
-
-    # Finalização
-    buffer = BytesIO()
-    pdf_bytes = pdf.output(dest='S').encode('latin1')
-    buffer.write(pdf_bytes)
-    buffer.seek(0)
-
-    filename = f"relatorio_comparativo_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
-    return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')'''
-
 @relatorios_bp.route("/extrairComparativoRelatorios", methods=['POST'])
 def extrair_comparativo_relatorios():
     data_inicio = request.form.get('data_inicio_comp')
     hora_inicio = request.form.get('hora_inicio_comp')
     data_final = request.form.get('data_final_comp')
     hora_final = request.form.get('hora_final_comp')
+    nome = request.form.get('nome_operador')  # exemplo, caso queira filtrar por operador
 
     if not all([data_inicio, hora_inicio, data_final, hora_final]):
         return {"status": "error", "message": "Parâmetros ausentes"}, 400
@@ -293,6 +182,28 @@ def extrair_comparativo_relatorios():
         PerformanceColaboradores.data >= dt_inicio.date(),
         PerformanceColaboradores.data <= dt_final.date()
     ).order_by(PerformanceColaboradores.data).all()
+
+    # Total ligações efetuadas no período
+    total_ligacoes_efetuadas = db.session.query(
+        func.count()
+    ).filter(
+        RegistroChamadas.status == 'Atendida',
+        RegistroChamadas.data_hora >= dt_inicio,
+        RegistroChamadas.data_hora <= dt_final,
+    ).scalar() or 0
+
+    # Total ligações transferidas no período e opcionalmente por operador
+    query_transferidas = db.session.query(func.count()).filter(
+        ChamadasDetalhes.transferencia.ilike('%Ramal%'),
+        ChamadasDetalhes.data >= dt_inicio.date(),
+        ChamadasDetalhes.data <= dt_final.date()
+    )
+    if nome:
+        query_transferidas = query_transferidas.filter(
+            ChamadasDetalhes.nomeAtendente.ilike(f'%{nome}%')
+        )
+
+    total_ligacoes_transferidas = query_transferidas.scalar() or 0
 
     total_chamados = len(chamados)
     total_ligacoes_atendidas = sum(p.ch_atendidas or 0 for p in performance)
@@ -305,14 +216,17 @@ def extrair_comparativo_relatorios():
     img_barra_path = None
 
     if turno_counts:
-        # Gráfico de Pizza
         labels = list(turno_counts.keys())
         sizes = list(turno_counts.values())
         colors = ['#4CAF50', '#2196F3', '#FF5722']
 
+        def func_autopct(pct, all_vals):
+            absolute = int(round(pct/100.*sum(all_vals)))
+            return f"{absolute}\n({pct:.1f}%)"
+
         plt.figure(figsize=(4.5, 4.5))
-        plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=colors)
-        plt.title('Distribuição de Chamados por Turno', fontsize=10)
+        plt.pie(sizes, labels=labels, autopct=lambda pct: func_autopct(pct, sizes), startangle=140, colors=colors)
+        plt.title('', fontsize=10)
         plt.axis('equal')
 
         img_buffer_pizza = BytesIO()
@@ -365,6 +279,8 @@ def extrair_comparativo_relatorios():
     pdf.set_font("Arial", "", 12)
     pdf.cell(0, 8, f"Total ligações atendidas: {total_ligacoes_atendidas}", ln=True)
     pdf.cell(0, 8, f"Total ligações não atendidas: {total_ligacoes_naoatendidas}", ln=True)
+    pdf.cell(0, 8, f"Total ligações efetuadas: {total_ligacoes_efetuadas}", ln=True)
+    pdf.cell(0, 8, f"Total ligações transferidas: {total_ligacoes_transferidas}", ln=True)
     pdf.ln(2)
 
     # Gráfico de Pizza
@@ -373,23 +289,13 @@ def extrair_comparativo_relatorios():
         if current_y > 220:
             pdf.add_page()
         pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "Distribuição de chamados por turno:", ln=True)
+        pdf.cell(0, 10, "Distribuição de Chamados por Turno:", ln=True)
         pdf.ln(2)
         pdf.image(img_pizza_path, x=pdf.get_x() + 30, w=pdf.w / 2.2)
         pdf.ln(5)
         os.remove(img_pizza_path)
 
-    '''# Gráfico de Barras
-    if img_barra_path and os.path.exists(img_barra_path):
-        current_y = pdf.get_y()
-        if current_y > 220:
-            pdf.add_page()
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "Distribuição por Turno (Barras):", ln=True)
-        pdf.ln(2)
-        pdf.image(img_barra_path, x=10, w=pdf.w - 20)
-        pdf.ln(10)
-        os.remove(img_barra_path)'''
+    # (Gráfico de barras comentado)
 
     # Finaliza PDF
     buffer = BytesIO()
@@ -399,6 +305,8 @@ def extrair_comparativo_relatorios():
 
     filename = f"relatorio_comparativo_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
+
+
 
 @relatorios_bp.route("/getOperadores", methods=['GET'])
 def get_operadores():
