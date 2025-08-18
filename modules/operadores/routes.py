@@ -11,126 +11,6 @@ from sqlalchemy import func, cast, Date, and_, or_
 operadores_bp = Blueprint('operadores_bp', __name__, url_prefix='/operadores')
 
 
-'''@operadores_bp.route('/performanceColaboradores', methods=['POST'])
-def get_performance_colaboradores():
-    OPERADORES_IDS = {
-        "Matheus": 2021,
-        "Renato": 2020,
-        "Gustavo": 2022,
-        "Raysa": 2023,
-        "Danilo": 2025
-    }
-
-    data = request.get_json()
-    nome = data.get('nome')
-    dias_str = str(data.get('dias', '1'))
-
-    operador_id = OPERADORES_IDS.get(nome)
-
-    # Autenticação
-    auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
-    if "access_token" not in auth_response:
-        return jsonify({"status": "error", "message": "Falha na autenticação"}), 401
-
-    access_token = auth_response["access_token"]
-
-    hoje = datetime.now()
-    ontem = hoje - timedelta(days=1)
-
-    # Ajuste no cálculo das datas
-    periodos = {
-        "1": (ontem).strftime('%Y-%m-%d'),  # Ontem
-        "7": (hoje - timedelta(days=6)).strftime('%Y-%m-%d'),  # Inclui 7 dias (ontem + hoje)
-        "15": (hoje - timedelta(days=14)).strftime('%Y-%m-%d'),  # Últimos 15 dias
-        "30": (hoje - timedelta(days=29)).strftime('%Y-%m-%d'),  # Últimos 30 dias
-        "90": (hoje - timedelta(days=89)).strftime('%Y-%m-%d')  # Últimos 90 dias
-    }
-
-    # Pega a data inicial com base no parâmetro "dias" ou o valor padrão "1"
-    data_inicial = periodos.get(dias_str, periodos["1"])
-    data_final = (hoje - timedelta(days=1)).strftime('%Y-%m-%d')  # Ontem
-
-    # Parâmetros para a consulta
-    class Params:
-        initial_date = data_inicial
-        final_date = data_final
-        initial_hour = "00:00:00"
-        final_hour = "23:59:59"
-        fixed = 0
-        week = ""
-        agents = [operador_id]
-        queues = [1]
-        options = {"sort": {"data": -1}, "offset": 0, "count": 1000}
-        conf = {}
-
-    # Chama a função de performance
-    response = utils.atendentePerformance(access_token, Params)
-    print(response)
-
-    # Processa os dados de atendentes
-    dados_atendentes = response.get("result", {}).get("data", [])
-    print(dados_atendentes)
-
-    acumulado = {
-        "ch_atendidas": 0,
-        "ch_naoatendidas": 0,
-        "tempo_online": 0,
-        "tempo_livre": 0,
-        "tempo_servico": 0,
-        "pimprod_Refeicao": 0,
-        "tempo_minatend": None,
-        "tempo_medatend": [],
-        "tempo_maxatend": None
-    }
-
-    # Itera sobre os dados recebidos e acumula os valores
-    for item in dados_atendentes:
-        acumulado["ch_atendidas"] += int(item.get("ch_atendidas") or 0)
-        acumulado["ch_naoatendidas"] += int(item.get("ch_naoatendidas") or 0)
-        acumulado["tempo_online"] += int(item.get("tempo_online") or 0)
-        acumulado["tempo_livre"] += int(item.get("tempo_livre") or 0)
-        acumulado["tempo_servico"] += int(item.get("tempo_servico") or 0)
-        acumulado["pimprod_Refeicao"] += int(item.get("pimprod_Refeicao") or 0)
-
-        if item.get("tempo_minatend") is not None:
-            acumulado["tempo_minatend"] = (
-                item["tempo_minatend"]
-                if acumulado["tempo_minatend"] is None
-                else min(acumulado["tempo_minatend"], item["tempo_minatend"])
-            )
-
-        if item.get("tempo_maxatend") is not None:
-            acumulado["tempo_maxatend"] = (
-                item["tempo_maxatend"]
-                if acumulado["tempo_maxatend"] is None
-                else max(acumulado["tempo_maxatend"], item["tempo_maxatend"])
-            )
-
-        if item.get("tempo_medatend") is not None:
-            acumulado["tempo_medatend"].append(item["tempo_medatend"])
-
-    # Calcula a média do tempo de atendimento
-    media_geral = (
-        sum(acumulado["tempo_medatend"]) / len(acumulado["tempo_medatend"])
-        if acumulado["tempo_medatend"] else 0
-    )
-
-    # Organiza os dados para o retorno
-    dados = {
-        "periodo": dias_str,
-        "ch_atendidas": acumulado["ch_atendidas"],
-        "ch_naoatendidas": acumulado["ch_naoatendidas"],
-        "tempo_online": acumulado["tempo_online"],
-        "tempo_livre": acumulado["tempo_livre"],
-        "tempo_servico": acumulado["tempo_servico"],
-        "pimprod_Refeicao": acumulado["pimprod_Refeicao"],
-        "tempo_minatend": acumulado["tempo_minatend"] or 0,
-        "tempo_medatend": round(media_geral, 2),
-        "tempo_maxatend": acumulado["tempo_maxatend"] or 0
-    }
-
-    return jsonify({"status": "success", "dados": dados})'''
-
 @operadores_bp.route('/performanceColaboradoresRender', methods=['POST'])
 def performance_colaboradores_render():
     session.pop('dados', None)
@@ -314,11 +194,11 @@ def chamados_por_operador_periodo():
         hoje = datetime.now().date()
 
         if dias == 1:
-            data_inicio = hoje - timedelta(days=1)  # apenas ontem
-            data_fim = data_inicio
+            data_inicio = hoje  # hoje
+            data_fim = hoje
         else:
-            data_inicio = hoje - timedelta(days=dias)
-            data_fim = hoje  # até hoje
+            data_inicio = hoje - timedelta(days=dias - 1)  # últimos N dias incluindo hoje
+            data_fim = hoje
 
         chamados = db.session.query(
             Chamado.cod_chamado,
@@ -355,39 +235,35 @@ def chamados_por_operador_periodo():
             "message": str(e)
         }), 500
 
+
 @operadores_bp.route('/ChamadosSuporte/ticketsTelefoneVsAtendidas', methods=['POST'])
 def chamados_telefone_vs_atendidas():
     try:
-        dias_str = str(request.json.get("dias"))
-        nome_operador = request.json.get("nome", "").strip().title()
+        data = request.get_json()
+        nome_operador = data.get("nome", "").strip().title()
+        dias_str = str(data.get("dias", "1"))
 
         if not nome_operador:
             return jsonify({'status': 'error', 'message': 'Nome do operador não fornecido'}), 400
 
         operador = PerformanceColaboradores.query.filter_by(name=nome_operador).first()
-        #if not operador:
-        #    return jsonify({'status': 'error', 'message': f"Operador '{nome_operador}' não encontrado"}), 404
+        if not operador:
+            return jsonify({'status': 'error', 'message': f"Operador '{nome_operador}' não encontrado"}), 404
 
         operador_id = operador.operador_id
 
+        # Trata o número de dias informado
+        try:
+            dias = int(dias_str)
+        except ValueError:
+            return jsonify({"status": "error", "message": "O valor de 'dias' deve ser um número inteiro"}), 400
+
         hoje = datetime.now().date()
-        ontem = hoje - timedelta(days=1)
-
-        periodos = {
-            "1": hoje,
-            "7": hoje - timedelta(days=7),
-            "15": hoje - timedelta(days=15),
-            "30": hoje - timedelta(days=30),
-            "90": hoje - timedelta(days=90),
-            "180": hoje - timedelta(days=180)
-        }
-
-        data_inicial = periodos.get(dias_str)
-        data_final = hoje
+        data_inicial = hoje - timedelta(days=dias)
 
         lista_dias = [
             data_inicial + timedelta(days=i)
-            for i in range((data_final - data_inicial).days + 1)
+            for i in range((hoje - data_inicial).days + 1)
         ]
         labels = [dia.strftime('%d/%m') for dia in lista_dias]
 
@@ -406,7 +282,7 @@ def chamados_telefone_vs_atendidas():
         chamados_por_dia = {dia: total for dia, total in chamados_result}
         dados_chamados = [chamados_por_dia.get(dia, 0) for dia in lista_dias]
 
-        # === LIGAÇÕES
+        # === LIGAÇÕES (Atendidas e que não foram transferidas para Ramal)
         atendimentos_result = db.session.query(
             cast(ChamadasDetalhes.data, Date).label('dia'),
             func.count(ChamadasDetalhes.id)
@@ -581,19 +457,27 @@ def get_chamados_abertos():
             return jsonify({"status": "error", "message": "Nome do operador não fornecido."}), 400
 
         hoje = datetime.now().date()
-        data_inicio = hoje - timedelta(days=dias)
 
-        # Limites de data com horário completo
-        inicio = datetime.combine(data_inicio, datetime.min.time())
-        fim = datetime.combine(hoje, datetime.max.time())
+        # Se 'dias' for 1, traz chamados abertos independentemente da data
+        if dias == 1:
+            chamados = Chamado.query.filter(
+                Chamado.nome_status.notin_(['Cancelado', 'Resolvido']),
+                Chamado.operador == nome
+            ).all()
 
-        # Filtra chamados abertos para o operador
-        chamados = Chamado.query.filter(
-            Chamado.nome_status.notin_(['Cancelado', 'Resolvido']),
-            Chamado.data_criacao >= inicio,
-            Chamado.data_criacao <= fim,
-            Chamado.operador == nome
-        ).all()
+        else:
+            data_inicio = hoje - timedelta(days=dias - 1)
+            data_fim = hoje
+
+            inicio = datetime.combine(data_inicio, datetime.min.time())
+            fim = datetime.combine(data_fim, datetime.max.time())
+
+            chamados = Chamado.query.filter(
+                Chamado.nome_status.notin_(['Cancelado', 'Resolvido']),
+                Chamado.data_criacao >= inicio,
+                Chamado.data_criacao <= fim,
+                Chamado.operador == nome
+            ).all()
 
         total_chamados = len(chamados)
         codigos = [c.cod_chamado for c in chamados]
@@ -606,6 +490,11 @@ def get_chamados_abertos():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @operadores_bp.route('/tma_tms/colaboradores', methods=['POST'])
 def tma_e_tms_colaboradores():
