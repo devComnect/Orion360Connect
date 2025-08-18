@@ -3,7 +3,7 @@ import requests
 from modules.deskmanager.authenticate.routes import token_desk
 from modules.insights.utils import formatar_tempo
 from datetime import datetime, timedelta
-from application.models import Chamado, db, RegistroChamadas, Categoria, PesquisaSatisfacao, RelatorioColaboradores, PerformanceColaboradores, DesempenhoAtendenteVyrtos
+from application.models import Chamado, db, RegistroChamadas, ChamadasDetalhes, Categoria, PesquisaSatisfacao, RelatorioColaboradores, PerformanceColaboradores, DesempenhoAtendenteVyrtos
 from collections import Counter
 from sqlalchemy import func, and_, or_
 import numpy as np
@@ -1038,6 +1038,32 @@ def get_ligacoes_efetuadas():
             "status": "error",
             "message": str(e)
         }), 500
+
+@insights_bp.route('/chamadasTransferidas', methods=['POST'])
+def get_ligacoes_transferidas():
+    try:
+        dados = request.get_json(force=True)
+        dias = int(dados.get("dias", 1))  
+        data_limite = datetime.now() - timedelta(days=dias)
+
+        total_ligacoes = db.session.query(
+            func.count()
+        ).filter(
+            ChamadasDetalhes.transferencia.ilike('%Ramal%'),
+            ChamadasDetalhes.data >= data_limite,  # comparação entre date e date
+        ).scalar() or 0
+
+        return jsonify({
+            "status": "success",
+            "total_ligacoes": total_ligacoes
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
 
 @insights_bp.route('/abertos/status', methods=['POST'])
 def estatisticas_chamados_periodos():

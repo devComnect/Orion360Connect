@@ -1933,3 +1933,46 @@ function atualizarLigacoesPerdidas(dias) {
     }
   }
 </script>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+    // Chamada inicial para 7 dias (pode mudar para 1)
+    atualizarChamadasTransferidas(1);
+
+    // Atualiza ao clicar no botão de filtro de dias
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarChamadasTransferidas(dias);
+      });
+    });
+  });
+
+  function atualizarChamadasTransferidas(dias, nomeOperador) {
+    fetch('/insights/chamadasTransferidas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias })
+    })
+    .then(response => response.json())
+    .then(data => {
+      const spanTransferidas = document.getElementById("ch_transferidas");
+
+      if (data.status === "success") {
+        spanTransferidas.textContent = data.total_ligacoes || 0;
+      } else {
+        spanTransferidas.textContent = "Erro";
+        console.error("Erro na resposta:", data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar chamadas transferidas:", error);
+      document.getElementById("ch_transferidas").textContent = "Erro";
+    });
+  }
+</script>

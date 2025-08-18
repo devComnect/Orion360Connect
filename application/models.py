@@ -359,9 +359,7 @@ class ChamadasDetalhes(db.Model):
     protocolo = db.Column(db.String(100))
     retentativaSucesso = db.Column(db.String(50))
     dataImportacao = db.Column(db.String(50))  # NOVA COLUNA
-
     
-
 class DoorAccessLogs(db.Model):
     __bind_key__ = 'door_access'
     __tablename__ = 'door_access_logs'

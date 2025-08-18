@@ -408,14 +408,19 @@ def chamados_telefone_vs_atendidas():
 
         # === LIGAÇÕES
         atendimentos_result = db.session.query(
-            PerformanceColaboradores.data,
-            func.sum(PerformanceColaboradores.ch_atendidas)
+            cast(ChamadasDetalhes.data, Date).label('dia'),
+            func.count(ChamadasDetalhes.id)
         ).filter(
-            PerformanceColaboradores.operador_id == operador_id,
-            PerformanceColaboradores.data >= data_inicial,
-            PerformanceColaboradores.data <= data_final
+            ChamadasDetalhes.tipo == 'Atendida',
+            ChamadasDetalhes.nomeAtendente.ilike(f"%{nome_operador}%"),
+            cast(ChamadasDetalhes.data, Date).in_(lista_dias),
+            or_(
+                ChamadasDetalhes.transferencia.is_(None),
+                ChamadasDetalhes.transferencia == '-',
+                ~ChamadasDetalhes.transferencia.ilike('%Ramal%')
+            )
         ).group_by(
-            PerformanceColaboradores.data
+            cast(ChamadasDetalhes.data, Date)
         ).all()
 
         atendimentos_por_dia_map = {data: total for data, total in atendimentos_result}

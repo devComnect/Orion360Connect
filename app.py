@@ -32,7 +32,7 @@ from modules.tasks.relatorios.utils import (
     importar_pSatisfacao, 
     importar_fcr_reabertos,
     processar_e_armazenar_eventos,
-    importar_detalhes_chamadas
+    importar_detalhes_chamadas_hoje
 )
 
 # ----------------- LOGGING CONFIG -----------------
@@ -157,7 +157,7 @@ def tarefa_importar_detalhes_chamadas():
     with app.app_context():
         try:
             logging.info("[AGENDADO] Iniciando coleta e armazenamento de detalhes de chamadas...")
-            resultado1 = importar_detalhes_chamadas()
+            resultado1 = importar_detalhes_chamadas_hoje()
             logging.info(f"[AGENDADO] Resultado padrão: {resultado1}")
         except Exception as e:
             logging.error(f"[AGENDADO] Erro ao importar detalhes de chamadas.")
@@ -189,7 +189,7 @@ with app.app_context():
         id='job_processa_detalhes_chamadas',
         func=tarefa_importar_detalhes_chamadas,
         trigger='interval',
-        minutes=15
+        minutes=5
     )
 
     scheduler.add_job(
