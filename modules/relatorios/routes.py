@@ -155,7 +155,6 @@ def extrair_relatorios():
     filename = f"relatorio_{operador}_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
 
-
 @relatorios_bp.route("/extrairComparativoRelatorios", methods=['POST'])
 def extrair_comparativo_relatorios():
     data_inicio = request.form.get('data_inicio_comp')
@@ -305,8 +304,6 @@ def extrair_comparativo_relatorios():
 
     filename = f"relatorio_comparativo_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
-
-
 
 @relatorios_bp.route("/getOperadores", methods=['GET'])
 def get_operadores():
