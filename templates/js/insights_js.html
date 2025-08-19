@@ -1934,7 +1934,7 @@ function atualizarLigacoesPerdidas(dias) {
   }
 </script>
 
-
+<!--Bloco que traz a relação de chamadas transferidas-->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
 
@@ -1973,6 +1973,53 @@ function atualizarLigacoesPerdidas(dias) {
     .catch(error => {
       console.error("Erro ao buscar chamadas transferidas:", error);
       document.getElementById("ch_transferidas").textContent = "Erro";
+    });
+  }
+</script>
+
+<!--Bloco que traz a relação de tempo maximo e minimo-->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+    // Chamada inicial para 1 dia
+    atualizarTminTmax(1);
+
+    // Atualiza ao clicar no botão de filtro de dias
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarTminTmax(dias);
+      });
+    });
+  });
+
+  function atualizarTminTmax(dias) {
+    fetch('/insights/tmin_tmax', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias })
+    })
+    .then(response => response.json())
+    .then(data => {
+      const spanTmin = document.getElementById("percentual-tma-ligacoes");
+      const spanTmax = document.getElementById("percentual-tms-ligacoes");
+
+      if (data.status === "success") {
+        spanTmin.textContent = data.tmin_media || 0;
+        spanTmax.textContent = data.tmax_media || 0;
+      } else {
+        spanTmin.textContent = "Erro";
+        spanTmax.textContent = "Erro";
+        console.error("Erro na resposta:", data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar TMIN/TMAX:", error);
+      document.getElementById("percentual-tma-ligacoes").textContent = "Erro";
+      document.getElementById("percentual-tms-ligacoes").textContent = "Erro";
     });
   }
 </script>

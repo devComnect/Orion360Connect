@@ -58,6 +58,14 @@ def extrair_relatorios():
         RegistroChamadas.nome_atendente.ilike(f'%{operador}%')
     ).scalar() or 0
 
+    # Total transferências no período
+    total_transferencias = db.session.query(func.count()).filter(
+        ChamadasDetalhes.transferencia.ilike('%Ramal%'),
+        ChamadasDetalhes.data >= dt_inicio.date(),
+        ChamadasDetalhes.data <= dt_final.date(),
+        ChamadasDetalhes.nomeAtendente.ilike(f'%{operador}%')
+    ).scalar() or 0
+
     # Geração do PDF
     pdf = FPDF()
     pdf.add_page()
@@ -69,82 +77,39 @@ def extrair_relatorios():
     pdf.cell(0, 10, f"Período: {dt_inicio.strftime('%d/%m/%Y %H:%M')} a {dt_final.strftime('%d/%m/%Y %H:%M')}", ln=True)
     pdf.ln(5)
 
-    # Chamados
+    # ---------- TABELA DE CHAMADOS ----------
     pdf.set_font("Arial", "B", 14)
     pdf.cell(0, 10, "Chamados:", ln=True)
     pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Total de chamados: {total_chamados}", ln=True)
-    pdf.ln(2)
 
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(40, 8, "Código", 1)
-    pdf.cell(50, 8, "Status", 1)
-    pdf.cell(60, 8, "Grupo", 1)
-    pdf.cell(40, 8, "Data Criação", 1)
-    pdf.ln()
+    pdf.set_fill_color(220, 220, 220)
+    pdf.cell(80, 8, "Descrição", border=1, fill=True)
+    pdf.cell(40, 8, "Total", border=1, ln=True, fill=True)
+    pdf.cell(80, 8, "Total de chamados", border=1)
+    pdf.cell(40, 8, str(total_chamados), border=1, ln=True)
+    pdf.ln(5)
 
-    pdf.set_font("Arial", "", 10)
-    if chamados:
-        for chamado in chamados:
-            pdf.cell(40, 8, chamado.cod_chamado or "-", 1)
-            pdf.cell(50, 8, chamado.nome_status or "-", 1)
-            grupo = chamado.nome_grupo or "-"
-            grupo_truncado = grupo[:30] + "..." if len(grupo) > 30 else grupo
-            pdf.cell(60, 8, grupo_truncado, 1)
-            pdf.cell(40, 8, chamado.data_criacao.strftime('%d/%m/%Y %H:%M'), 1)
-            pdf.ln()
-    else:
-        pdf.cell(0, 8, "Nenhum chamado encontrado.", 1, ln=True)
-    pdf.ln(10)
-
-    # Performance
+    # ---------- TABELA DE LIGAÇÕES ----------
     pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, "Performance de Ligações:", ln=True)
-
-    # Cabeçalho da tabela de performance ajustado
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(22, 8, "Data", 1)
-    pdf.cell(22, 8, "Atendidas", 1)
-    pdf.cell(28, 8, "Não atendidas", 1)
-    pdf.cell(22, 8, "Efetuadas", 1)
-    pdf.cell(28, 8, "Transferidas", 1)
-    pdf.cell(28, 8, "Tempo Online", 1)
-    pdf.cell(29, 8, "Tempo Serviço", 1)
-    pdf.ln()
-
-    pdf.set_font("Arial", "", 10)
-    if performance:
-        for perf in performance:
-            # Ligações efetuadas e transferidas por dia
-            ligacoes_efetuadas_dia = db.session.query(func.count()).filter(
-                RegistroChamadas.status == 'Atendida',
-                func.date(RegistroChamadas.data_hora) == perf.data,
-                RegistroChamadas.nome_atendente.ilike(f'%{operador}%')
-            ).scalar() or 0
-
-            ligacoes_transferidas_dia = db.session.query(func.count()).filter(
-                RegistroChamadas.status == 'Transferida',
-                func.date(RegistroChamadas.data_hora) == perf.data,
-                RegistroChamadas.nome_atendente.ilike(f'%{operador}%')
-            ).scalar() or 0
-
-            pdf.cell(22, 8, perf.data.strftime('%d/%m/%Y'), 1)
-            pdf.cell(22, 8, str(perf.ch_atendidas or 0), 1)
-            pdf.cell(28, 8, str(perf.ch_naoatendidas or 0), 1)
-            pdf.cell(22, 8, str(ligacoes_efetuadas_dia), 1)
-            pdf.cell(28, 8, str(ligacoes_transferidas_dia), 1)
-            pdf.cell(28, 8, str(perf.tempo_online or 0), 1)
-            pdf.cell(29, 8, str(perf.tempo_servico or 0), 1)
-            pdf.ln()
-    else:
-        pdf.cell(0, 8, "Nenhum dado de performance encontrado.", 1, ln=True)
-
-    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Ligações:", ln=True)
     pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 8, f"Total ligações atendidas: {total_ligacoes_atendidas}", ln=True)
-    pdf.cell(0, 8, f"Total ligações não atendidas: {total_ligacoes_naoatendidas}", ln=True)
-    pdf.cell(0, 8, f"Total ligações efetuadas: {ligacoes_efetuadas_dia}", ln=True)
-    pdf.ln(2)
+
+    pdf.set_fill_color(220, 220, 220)
+    pdf.cell(80, 8, "Descrição", border=1, fill=True)
+    pdf.cell(40, 8, "Total", border=1, ln=True, fill=True)
+
+    pdf.cell(80, 8, "Ligações atendidas", border=1)
+    pdf.cell(40, 8, str(total_ligacoes_atendidas), border=1, ln=True)
+
+    pdf.cell(80, 8, "Ligações não atendidas", border=1)
+    pdf.cell(40, 8, str(total_ligacoes_naoatendidas), border=1, ln=True)
+
+    pdf.cell(80, 8, "Ligações efetuadas", border=1)
+    pdf.cell(40, 8, str(total_ligacoes_efetuadas), border=1, ln=True)
+
+    pdf.cell(80, 8, "Ligações transferidas", border=1)
+    pdf.cell(40, 8, str(total_transferencias), border=1, ln=True)
+    pdf.ln(5)
 
     # Finalização
     buffer = BytesIO()
@@ -154,6 +119,7 @@ def extrair_relatorios():
 
     filename = f"relatorio_{operador}_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
+
 
 @relatorios_bp.route("/extrairComparativoRelatorios", methods=['POST'])
 def extrair_comparativo_relatorios():

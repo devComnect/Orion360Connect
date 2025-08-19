@@ -862,9 +862,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 </script>
 
-
-<!--Script que me traz as chamadas trasnferidas -->
-
 <!-- Bloco que traz as chamadas transferidas -->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -906,6 +903,55 @@ document.addEventListener("DOMContentLoaded", () => {
     .catch(error => {
       console.error("Erro ao buscar chamadas transferidas:", error);
       document.getElementById("ch-transferidas").textContent = "Erro";
+    });
+  }
+</script>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const nomeOperador = document.getElementById("colaboradorNome")?.textContent?.trim();
+    if (!nomeOperador) return;
+
+    // Chamada inicial para 7 dias (ou 1 se quiser)
+    atualizarTminTmax(1, nomeOperador);
+
+    // Atualiza ao clicar no botão de filtro de dias
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarTminTmax(dias, nomeOperador);
+      });
+    });
+  });
+
+  function atualizarTminTmax(dias, nomeOperador) {
+    fetch('/operadores/tminTmaxColaboradores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias, nome: nomeOperador })
+    })
+    .then(response => response.json())
+    .then(data => {
+      const spanTmin = document.getElementById("percentual-tma-ligacoes");
+      const spanTmax = document.getElementById("percentual-tms-ligacoes");
+
+      if (data.status === "success") {
+        spanTmin.textContent = data.tmin_media || "-";
+        spanTmax.textContent = data.tmax_media || "-";
+      } else {
+        spanTmin.textContent = "Erro";
+        spanTmax.textContent = "Erro";
+        console.error("Erro na resposta:", data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar TMIN/TMAX:", error);
+      document.getElementById("percentual-tma-ligacoes").textContent = "Erro";
+      document.getElementById("percentual-tms-ligacoes").textContent = "Erro";
     });
   }
 </script>

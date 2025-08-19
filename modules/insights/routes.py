@@ -1064,6 +1064,75 @@ def get_ligacoes_transferidas():
             "message": str(e)
         }), 500
 
+@insights_bp.route('/tmin_tmax', methods=['POST'])
+def get_tmin_tmax():
+    try:
+        dias = int(request.json.get("dias", 1))  # padrão: 1 dia
+        hoje = datetime.now().date()
+        data_inicio = hoje - timedelta(days=dias)
+
+        # Contagem de registros válidos
+        count_min = db.session.query(func.count(PerformanceColaboradores.id)).filter(
+            PerformanceColaboradores.tempo_minatend != 0,
+            PerformanceColaboradores.data >= data_inicio,
+            PerformanceColaboradores.data <= hoje
+        ).scalar() or 0
+
+        count_max = db.session.query(func.count(PerformanceColaboradores.id)).filter(
+            PerformanceColaboradores.tempo_maxatend != 0,
+            PerformanceColaboradores.data >= data_inicio,
+            PerformanceColaboradores.data <= hoje
+        ).scalar() or 0
+
+        # Totais (em segundos → converte p/ minutos)
+        total_ligacoes_minatend = db.session.query(
+            func.sum(PerformanceColaboradores.tempo_minatend)
+        ).filter(
+            PerformanceColaboradores.tempo_minatend != 0,
+            PerformanceColaboradores.data >= data_inicio,
+            PerformanceColaboradores.data <= hoje
+        ).scalar() or 0
+
+        total_ligacoes_maxatend = db.session.query(
+            func.sum(PerformanceColaboradores.tempo_maxatend)
+        ).filter(
+            PerformanceColaboradores.tempo_maxatend != 0,
+            PerformanceColaboradores.data >= data_inicio,
+            PerformanceColaboradores.data <= hoje
+        ).scalar() or 0
+
+        # Converte para minutos
+        total_ligacoes_minatend = total_ligacoes_minatend / 60
+        total_ligacoes_maxatend = total_ligacoes_maxatend / 60
+
+        # Médias em minutos
+        media_min = (total_ligacoes_minatend / count_min) if count_min > 0 else 0
+        media_max = (total_ligacoes_maxatend / count_max) if count_max > 0 else 0
+
+        def formatar_tempo(minutos: float) -> str:
+            if minutos < 60:
+                return f"{round(minutos)} min"
+            elif minutos < 1440:
+                return f"{minutos / 60:.1f} h"
+            else:
+                return f"{minutos / 1440:.2f} dias"
+
+        return jsonify({
+            "status": "success",
+            "dias": dias,
+            "tmin_total": formatar_tempo(total_ligacoes_minatend),
+            "tmax_total": formatar_tempo(total_ligacoes_maxatend),
+            "tmin_media": formatar_tempo(media_min),
+            "tmax_media": formatar_tempo(media_max)
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
+
 
 @insights_bp.route('/abertos/status', methods=['POST'])
 def estatisticas_chamados_periodos():

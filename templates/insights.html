@@ -256,9 +256,9 @@
       </div>
     </div>
 
-  <!-- TMA TMS -->
+<!-- Card TMA/TMS -->
 <div class="col">
-  <div class="card shadow-sm h-100 tempo-medio-card">
+  <div class="card shadow-sm h-100">
     <div class="card-body card-body-compact">
 
       <!-- Título principal -->
@@ -266,18 +266,32 @@
         <h6>Tempo Médio</h6>
       </div>
 
+      <!-- Chamados -->
+      <h6 class="text-center mb-2">Chamados</h6>
       <div class="info-item">
-        <span class="text-warning">TMA</span><br>
+        <span class="text-warning">TMA</span>
         <span class="value" id="percentual-tma">0</span>
       </div>
       <div class="info-item">
-        <span class="text-success">TMS</span><br>
+        <span class="text-success">TMS</span>
         <span class="value" id="percentual-tms">0</span>
+      </div>
+
+      <!-- Ligações -->
+      <h6 class="text-center mt-3 mb-2">Ligações</h6>
+      <div class="info-item">
+        <span class="text-success">TMIN</span>
+        <span class="value" id="percentual-tma-ligacoes">0</span>
+      </div>
+      <div class="info-item">
+        <span class="text-danger">TMAX</span>
+        <span class="value" id="percentual-tms-ligacoes">0</span>
       </div>
 
     </div>
   </div>
 </div>
+
 
 <!-- Card SLA Unificado -->
 <div class="col">
@@ -356,7 +370,6 @@
         <!-- CES -->
         <div class="col">
           <h6 class="mb-2">CES</h6>
-          
           <div class="info-item mb-1">
             <span class="text d-block">Nota</span>
             <span class="value" id="ces-nota">0</span>
@@ -381,10 +394,7 @@
             <span class="value" id="nps-null">0</span>
           </div>
         </div>
-
-
       </div>
-
     </div>
   </div>
 </div>

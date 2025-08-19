@@ -804,6 +804,81 @@ def get_ligacoes_transferidas_colaboradores():
             "message": str(e)
         }), 500
 
+@operadores_bp.route('/tminTmaxColaboradores', methods=['POST'])
+def get_tmin_tmax_colaboradores():
+    try:
+        data = request.get_json(force=True)
+        nome = data.get('nome', '').strip().lower()
+        dias = int(data.get("dias", 1))
+        hoje = datetime.now().date()
+
+        # Calcula a data limite (apenas data, sem hora)
+        data_limite = (datetime.now() - timedelta(days=dias)).date()
+
+        # Contagem de registros válidos
+        count_min = db.session.query(func.count(PerformanceColaboradores.id)).filter(
+            PerformanceColaboradores.tempo_minatend != 0,
+            PerformanceColaboradores.data >= data_limite,
+            PerformanceColaboradores.data <= hoje,
+            PerformanceColaboradores.name.ilike(f'%{nome}%')
+        ).scalar() or 0
+
+        count_max = db.session.query(func.count(PerformanceColaboradores.id)).filter(
+            PerformanceColaboradores.tempo_maxatend != 0,
+            PerformanceColaboradores.data >= data_limite,
+            PerformanceColaboradores.data <= hoje,
+            PerformanceColaboradores.name.ilike(f'%{nome}%')
+        ).scalar() or 0
+
+        # Totais (em segundos → converte p/ minutos)
+        total_ligacoes_minatend = db.session.query(
+            func.sum(PerformanceColaboradores.tempo_minatend)
+        ).filter(
+            PerformanceColaboradores.tempo_minatend != 0,
+            PerformanceColaboradores.data >= data_limite,
+            PerformanceColaboradores.data <= hoje,
+            PerformanceColaboradores.name.ilike(f'%{nome}%')
+        ).scalar() or 0
+
+        total_ligacoes_maxatend = db.session.query(
+            func.sum(PerformanceColaboradores.tempo_maxatend)
+        ).filter(
+            PerformanceColaboradores.tempo_maxatend != 0,
+            PerformanceColaboradores.data >= data_limite,
+            PerformanceColaboradores.data <= hoje,
+            PerformanceColaboradores.name.ilike(f'%{nome}%')
+        ).scalar() or 0
+
+        # Converte para minutos
+        total_ligacoes_minatend = total_ligacoes_minatend / 60
+        total_ligacoes_maxatend = total_ligacoes_maxatend / 60
+
+        # Médias em minutos
+        media_min = (total_ligacoes_minatend / count_min) if count_min > 0 else 0
+        media_max = (total_ligacoes_maxatend / count_max) if count_max > 0 else 0
+
+        def formatar_tempo(minutos: float) -> str:
+            if minutos < 60:
+                return f"{round(minutos)} min"
+            elif minutos < 1440:
+                return f"{minutos / 60:.1f} h"
+            else:
+                return f"{minutos / 1440:.2f} dias"
+
+        return jsonify({
+            "status": "success",
+            "dias": dias,
+            "tmin_total": formatar_tempo(total_ligacoes_minatend),
+            "tmax_total": formatar_tempo(total_ligacoes_maxatend),
+            "tmin_media": formatar_tempo(media_min),
+            "tmax_media": formatar_tempo(media_max)
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 @operadores_bp.route('/chamadasEfetuadasColaboradores', methods=['POST'])
 def get_ligacoes_efetuadas_colaboradores():
