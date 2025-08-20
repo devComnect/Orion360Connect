@@ -1,12 +1,19 @@
-from flask import Blueprint, jsonify, request, render_template, url_for, send_file
-from application.models import Chamado, db,  PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes
+from flask import Blueprint, jsonify, request, render_template, url_for, send_file, make_response
+from application.models import Chamado, db,  PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess
 from datetime import datetime, time
 from modules.relatorios.utils import get_turno
 from collections import Counter
 from io import BytesIO
 from fpdf import FPDF
 import matplotlib.pyplot as plt
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 from sqlalchemy import func
+from zoneinfo import ZoneInfo  # Python 3.9+
+from datetime import datetime, timedelta
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
 import os
 
 
@@ -120,6 +127,112 @@ def extrair_relatorios():
     filename = f"relatorio_{operador}_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
 
+@relatorios_bp.route("/extrairControleAcesso", methods=['POST'])
+def extrair_controle_acesso():
+    data_inicio = request.form.get('data')
+    hora_inicio = request.form.get('hora')
+    data_fim = request.form.get('dataFinalAcesso')
+    hora_fim = request.form.get('horaFinalAcesso')
+    operador = request.form.get('operadorControle')
+    leitor_id = request.form.get('leitorasSelect')
+
+    tz = ZoneInfo("America/Sao_Paulo")
+
+    datahora_inicio = datetime.strptime(f"{data_inicio} {hora_inicio}", "%Y-%m-%d %H:%M").replace(tzinfo=tz)
+    datahora_fim = datetime.strptime(f"{data_fim} {hora_fim}", "%Y-%m-%d %H:%M").replace(tzinfo=tz)
+
+    timestamp_inicio = int((datahora_inicio - timedelta(hours=3)).timestamp())
+    timestamp_fim = int((datahora_fim - timedelta(hours=3)).timestamp())
+
+    query = (
+        db.session.query(
+            DoorAccessLogs.id.label('acesso_id'),
+            UserAccess.id.label('usuario_id'),
+            UserAccess.name.label('nome_usuario'),
+            DeviceAccess.id.label('dispositivo_id'),
+            DeviceAccess.name.label('nome_dispositivo'),
+            func.from_unixtime(DoorAccessLogs.time).label('data_acesso'),
+            DoorAccessLogs.event.label('tipo_evento'),
+            DoorAccessLogs.hw_device_id,
+            DoorAccessLogs.identifier_id,
+            DoorAccessLogs.card_value,
+            DoorAccessLogs.qrcode_value
+        )
+        .join(UserAccess, DoorAccessLogs.user_id == UserAccess.id)
+        .join(DeviceAccess, DoorAccessLogs.device_id == DeviceAccess.id)
+        .filter(DoorAccessLogs.time.between(timestamp_inicio, timestamp_fim))
+    )
+
+    if operador and operador != "Todos":
+        query = query.filter(UserAccess.name == operador)
+
+    if leitor_id and leitor_id != "Todos":
+        query = query.filter(DeviceAccess.id == int(leitor_id))
+
+    query = query.order_by(DoorAccessLogs.time.desc())
+    resultados = query.all()
+
+    buffer = BytesIO()
+
+    # Usando SimpleDocTemplate e Platypus para PDF com tabela
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    title = Paragraph("Relatório de Controle de Acesso", styles['Title'])
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+
+    colaborador_text = f"Colaborador: {operador if operador and operador != 'Todos' else 'Todos'}"
+    periodo_text = f"Período: {data_inicio} {hora_inicio} até {data_fim} {hora_fim}"
+
+    elements.append(Paragraph(colaborador_text, styles['Normal']))
+    elements.append(Paragraph(periodo_text, styles['Normal']))
+    elements.append(Spacer(1, 12))
+
+    # Cabeçalho da tabela
+    # Cabeçalho da tabela atualizado
+    data = [
+        ['Data Acesso', 'Leitora', 'Evento']
+    ]
+
+# Preenche linhas da tabela com os resultados
+    for row in resultados:
+        data_acesso_sp = row.data_acesso + timedelta(hours=3)  # ajustar para horário de SP
+        data.append([
+            data_acesso_sp.strftime('%Y-%m-%d %H:%M:%S'),
+            row.nome_dispositivo,
+            str(row.tipo_evento)
+        ])
+
+    # Cria a tabela e aplica estilo
+    table = Table(data, colWidths=[150, 150, 150])
+    style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.darkgray),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+    ])
+    table.setStyle(style)
+    elements.append(table)
+
+    doc.build(elements)
+    buffer.seek(0)
+
+    response = make_response(buffer.read())
+    response.headers['Content-Type'] = 'application/pdf'
+
+    operador_safe = operador.replace(" ", "_") if operador and operador != "Todos" else "todos"
+    response.headers['Content-Disposition'] = f'attachment; filename=controle_acesso_{operador_safe}_{data_inicio}_a_{data_fim}.pdf'
+
+    return response
 
 @relatorios_bp.route("/extrairComparativoRelatorios", methods=['POST'])
 def extrair_comparativo_relatorios():
@@ -284,3 +397,33 @@ def get_operadores():
     )
     nomes = [op[0] for op in operadores]
     return jsonify(nomes)
+
+@relatorios_bp.route("/getColaboradores", methods=['GET'])
+def get_colaboradores():
+    nomes = (
+        db.session.query(UserAccess.name)
+        .join(DoorAccessLogs, DoorAccessLogs.user_id == UserAccess.id)
+        .filter(UserAccess.name.isnot(None))  # evita nomes nulos
+        .distinct()
+        .order_by(UserAccess.name.asc())
+        .all()
+    )
+
+    colaboradores = [nome[0] for nome in nomes]
+
+    return jsonify(colaboradores)
+
+@relatorios_bp.route("/getLeitoras", methods=['GET'])
+def get_leitoras():
+    leitoras = (
+        db.session.query(DeviceAccess.id, DeviceAccess.name)
+        .join(DoorAccessLogs, DoorAccessLogs.device_id == DeviceAccess.id)
+        .filter(DeviceAccess.name.isnot(None))  # evita nomes nulos
+        .distinct()
+        .order_by(DeviceAccess.name.asc())
+        .all()
+    )
+
+    leitoras_formatadas = [{"id": id_, "name": name} for id_, name in leitoras]
+
+    return jsonify(leitoras_formatadas)

@@ -113,35 +113,34 @@
           <form id="formRelatorio1" method="POST" action="">
             <div class="row mb-3">
               <div class="col-6">
-                <label for="data_inicio" class="form-label">Data Início</label>
-                <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+                <label for="data" class="form-label">Data Inicio</label>
+                <input type="date" class="form-control" id="data" name="data" required>
               </div>
               <div class="col-6">
-                <label for="hora_inicio" class="form-label">Hora Início</label>
-                <input type="time" class="form-control" id="hora_inicio" name="hora_inicio" required>
-              </div>
-            </div>
-            <div class="row mb-3">
-              <div class="col-6">
-                <label for="data_final" class="form-label">Data Fim</label>
-                <input type="date" class="form-control" id="data_final" name="data_final" required>
+                <label for="hora" class="form-label">Hora Inicio</label>
+                <input type="time" class="form-control" id="hora" name="hora" required>
               </div>
               <div class="col-6">
-                <label for="hora_final" class="form-label">Hora Fim</label>
-                <input type="time" class="form-control" id="hora_final" name="hora_final" required>
+                <label for="dataFinalAcesso" class="form-label">Data Fim</label>
+                <input type="date" class="form-control" id="dataFinalAcesso" name="dataFinalAcesso" required>
+              </div>
+              <div class="col-6">
+                <label for="horaFinalAcesso" class="form-label">Hora Fim</label>
+                <input type="time" class="form-control" id="horaFinalAcesso" name="horaFinalAcesso" required>
               </div>
             </div>
             <div class="mb-3">
-              <label for="operador" class="form-label">Colaborador</label>
-              <select class="form-select" id="operador" name="operador" required>
+              <label for="operadorControle" class="form-label">Colaborador</label>
+              <select class="form-select" id="operadorControle" name="operadorControle" required>
                 <option value="">Selecione</option>
               </select>
             </div>
 
             <div class="mb-3">
-              <label for="eventos" class="form-label">Leitora Biométrica</label>
-              <select class="form-select" id="eventos" name="eventos" required>
-                <option value="">Todas</option>
+              <label for="leitorasSelect" class="form-label">Leitora Biométrica</label>
+              <select class="form-select" id="leitorasSelect" name="leitorasSelect" required>
+                <option value="">Selecione</option>
+                <option value="Todos">Todos</option>
               </select>
             </div>
             

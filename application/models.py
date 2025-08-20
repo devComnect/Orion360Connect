@@ -377,3 +377,19 @@ class DoorAccessLogs(db.Model):
     qrcode_value = db.Column(db.String(50))
     log_type_id = db.Column(db.Integer)
     updated_at = db.Column(db.DateTime)
+
+# Modelo parcial da tabela 'users' do banco 'door_access'
+class UserAccess(db.Model):
+    __bind_key__ = 'door_access'
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255))
+
+# Modelo parcial da tabela 'devices' do banco 'door_access'
+class DeviceAccess(db.Model):
+    __bind_key__ = 'door_access'
+    __tablename__ = 'devices'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255))

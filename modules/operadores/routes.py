@@ -235,7 +235,6 @@ def chamados_por_operador_periodo():
             "message": str(e)
         }), 500
 
-
 @operadores_bp.route('/ChamadosSuporte/ticketsTelefoneVsAtendidas', methods=['POST'])
 def chamados_telefone_vs_atendidas():
     try:
@@ -494,7 +493,6 @@ def get_chamados_abertos():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 @operadores_bp.route('/tma_tms/colaboradores', methods=['POST'])
 def tma_e_tms_colaboradores():

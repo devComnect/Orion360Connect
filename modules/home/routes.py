@@ -59,6 +59,11 @@ def render_guardians():
 def render_guardians_individual():
     return render_template('guardians_individual.html')
 
+@home_bp.route('/relatoriosIndividual', methods=['GET'])
+def render_relatorios_individual():
+    return render_template('relatorios_colaboradores_nivel2.html')
+
+
 @home_bp.route('/escala', methods=['GET'])
 @login_required
 def render_escala():
