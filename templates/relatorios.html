@@ -36,7 +36,7 @@
           <h5 class="mb-0">Individual</h5>
         </div>
         <div class="card-body">
-          <form id="formRelatorio1" method="POST" action="">
+          <form id="formRelatorio1">
             <div class="row mb-3">
               <div class="col-6">
                 <label for="data_inicio" class="form-label">Data Início</label>
@@ -61,13 +61,15 @@
               <label for="operador" class="form-label">Colaborador</label>
               <select class="form-select" id="operador" name="operador" required>
                 <option value="">Selecione</option>
+                <!-- Opções preenchidas dinamicamente via JS ou template -->
               </select>
             </div>
-            <button type="button" class="btn btn-success mt-2" onclick="gerarPDF()">Gerar PDF</button>
+            <button type="button" class="btn btn-success mt-2" onclick="gerarPDFIndividual()">Gerar PDF</button>
           </form>
         </div>
       </div>
     </div>
+
 
      
 

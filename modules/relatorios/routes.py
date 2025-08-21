@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, send_file, make_response
-from application.models import Chamado, db,  PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess
+from application.models import Chamado, db,  PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess, EventosAtendentes
 from datetime import datetime, time
 from modules.relatorios.utils import get_turno
 from collections import Counter
@@ -13,7 +13,8 @@ from zoneinfo import ZoneInfo  # Python 3.9+
 from datetime import datetime, timedelta
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
 import os
 
 
@@ -22,8 +23,8 @@ relatorios_bp = Blueprint('relatorios_bp', __name__, url_prefix='/relatorios')
 
 @relatorios_bp.route("/extrairRelatorios", methods=['POST'])
 def extrair_relatorios():
-    data_inicio = request.form.get('data_inicio')  # yyyy-mm-dd
-    hora_inicio = request.form.get('hora_inicio')  # HH:MM
+    data_inicio = request.form.get('data_inicio')
+    hora_inicio = request.form.get('hora_inicio')
     data_final = request.form.get('data_final')
     hora_final = request.form.get('hora_final')
     operador = request.form.get('operador')
@@ -37,7 +38,7 @@ def extrair_relatorios():
     except ValueError:
         return {"status": "error", "message": "Formato de data/hora inválido"}, 400
 
-    # Consulta chamados
+    # ---------- CHAMADOS ----------
     chamados = Chamado.query.filter(
         Chamado.operador == operador,
         Chamado.data_criacao >= dt_inicio,
@@ -45,7 +46,18 @@ def extrair_relatorios():
     ).order_by(Chamado.data_criacao).all()
     total_chamados = len(chamados)
 
-    # Consulta performance (por data)
+    # ---------- SLA ----------  
+    expirados_atendimento = sum(1 for c in chamados if c.sla_atendimento == 'S')
+    expirados_resolucao = sum(1 for c in chamados if c.sla_resolucao == 'S')
+    chamados_atendimento_prazo = sum(1 for c in chamados if c.sla_atendimento == 'N')
+    chamados_finalizado_prazo = sum(1 for c in chamados if c.sla_resolucao == 'N')
+
+    percentual_atendimento = round((expirados_atendimento / total_chamados) * 100, 2) if total_chamados else 0
+    percentual_resolucao = round((expirados_resolucao / total_chamados) * 100, 2) if total_chamados else 0
+    percentual_prazo_atendimento = round((chamados_atendimento_prazo / total_chamados) * 100, 2) if total_chamados else 0
+    percentual_prazo_resolucao = round((chamados_finalizado_prazo / total_chamados) * 100, 2) if total_chamados else 0
+
+    # ---------- PERFORMANCE ----------
     performance = PerformanceColaboradores.query.filter(
         PerformanceColaboradores.name == operador,
         PerformanceColaboradores.data >= dt_inicio.date(),
@@ -55,7 +67,7 @@ def extrair_relatorios():
     total_ligacoes_atendidas = sum(p.ch_atendidas or 0 for p in performance)
     total_ligacoes_naoatendidas = sum(p.ch_naoatendidas or 0 for p in performance)
 
-    # Total ligações efetuadas no período
+    # ---------- LIGAÇÕES EFETUADAS ----------
     total_ligacoes_efetuadas = db.session.query(
         func.count()
     ).filter(
@@ -65,7 +77,7 @@ def extrair_relatorios():
         RegistroChamadas.nome_atendente.ilike(f'%{operador}%')
     ).scalar() or 0
 
-    # Total transferências no período
+    # ---------- TRANSFERÊNCIAS ----------
     total_transferencias = db.session.query(func.count()).filter(
         ChamadasDetalhes.transferencia.ilike('%Ramal%'),
         ChamadasDetalhes.data >= dt_inicio.date(),
@@ -73,59 +85,166 @@ def extrair_relatorios():
         ChamadasDetalhes.nomeAtendente.ilike(f'%{operador}%')
     ).scalar() or 0
 
-    # Geração do PDF
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, f"Relatório do Operador: {operador}", ln=True, align="C")
+    # ---------- PAUSAS ----------
+    pausas = db.session.query(
+        EventosAtendentes.nome_pausa,
+        func.count().label('total')
+    ).filter(
+        EventosAtendentes.nome_atendente.ilike(f'%{operador}%'),
+        EventosAtendentes.data >= dt_inicio.date(),
+        EventosAtendentes.data <= dt_final.date(),
+        EventosAtendentes.evento == 'Pausa'
+    ).group_by(EventosAtendentes.nome_pausa).all()
 
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Período: {dt_inicio.strftime('%d/%m/%Y %H:%M')} a {dt_final.strftime('%d/%m/%Y %H:%M')}", ln=True)
-    pdf.ln(5)
+    # ---------- TEMPO MIN/MAX ATENDIMENTO ----------
+    count_min = db.session.query(func.count(PerformanceColaboradores.id)).filter(
+        PerformanceColaboradores.tempo_minatend != 0,
+        PerformanceColaboradores.data >= dt_inicio.date(),
+        PerformanceColaboradores.data <= dt_final.date(),
+        PerformanceColaboradores.name.ilike(f'%{operador}%')
+    ).scalar() or 0
 
-    # ---------- TABELA DE CHAMADOS ----------
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, "Chamados:", ln=True)
-    pdf.set_font("Arial", "", 12)
+    count_max = db.session.query(func.count(PerformanceColaboradores.id)).filter(
+        PerformanceColaboradores.tempo_maxatend != 0,
+        PerformanceColaboradores.data >= dt_inicio.date(),
+        PerformanceColaboradores.data <= dt_final.date(),
+        PerformanceColaboradores.name.ilike(f'%{operador}%')
+    ).scalar() or 0
 
-    pdf.set_fill_color(220, 220, 220)
-    pdf.cell(80, 8, "Descrição", border=1, fill=True)
-    pdf.cell(40, 8, "Total", border=1, ln=True, fill=True)
-    pdf.cell(80, 8, "Total de chamados", border=1)
-    pdf.cell(40, 8, str(total_chamados), border=1, ln=True)
-    pdf.ln(5)
+    total_ligacoes_minatend = db.session.query(
+        func.sum(PerformanceColaboradores.tempo_minatend)
+    ).filter(
+        PerformanceColaboradores.tempo_minatend != 0,
+        PerformanceColaboradores.data >= dt_inicio.date(),
+        PerformanceColaboradores.data <= dt_final.date(),
+        PerformanceColaboradores.name.ilike(f'%{operador}%')
+    ).scalar() or 0
 
-    # ---------- TABELA DE LIGAÇÕES ----------
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, "Ligações:", ln=True)
-    pdf.set_font("Arial", "", 12)
+    total_ligacoes_maxatend = db.session.query(
+        func.sum(PerformanceColaboradores.tempo_maxatend)
+    ).filter(
+        PerformanceColaboradores.tempo_maxatend != 0,
+        PerformanceColaboradores.data >= dt_inicio.date(),
+        PerformanceColaboradores.data <= dt_final.date(),
+        PerformanceColaboradores.name.ilike(f'%{operador}%')
+    ).scalar() or 0
 
-    pdf.set_fill_color(220, 220, 220)
-    pdf.cell(80, 8, "Descrição", border=1, fill=True)
-    pdf.cell(40, 8, "Total", border=1, ln=True, fill=True)
+    total_ligacoes_minatend /= 60
+    total_ligacoes_maxatend /= 60
 
-    pdf.cell(80, 8, "Ligações atendidas", border=1)
-    pdf.cell(40, 8, str(total_ligacoes_atendidas), border=1, ln=True)
+    media_min = (total_ligacoes_minatend / count_min) if count_min > 0 else 0
+    media_max = (total_ligacoes_maxatend / count_max) if count_max > 0 else 0
 
-    pdf.cell(80, 8, "Ligações não atendidas", border=1)
-    pdf.cell(40, 8, str(total_ligacoes_naoatendidas), border=1, ln=True)
+    def formatar_tempo(minutos: float) -> str:
+        if minutos < 60:
+            return f"{round(minutos)} min"
+        elif minutos < 1440:
+            return f"{minutos / 60:.1f} h"
+        else:
+            return f"{minutos / 1440:.2f} dias"
 
-    pdf.cell(80, 8, "Ligações efetuadas", border=1)
-    pdf.cell(40, 8, str(total_ligacoes_efetuadas), border=1, ln=True)
-
-    pdf.cell(80, 8, "Ligações transferidas", border=1)
-    pdf.cell(40, 8, str(total_transferencias), border=1, ln=True)
-    pdf.ln(5)
-
-    # Finalização
+    # ---------- GERAÇÃO DO PDF ----------
     buffer = BytesIO()
-    pdf_bytes = pdf.output(dest='S').encode('latin1')
-    buffer.write(pdf_bytes)
-    buffer.seek(0)
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
 
-    filename = f"relatorio_{operador}_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
-    return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
+    centered_style_title = ParagraphStyle(name="centered_title", parent=styles['Title'], alignment=TA_CENTER)
+    centered_style_subtitle = ParagraphStyle(name="centered_subtitle", parent=styles['Normal'], alignment=TA_CENTER)
+    centered_style_section = ParagraphStyle(name="centered_section", parent=styles['Heading2'], alignment=TA_CENTER)
+
+    # Título principal
+    elements.append(Paragraph(f"Relatório do Operador: {operador}", centered_style_title))
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph(f"Período: {data_inicio} {hora_inicio} até {data_final} {hora_final}", centered_style_subtitle))
+    elements.append(Spacer(1, 12))
+
+    # ---------- Tabela de Chamados ----------
+    data_chamados = [['Descrição', 'Total']]
+    data_chamados.extend([
+        ['Total de chamados', str(total_chamados)],
+        ['SLA Atendimento (Prazo)', f"{percentual_prazo_atendimento}%"],
+        ['SLA Atendimento (expirado)', f"{percentual_atendimento}%"],
+        ['SLA Resolução (Prazo)', f"{percentual_prazo_resolucao}%"],
+        ['SLA Resolução (expirado)', f"{percentual_resolucao}%"],
+    ])
+
+    table_chamados = Table(data_chamados, colWidths=[250, 100])
+    table_chamados.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 11),
+        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.gray)
+    ]))
+    elements.append(Paragraph("Chamados", centered_style_section))
+    elements.append(table_chamados)
+    elements.append(Spacer(1,12))
+
+    # ---------- Tabela de Ligações ----------
+    data_ligacoes = [['Descrição', 'Total']]
+    data_ligacoes.extend([
+        ['Ligações Atendidas', str(total_ligacoes_atendidas)],
+        ['Ligações não Atendidas', str(total_ligacoes_naoatendidas)],
+        ['Ligações Efetuadas', str(total_ligacoes_efetuadas)],
+        ['Ligações Transferidas', str(total_transferencias)],
+        ['Tempo Mínimo Atendimento (Média)', formatar_tempo(media_min)],
+        ['Tempo Máximo Atendimento (Média)', formatar_tempo(media_max)]
+    ])
+    table_ligacoes = Table(data_ligacoes, colWidths=[250, 100])
+    table_ligacoes.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 11),
+        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.gray)
+    ]))
+    elements.append(Paragraph("Ligações", centered_style_section))
+    elements.append(table_ligacoes)
+    elements.append(Spacer(1,12))
+
+    # ---------- Tabela de Pausas ----------
+    data_pausas = [['Nome da pausa', 'Total']]
+    for p in pausas:
+        data_pausas.append([p.nome_pausa or '-', str(p.total)])
+    table_pausas = Table(data_pausas, colWidths=[250, 100])
+    table_pausas.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 11),
+        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.gray)
+    ]))
+    elements.append(Paragraph("Pausas", centered_style_section))
+    elements.append(table_pausas)
+    elements.append(Spacer(1,12))
+
+    # ---------- Build PDF ----------
+    import traceback
+    try:
+        doc.build(elements)
+    except Exception as e:
+        print("Erro ao gerar PDF:", e)
+        traceback.print_exc()
+        return {"status": "error", "message": f"Erro ao gerar PDF: {e}"}, 500
+
+    buffer.seek(0)
+    operador_safe = operador.replace(" ", "_")
+    response = make_response(buffer.read())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=relatorio_{operador_safe}_{data_inicio}_a_{data_final}.pdf'
+
+    return response
+
 
 @relatorios_bp.route("/extrairControleAcesso", methods=['POST'])
 def extrair_controle_acesso():
@@ -240,7 +359,7 @@ def extrair_comparativo_relatorios():
     hora_inicio = request.form.get('hora_inicio_comp')
     data_final = request.form.get('data_final_comp')
     hora_final = request.form.get('hora_final_comp')
-    nome = request.form.get('nome_operador')  # exemplo, caso queira filtrar por operador
+    nome = request.form.get('nome_operador')  # opcional
 
     if not all([data_inicio, hora_inicio, data_final, hora_final]):
         return {"status": "error", "message": "Parâmetros ausentes"}, 400
@@ -251,138 +370,142 @@ def extrair_comparativo_relatorios():
     except ValueError:
         return {"status": "error", "message": "Formato de data/hora inválido"}, 400
 
-    chamados = Chamado.query.filter(
+    # ---------- CHAMADOS ----------
+    query_chamados = Chamado.query.filter(
         Chamado.data_criacao >= dt_inicio,
         Chamado.data_criacao <= dt_final
-    ).order_by(Chamado.data_criacao).all()
+    )
+    if nome:
+        query_chamados = query_chamados.filter(Chamado.operador.ilike(f'%{nome}%'))
+    chamados = query_chamados.order_by(Chamado.data_criacao).all()
+    total_chamados = len(chamados)
 
+    # Percentuais de SLA
+    expirados_atendimento = sum(1 for c in chamados if c.sla_atendimento == 'S')
+    expirados_resolucao = sum(1 for c in chamados if c.sla_resolucao == 'S')
+    chamados_atendimento_prazo = sum(1 for c in chamados if c.sla_atendimento == 'N')
+    chamados_finalizado_prazo = sum(1 for c in chamados if c.sla_resolucao == 'N')
+
+    percentual_atendimento = round((expirados_atendimento / total_chamados) * 100, 2) if total_chamados else 0
+    percentual_resolucao = round((expirados_resolucao / total_chamados) * 100, 2) if total_chamados else 0
+    percentual_prazo_atendimento = round((chamados_atendimento_prazo / total_chamados) * 100, 2) if total_chamados else 0
+    percentual_prazo_resolucao = round((chamados_finalizado_prazo / total_chamados) * 100, 2) if total_chamados else 0
+
+    # ---------- PERFORMANCE ----------
     performance = PerformanceColaboradores.query.filter(
         PerformanceColaboradores.data >= dt_inicio.date(),
         PerformanceColaboradores.data <= dt_final.date()
     ).order_by(PerformanceColaboradores.data).all()
-
-    # Total ligações efetuadas no período
-    total_ligacoes_efetuadas = db.session.query(
-        func.count()
-    ).filter(
+    total_ligacoes_atendidas = sum(p.ch_atendidas or 0 for p in performance)
+    total_ligacoes_naoatendidas = sum(p.ch_naoatendidas or 0 for p in performance)
+    total_ligacoes_efetuadas = db.session.query(func.count()).filter(
         RegistroChamadas.status == 'Atendida',
         RegistroChamadas.data_hora >= dt_inicio,
-        RegistroChamadas.data_hora <= dt_final,
+        RegistroChamadas.data_hora <= dt_final
     ).scalar() or 0
-
-    # Total ligações transferidas no período e opcionalmente por operador
     query_transferidas = db.session.query(func.count()).filter(
         ChamadasDetalhes.transferencia.ilike('%Ramal%'),
         ChamadasDetalhes.data >= dt_inicio.date(),
         ChamadasDetalhes.data <= dt_final.date()
     )
     if nome:
-        query_transferidas = query_transferidas.filter(
-            ChamadasDetalhes.nomeAtendente.ilike(f'%{nome}%')
-        )
-
+        query_transferidas = query_transferidas.filter(ChamadasDetalhes.nomeAtendente.ilike(f'%{nome}%'))
     total_ligacoes_transferidas = query_transferidas.scalar() or 0
 
-    total_chamados = len(chamados)
-    total_ligacoes_atendidas = sum(p.ch_atendidas or 0 for p in performance)
-    total_ligacoes_naoatendidas = sum(p.ch_naoatendidas or 0 for p in performance)
+    # ---------- TABELAS ----------
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
 
+    # Centralizados
+    centered_title = ParagraphStyle('centered_title', parent=styles['Title'], alignment=TA_CENTER)
+    centered_subtitle = ParagraphStyle('centered_subtitle', parent=styles['Normal'], alignment=TA_CENTER)
+    centered_section = ParagraphStyle('centered_section', parent=styles['Heading2'], alignment=TA_CENTER)
+
+    # Título
+    elements.append(Paragraph("Relatório Comparativo", centered_title))
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph(f"Período: {dt_inicio.strftime('%d/%m/%Y %H:%M')} a {dt_final.strftime('%d/%m/%Y %H:%M')}", centered_subtitle))
+    elements.append(Spacer(1, 12))
+
+    # ---------- Tabela de Chamados ----------
+    data_chamados = [
+        ['Descrição', 'Total']
+    ]
+    data_chamados.extend([
+        ['Total de chamados', str(total_chamados)],
+        ['SLA Atendimento (Prazo)', f"{percentual_prazo_atendimento}%"],
+        ['SLA Atendimento (Expirado)', f"{percentual_atendimento}%"],
+        ['SLA Resolução (Prazo)', f"{percentual_prazo_resolucao}%"],
+        ['SLA Resolução (Expirado)', f"{percentual_resolucao}%"]
+    ])
+    table_chamados = Table(data_chamados, colWidths=[250, 100])
+    table_chamados.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 11),
+        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.gray)
+    ]))
+    elements.append(Paragraph("Chamados", centered_section))
+    elements.append(table_chamados)
+    elements.append(Spacer(1, 12))
+
+    # ---------- Tabela de Ligações ----------
+    data_ligacoes = [
+        ['Descrição', 'Total'],
+        ['Ligações Atendidas', str(total_ligacoes_atendidas)],
+        ['Ligações não Atendidas', str(total_ligacoes_naoatendidas)],
+        ['Ligações Efetuadas', str(total_ligacoes_efetuadas)],
+        ['Ligações Transferidas', str(total_ligacoes_transferidas)]
+    ]
+    table_ligacoes = Table(data_ligacoes, colWidths=[250, 100])
+    table_ligacoes.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 11),
+        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.gray)
+    ]))
+    elements.append(Paragraph("Ligações", centered_section))
+    elements.append(table_ligacoes)
+    elements.append(Spacer(1, 12))
+
+    # ---------- Gráfico de Pizza por Turno ----------
     turnos = [get_turno(ch.data_criacao) for ch in chamados]
     turno_counts = Counter(turnos)
-
-    img_pizza_path = None
-    img_barra_path = None
-
     if turno_counts:
         labels = list(turno_counts.keys())
         sizes = list(turno_counts.values())
-        colors = ['#4CAF50', '#2196F3', '#FF5722']
-
-        def func_autopct(pct, all_vals):
-            absolute = int(round(pct/100.*sum(all_vals)))
-            return f"{absolute}\n({pct:.1f}%)"
+        colors_pizza = ['#4CAF50', '#2196F3', '#FF5722']
 
         plt.figure(figsize=(4.5, 4.5))
-        plt.pie(sizes, labels=labels, autopct=lambda pct: func_autopct(pct, sizes), startangle=140, colors=colors)
-        plt.title('', fontsize=10)
+        plt.pie(sizes, labels=labels, autopct=lambda pct: f"{int(round(pct/100.*sum(sizes)))}\n({pct:.1f}%)",
+                startangle=140, colors=colors_pizza)
         plt.axis('equal')
-
-        img_buffer_pizza = BytesIO()
-        plt.savefig(img_buffer_pizza, format='PNG', bbox_inches='tight')
+        img_buffer = BytesIO()
+        plt.savefig(img_buffer, format='PNG', bbox_inches='tight')
         plt.close()
 
-        import tempfile
-        temp_pizza = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-        temp_pizza.write(img_buffer_pizza.getbuffer())
-        temp_pizza.close()
-        img_pizza_path = temp_pizza.name
+        from reportlab.platypus import Image
+        img_buffer.seek(0)
+        elements.append(Paragraph("Distribuição de Chamados por Turno", centered_section))
+        elements.append(Image(img_buffer, width=200, height=200))
+        elements.append(Spacer(1,12))
 
-        # Gráfico de Barras
-        plt.figure(figsize=(4.5, 2.5))
-        plt.bar(labels, sizes, color=colors)
-        plt.title("Chamados por Turno (Barras)", fontsize=10)
-        plt.xlabel("Turno")
-        plt.ylabel("Quantidade")
-        plt.tight_layout()
-
-        img_buffer_barra = BytesIO()
-        plt.savefig(img_buffer_barra, format='PNG', bbox_inches='tight')
-        plt.close()
-
-        temp_barra = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-        temp_barra.write(img_buffer_barra.getbuffer())
-        temp_barra.close()
-        img_barra_path = temp_barra.name
-
-    # Geração do PDF
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, f"Relatório Comparativo:", ln=True, align="C")
-
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Período: {dt_inicio.strftime('%d/%m/%Y %H:%M')} a {dt_final.strftime('%d/%m/%Y %H:%M')}", ln=True)
-    pdf.ln(5)
-
-    # Chamados
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, "Chamados:", ln=True)
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 10, f"Total de chamados: {total_chamados}", ln=True)
-    pdf.ln(2)
-
-    # Performance
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(0, 10, "Ligações:", ln=True)
-    pdf.set_font("Arial", "", 12)
-    pdf.cell(0, 8, f"Total ligações atendidas: {total_ligacoes_atendidas}", ln=True)
-    pdf.cell(0, 8, f"Total ligações não atendidas: {total_ligacoes_naoatendidas}", ln=True)
-    pdf.cell(0, 8, f"Total ligações efetuadas: {total_ligacoes_efetuadas}", ln=True)
-    pdf.cell(0, 8, f"Total ligações transferidas: {total_ligacoes_transferidas}", ln=True)
-    pdf.ln(2)
-
-    # Gráfico de Pizza
-    if img_pizza_path and os.path.exists(img_pizza_path):
-        current_y = pdf.get_y()
-        if current_y > 220:
-            pdf.add_page()
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "Distribuição de Chamados por Turno:", ln=True)
-        pdf.ln(2)
-        pdf.image(img_pizza_path, x=pdf.get_x() + 30, w=pdf.w / 2.2)
-        pdf.ln(5)
-        os.remove(img_pizza_path)
-
-    # (Gráfico de barras comentado)
-
-    # Finaliza PDF
-    buffer = BytesIO()
-    pdf_bytes = pdf.output(dest='S').encode('latin1')
-    buffer.write(pdf_bytes)
+    # ---------- Build PDF ----------
+    doc.build(elements)
     buffer.seek(0)
-
     filename = f"relatorio_comparativo_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
+
 
 @relatorios_bp.route("/getOperadores", methods=['GET'])
 def get_operadores():
