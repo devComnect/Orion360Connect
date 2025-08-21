@@ -28,11 +28,11 @@ from modules.tasks.relatorios.utils import (
     importar_chamados,
     processar_e_armazenar_performance_incremental,
     processar_e_armazenar_performance_vyrtos_incremental,
-    importar_registro_chamadas_saida_incremental,
     importar_pSatisfacao, 
     importar_fcr_reabertos,
     processar_e_armazenar_eventos,
-    importar_detalhes_chamadas_hoje
+    importar_detalhes_chamadas_hoje,
+    importar_registro_chamadas_incremental
 )
 
 # ----------------- LOGGING CONFIG -----------------
@@ -140,7 +140,7 @@ def tarefa_importar_fcr_reabertos():
 def tarefa_importar_registro_chamadas_saida_incremental():
     with app.app_context():
         try:
-            importar_registro_chamadas_saida_incremental()
+            importar_registro_chamadas_incremental()
             logging.info("[AGENDADO] Registro chamadas de saída com sucesso.")
         except Exception as e:
             logging.error(f"[AGENDADO] Erro ao importar registro de chamadas de saída: {e}")

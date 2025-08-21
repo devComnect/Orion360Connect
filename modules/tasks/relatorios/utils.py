@@ -1243,19 +1243,19 @@ def importar_grupos():
         "total_api": len(grupos_api),
     }
 
-def processar_e_armazenar_eventos(dias=1):
+def processar_e_armazenar_eventos():
     hoje = datetime.now().date()
-    ontem = hoje - timedelta(days=1)
+    data_inicial = hoje
+    data_final = hoje
+
+    print(f"🔄 Importando eventos SOMENTE do dia {hoje}")
 
     # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
+        print("❌ Falha na autenticação")
         return {"status": "error", "message": "Falha na autenticação"}
     access_token = auth_response["access_token"]
-
-    # Intervalo de datas para busca
-    data_inicial = hoje
-    data_final = hoje
 
     # Mapeamento operadores
     OPERADORES_MAP = {
@@ -1273,32 +1273,35 @@ def processar_e_armazenar_eventos(dias=1):
 
     # Funções auxiliares internas para parsing seguro
     def parse_data(data_str):
-        if not data_str or data_str.strip() in ["-", ""]:
+        if not data_str or str(data_str).strip() in ["-", ""]:
             return None
         for fmt in ["%d/%m/%Y", "%Y/%m/%d", "%Y-%m-%d"]:
             try:
                 return datetime.strptime(data_str, fmt).date()
             except ValueError:
                 continue
+        print(f"⚠️ Data inválida recebida: {data_str}")
         return None
 
     def parse_datetime(dt_str):
-        if not dt_str or dt_str.strip() in ["-", ""]:
+        if not dt_str or str(dt_str).strip() in ["-", ""]:
             return None
         for fmt in ["%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M:%S", "%Y/%m/%d %H:%M:%S"]:
             try:
                 return datetime.strptime(dt_str, fmt)
             except ValueError:
                 continue
+        print(f"⚠️ Datetime inválido recebido: {dt_str}")
         return None
 
     def parse_timedelta(valor):
-        if not valor or valor.strip() in ["-", ""]:
+        if not valor or str(valor).strip() in ["-", ""]:
             return None
         try:
             h, m, s = map(int, valor.split(":"))
             return timedelta(hours=h, minutes=m, seconds=s)
-        except ValueError:
+        except Exception as e:
+            print(f"⚠️ Erro ao parsear timedelta '{valor}': {e}")
             return None
 
     def parse_bool(valor):
@@ -1306,6 +1309,7 @@ def processar_e_armazenar_eventos(dias=1):
 
     for operador_id in operadores_ids:
         nome_operador = OPERADORES_MAP.get(operador_id, "Desconhecido")
+        print(f"\n👤 Processando operador {nome_operador} (ID {operador_id})")
 
         for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):
             offset = 0
@@ -1325,18 +1329,30 @@ def processar_e_armazenar_eventos(dias=1):
                     "conf": {}
                 }
 
-                print(f"[{nome_operador}] Buscando eventos de {inicio} até {fim}, offset {offset}")
+                print(f"➡️ [{nome_operador}] Buscando eventos de {inicio} até {fim}, offset {offset}")
                 response = utils.atendenteEventosData(access_token, params)
+
+                if not response:
+                    print(f"❌ [{nome_operador}] Resposta vazia da API")
+                    break
+
                 dados = response.get("result", {}).get("data", [])
+                print(f"📦 [{nome_operador}] Registros recebidos: {len(dados)}")
 
                 if not dados:
                     break
 
                 for item in dados:
                     try:
-                        # Verifica se o registro já existe antes de adicionar
+                        print(f"🔍 [{nome_operador}] Item cru: {item}")
+
                         data_evento = parse_data(item.get("data"))
                         data_inicio = parse_datetime(item.get("dataInicio"))
+                        data_fim = parse_datetime(item.get("dataFim"))
+
+                        if not item.get("evento") and not data_inicio:
+                            print(f"⚠️ [{nome_operador}] Evento descartado (sem evento e sem dataInicio): {item}")
+                            continue
 
                         existe = EventosAtendentes.query.filter_by(
                             atendente=operador_id,
@@ -1345,7 +1361,8 @@ def processar_e_armazenar_eventos(dias=1):
                         ).first()
 
                         if existe:
-                            continue  # pula registro já existente
+                            print(f"⏭️ [{nome_operador}] Evento já existe: {item.get('evento')} em {data_inicio}")
+                            continue
 
                         registro = EventosAtendentes(
                             data=data_evento,
@@ -1355,7 +1372,7 @@ def processar_e_armazenar_eventos(dias=1):
                             parametro=item.get("parametro") or None,
                             nome_pausa=item.get("nomePausa") or None,
                             data_inicio=data_inicio,
-                            data_fim=parse_datetime(item.get("dataFim")),
+                            data_fim=data_fim,
                             sinaliza_duracao=parse_bool(item.get("sinalizaDuracao")),
                             duracao=parse_timedelta(item.get("duracao")),
                             complemento=item.get("complemento") or None,
@@ -1365,16 +1382,19 @@ def processar_e_armazenar_eventos(dias=1):
                         total_registros += 1
 
                     except Exception as e:
-                        print(f"[ERRO] {nome_operador} em {item.get('dataInicio')}: {str(e)}")
+                        print(f"❌ [{nome_operador}] Erro ao processar item: {e} | Dados: {item}")
 
-                db.session.flush()
+                try:
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"❌ Erro ao salvar registros no banco: {e}")
+
                 offset += 1000
 
-            print(f"[{nome_operador}] Total eventos inseridos de {inicio} a {fim}: {total_registros}")
+            print(f"✅ [{nome_operador}] Total eventos inseridos de {inicio} a {fim}: {total_registros}")
 
-        db.session.commit()
-
-    return {"status": "success", "message": "Eventos importados com sucesso."}
+    return {"status": "success", "message": f"Eventos importados apenas do dia {hoje}."}
 
 def importar_categorias():
     token = token_desk()
@@ -1421,152 +1441,105 @@ def importar_categorias():
         "inseridos": total_inseridos,
     }
 
-def importar_registro_chamadas_saida_incremental():
-    hoje = datetime.now().date()
-    data_inicial = hoje
-    data_final = hoje  # apenas o dia atual
-
-    # Autenticação
-    auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
-    if "access_token" not in auth_response:
-        return {"status": "error", "message": "Falha na autenticação"}
-
-    access_token = auth_response["access_token"]
-
-    for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=1):
-        offset = 0
-
-        while True:
-            params = {
-                "initial_date": inicio.strftime('%d/%m/%Y'),
-                "final_date": fim.strftime('%d/%m/%Y'),
-                "initial_hour": "00:00:00",
-                "final_hour": "23:59:59",
-                "options": json.dumps({
-                    "sort": {"data": -1},
-                    "offset": offset,
-                    "count": 100
-                })
-            }
-
-            response = utils.registroChamadas(access_token, params)
-            dados = response.get("result", {}).get("data", [])
-
-            if not dados:
-                break  # fim dos dados
-
-            novos_registros = 0
-
-            for item in dados:
-                try:
-                    unique_id = item.get("uniqueID")
-                    
-                    # Verifica se o registro já existe
-                    existe = RegistroChamadas.query.filter_by(unique_id=unique_id).first()
-                    if existe:
-                        continue  # pula duplicados
-
-                    registro = RegistroChamadas(
-                        data_hora=datetime.strptime(item["dataHora"], "%Y-%m-%d %H:%M:%S"),
-                        unique_id=unique_id,
-                        status=item.get("status"),
-                        numero=item.get("numero"),
-                        tempo_espera=item.get("tempoEspera"),
-                        tempo_atendimento=item.get("tempoAtendimento"),
-                        nome_atendente=item.get("nomeAtendente"),
-                        motivo=item.get("motivo"),
-                        sub_motivo=item.get("subMotivo"),
-                        desconexao_local=item.get("desconexaoLocal"),
-                        data_importacao=datetime.utcnow()
-                    )
-                    db.session.add(registro)
-                    novos_registros += 1
-
-                except Exception as e:
-                    print(f"Erro ao processar registro: {e}")
-                    continue
-
-            db.session.commit()
-            offset += 100  # próxima página
-
-            if novos_registros == 0:
-                break  # se não adicionou nada novo, evita loop desnecessário
-
-    return {"status": "success", "message": "Importação incremental concluída com sucesso"}
-
 def importar_registro_chamadas_incremental():
     hoje = datetime.now().date()
-    data_inicial = hoje - timedelta(days=180)
-    data_final = hoje  # apenas o dia atual
 
     # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
+        print("❌ Falha na autenticação:", auth_response)
         return {"status": "error", "message": "Falha na autenticação"}
 
     access_token = auth_response["access_token"]
+    print(f"✅ Token obtido: {access_token[:10]}...")
 
-    for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=1):
-        offset = 0
+    total_inseridos = 0
+    offset = 0
+    print(f"\n📅 Buscando registros do dia {hoje.strftime('%d/%m/%Y')}")
 
-        while True:
-            params = {
-                "initial_date": inicio.strftime('%d/%m/%Y'),
-                "final_date": fim.strftime('%d/%m/%Y'),
-                "initial_hour": "00:00:00",
-                "final_hour": "23:59:59",
-                "options": json.dumps({
-                    "sort": {"data": -1},
-                    "offset": offset,
-                    "count": 100
-                })
-            }
+    while True:
+        params = {
+            "initial_date": hoje.strftime('%d/%m/%Y'),
+            "final_date": hoje.strftime('%d/%m/%Y'),
+            "initial_hour": "00:00:00",
+            "final_hour": "23:59:59",
+            "options": json.dumps({
+                "sort": {"data": -1},
+                "offset": offset,
+                "count": 100
+            })
+        }
 
-            response = utils.registroChamadas(access_token, params)
-            dados = response.get("result", {}).get("data", [])
+        print(f"➡️ Requisição com offset={offset}, params={params}")
+        response = utils.registroChamadas(access_token, params)
 
-            if not dados:
-                break  # fim dos dados
+        # Validação de resposta
+        if not response:
+            print("❌ Resposta da API veio vazia")
+            break
 
-            novos_registros = 0
+        mensagens = response.get("result", {}).get("messages", [])
+        print("ℹ️ Mensagens API:", mensagens)
 
-            for item in dados:
-                try:
-                    unique_id = item.get("uniqueID")
+        dados = response.get("result", {}).get("data", [])
+        print(f"📦 Registros recebidos: {len(dados)}")
 
-                    # Verifica se já existe no banco
-                    existe = RegistroChamadas.query.filter_by(unique_id=unique_id).first()
-                    if existe:
-                        continue  # pula se já existe
+        if not dados:
+            print("⚠️ Nenhum dado retornado, encerrando loop.")
+            break
 
-                    registro = RegistroChamadas(
-                        data_hora=datetime.strptime(item["dataHora"], "%Y-%m-%d %H:%M:%S"),
-                        unique_id=unique_id,
-                        status=item.get("status"),
-                        numero=item.get("numero"),
-                        tempo_espera=item.get("tempoEspera"),
-                        tempo_atendimento=item.get("tempoAtendimento"),
-                        nome_atendente=item.get("nomeAtendente"),
-                        motivo=item.get("motivo"),
-                        sub_motivo=item.get("subMotivo"),
-                        desconexao_local=item.get("desconexaoLocal"),
-                        data_importacao=datetime.utcnow()
-                    )
-                    db.session.add(registro)
-                    novos_registros += 1
+        novos_registros = 0
 
-                except Exception as e:
-                    print(f"Erro ao processar registro: {e}")
+        for item in dados:
+            try:
+                unique_id = item.get("uniqueID")
+                if not unique_id:
+                    print("⚠️ Registro sem uniqueID:", item)
                     continue
 
+                # Verifica se já existe no banco
+                existe = RegistroChamadas.query.filter_by(unique_id=unique_id).first()
+                if existe:
+                    print(f"⏭️ Registro já existe: {unique_id}")
+                    continue
+
+                print(f"➕ Novo registro {unique_id} - DataHora={item.get('dataHora')}")
+
+                registro = RegistroChamadas(
+                    data_hora=datetime.strptime(item["dataHora"], "%Y-%m-%d %H:%M:%S"),
+                    unique_id=unique_id,
+                    status=item.get("status"),
+                    numero=item.get("numero"),
+                    tempo_espera=item.get("tempoEspera"),
+                    tempo_atendimento=item.get("tempoAtendimento"),
+                    nome_atendente=item.get("nomeAtendente"),
+                    motivo=item.get("motivo"),
+                    sub_motivo=item.get("subMotivo"),
+                    desconexao_local=item.get("desconexaoLocal"),
+                    data_importacao=datetime.utcnow()
+                )
+                db.session.add(registro)
+                novos_registros += 1
+                total_inseridos += 1
+
+            except Exception as e:
+                print(f"❌ Erro ao processar registro {item}: {e}")
+                continue
+
+        try:
             db.session.commit()
-            offset += 100
+            print(f"💾 {novos_registros} registros salvos neste batch.")
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ Erro ao dar commit: {e}")
 
-            # Se nenhum novo registro foi adicionado, pode parar
-            if novos_registros == 0:
-                break
+        offset += 100
 
-    return {"status": "success", "message": "Importação incremental concluída com sucesso"}
+        if len(dados) < 100:
+            print("🚪 Menos de 100 registros recebidos, encerrando paginação.")
+            break
+
+    return {"status": "success", "message": f"Importação concluída. Total inseridos: {total_inseridos}"}
 
 def importar_detalhes_chamadas_hoje():
     hoje = datetime.now().date()
