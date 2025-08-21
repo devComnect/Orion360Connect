@@ -5,7 +5,7 @@ import calendar
 from modules.deskmanager.authenticate.routes import token_desk
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_date
-from application.models import db, Chamado
+from application.models import db, Chamado, PerformanceColaboradores, ChamadasDetalhes, DesempenhoAtendenteVyrtos
 from sqlalchemy import extract, func
 
 
@@ -494,7 +494,71 @@ def listar_sla_andamento_grupos():
         "mes_referencia": mes_referencia_atual
     })
 
+@dashboard_bp.route('/v2/report/attendants_performance', methods=['POST'])
+def buscar_desempenho_atendentes():
+    try:
+        hoje = datetime.now().date()  # apenas a data
+        ontem = hoje - timedelta(days=1)
+
+        # Consulta no banco de dados PerformanceColaboradores
+        resultados = (
+            db.session.query(
+                PerformanceColaboradores.name,
+                db.func.sum(PerformanceColaboradores.ch_atendidas).label('total')
+            )
+            .filter(PerformanceColaboradores.data == hoje)
+            .group_by(PerformanceColaboradores.name)
+            .all()
+        )
+
+        dados_grafico = [
+            {"nome": nome, "total": total}
+            for nome, total in resultados
+        ]
+
+        return jsonify({
+            "status": "success",
+            "data": dados_grafico,
+            "registros_encontrados": len(dados_grafico)
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Erro inesperado ao buscar desempenho de atendentes.",
+            "details": str(e)
+        }), 500
 
 
+@dashboard_bp.route('/v2/report/attendants_performance_vyrtos', methods=['POST'])
+def buscar_ligacoes_atendidas_vyrtos():
+    try:
+        hoje = datetime.now().date()
 
+        resultados = (
+            db.session.query(
+                DesempenhoAtendenteVyrtos.name,
+                db.func.sum(DesempenhoAtendenteVyrtos.ch_atendidas).label('total')
+            )
+            .filter(DesempenhoAtendenteVyrtos.data == hoje)
+            .group_by(DesempenhoAtendenteVyrtos.name)
+            .all()
+        )
 
+        dados_grafico = [
+            {"nome": nome, "total": total}
+            for nome, total in resultados
+        ]
+
+        return jsonify({
+            "status": "success",
+            "data": dados_grafico,
+            "registros_encontrados": len(dados_grafico)
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Erro ao buscar dados locais",
+            "details": str(e)
+        }), 500

@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 import requests
-import modules.tasks.relatorios.utils as utils
+import modules.tasks.utils as utils
 from modules.deskmanager.authenticate.routes import token_desk
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_date
@@ -75,7 +75,6 @@ def relacao_admin_abertos_vs_resolvido_periodo():
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
 
 @admin_bp.route('/v2/report/attendants_performance', methods=['POST'])
 def importar_ligacoes_atendidas():

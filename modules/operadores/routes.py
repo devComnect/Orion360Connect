@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, session
-import modules.tasks.relatorios.utils as utils
+import modules.tasks.utils as utils
 from application.models import db, ChamadasDetalhes, DesempenhoAtendenteVyrtos, PerformanceColaboradores, PesquisaSatisfacao, RelatorioColaboradores, RegistroChamadas
 from modules.auth.utils import authenticate, authenticate_relatorio
 from application.models import Chamado

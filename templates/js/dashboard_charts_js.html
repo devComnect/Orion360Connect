@@ -255,7 +255,7 @@
 
 <!-- Bloco que me traz as ligações atendidas no dia no mês-->
 <script>
-    fetch('/dashboard/call/v2/report/attendants_performance', { method: 'POST' })
+    fetch('/dashboard/v2/report/attendants_performance', { method: 'POST' })
     .then(res => res.json())
     .then(res => {
         const labels = res.data.map(r => r.nome);
@@ -307,7 +307,7 @@
 
 <!-- Bloco que traz as chamadas atendidas Vyrtos -->
 <script>
-    fetch('/dashboard/call/v2/report/attendants_performance_vyrtos', { method: 'POST' })
+    fetch('/dashboard/v2/report/attendants_performance_vyrtos', { method: 'POST' })
     .then(res => res.json())
     .then(res => {
         const labels = res.data.map(r => r.nome);
