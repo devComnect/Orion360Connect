@@ -547,7 +547,8 @@ def relacao_admin_abertos_vs_resolvido_periodo():
             func.date(Chamado.data_criacao).label('dia'),
             func.count(Chamado.id)
         ).filter(
-            Chamado.data_criacao >= data_limite
+            Chamado.data_criacao >= data_limite,
+            Chamado.nome_status != 'Cancelado'
         ).group_by('dia').all()
 
         for dia, total in resultados_abertos:
@@ -558,7 +559,8 @@ def relacao_admin_abertos_vs_resolvido_periodo():
             func.count(Chamado.id)
         ).filter(
             Chamado.data_criacao >= data_limite,
-            Chamado.nome_status == 'Resolvido'
+            Chamado.nome_status == 'Resolvido',
+            
         ).group_by('dia').all()
 
         for dia, total in resultados_resolvidos:

@@ -245,7 +245,6 @@ def extrair_relatorios():
 
     return response
 
-
 @relatorios_bp.route("/extrairControleAcesso", methods=['POST'])
 def extrair_controle_acesso():
     data_inicio = request.form.get('data')
@@ -505,7 +504,6 @@ def extrair_comparativo_relatorios():
     buffer.seek(0)
     filename = f"relatorio_comparativo_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
-
 
 @relatorios_bp.route("/getOperadores", methods=['GET'])
 def get_operadores():

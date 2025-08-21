@@ -45,7 +45,7 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 
 app_logger = logging.getLogger()
-app_logger.setLevel(logging.INFO)
+app_logger.setLevel(logging.DEBUG)  # DEBUG para logs detalhados
 app_logger.addHandler(handler)
 # ---------------------------------------------------
 
@@ -147,11 +147,12 @@ def tarefa_importar_registro_chamadas_saida_incremental():
 
 def tarefa_importar_eventos():
     with app.app_context():
+        logging.info("[AGENDADO] Iniciando importação de eventos...")
         try:
             processar_e_armazenar_eventos()
-            logging.info("[AGENDADO] Import de eventos realizado com sucesso.")
-        except Exception as e:
-            logging.error(f"[AGENDADO] Erro ao importar eventos: {e}")
+            logging.info("[AGENDADO] Importação de eventos finalizada com sucesso.")
+        except Exception:
+            logging.exception("[AGENDADO] Erro ao importar eventos.")
 
 def tarefa_importar_detalhes_chamadas():
     with app.app_context():
@@ -196,7 +197,7 @@ with app.app_context():
         id='job_import_eventos',
         func=tarefa_importar_eventos,
         trigger='interval',
-        minutes=15
+        minutes=10
     )
 
     scheduler.add_job(
