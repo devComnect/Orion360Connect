@@ -363,6 +363,7 @@ def get_operadores():
             Chamado.operador != 'Maria Luiza',
             Chamado.operador != 'Alexandre',
             Chamado.operador != 'Suporte',
+            Chamado.operador != 'Reinaldo',
             #Chamado.nome_grupo.like('SUPORTE COMNEcT%')
         ).distinct().order_by(
             Chamado.operador
@@ -1133,8 +1134,6 @@ def get_tmin_tmax():
             "status": "error",
             "message": str(e)
         }), 500
-
-
 
 @insights_bp.route('/abertos/status', methods=['POST'])
 def estatisticas_chamados_periodos():

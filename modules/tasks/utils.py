@@ -341,21 +341,19 @@ def processar_e_armazenar_performance_incremental():
                         data_raw = item["data"].split("T")[0] if "T" in item["data"] else item["data"]
                         data_registro = datetime.strptime(data_raw, "%Y-%m-%d").date()
 
-                        # Verifica se já existe registro
                         registro_existente = PerformanceColaboradores.query.filter_by(
                             operador_id=operador_id,
                             data=data_registro
                         ).first()
 
                         if registro_existente:
-                            # Atualiza campos existentes
                             registro_existente.name = nome_operador
                             registro_existente.ch_atendidas = item.get("ch_atendidas", 0)
                             registro_existente.ch_naoatendidas = item.get("ch_naoatendidas", 0)
                             registro_existente.tempo_online = item.get("tempo_online", 0)
                             registro_existente.tempo_livre = item.get("tempo_livre", 0)
                             registro_existente.tempo_servico = item.get("tempo_servico", 0)
-                            registro_existente.pimprod_refeicao = item.get("pimprod_Refeicao", 0)
+                            registro_existente.pimprod_refeicao = item.get("pimprod_Refeicao_2", 0)  # <-- AJUSTE AQUI
                             registro_existente.tempo_minatend = item.get("tempo_minatend")
                             registro_existente.tempo_medatend = item.get("tempo_medatend")
                             registro_existente.tempo_maxatend = item.get("tempo_maxatend")
@@ -370,7 +368,7 @@ def processar_e_armazenar_performance_incremental():
                                 tempo_online=item.get("tempo_online", 0),
                                 tempo_livre=item.get("tempo_livre", 0),
                                 tempo_servico=item.get("tempo_servico", 0),
-                                pimprod_refeicao=item.get("pimprod_Refeicao", 0),
+                                pimprod_refeicao=item.get("pimprod_Refeicao_2", 0),  # <-- AJUSTE AQUI
                                 tempo_minatend=item.get("tempo_minatend"),
                                 tempo_medatend=item.get("tempo_medatend"),
                                 tempo_maxatend=item.get("tempo_maxatend"),
@@ -383,9 +381,8 @@ def processar_e_armazenar_performance_incremental():
                     except Exception as e:
                         app.logger.error(f"[ERRO] {nome_operador} em {item.get('data')}: {str(e)}")
 
-                offset += 1000  # Próxima página
+                offset += 1000
 
-        # Se nenhum dado foi encontrado, tenta pegar dados só de hoje
         if not dados_encontrados:
             app.logger.info("Nenhum dado encontrado nos últimos 2 dias. Tentando buscar dados apenas de hoje.")
             for operador_id, nome_operador in OPERADORES_MAP.items():
@@ -427,7 +424,7 @@ def processar_e_armazenar_performance_incremental():
                                 registro_existente.tempo_online = item.get("tempo_online", 0)
                                 registro_existente.tempo_livre = item.get("tempo_livre", 0)
                                 registro_existente.tempo_servico = item.get("tempo_servico", 0)
-                                registro_existente.pimprod_refeicao = item.get("pimprod_Refeicao", 0)
+                                registro_existente.pimprod_refeicao = item.get("pimprod_Refeicao_2", 0)  # <-- AJUSTE AQUI
                                 registro_existente.tempo_minatend = item.get("tempo_minatend")
                                 registro_existente.tempo_medatend = item.get("tempo_medatend")
                                 registro_existente.tempo_maxatend = item.get("tempo_maxatend")
@@ -442,7 +439,7 @@ def processar_e_armazenar_performance_incremental():
                                     tempo_online=item.get("tempo_online", 0),
                                     tempo_livre=item.get("tempo_livre", 0),
                                     tempo_servico=item.get("tempo_servico", 0),
-                                    pimprod_refeicao=item.get("pimprod_Refeicao", 0),
+                                    pimprod_refeicao=item.get("pimprod_Refeicao_2", 0),  # <-- AJUSTE AQUI
                                     tempo_minatend=item.get("tempo_minatend"),
                                     tempo_medatend=item.get("tempo_medatend"),
                                     tempo_maxatend=item.get("tempo_maxatend"),
@@ -462,6 +459,7 @@ def processar_e_armazenar_performance_incremental():
     except Exception as e:
         app.logger.error(f"Erro na tarefa processar_e_armazenar_performance_incremental: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 def processar_e_armazenar_performance_vyrtos_incremental():
     hoje = datetime.now().date()

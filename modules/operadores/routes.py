@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, session
 import modules.tasks.utils as utils
-from application.models import db, ChamadasDetalhes, DesempenhoAtendenteVyrtos, PerformanceColaboradores, PesquisaSatisfacao, RelatorioColaboradores, RegistroChamadas
+from application.models import db, ChamadasDetalhes, DesempenhoAtendenteVyrtos, PerformanceColaboradores, PesquisaSatisfacao, RelatorioColaboradores, RegistroChamadas, EventosAtendentes
 from modules.auth.utils import authenticate, authenticate_relatorio
 from application.models import Chamado
 from settings.endpoints import CREDENTIALS
@@ -22,10 +22,12 @@ def performance_colaboradores_render():
         return jsonify({"status": "error", "message": "Nome do operador não fornecido"}), 400
 
     ontem = date.today() - timedelta(days=1)
+    hoje = datetime.today()
+
 
     registros = PerformanceColaboradores.query.filter(
         PerformanceColaboradores.name == nome,
-        PerformanceColaboradores.data == ontem
+        PerformanceColaboradores.data == hoje.date()
     )
 
     acumulado = {
@@ -34,7 +36,7 @@ def performance_colaboradores_render():
         "tempo_online": 0,
         "tempo_livre": 0,
         "tempo_servico": 0,
-        "pimprod_Refeicao": 0,
+        "pimprod_refeicao": 0,
         "tempo_minatend": None,
         "tempo_medatend": [],
         "tempo_maxatend": None
@@ -46,7 +48,7 @@ def performance_colaboradores_render():
         acumulado["tempo_online"] += item.tempo_online
         acumulado["tempo_livre"] += item.tempo_livre
         acumulado["tempo_servico"] += item.tempo_servico
-        acumulado["pimprod_Refeicao"] += item.pimprod_refeicao
+        acumulado["pimprod_refeicao"] += item.pimprod_refeicao
 
         if item.tempo_minatend is not None:
             acumulado["tempo_minatend"] = (
@@ -76,7 +78,7 @@ def performance_colaboradores_render():
         "tempo_online": acumulado["tempo_online"],
         "tempo_livre": acumulado["tempo_livre"],
         "tempo_servico": acumulado["tempo_servico"],
-        "pimprod_Refeicao": acumulado["pimprod_Refeicao"],
+        "pimprod_refeicao": acumulado["pimprod_refeicao"],
         "tempo_minatend": acumulado["tempo_minatend"] or 0,
         "tempo_medatend": round(media_geral, 2),
         "tempo_maxatend": acumulado["tempo_maxatend"] or 0
@@ -101,7 +103,7 @@ def render_operadores():
 def get_performance_colaboradores():
     data = request.get_json()
     nome = data.get('nome', '').strip().title()  # normaliza o nome
-    dias_str = str(data.get('dias', '1'))
+    dias_str = str(data.get('dias'))
 
     if not nome:
         return jsonify({"status": "error", "message": "Nome do operador não fornecido"}), 400
@@ -130,6 +132,27 @@ def get_performance_colaboradores():
         PerformanceColaboradores.data <= hoje
     ).all()
 
+    pausas_produtivas = 0
+    pausas_improdutivas = 0
+
+    # Buscar pausas
+    pausas = db.session.query(
+        EventosAtendentes.parametro,
+        func.count().label('total')
+    ).filter(
+        func.lower(EventosAtendentes.nome_atendente) == nome.lower(),  # ← aqui!
+        EventosAtendentes.data >= data_inicial,
+        EventosAtendentes.data <= hoje,
+        EventosAtendentes.evento == 'Pausa'
+    ).group_by(EventosAtendentes.parametro).all()
+
+    # Classificar
+    for parametro, total in pausas:
+        if str(parametro) in ['3']:
+            pausas_produtivas += total
+        else:
+            pausas_improdutivas += total
+
 
     # Inicializa os acumuladores
     acumulado = {
@@ -138,7 +161,7 @@ def get_performance_colaboradores():
         "tempo_online": 0,
         "tempo_livre": 0,
         "tempo_servico": 0,
-        "pimprod_Refeicao": 0,
+        "pimprod_refeicao": 0,
         "tempo_minatend": None,
         "tempo_medatend": [],
         "tempo_maxatend": None
@@ -150,7 +173,7 @@ def get_performance_colaboradores():
         acumulado["tempo_online"] += r.tempo_online
         acumulado["tempo_livre"] += r.tempo_livre
         acumulado["tempo_servico"] += r.tempo_servico
-        acumulado["pimprod_Refeicao"] += r.pimprod_refeicao
+        acumulado["pimprod_refeicao"] += r.pimprod_refeicao
 
         if r.tempo_minatend is not None:
             acumulado["tempo_minatend"] = r.tempo_minatend if acumulado["tempo_minatend"] is None else min(acumulado["tempo_minatend"], r.tempo_minatend)
@@ -173,10 +196,12 @@ def get_performance_colaboradores():
         "tempo_online": acumulado["tempo_online"],
         "tempo_livre": acumulado["tempo_livre"],
         "tempo_servico": acumulado["tempo_servico"],
-        "pimprod_Refeicao": acumulado["pimprod_Refeicao"],
+        "pimprod_refeicao": acumulado["pimprod_refeicao"],
         "tempo_minatend": acumulado["tempo_minatend"] or 0,
         "tempo_medatend": round(media_geral, 2),
-        "tempo_maxatend": acumulado["tempo_maxatend"] or 0
+        "tempo_maxatend": acumulado["tempo_maxatend"] or 0,
+        "pausas_produtivas": pausas_produtivas,
+        "pausas_improdutivas": pausas_improdutivas,
     }
 
     return jsonify({"status": "success", "dados": dados})

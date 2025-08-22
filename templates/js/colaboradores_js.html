@@ -38,11 +38,11 @@ function copiarChamados() {
       const tempoRefeicao = dados.pimprod_Refeicao || 0;
       const totalTempo = tempoOnline + tempoLivre + tempoServico + tempoRefeicao;
 
+      // Gráfico: composição das atividades
       const distribuicaoPercentual = [
-        //(tempoOnline / totalTempo) * 100,
-        ((tempoLivre + tempoOnline) / totalTempo) * 100,
-        (tempoServico / totalTempo) * 100,
-        (tempoRefeicao / totalTempo) * 100
+        ((tempoLivre + tempoOnline) / totalTempo) * 100,  // Tempo Livre + Online
+        (tempoServico / totalTempo) * 100,                // Tempo em Serviço
+        (tempoRefeicao / totalTempo) * 100                // Tempo de Refeição
       ].map(v => +v.toFixed(2));
 
       if (chartDistribuicao) {
@@ -51,33 +51,57 @@ function copiarChamados() {
       } else {
         const ctx = document.getElementById("tempoDistribuicaoChart").getContext('2d');
         chartDistribuicao = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: [ "Livre", "Serviço", "Refeição"],
-          datasets: [{
-            data: distribuicaoPercentual,
-            backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e']
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                color: '#fff'  // ← deixa o texto da legenda branco
+          type: 'doughnut',
+          data: {
+            labels: ["Livre + Online", "Serviço", "Refeição"],
+            datasets: [{
+              data: distribuicaoPercentual,
+              backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#fff' }
+              },
+              datalabels: {
+                color: '#fff',
+                formatter: value => `${value.toFixed(1)}%`,
+                font: { weight: 'bold', size: 14 }
               }
-            },
-            datalabels: {
-              color: '#fff',  // ← deixa os números dentro do gráfico brancos
-              formatter: value => `${value.toFixed(1)}%`,
-              font: { weight: 'bold', size: 14 }
             }
-          }
-        },
-        plugins: [ChartDataLabels]
-      });
+          },
+          plugins: [ChartDataLabels]
+        });
       }
+
+      // --- Legenda adicional para pausas produtivas/improdutivas dentro do tempo livre ---
+      const pausasProdutivas = dados.pausas_produtivas || 0;
+      const pausasImprodutivas = dados.pausas_improdutivas || 0;
+      const totalPausas = pausasProdutivas + pausasImprodutivas;
+
+      let legendaPausas = "";
+
+      if (tempoLivre > 0 && totalPausas > 0) {
+        // Porcentagem das pausas produtivas e improdutivas em relação ao total de pausas
+        const percentProdRel = ((pausasProdutivas / totalPausas) * 100).toFixed(0);
+        const percentImprodRel = ((pausasImprodutivas / totalPausas) * 100).toFixed(0);
+
+        // Porcentagem do tempo livre no total para contextualizar
+        const percentTempoLivre = ((tempoLivre / totalTempo) * 100).toFixed(1);
+
+        legendaPausas = `
+          <strong>Tempo Livre (${percentTempoLivre}%) composto por:</strong><br>
+          • <span style="color:#ADFF2F;">${pausasProdutivas} Pausas Produtivas</span> (${percentProdRel}%)<br>
+          • <span style="color:#e74a3b;">${pausasImprodutivas} Pausas Improdutivas</span> (${percentImprodRel}%)
+        `;
+      } else {
+        legendaPausas = `Tempo Livre sem pausas registradas.`;
+      }
+
+      document.getElementById("info-pausas").innerHTML = legendaPausas;
     }
 
     async function atualizarTotalChamados(dias = 1) {
@@ -137,6 +161,8 @@ function copiarChamados() {
     atualizarPerformance(1);
   });
 </script>
+
+
 
 <!-- Bloco que traz a relação de chamados abertos e ligações atendidas-->
 <script>
