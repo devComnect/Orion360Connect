@@ -98,6 +98,9 @@ class PerformanceColaboradores(db.Model):
     tempo_minatend = db.Column(db.Integer, nullable=True)
     tempo_medatend = db.Column(db.Float, nullable=True)
     tempo_maxatend = db.Column(db.Integer, nullable=True)
+    pimprod_Lanche_5 = db.Column(db.Integer, default=0)
+    pimprod_Pessoal_6 = db.Column(db.Integer, default=0)
+    pimprod_Toalete_1 = db.Column(db.Integer, default=0)
 
     data_importacao = db.Column(db.DateTime, default=datetime.utcnow)
 

@@ -357,7 +357,11 @@ def processar_e_armazenar_performance_incremental():
                             registro_existente.tempo_minatend = item.get("tempo_minatend")
                             registro_existente.tempo_medatend = item.get("tempo_medatend")
                             registro_existente.tempo_maxatend = item.get("tempo_maxatend")
+                            registro_existente.pimprod_Toalete_1 = item.get("pimprod_Toalete_1")
+                            registro_existente.pimprod_Lanche_5 = item.get("pimprod_Lanche_5")
+                            registro_existente.pimprod_Pessoal_6 = item.get("pimprod_Pessoal_6")
                             registro_existente.data_importacao = datetime.now()
+
                         else:
                             novo_registro = PerformanceColaboradores(
                                 operador_id=operador_id,
@@ -372,6 +376,9 @@ def processar_e_armazenar_performance_incremental():
                                 tempo_minatend=item.get("tempo_minatend"),
                                 tempo_medatend=item.get("tempo_medatend"),
                                 tempo_maxatend=item.get("tempo_maxatend"),
+                                pimprod_Toalete_1 = item.get("pimprod_Toalete_1"),
+                                pimprod_Lanche_5 = item.get("pimprod_Lanche_5"),
+                                pimprod_Pessoal_6 = item.get("pimprod_Pessoal_6"),
                                 data_importacao=datetime.now()
                             )
                             db.session.add(novo_registro)
@@ -428,6 +435,9 @@ def processar_e_armazenar_performance_incremental():
                                 registro_existente.tempo_minatend = item.get("tempo_minatend")
                                 registro_existente.tempo_medatend = item.get("tempo_medatend")
                                 registro_existente.tempo_maxatend = item.get("tempo_maxatend")
+                                registro_existente.pimprod_Toalete_1 = item.get("pimprod_Toalete_1")
+                                registro_existente.pimprod_Lanche_5 = item.get("pimprod_Lanche_5")
+                                registro_existente.pimprod_Pessoal_6 = item.get("pimprod_Pessoal_6")
                                 registro_existente.data_importacao = datetime.now()
                             else:
                                 novo_registro = PerformanceColaboradores(
@@ -443,6 +453,9 @@ def processar_e_armazenar_performance_incremental():
                                     tempo_minatend=item.get("tempo_minatend"),
                                     tempo_medatend=item.get("tempo_medatend"),
                                     tempo_maxatend=item.get("tempo_maxatend"),
+                                    pimprod_Toalete_1 = item.get("pimprod_Toalete_1"),
+                                    pimprod_Lanche_5 = item.get("pimprod_Lanche_5"),
+                                    pimprod_Pessoal_6 = item.get("pimprod_Pessoal_6"),
                                     data_importacao=datetime.now()
                                 )
                                 db.session.add(novo_registro)
