@@ -420,43 +420,55 @@ def listar_p_satisfacao():
         'Ótimo': 10
     }
 
-    # Buscar todas as alternativas preenchidas no período
-    alternativas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
+    # Busca alternativa + referência do chamado
+    alternativas_brutas = db.session.query(
+        PesquisaSatisfacao.alternativa,
+        PesquisaSatisfacao.referencia_chamado
+    ).filter(
         and_(
             PesquisaSatisfacao.data_resposta >= data_limite,
             PesquisaSatisfacao.alternativa.isnot(None),
             func.length(PesquisaSatisfacao.alternativa) > 0,
             PesquisaSatisfacao.operador.ilike(f"{nome}%")
-            )
+        )
     ).all()
 
     respostas_convertidas = []
+    referencias_chamados = []
 
-    for alt in alternativas_brutas:
-        valor = alt[0].strip()
-        # Se for número direto (ex: '8', '10')
+    for alternativa, referencia in alternativas_brutas:
+        valor = alternativa.strip()
         if valor.isdigit():
             numero = int(valor)
             if 0 <= numero <= 10:
                 respostas_convertidas.append(numero)
-        # Se for texto mapeado (ex: 'Concordo')
+                referencias_chamados.append(referencia)
         elif valor in CSAT_MAP:
             respostas_convertidas.append(CSAT_MAP[valor])
+            referencias_chamados.append(referencia)
 
     total_respondidas = len(respostas_convertidas)
 
-    # Considerar como satisfatórias as notas 8 a 10
     respostas_satisfatorias = sum(1 for nota in respostas_convertidas if nota >= 7)
 
-    # Cálculo do CSAT
     csat = round((respostas_satisfatorias / total_respondidas) * 100, 2) if total_respondidas else 0
+
+    # Apenas os chamados das respostas satisfatórias (>=7)
+    referencias_satisfatorias = [
+        referencias_chamados[i]
+        for i, nota in enumerate(respostas_convertidas)
+        if nota >= 7
+    ]
 
     return jsonify({
         "status": "success",
         "total_respondidas": total_respondidas,
         "respostas_satisfatorias": respostas_satisfatorias,
-        "csat": csat
+        "csat": csat,
+        "referencia_chamados": referencias_chamados
     })
+
+
 
 @operadores_bp.route('/performanceColaboradoresRender/n2', methods=['POST'])
 def performance_colaboradores_render_n2():

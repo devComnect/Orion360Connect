@@ -389,37 +389,50 @@ document.addEventListener("DOMContentLoaded", () => {
 <!-- Script que traz a pesquisa de satisfação e popula o modal -->
 <script>
   let comentariosPesquisa = [];
+  let diasSelecionados = 1; // guarda o filtro atual para usar ao abrir modal
 
   document.addEventListener("DOMContentLoaded", function () {
-    atualizarCardPesquisaSatisfacao(1); // valor inicial
+    atualizarCardPesquisaSatisfacao(diasSelecionados); // valor inicial
 
     // Botões de filtro por período
     document.querySelectorAll('.filtro-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        const dias = parseInt(this.getAttribute('data-dias'), 10);
-        atualizarCardPesquisaSatisfacao(dias);
+        diasSelecionados = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarCardPesquisaSatisfacao(diasSelecionados);
       });
     });
 
-    // Evento que preenche o modal com os comentários
-    const modalElement = document.getElementById("modalComentariosPesquisa");
-    modalElement.addEventListener("shown.bs.modal", function () {
+    // Tornar o CSAT clicável para abrir o modal
+    const csatPercentualEl = document.getElementById("csat-percentual");
+    csatPercentualEl.style.cursor = "pointer";
+    csatPercentualEl.addEventListener("click", function () {
+      if (comentariosPesquisa.length === 0) {
+        alert("Nenhum chamado disponível.");
+        return;
+      }
       const lista = document.getElementById("listaComentarios");
       lista.innerHTML = "";
 
-      if (comentariosPesquisa.length > 0) {
-        comentariosPesquisa.forEach(coment => {
-          const li = document.createElement("li");
-          li.textContent = coment;
-          lista.appendChild(li);
-        });
-      } else {
+      comentariosPesquisa.forEach(codigoChamado => {
         const li = document.createElement("li");
-        li.textContent = "Nenhum comentário disponível.";
+        li.style.marginBottom = "8px";
+
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigoChamado}`;
+        link.target = "_blank";
+        link.textContent = codigoChamado;
+        link.style.color = "#ff6384"; // cor para contraste
+
+        li.appendChild(link);
         lista.appendChild(li);
-      }
+      });
+
+      // Abrir modal via Bootstrap 5 JS API
+      const modalElement = document.getElementById("modalComentariosPesquisa");
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
     });
   });
 
@@ -441,9 +454,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.status === 'success') {
         csatPercentualEl.textContent = data.csat + '%';
         totalAvaliadoEl.textContent = data.total_respondidas;
-
-        // Se quiser exibir comentários no modal, descomente isso se adicionar esse campo no back-end:
-        // comentariosPesquisa = data.alternativas || [];
+        comentariosPesquisa = data.referencia_chamados || [];
       } else {
         csatPercentualEl.textContent = '0%';
         totalAvaliadoEl.textContent = '0';
