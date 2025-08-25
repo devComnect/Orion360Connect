@@ -1,81 +1,116 @@
-body {
+/* === Body e cores gerais === */
+    body {
+      background-color: #121212;
+      color: #f1f1f1;
       font-family: Arial, sans-serif;
-      padding: 20px;
-      background-color: #f4f6f9;
     }
 
-    #buttons-container {
-      margin-bottom: 15px;
+    /* Botões */
+    .btn-outline-secondary {
+      border-color: #555;
+      color: #ddd;
+    }
+    .btn-outline-secondary:hover,
+    .btn-outline-secondary.active {
+      background-color: #333;
+      color: #fff;
+      border-color: #777;
     }
 
-    button.download-btn {
-      padding: 10px 20px;
-      background-color: #4285f4;
-      color: white;
+    .btn-outline-primary {
+      border-color: #3f51b5;
+      color: #9fa8da;
+    }
+    .btn-outline-primary:hover,
+    .btn-outline-primary.active {
+      background-color: #3f51b5;
+      color: #fff;
+    }
+
+    /* Título */
+    h1 {
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    /* === Cards Modernos === */
+    .card {
+      background: #2f2f37;
       border: none;
-      border-radius: 5px;
+      border-radius: 16px;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+      margin-bottom: 2rem;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.6);
+    }
+
+    .card-header {
+      background: transparent;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: #e0e0ff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+
+    /* Botões download */
+    #buttons-container {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .download-btn {
+      background-color: #1e1e1e;
+      color: #f1f1f1;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 6px;
       cursor: pointer;
-      font-weight: bold;
-      margin-right: 10px;
-      transition: background-color 0.3s ease;
-    }
-    button.download-btn:hover {
-      background-color: #3367d6;
+      transition: all 0.2s;
+      font-weight: 600;
     }
 
-    #abas {
-      margin-bottom: 10px;
+    .download-btn:hover {
+      background-color: #2a2a2a;
     }
 
-    button.aba-btn {
+    /* === Abas === */
+    .aba-btn {
       padding: 8px 16px;
       margin-right: 4px;
       cursor: pointer;
-      border: 1px solid #aaa;
-      background-color: #eee;
-      border-radius: 4px;
+      border: 1px solid #777;
+      background-color: #1e1e1e;
+      color: #f1f1f1;
+      border-radius: 6px;
       transition: background-color 0.2s ease;
     }
 
-    button.aba-btn:hover {
-      background-color: #ddd;
+    .aba-btn.active {
+      background-color: #3f51b5;
+      color: #fff;
+      border-color: #3f51b5;
     }
 
-    button.aba-btn.active {
-      background-color: #4285f4;
-      color: white;
-      border-color: #4285f4;
-    }
-
+    /* === Containers de planilha === */
     .planilha-container {
       display: none;
-      margin-top: 10px;
+      height: 400px;
     }
 
     .planilha-container.active {
       display: block;
     }
-
- /* Estilização customizada para o Tabulator */
-.tabulator {
-  background-color: #8e8c8c; /* cinza escuro suave */
-  border: 1px solid #999;
-  color: #333;
-}
-
-.tabulator-header {
-  background-color: #707070;
-  color: #000;
-}
-
-.tabulator-col,
-.tabulator-cell {
-  background-color: #7b7a7a; /* células individuais */
-  color: #222;
-  border-color: #777575;
-}
-
-.tabulator-row:hover {
-  background-color: #ccc !important;
-}
-

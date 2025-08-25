@@ -12,135 +12,213 @@
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
   <!-- Estilos customizados -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style_admin.css')}}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style_colaboradores.css')}}">
-</head>
-
-<body>
-{% include 'header/model-header.html' %}
 
 <style>
-.tempo-medio-card .info-item,
-.csat-card .info-item {
-  display: block;         /* empilha verticalmente */
-  text-align: center;     /* centraliza o texto */
-  padding: 6px 0;         /* espaçamento entre itens */
-}
-
-.info-item {
-  margin-bottom: 1rem; /* ajuste para um espaçamento menor que o padrão */
-}
-
-.tempo-medio-card .info-item .value,
-.csat-card .info-item .value {
-  display: block;         /* valor embaixo do texto */
-  margin-top: 0.25rem;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-  .carousel-control-prev,
-  .carousel-control-next {
-    width: 5%; /* ou 3% se quiser mais estreito */
-    top: 50%;
-    transform: translateY(-50%);
+   /* Card CSAT/NPS/CES */
+  .csat-card {
+    background: #2f2f37;
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
   }
 
-  .carousel-control-prev { left: -5%; }
-  .carousel-control-next { right: -5%; }
-
-  #carouselGraficos { width: 100%; }
-
-  .grupo-container {
-    overflow: hidden;
-    transition: max-width 0.5s ease-in-out, padding-left 0.5s ease-in-out;
-    max-width: 0;
-    padding-left: 0;
+  .csat-card .card-body-compact {
+    padding: 1rem;
   }
 
-  .grupo-container.expandido {
-    max-width: 1000px;
-    padding-left: 10px;
+  /* Título principal */
+  .csat-card .card-body-center h6 {
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #e0e0ff;
   }
 
-  /* Ajuste meio termo para os cards principais que você enviou */
-  .row.g-3 > .col > .card {
-    font-size: 0.85rem !important; /* leve redução da fonte geral */
-  }
-
-  .row.g-3 > .col > .card > .card-body.card-body-compact {
-    padding: 0.45rem 0.75rem !important; /* padding mais confortável */
-  }
-
-  .row.g-3 > .col > .card .card-body-center h6,
-  .row.g-3 > .col > .card h6.text-center {
-    font-size: 0.85rem !important; /* títulos mais legíveis */
-    margin-top: 0.3rem !important;
-    margin-bottom: 0.3rem !important;
-  }
-
-  .row.g-3 > .col > .card .info-item {
-    margin-bottom: 0.2rem !important; /* espaçamento ajustado */
-    font-size: 0.85rem !important;
-    line-height: 1.2;
-  }
-
-  .row.g-3 > .col > .card .value {
-    font-weight: 500;
-    font-size: 0.85rem !important;
-  }
-
-  .row.g-3 > .col > .card .value a {
-    font-size: 0.85rem !important;
-  }
-
-  .row.g-3 > .col > .card .info-item:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  /* Estilos originais mantidos para o restante */
-  .card-body-compact {
-    padding: 0.8rem !important;
-  }
-
-  .card-body-center {
-    text-align: center;
-    padding-bottom: 0.5rem;
-  }
-
-  .info-item {
+  /* Colunas de métricas */
+  .csat-card .row.text-center > .col {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    margin-bottom: 0.3rem;
+  }
+
+  /* Itens dentro da métrica (um abaixo do outro) */
+  .csat-card .info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .csat-card .info-item .value {
+    font-weight: 600;
     font-size: 0.95rem;
+    color: #fff;
+    margin-top: 0.2rem;
   }
 
-  .info-item:last-child {
-    margin-bottom: 0;
+  /* Título de cada métrica */
+  .csat-card h6.mb-2 {
+    margin-bottom: 0.5rem !important;
   }
 
-  .value {
-    font-weight: 500;
-    font-size: 0.95rem;
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .csat-card .row.text-center {
+      flex-direction: column;
+    }
+    .csat-card .row.text-center > .col {
+      margin-bottom: 1rem;
+    }
   }
+    body {
+      background-color: #121212;
+      color: #f1f1f1;
+      font-family: Arial, sans-serif;
+    }
 
-  h6 {
-    font-size: 0.95rem;
-    margin-bottom: 0.5rem;
-  }
+    /* === Cards Modernos === */
+    .card {
+      background: #2f2f37;
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+    }
 
-  .card h6.text-center {
-    margin-bottom: 0.3rem;
-    margin-top: 0.6rem;
-  }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.6);
+    }
 
-  .card {
-    font-size: 0.94rem;
-  }
+    .card-header {
+      background: transparent;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: #e0e0ff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    .card-body-compact {
+      padding: 1rem;
+    }
+
+    .card-body-center {
+      text-align: center;
+    }
+
+    h6 {
+      color: #e0e0ff;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      text-shadow: 0 0 6px rgba(224,224,255,0.4);
+    }
+
+    /* === Itens dentro dos cards === */
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    .info-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .value {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .value a {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    /* === Gráficos (Chart.js) === */
+    canvas {
+      max-height: 230px !important;
+    }
+
+    .chartjs-render-monitor {
+      background: transparent;
+    }
+
+    /* Legendas e escalas */
+    .chartjs-legend,
+    .chartjs-title,
+    .chartjs-axis {
+      color: #fff !important;
+    }
+
+    /* Carrossel - setas ajustadas */
+    #carouselGraficos .carousel-control-prev,
+    #carouselGraficos .carousel-control-next {
+      width: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+    }
+
+    #carouselGraficos .carousel-control-prev {
+      left: -20px; /* fora do conteúdo */
+    }
+
+    #carouselGraficos .carousel-control-next {
+      right: -20px; /* fora do conteúdo */
+    }
+
+    #carouselGraficos .carousel-control-prev-icon,
+    #carouselGraficos .carousel-control-next-icon {
+      background-color: rgba(0,0,0,0.6);
+      border-radius: 50%;
+      padding: 10px;
+      width: 35px;
+      height: 35px;
+      background-size: 50% 50%;
+    }
+
+    #carouselGraficos .carousel-inner .row {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+
+    /* Botões de filtro */
+    .btn-outline-secondary {
+      border-color: #555;
+      color: #ddd;
+    }
+    .btn-outline-secondary:hover,
+    .btn-outline-secondary.active {
+      background-color: #333;
+      color: #fff;
+      border-color: #777;
+    }
+
+    /* Botões de operadores e grupos */
+    .btn-outline-primary {
+      border-color: #3f51b5;
+      color: #9fa8da;
+    }
+    .btn-outline-primary:hover,
+    .btn-outline-primary.active {
+      background-color: #3f51b5;
+      color: #fff;
+    }
 </style>
+
+</head>
+
+{% include 'header/model-header.html' %}
 
 <div class="container-fluid my-4 px-5">
 
@@ -155,14 +233,15 @@
 
   <!-- Botões de operadores -->
   <div class="row mb-4">
-    <div class="col-12">
+    <div class="col-12 mb-3"> <!-- Adicionei 'mb-3' aqui -->
       <div class="d-flex flex-wrap gap-2 justify-content-center d-none" id="botoes-operadores">
         <button class="btn btn-outline-primary operador-btn active" data-operador="">
           <i class="bi bi-arrow-bar-right"></i>
         </button>
       </div>
     </div>
-    <div class="col-12">
+    
+    <div class="col-12 mb-3"> <!-- Adicionei 'mb-3' aqui também -->
       <div class="d-flex flex-wrap gap-2 justify-content-center d-none" id="botoes-grupos">
         <button class="btn btn-outline-primary grupos-btn active" data-grupos="">
           <i class="bi bi-people-fill"></i>
@@ -170,6 +249,7 @@
       </div>
     </div>
   </div>
+
 
   <!-- Botões de filtro de período -->
   <div class="row justify-content-center mb-4">
@@ -579,6 +659,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <!-- Bootstrap JS Bundle (inclui Popper) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap JS -->
 
 <!-- Modal para mostrar os códigos -->
 <div class="modal fade" id="modalCodigos" tabindex="-1" aria-labelledby="modalCodigosLabel" aria-hidden="true">

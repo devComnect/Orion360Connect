@@ -1,47 +1,102 @@
-.card-header {
-            font-weight: bold;
-        }
-        .status-card {
-            border-left: 4px solid #0d6efd;
-        }
-        .btn-registro {
-            background-color: #0d6efd;
-            color: white;
-            font-weight: bold;
-        }
-
-/* Estilos para os botões de operadores */
-#botoes-operadores {
-    padding: 10px 0;
-    overflow-x: auto;
-    white-space: nowrap;
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-.operador-btn {
-    margin-right: 8px;
-    margin-bottom: 8px;
-    transition: all 0.3s ease;
-    border-radius: 5px;
-    padding: 5px 15px;
-    font-size: 0.9rem;
+/* Layout geral */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f9;
+    color: #333;
 }
 
-.operador-btn:hover {
-    transform: translateY(-2px);
+/* Container central */
+.container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
 }
 
-.operador-btn.active {
-    background-color: #0d6efd;
+/* Cards */
+.card {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+/* Botões padrão */
+button, .btn {
+    display: inline-block;
+    background-color: #007bff;
     color: white;
-    border-color: #0d6efd;
+    font-size: 14px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
 }
 
-#botoes-operadores {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center; /* Centraliza horizontalmente */
-    align-items: center;     /* Centraliza verticalmente */
-    gap: 0.5rem;            /* Espaço entre os botões */
+button:hover, .btn:hover {
+    background-color: #0056b3;
 }
 
+/* Títulos */
+h1, h2, h3 {
+    margin-bottom: 10px;
+    color: #222;
+}
 
+/* Tabelas */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.table th, .table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f1f1f1;
+}
+
+/* Inputs */
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+/* Navbar (se usar) */
+.navbar {
+    background-color: #007bff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    margin-right: 15px;
+    font-weight: bold;
+}
+
+.navbar a:hover {
+    text-decoration: underline;
+}

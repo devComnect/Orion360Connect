@@ -13,39 +13,71 @@
   <link rel="shortcut icon" href="{{ url_for('static', filename='img/icone.png') }}">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"> 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style_home.css')}}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style_colaboradores_individual.css')}}">
 </head>
 <body>
     <!-- Header -->
-    <header>
-    <div class="container">
-        <div class="header-container">
-            <!-- Logo à esquerda -->
-            <div class="logo">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo do Projeto" class="logo-img">
-            </div>
-
-            <!-- Links centralizados -->
-            <nav class="nav-links-wrapper">
-                <ul class="nav-links">
-                    <li><a href="/performance">Performance</a></li>
-                    <li><a href="/dashboard_colaborador">Dashboard</a></li>
-                    <li><a href="/guardiansIndividual">Guardians</a></li>
-                </ul>
-            </nav>
-
-            <!-- Botão de logout à direita -->
-            <div class="logout-container">
-                <form action="/logout/colaboradores" method="POST" style="display:inline;">
-                    <button type="submit" class="logout-btn">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Sair
-                    </button>
-                </form>
-            </div>
-        </div>
+   <header class="app-header shadow-sm">
+  <div class="container d-flex justify-content-between align-items-center flex-wrap">
+    <!-- Logo -->
+    <div class="logo">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo do Projeto" class="logo-img" style="height: 40px;">
     </div>
+
+    <!-- Navegação centralizada -->
+    <ul class="nav justify-content-center mb-0">
+      <li><a href="/performance" class="nav-link">Performance</a></li>
+      <li><a href="/dashboard_colaborador" class="nav-link">Dashboard</a></li>
+      <li><a href="/guardiansIndividual" class="nav-link">Guardians</a></li>
+    </ul>
+
+    <!-- Logout -->
+    <div class="logout-container">
+      <form action="/logout/colaboradores" method="POST" class="d-inline">
+        <button type="submit" class="btn btn-danger btn-sm">
+          <i class="fas fa-sign-out-alt me-1"></i> Sair
+        </button>
+      </form>
+    </div>
+  </div>
 </header>
+
+<style>
+  /* === HEADER === */
+  .app-header {
+    background: #1e1e26; /* igual aos cards */
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 0.8rem 0;
+  }
+
+  .app-header .nav-link {
+    color: #ccc;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+  }
+
+  .app-header .nav-link:hover,
+  .app-header .nav-link.active {
+    background: #3f51b5;
+    color: #fff !important;
+    text-shadow: 0 0 6px rgba(224,224,255,0.6);
+  }
+
+  .app-header .logo-img {
+    filter: brightness(1.2); /* realça a logo no fundo escuro */
+  }
+
+  .logout-container .btn-outline-danger {
+    border-color: #c62828;
+    color: #ff6b6b;
+  }
+
+  .logout-container .btn-outline-danger:hover {
+    background: #c62828;
+    color: #fff;
+  }
+</style>
 </body>
 </html>

@@ -14,366 +14,373 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Estilos customizados -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style_admin.css')}}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style_colaboradores.css')}}">
+
+  <!-- Plugin de Anotação (metas) -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+
+  <style>
+    /* --- Layout Árvore com CSS Grid --- */
+    .fluxograma {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: auto auto auto;
+      gap: 3rem 4rem;
+      position: relative;
+      padding-bottom: 3rem;
+      margin-bottom: 3rem;
+      color: white;
+    }
+
+        .fluxo-card {
+      min-width: 280px;
+      flex-shrink: 0;
+      background-color: #26262f;
+      border-radius: 10px;
+      padding: 1rem;
+      color: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      position: relative;
+      /* Nova linha para mais espaço interno no gráfico */
+      padding: 2rem;
+    }
+
+    .fluxo-card h5 {
+      font-weight: 700;
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #e0e0ff;
+      text-shadow: 0 0 8px rgba(224,224,255,0.7);
+    }
+
+    /* Posicionamento dos cards */
+    /* Usaremos classes para cada nível e posição para melhor controle */
+    .nivel-1 {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .nivel-2-esq {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .nivel-2-dir {
+      grid-column: 3;
+      grid-row: 2;
+    }
+
+    .nivel-3 {
+      grid-column: 2;
+      grid-row: 3;
+    }
+
+    /* Linhas de conexão - usando pseudo elementos */
+    /* Linha vertical do topo para o meio */
+    .nivel-1::after {
+      content: "";
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      width: 4px;
+      height: 30px;
+      background-color: #666;
+      transform: translateX(-50%);
+      z-index: 1;
+    }
+
+    /* Linha horizontal para os cards do nível 2 */
+    .nivel-2-esq::before,
+    .nivel-2-dir::before {
+      content: "";
+      position: absolute;
+      top: -30px;
+      width: 50%;
+      height: 4px;
+      background-color: #666;
+      z-index: 1;
+    }
+
+    /* Linha horizontal para esquerda */
+    .nivel-2-esq::before {
+      right: 0;
+      left: auto;
+    }
+
+    /* Linha horizontal para direita */
+    .nivel-2-dir::before {
+      left: 0;
+      right: auto;
+    }
+
+    /* Linha vertical que conecta do nível 2 para nível 3 */
+    .nivel-3::before {
+      content: "";
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      width: 4px;
+      height: 30px;
+      background-color: #666;
+      transform: translateX(-50%);
+      z-index: 1;
+    }
+
+    /* Linha horizontal que conecta nível 2 esquerda e direita */
+    /* Criar uma barra horizontal entre as colunas 1 e 3, no meio do grid */
+
+    .fluxograma::before {
+      content: "";
+      position: absolute;
+      top: 70px; /* ajuste conforme altura do card */
+      left: calc(100% / 3);
+      width: calc(100% / 3 * 1);
+      height: 4px;
+      background-color: #666;
+      z-index: 0;
+    }
+
+    /* Ajuste para links (a) não interferirem */
+    .info-item a {
+      color: #fff;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+  </style>
 </head>
 
 <body>
-{% include 'header/model-header.html' %}
+  {% include 'header/model-header.html' %}
 
-<style>
-  .carousel-control-prev,
-.carousel-control-next {
-  width: 5%; /* ou 3% se quiser mais estreito */
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.carousel-control-prev {
-  left: -5%;  /* empurra para fora da borda do carrossel */
-}
-
-.carousel-control-next {
-  right: -5%; /* empurra para fora da borda do carrossel */
-}
-
-#carouselGraficos {
-  width: 100%;
-  
-}
-
-</style>
-
-<div class="container-fluid my-4 px-5">
+  <div class="container-fluid my-4 px-5">
     <!-- Botão Voltar-->
     <div class="row mb-2">
-    <div class="col-auto">
+      <div class="col-auto">
         <div class="btn-group" role="group" aria-label="bottomVoltar">
-           <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">Voltar</a>
-        </div>
-    </div>
-  </div>
-
-  <div class="justify-content-center text-white">
-    <h1>OKRs</h1>
-  </div><br>
-  
-  <!-- Botões de filtro de período -->
-  <div class="row justify-content-center mb-4">
-    <div class="col-auto">
-      <div class="btn-group">
-        <button class="btn btn-outline-secondary filtro-btn" data-dias="30">Mês</button>
-        <button class="btn btn-outline-secondary filtro-btn" data-dias="90">Trimestre</button>
-        <button class="btn btn-outline-secondary filtro-btn" data-dias="180">Semestre</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cards principais -->
-  <div class="row g-3">
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Chamados Criados (Suporte)</h6>
-          <p class="fs-4" id="chamados-abertos">-</p>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Chamados Resolvidos (Suporte)</h6>
-          <p class="fs-4" id="chamados-finalizados">-</p>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Chamados em Aberto (Global)</h6>
-          <p class="fs-4 mb-1 text-danger">
-           <a href="#" onclick="mostrarCodigosChamadosAbertos('Chamados em Aberto', codigosEmAberto)">
-                <span id="ChamadosEmAbertoSuporte">-</span>
-            </a>
-          </p>
+          <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">Voltar</a>
         </div>
       </div>
     </div>
 
-    <!-- SLA Atendimento -->
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Atendimento (Global)</h6>
-          <p class="fs-6 mb-1 text-danger">
-            Expirados: <a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)"><span id="sla-atendimento-expirado">-</span></a>
-          </p>
-          <p class="fs-6 mb-0 text-success">No Prazo: <span id="sla-atendimento-prazo">-</span></p>
+    <div class="justify-content-center text-white">
+      <h1>OKRs</h1>
+    </div><br>
+
+    <div class="text-end mb-3">
+      <button class="btn btn-sm btn-outline-light me-2" onclick="exportarPDF()">📄 Exportar PDF</button>
+      <button class="btn btn-sm btn-outline-light" onclick="exportarExcel()">📊 Exportar Excel</button>
+    </div>
+
+    <!-- Botões de filtro de período -->
+    <div class="row justify-content-center mb-4">
+      <div class="col-auto">
+        <div class="btn-group">
+          <button class="btn btn-outline-secondary filtro-btn" data-dias="30">Mês</button>
+          <button class="btn btn-outline-secondary filtro-btn" data-dias="90">Trimestre</button>
+          <button class="btn btn-outline-secondary filtro-btn" data-dias="180">Semestre</button>
         </div>
       </div>
     </div>
 
-    <!-- SLA Resolução -->
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Resolução (Global)</h6>
-          <p class="fs-6 mb-1 text-danger">
-            Expirados: <a href="#" onclick="mostrarCodigosSla('Resolução Expirada', codigosResolucao)"><span id="sla-resolucao-expirado">-</span></a>
-          </p>
-          <p class="fs-6 mb-0 text-success">No Prazo: <span id="percentual_prazo_resolucao">-</span></p>
+    <!-- Fluxograma - layout em árvore -->
+    <div class="fluxograma text-white">
+
+      <!-- Nível 1 -->
+      <div class="fluxo-card nivel-1">
+        <h6>Chamados</h6>
+        <div class="info-item">
+          <span>Reabertos</span>
+          <span class="value text-white">
+            <a href="#" onclick="mostrarChamadosOperador('Chamados Reabertos do Operador', chamadosReabertosCodigos)">
+              <span id="chamado_reaberto">0</span>
+            </a> / <span id="percentual_reaberto">0</span>
+          </span>
         </div>
+        <div class="info-item">
+          <span>FCR</span>
+          <span class="value text-white">
+            <a href="#" onclick="mostrarChamadosOperador('Chamados com FCR do Operador', chamadosFcrCodigos)">
+              <span id="chamado_fcr">0</span>
+            </a> / <span id="percentual_fcr">0</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Nível 2 esquerdo -->
+      <div class="fluxo-card nivel-2-esq">
+        <h6>Tempo Médio</h6>
+        <h6 class="text-center mb-2">Chamados</h6>
+        <div class="info-item"><span class="text-warning">TMA</span><span class="value" id="percentual-tma">0</span></div>
+        <div class="info-item"><span class="text-success">TMS</span><span class="value" id="percentual-tms">0</span></div>
+        <h6 class="text-center mt-3 mb-2">Ligações</h6>
+        <div class="info-item"><span class="text-success">TMIN</span><span class="value" id="percentual-tma-ligacoes">0</span></div>
+        <div class="info-item"><span class="text-danger">TMAX</span><span class="value" id="percentual-tms-ligacoes">0</span></div>
+      </div>
+
+      <!-- Nível 2 direito -->
+      <div class="fluxo-card nivel-2-dir">
+        <h6>SLA</h6>
+        <h6 class="text-center mb-2">Atendimento</h6>
+        <div class="info-item">
+          <span class="text-danger">Expirados</span>
+          <span class="value"><a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)"><span id="sla_atendimento_expirado">0</span></a></span>
+        </div>
+        <div class="info-item"><span class="text-success">No Prazo</span><span class="value" id="sla_atendimento_prazo">0</span></div>
+        <h6 class="text-center mt-3 mb-2">Resolução</h6>
+        <div class="info-item">
+          <span class="text-danger">Expirados</span>
+          <span class="value"><a href="#" onclick="mostrarCodigosSla('Resolução Expirada', codigosResolucao)"><span id="sla_resolucao_expirado">-</span></a></span>
+        </div>
+        <div class="info-item"><span class="text-success">No Prazo</span><span class="value" id="percentual_prazo_resolucao">0</span></div>
+      </div>
+
+      <!-- Nível 3 -->
+      <div class="fluxo-card nivel-3">
+        <h6>Satisfação</h6>
+        <div class="info-item"><span>CSAT</span><span class="value" id="csat-percentual">0%</span></div>
+        <div class="info-item"><span>Total Avaliado</span><span class="value" id="total-avaliado">0</span></div>
+        <div class="info-item"><span>CES</span><span class="value" id="ces-nota">0</span></div>
+        <div class="info-item"><span>Classificação CES</span><span class="value" id="ces-descricao">-</span></div>
+        <div class="info-item"><span>NPS</span><span class="value" id="nps-retorno">0</span></div>
+        <div class="info-item"><span>Classificação NPS</span><span class="value" id="nps-null">0</span></div>
       </div>
     </div>
 
-    <!-- SLA Resolução -->
-    <div class="col">
-      <div class="card shadow-sm h-100 text-center">
-        <div class="card-body">
-          <h6>Pesquisa Satisfação (Global)</h6>
-          <p class="fs-6 mb-1 text-danger">
-            Sem retorno: <span id="percentual-null">-</span>
-          </p>
-          <p class="fs-6 mb-0 text-success">Retorno: <span id="percentual-retorno">-</span></p>
-        </div>
-      </div>
-    </div>
-
-  <!-- Carrossel de Gráficos -->
-  <!--<div class="row mt-3 gx-4">
+    <!-- Gráfico de Evolução Mensal dos OKRs -->
+  <div class="row mt-5">
     <div class="col-12">
-      <div id="carouselGraficos" class="carousel slide" data-bs-interval="false" data-bs-ride="false">
-        <div class="carousel-inner">
-
-          Slide 1 
-          <div class="carousel-item active">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                  <div class="card-header text-center">Abertos vs Resolvidos <i class="bi bi-graph-up"></i></div>
-                  <div class="card-body d-flex flex-column align-items-center" style="height: 300px;">
-                    
-                    Resumo em linha acima do gráfico 
-                    
-                    <canvas id="LinhaAbertosResolvidosAdminChart"></canvas>
-                    <div id="resumoAdminAbertosResolvidos" class="text-center text-white small d-flex gap-3 mb-0">
-                      <p class="mb-1"><strong>Total Abertos:</strong> <span id="adminTotalAbertos">-</span></p>
-                      <p class="mb-1"><strong>Total Resolvidos:</strong> <span id="adminTotalResolvidos">-</span></p>
-                      <p class="mb-1"><strong>Diferença:</strong> <span id="adminDiferenca">-</span></p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                  <div class="card-header text-center">Abertos vs Status <i class="bi bi-pie-chart-fill"></i></div>
-                  <div class="card-body d-flex flex-column align-items-center" style="height: 300px;">
-                    <canvas id="statusChart"></canvas>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                  <div class="card-header text-center">Tickets por Canal <i class="bi bi-sliders"></i></div>
-                  <div class="card-body d-flex flex-column align-items-center" style="height: 300px;">
-                    <canvas id="TicketsAdminCanalChart"></canvas>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="carousel-item">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                  <div class="card-header text-center">Tickets por Operador <i class="bi bi-ticket-detailed"></i></div>
-                  <div class="card-body d-flex flex-column align-items-center" style="height: 270px;">
-                    <canvas id="OperadorAtendimentoChart" style="width: 100%; max-width: 710px;"></canvas>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                  <div class="card-header text-center py-2">
-                    <small>SLA - Suporte</small> <i class="bi bi-alarm-fill"></i><br>
-                    <small>Atendimento / Resolução</small>
-                  </div>
-                  <div class="card-body p-2 d-flex justify-content-center align-items-center flex-wrap" style="height: 270px;">
-                    <canvas id="slaChart" class="mx-1" style="height: 130px; width: 130px;"></canvas>
-                    <canvas id="slaChart2" class="mx-1" style="height: 130px; width: 130px;"></canvas>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                  <div class="card-header text-center py-2">
-                    <small>SLA - Por Grupo</small> <i class="bi bi-alarm-fill"></i><br>
-                    <small>Atendimento / Resolução</small>
-                  </div>
-                  <div class="card-body p-2 d-flex justify-content-center align-items-center flex-wrap" style="height: 270px;">
-                    <canvas id="slaGrupoChart" class="mx-1" style="height: 130px; width: 130px;"></canvas>
-                    <canvas id="slaGrupoChart2" class="mx-1" style="height: 130px; width: 130px;"></canvas>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#carouselGraficos" data-bs-slide="prev">
-          <span class="carousel-control-prev-icon bg-dark rounded-circle" aria-hidden="true"></span>
-          <span class="visually-hidden">Anterior</span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#carouselGraficos" data-bs-slide="next">
-          <span class="carousel-control-next-icon bg-dark rounded-circle" aria-hidden="true"></span>
-          <span class="visually-hidden">Próximo</span>
-        </button>
+      <div class="fluxo-card" style="position: relative; padding: 2rem;">
+        <h5 class="text-center mb-4" style="font-weight: 700; font-size: 1.5rem; color: #e0e0ff; text-shadow: 0 0 8px rgba(224,224,255,0.7);">
+          Evolução Mensal dos OKRs
+        </h5>
+        <canvas id="graficoEvolucaoOKRs" height="200"></canvas>
       </div>
     </div>
-  </div>-->
-
-
-    
-
-    <!-- Tops -->
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body text-center">
-          <h6>Top 5 Clientes <i class="bi bi-building-gear"></i></h6>
-          <ul id="top-clientes" class="list-group list-group-flush mt-3">
-            <li class="list-group-item bg-transparent text-white">Carregando...</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body text-center">
-          <h6>Top 5 Status <i class="bi bi-file-earmark-check-fill"></i></h6>
-          <ul id="top-status" class="list-group list-group-flush mt-3">
-            <li class="list-group-item bg-transparent text-white">Carregando...</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body text-center">
-          <h6>Top 5 Grupos <i class="bi bi-people"></i></h6>
-          <ul id="top-grupos" class="list-group list-group-flush mt-3">
-            <li class="list-group-item bg-transparent text-white">Carregando...</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body text-center">
-          <h6>Top 5 Tipo Ocorrência <i class="bi bi-send-check-fill"></i></h6>
-          <ul id="top-tipo-ocorrencia" class="list-group list-group-flush mt-3">
-            <li class="list-group-item bg-transparent text-white">Carregando...</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Novo Card 1 -->
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body text-center">
-          <h6>Top 5 Categorias <i class="bi bi-stack"></i></h6>
-          <ul id="top-categorias" class="list-group list-group-flush mt-3">
-            <li class="list-group-item bg-transparent text-white">Carregando...</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Novo Card 2 -->
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body text-center">
-          <h6>Top 5 Sub - Categorias <i class="bi bi-stack-overflow"></i></h6>
-          <ul id="top-sub-categorias" class="list-group list-group-flush mt-3">
-            <li class="list-group-item bg-transparent text-white">Carregando...</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div> <!-- FIM da .row -->
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- Chart Data Labels (necessário para datalabels) -->
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-
-<!-- Bootstrap JS Bundle (inclui Popper) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-
-<!-- Modal para mostrar os códigos -->
- <div class="modal fade" id="modalCodigos" tabindex="-1" aria-labelledby="modalCodigosLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalCodigosLabel">Chamados</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaCodigos" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
 </div>
 
-<div class="modal fade" id="modalChamadosExpirados" tabindex="-1" aria-labelledby="modalChamadosExpiradosLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-        <div class="modal-header border-0">
-            <h5 class="modal-title" id="modalChamadosExpiradosLabel">Chamados Expirados</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-        <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-            <ul id="listaChamados" class="list-unstyled mb-0"></ul>
-        </div>
-        <div class="modal-footer border-0">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-        </div>
-        </div>
-    </div>
-    </div>
+  </div> <!-- FIM da container-fluid -->
 
+  <!-- Chart Data Labels -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <!-- Bootstrap Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- html2pdf para exportar PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- SheetJS para exportar Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<!-- Modal exclusivo para SLA por Grupo -->
-<div class="modal fade" id="modalChamadosGrupos" tabindex="-1" aria-labelledby="modalChamadosGruposLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalChamadosGruposLabel">Chamados Expirados - Por Grupo</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaChamadosGrupos" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
+  <!-- Script do Gráfico -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const ctx = document.getElementById('graficoEvolucaoOKRs').getContext('2d');
 
-<!-- Includes JavaScript -->
-{% include 'js/colaboradores_js.html' %}
-{% include 'js/insights_js.html' %}
+      // ✅ REGISTRA O PLUGIN
+      Chart.register(window['chartjs-plugin-annotation']);
 
+      const dadosExemplo = {
+        labels: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho'],
+        datasets: [
+          {
+            label: 'SLA Atendimento (%)',
+            data: [97, 95, 93, 96, 94, 98],
+            borderColor: '#4caf50',
+            backgroundColor: 'rgba(76, 175, 80, 0.4)',
+            tension: 0.3
+          },
+          {
+            label: 'SLA Solução (%)',
+            data: [96, 94, 92, 95, 93, 97],
+            borderColor: '#2196f3',
+            backgroundColor: 'rgba(33, 150, 243, 0.4)',
+            tension: 0.3
+          },
+          {
+            label: 'FCR (%)',
+            data: [85, 88, 86, 87, 90, 92],
+            borderColor: '#ff9800',
+            backgroundColor: 'rgba(255, 152, 0, 0.4)',
+            tension: 0.3
+          },
+          {
+            label: 'TMA (min)',
+            data: [4, 4.5, 5.2, 4.7, 4.1, 3.9],
+            borderColor: '#e91e63',
+            backgroundColor: 'rgba(233, 30, 99, 0.4)',
+            tension: 0.3
+          },
+          {
+            label: 'CSAT (%)',
+            data: [94, 95, 92, 96, 97, 93],
+            borderColor: '#9c27b0',
+            backgroundColor: 'rgba(156, 39, 176, 0.4)',
+            tension: 0.3
+          }
+        ]
+      };
 
+      new Chart(ctx, {
+        type: 'line',
+        data: dadosExemplo,
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { color: '#fff' }
+            },
+            annotation: {
+              annotations: {
+                linhaMeta: {
+                  type: 'line',
+                  yMin: 95,
+                  yMax: 95,
+                  borderColor: 'red',
+                  borderWidth: 2,
+                  label: {
+                    content: 'Meta: 95%',
+                    enabled: true,
+                    position: 'end',
+                    backgroundColor: 'rgba(255,0,0,0.7)',
+                    color: '#fff'
+                  }
+                }
+              }
+            },
+            datalabels: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#fff' }
+            },
+            x: {
+              ticks: { color: '#fff' }
+            }
+          }
+        }
+      });
+    });
+
+    // Funções fictícias para links clicáveis
+    function mostrarChamadosOperador(titulo, codigos) {
+      alert(`${titulo}\nCódigos: ${codigos.join(', ')}`);
+    }
+    function mostrarCodigosSla(titulo, codigos) {
+      alert(`${titulo}\nCódigos: ${codigos.join(', ')}`);
+    }
+
+    // Exportar PDF (exemplo)
+    function exportarPDF() {
+      const element = document.body;
+      html2pdf().from(element).save('OKRs.pdf');
+    }
+
+    // Exportar Excel (exemplo)
+    function exportarExcel() {
+      alert('Funcionalidade de exportar Excel ainda não implementada.');
+    }
+  </script>
 </body>
 </html>
