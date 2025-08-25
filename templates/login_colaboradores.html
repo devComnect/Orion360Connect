@@ -34,11 +34,11 @@
         </div>
         <div class="Login">
         <form method="POST" action="{{ url_for('login.login_colaboradores') }}">
-                <input type="text" name="username" id="username" placeholder="Username" required>
-                <input type="password" name="password" id="password" placeholder="Password" required>
-                <button type="submit" class="btn-btn-primary">Enviar</button><br><br>
-                <a href="">Esqueci minha senha</a>
-            </form><br>
+            <input type="text" name="username" id="username" placeholder="Username" required />
+            <input type="password" name="password" id="password" placeholder="Password" required />
+            <button type="submit" class="btn-btn-primary">Enviar</button><br /><br />
+            <a href="{{ url_for('home_bp.render_register_colaboradores') }}">Esqueci minha senha</a>
+        </form><br>
         </div><br><br><br><br><br>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

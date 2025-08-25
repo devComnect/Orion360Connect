@@ -67,6 +67,10 @@ def render_relatorios_individual():
 def render_register():
     return render_template('register.html')
 
+@home_bp.route('/registerColaboradores', methods=['GET'])
+def render_register_colaboradores():
+    return render_template('register_colaboradores.html')
+
 @home_bp.route('/escala', methods=['GET'])
 @login_required
 def render_escala():

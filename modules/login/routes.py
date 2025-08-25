@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, redirect, flash, url_for, current_app, session
+from flask import Blueprint, request, render_template, redirect, flash, url_for, current_app, session, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from application.models import db, User, PerformanceColaboradores
 from datetime import datetime
@@ -16,45 +16,27 @@ def home():
         return redirect(url_for('login.login'))
     return render_template('dashboard.html')
 
-
-'''@login_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
-
-        if User.query.filter_by(email=email).first():
-            flash('E-mail já cadastrado!', 'danger')
-            return redirect(url_for('login.register'))
-
-        user = User(username=username, email=email)
-        user.set_password(password)  # Assumindo que set_password faz hash
-        db.session.add(user)
-        db.session.commit()
-
-        flash('Conta criada com sucesso!', 'success')
-        return redirect(url_for('login.login'))
-
-    return render_template('register.html')'''
-
-
 @login_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
 
-        usuarios_permitidos = ['fsilva', 'lolegario', 'avaz']
-        if username not in usuarios_permitidos:
+        # Buscando todos os administradores
+        usuarios_permitidos = User.query.filter_by(is_admin=1).all()
+
+        # Verificando se o usuário está na lista de administradores
+        if not any(user.username == username for user in usuarios_permitidos):
             flash('Usuário não autorizado para acessar este sistema.', 'danger')
             return render_template('login.html')
 
+        # Buscando o usuário pelo nome de usuário
         user = User.query.filter_by(username=username).first()
         if not user:
             flash('Usuário não encontrado.', 'danger')
             return render_template('login.html')
 
+        # Verificando a senha
         if user.password == password:
             SessionManager.login_user(user)
             return redirect(url_for('home_bp.render_insights'))
@@ -62,7 +44,6 @@ def login():
             flash('Credenciais inválidas. Tente novamente.', 'danger')
 
     return render_template('login.html')
-
 
 @login_bp.route('/logout', methods=['GET', 'POST'])
 def logout():
@@ -73,7 +54,6 @@ def logout():
     except Exception as e:
         current_app.logger.error(f"Erro no logout: {e}", exc_info=True)
         return f"Erro interno no logout: {str(e)}", 500
-
 
 @login_bp.route('/login/colaboradores', methods=['GET', 'POST'])
 def login_colaboradores():
@@ -192,20 +172,16 @@ def login_colaboradores():
 
     return render_template('login_colaboradores.html')
 
-
 @login_bp.route('/render/colaboradores', methods=['GET'])
 def render_login_operadores():
     lista_nivel2 = ['Fernando', 'Eduardo', 'Chrysthyanne', 'Luciano']
 
     nome = session.get('nome')
-    #total_chamados = session.get('total_chamados', 0)  # Pega da sessão, default 0
-
     if nome in lista_nivel2:
         return render_template('colaboradores_individual_nivel2.html', nome=nome)
 
     else:
         return render_template('colaboradores_individual.html', nome=nome)
-
 
 @login_bp.route('/logout/colaboradores', methods=['POST', 'GET'])
 def logout_colaboradores():
@@ -221,3 +197,113 @@ def logout_colaboradores():
     except Exception as e:
         current_app.logger.error(f"Erro no logout: {e}", exc_info=True)
         return f"Erro interno no logout: {str(e)}", 500
+    
+@login_bp.route('/setColaboradores', methods=['POST'])
+def insert_colaboradores():
+    data = request.get_json()
+
+    nome = data.get('nome')
+    username = data.get('username')
+    email = data.get('email')
+    senha = data.get('senha')
+    is_admin = str(data.get('nivel_acesso')) == "1"
+
+
+    if not nome or not username or not email or not senha or not is_admin:
+        return jsonify(status='error', message='Todos os campos são obrigatórios!')
+
+    if User.query.filter_by(email=email).first():
+        return jsonify(status='error', message='Email já está em uso!')
+
+    if User.query.filter_by(username=username).first():
+        return jsonify(status='error', message='Usuário já existe!')
+
+    novo_usuario = User(
+        username=username,
+        password=senha,
+        email=email,
+        name=nome,
+        is_admin=is_admin    
+        )
+
+    db.session.add(novo_usuario)
+    db.session.commit()
+
+    return jsonify(status='success', message='Usuário cadastrado com sucesso!')
+
+@login_bp.route('/deleteColaboradores', methods=['POST'])
+def delete_colaboradores():
+    data = request.get_json()
+
+    email_username = data.get('email-username')
+    if not email_username:
+        return jsonify(status='error', message='Informe o e-mail ou username para exclusão.')
+
+    # Procura o usuário pelo email ou username
+    usuario = User.query.filter(
+        (User.email == email_username) | (User.username == email_username)
+    ).first()
+
+    if not usuario:
+        return jsonify(status='error', message='Usuário não encontrado.')
+
+    try:
+        db.session.delete(usuario)
+        db.session.commit()
+        return jsonify(status='success', message='Usuário excluído com sucesso!')
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(status='error', message='Erro ao excluir usuário: ' + str(e))
+
+@login_bp.route('/updateColaboradores', methods=['POST'])
+def update_colaboradores():
+    data = request.get_json()
+
+    nome = data.get('nome')
+    username = data.get('username')
+    email = data.get('email')
+    senha = data.get('senha')  # Pode estar em branco
+    nivel_acesso = data.get('nivel_acesso')
+
+    if not nome or not username or not email or nivel_acesso is None:
+        return jsonify(status='error', message='Todos os campos obrigatórios devem ser preenchidos.')
+
+    # Busca o usuário pelo e-mail
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify(status='error', message='Usuário não encontrado.')
+
+    # Atualiza os dados
+    user.name = nome
+    user.username = username
+    user.is_admin = str(nivel_acesso) == "1" or nivel_acesso == "admin"
+
+    if senha:
+        user.password = senha  # Lembre-se: aplicar hash aqui se necessário
+
+    db.session.commit()
+
+    return jsonify(status='success', message='Usuário atualizado com sucesso.')
+
+@login_bp.route('/alterar_senha_colaborador', methods=['POST'])
+def update_password():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Dados inválidos'}), 400
+
+    username = data.get('username')
+    nova_senha = data.get('senha')
+
+    if not username or not nova_senha:
+        return jsonify({'error': 'Username e senha são obrigatórios.'}), 400
+
+    colaborador = User.query.filter_by(username=username).first()
+    if not colaborador:
+        return jsonify({'error': 'Usuário não encontrado.'}), 404
+
+    colaborador.password  = nova_senha
+    db.session.commit()
+
+    return jsonify({'message': 'Senha atualizada com sucesso!'})
+
+

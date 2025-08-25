@@ -60,6 +60,12 @@ h1 {
   box-shadow: 0 0 5px rgba(63, 81, 181, 0.5);
 }
 
+/* Placeholder visível no fundo escuro */
+.form-control::placeholder {
+  color: #aaa;
+  opacity: 1;
+}
+
 .form-label {
   font-size: 1rem;
   font-weight: 600;
@@ -92,10 +98,6 @@ h1 {
   color: #ddd;
   font-size: 0.95rem;
 }
-
-
-
-
 
 /* Estilo do botão "Voltar" */
 .btn-outline-secondary:hover {
