@@ -19,134 +19,135 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
 
   <style>
-    /* --- Layout Árvore com CSS Grid --- */
-    .fluxograma {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: auto auto auto;
-      gap: 3rem 4rem;
-      position: relative;
-      padding-bottom: 3rem;
-      margin-bottom: 3rem;
-      color: white;
-    }
+  body {
+    background-color: #121212; /* Cor de fundo escura */
+    color: #f0f0f0; /* Cor de texto clara para contraste */
+  }
 
-        .fluxo-card {
-      min-width: 280px;
-      flex-shrink: 0;
-      background-color: #26262f;
-      border-radius: 10px;
-      padding: 1rem;
-      color: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-      position: relative;
-      /* Nova linha para mais espaço interno no gráfico */
-      padding: 2rem;
-    }
+  /* --- Layout Árvore com CSS Grid --- */
+  .fluxograma {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 3rem 4rem;
+    position: relative;
+    padding-bottom: 3rem;
+    margin-bottom: 3rem;
+    color: white;
+    padding-top: 60px; /* Ajuste para não sobrepor o topo */
+  }
 
-    .fluxo-card h5 {
-      font-weight: 700;
-      font-size: 1.5rem;
-      margin-bottom: 1.5rem;
-      color: #e0e0ff;
-      text-shadow: 0 0 8px rgba(224,224,255,0.7);
-    }
+  .fluxo-card {
+    min-width: 280px;
+    flex-shrink: 0;
+    background-color: #26262f;
+    border-radius: 10px;
+    padding: 1rem;
+    color: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    position: relative;
+    padding: 2rem;
+  }
 
-    /* Posicionamento dos cards */
-    /* Usaremos classes para cada nível e posição para melhor controle */
-    .nivel-1 {
-      grid-column: 2;
-      grid-row: 1;
-    }
+  .fluxo-card h5 {
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #e0e0ff;
+    text-shadow: 0 0 8px rgba(224,224,255,0.7);
+  }
 
-    .nivel-2-esq {
-      grid-column: 1;
-      grid-row: 2;
-    }
+  /* Posicionamento dos cards */
+  .nivel-1 {
+    grid-column: 2;
+    grid-row: 1;
+  }
 
-    .nivel-2-dir {
-      grid-column: 3;
-      grid-row: 2;
-    }
+  .nivel-2-esq {
+    grid-column: 1;
+    grid-row: 2;
+  }
 
-    .nivel-3 {
-      grid-column: 2;
-      grid-row: 3;
-    }
+  .nivel-2-dir {
+    grid-column: 3;
+    grid-row: 2;
+  }
 
-    /* Linhas de conexão - usando pseudo elementos */
-    /* Linha vertical do topo para o meio */
-    .nivel-1::after {
-      content: "";
-      position: absolute;
-      bottom: -30px;
-      left: 50%;
-      width: 4px;
-      height: 30px;
-      background-color: #666;
-      transform: translateX(-50%);
-      z-index: 1;
-    }
+  .nivel-3 {
+    grid-column: 2;
+    grid-row: 3;
+  }
 
-    /* Linha horizontal para os cards do nível 2 */
-    .nivel-2-esq::before,
-    .nivel-2-dir::before {
-      content: "";
-      position: absolute;
-      top: -30px;
-      width: 50%;
-      height: 4px;
-      background-color: #666;
-      z-index: 1;
-    }
+  /* Linhas de conexão - usando pseudo elementos */
 
-    /* Linha horizontal para esquerda */
-    .nivel-2-esq::before {
-      right: 0;
-      left: auto;
-    }
+  /* Linha vertical do topo para o meio (Nivel 1) */
+  .nivel-1::after {
+    content: "";
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    width: 4px;
+    height: 30px;
+    background-color: #666;
+    transform: translateX(-50%);
+    z-index: 1;
+  }
 
-    /* Linha horizontal para direita */
-    .nivel-2-dir::before {
-      left: 0;
-      right: auto;
-    }
+  /* Linhas horizontais que conectam os cards do nível 1 ao nível 2 */
+  .nivel-2-esq::before,
+  .nivel-2-dir::before {
+    content: "";
+    position: absolute;
+    top: -30px;
+    width: 50%;
+    height: 4px;
+    background-color: #666;
+    z-index: 1;
+  }
 
-    /* Linha vertical que conecta do nível 2 para nível 3 */
-    .nivel-3::before {
-      content: "";
-      position: absolute;
-      top: -30px;
-      left: 50%;
-      width: 4px;
-      height: 30px;
-      background-color: #666;
-      transform: translateX(-50%);
-      z-index: 1;
-    }
+  .nivel-2-esq::before {
+    right: 0;
+    left: auto;
+  }
 
-    /* Linha horizontal que conecta nível 2 esquerda e direita */
-    /* Criar uma barra horizontal entre as colunas 1 e 3, no meio do grid */
+  .nivel-2-dir::before {
+    left: 0;
+    right: auto;
+  }
 
-    .fluxograma::before {
-      content: "";
-      position: absolute;
-      top: 70px; /* ajuste conforme altura do card */
-      left: calc(100% / 3);
-      width: calc(100% / 3 * 1);
-      height: 4px;
-      background-color: #666;
-      z-index: 0;
-    }
+  /* Linha vertical do nível 2 para o nível 3 */
+  .nivel-3::before {
+    content: "";
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    width: 4px;
+    height: 30px;
+    background-color: #666;
+    transform: translateX(-50%);
+    z-index: 1;
+  }
 
-    /* Ajuste para links (a) não interferirem */
-    .info-item a {
-      color: #fff;
-      text-decoration: underline;
-      cursor: pointer;
-    }
+  /* Linha horizontal que conecta o nível 2 esq. e dir. */
+  .fluxograma::before {
+    content: "";
+    position: absolute;
+    top: 120px; /* Ajuste para que a linha fique no meio entre os cards do nível 2 */
+    left: 30%; /* Alinha com a largura dos cards */
+    width: 40%;
+    height: 4px;
+    background-color: #666;
+    z-index: 0;
+  }
 
-  </style>
+  /* Ajuste para links (a) não interferirem */
+  .info-item a {
+    color: #fff;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+</style>
+
 </head>
 
 <body>
@@ -162,9 +163,10 @@
       </div>
     </div>
 
-    <div class="justify-content-center text-white">
-      <h1>OKRs</h1>
-    </div><br>
+    <div class="row justify-content-center text-white">
+      <h1 class="text-center">OKRs</h1>
+    </div>
+
 
     <div class="text-end mb-3">
       <button class="btn btn-sm btn-outline-light me-2" onclick="exportarPDF()">📄 Exportar PDF</button>

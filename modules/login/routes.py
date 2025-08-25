@@ -17,7 +17,7 @@ def home():
     return render_template('dashboard.html')
 
 
-@login_bp.route('/register', methods=['GET', 'POST'])
+'''@login_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
@@ -36,7 +36,7 @@ def register():
         flash('Conta criada com sucesso!', 'success')
         return redirect(url_for('login.login'))
 
-    return render_template('register.html')
+    return render_template('register.html')'''
 
 
 @login_bp.route('/login', methods=['GET', 'POST'])
