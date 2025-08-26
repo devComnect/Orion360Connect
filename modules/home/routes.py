@@ -71,22 +71,46 @@ def render_register():
 def render_register_colaboradores():
     return render_template('register_colaboradores.html')
 
+from datetime import datetime
+from flask import render_template
+import pandas as pd
+
 @home_bp.route('/escala', methods=['GET'])
 @login_required
 def render_escala():
     caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte 2026.xlsm'
 
-    # Lê todas as abas da planilha .xlsm
-    xls = pd.ExcelFile(caminho_arquivo)
-    abas = {}
-    for aba in xls.sheet_names:
-        df = pd.read_excel(xls, sheet_name=aba)
-        df.fillna('', inplace=True)
-        abas[aba] = df.to_dict(orient='records')
+    abas_para_ignorar = {'Escala', 'Configuração', 'Dashboard', 'Ajuda'}
 
-    # Debug para checar dados no console do servidor
-    print("Abas encontradas:", list(abas.keys()))
-    for aba, dados in abas.items():
-        print(f"Aba '{aba}' exemplo:", dados[:2])
+    ordem_meses = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ]
+
+    xls = pd.ExcelFile(caminho_arquivo)
+
+    abas_validas = [aba for aba in xls.sheet_names if aba not in abas_para_ignorar]
+    abas_validas.sort(key=lambda aba: ordem_meses.index(aba) if aba in ordem_meses else 999)
+
+    abas = []
+
+    for aba in abas_validas:
+        df = pd.read_excel(xls, sheet_name=aba)
+
+        # Converte datas para string
+        df = df.applymap(
+            lambda x: x.strftime('%Y-%m-%d') if isinstance(x, (pd.Timestamp, datetime)) and pd.notnull(x) else x
+        )
+
+        df.fillna('', inplace=True)
+
+        abas.append({
+            "nome": aba,
+            "dados": df.to_dict(orient='records')
+        })
 
     return render_template('escala.html', abas=abas)
+
+
+
+

@@ -6,12 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"> 
-  <link rel="icon" href="{{ url_for('static', filename='img/icone.png') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+  <link rel="icon" href="{{ url_for('static', filename='img/icone.png') }}" />
+  
   <!-- Tabulator -->
   <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.1/dist/css/tabulator.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style_escala.css')}}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style_escala.css') }}" />
 </head>
 
 {% include 'header/model-header.html' %}
@@ -41,9 +42,9 @@
   </div>
 
   <!-- Botões Download -->
-  <div id="buttons-container">
-    <button id="download-btn" class="download-btn">Download Planilha Aba Atual</button>
-    <button id="download-original-btn" class="download-btn">Download Planilha Original</button>
+  <div id="buttons-container" class="mt-3">
+    <button id="download-btn" class="btn btn-primary me-2">Download Planilha Aba Atual</button>
+    <button id="download-original-btn" class="btn btn-secondary">Download Planilha Original</button>
   </div>
 
 </div>
@@ -57,7 +58,125 @@
 <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.1/dist/js/tabulator.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-{% include 'js/escala_js.html' %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const abas = JSON.parse(document.getElementById('dados-json').textContent);
+  const abasDiv = document.getElementById('abas');
+  const planilhasDiv = document.getElementById('planilhas');
+  const downloadBtn = document.getElementById('download-btn');
+  const downloadOriginalBtn = document.getElementById('download-original-btn');
+
+  const tabelas = {};
+  let abaAtual = null;
+
+  abas.forEach(({nome, dados}, index) => {
+    // Ignora as 15 primeiras linhas
+    const dadosFiltrados = dados.slice(13);
+
+    // Obtém a ordem original das colunas
+    const colunasOriginais = Object.keys(dadosFiltrados[0] || []);
+
+    // Define a primeira coluna (ex: "Funcionário", que será mantida na frente)
+    const primeiraColuna = colunasOriginais[0];
+
+    // As demais colunas que representam datas (ex: "2026-01-01", etc)
+    const colunasDatasOrdenadas = colunasOriginais.slice(1).sort((a, b) => {
+      const dataA = new Date(a);
+      const dataB = new Date(b);
+      return dataA - dataB;
+    });
+
+    // Junta a coluna fixa com as datas ordenadas
+    const colunasOrdenadas = [primeiraColuna, ...colunasDatasOrdenadas];
+
+    // Cria botão da aba
+    const btn = document.createElement('button');
+    btn.textContent = nome;
+    btn.classList.add('btn', 'btn-outline-primary', 'me-1', 'aba-btn');
+    if(index === 0) {
+      btn.classList.add('active');
+      abaAtual = nome;
+    }
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.aba-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.querySelectorAll('.planilha-container').forEach(div => div.classList.remove('active'));
+      document.getElementById(`planilha-${nome}`).classList.add('active');
+
+      abaAtual = nome;
+    });
+    abasDiv.appendChild(btn);
+
+    // Cria container da planilha
+    const container = document.createElement('div');
+    container.id = `planilha-${nome}`;
+    container.classList.add('planilha-container', 'mt-3');
+    if(index === 0) container.classList.add('active');
+    planilhasDiv.appendChild(container);
+
+    // Define colunas do Tabulator com base nas colunas ordenadas
+    const colunas = colunasOrdenadas.map(campo => ({
+      title: campo,
+      field: campo,
+      editor: "input",
+      headerFilter: "input",
+    }));
+
+    // Inicializa Tabulator
+    tabelas[nome] = new Tabulator(container, {
+      data: dadosFiltrados,
+      columns: colunas,
+      layout: "fitColumns",
+      movableColumns: true,
+      pagination: "local",
+      paginationSize: 20,
+      cellEdited: (cell) => {
+        console.log(`Editado na aba ${nome}: campo=${cell.getField()}, valor=${cell.getValue()}`, cell.getRow().getData());
+      }
+    });
+  });
+
+  // Download da aba atual (editada)
+  downloadBtn.addEventListener('click', () => {
+    if(!abaAtual) return alert("Nenhuma aba selecionada.");
+    const table = tabelas[abaAtual];
+    const dados = table.getData();
+    if(dados.length === 0) return alert("A aba está vazia.");
+
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, abaAtual);
+    XLSX.writeFile(wb, `escala_${abaAtual}.xlsx`);
+  });
+
+  // Download da planilha original via rota Flask
+  downloadOriginalBtn.addEventListener('click', () => {
+    window.location.href = '/escala/download_original';
+  });
+});
+</script>
+
+
+
+<style>
+  .planilha-container { display: none; }
+  .planilha-container.active { display: block; }
+  .aba-btn.active {
+    background-color: #0d6efd;
+    color: white;
+  }
+</style>
+
+
+<style>
+  .planilha-container { display: none; }
+  .planilha-container.active { display: block; }
+  .aba-btn.active {
+    background-color: #0d6efd;
+    color: white;
+  }
+</style>
 
 </body>
 </html>

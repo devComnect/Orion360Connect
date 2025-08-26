@@ -376,6 +376,7 @@ def extrair_comparativo_relatorios():
     )
     if nome:
         query_chamados = query_chamados.filter(Chamado.operador.ilike(f'%{nome}%'))
+        
     chamados = query_chamados.order_by(Chamado.data_criacao).all()
     total_chamados = len(chamados)
 
