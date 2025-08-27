@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, render_template, request, redirect, url_for
 #from flask_login import login_required
 from modules.login.decorators import login_required
+from datetime import datetime
 import pandas as pd
 
 home_bp = Blueprint('home_bp', __name__)
@@ -71,14 +72,65 @@ def render_register():
 def render_register_colaboradores():
     return render_template('register_colaboradores.html')
 
-from datetime import datetime
-from flask import render_template
+
 import pandas as pd
+from datetime import datetime
+import os
 
 @home_bp.route('/escala', methods=['GET'])
 @login_required
 def render_escala():
-    caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte 2026.xlsm'
+    caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte_2026.xlsx'
+    abas_para_ignorar = {'Escala', 'Configuração', 'Dashboard', 'Ajuda'}
+
+    ordem_meses = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ]
+
+    # ✅ Verificação 1: Arquivo existe?
+    if not os.path.isfile(caminho_arquivo):
+        return f"Arquivo não encontrado: {caminho_arquivo}", 404
+
+    try:
+        # ✅ Carrega planilha (suporta .xlsx e .xlsm)
+        xls = pd.ExcelFile(caminho_arquivo, engine='openpyxl')
+    except Exception as e:
+        return f"Erro ao abrir o arquivo Excel: {str(e)}", 500
+
+    # ✅ Processa abas
+    abas_validas = [aba for aba in xls.sheet_names if aba not in abas_para_ignorar]
+    abas_validas.sort(key=lambda aba: ordem_meses.index(aba) if aba in ordem_meses else 999)
+
+    abas = []
+
+    for aba in abas_validas:
+        try:
+            df = pd.read_excel(xls, sheet_name=aba)
+
+            # Converte datas para string
+            df = df.applymap(
+                lambda x: x.strftime('%Y-%m-%d') if isinstance(x, (pd.Timestamp, datetime)) and pd.notnull(x) else x
+            )
+
+            df.fillna('', inplace=True)
+
+            abas.append({
+                "nome": aba,
+                "dados": df.to_dict(orient='records')
+            })
+
+        except Exception as e:
+            # Se erro ao processar uma aba, apenas pula
+            print(f"[ERRO] Falha ao ler aba '{aba}': {e}")
+            continue
+
+    return render_template('escala.html', abas=abas)
+
+
+@home_bp.route('/escalaColaborador', methods=['GET'])
+def render_escala_individual():
+    caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte_2026.xlsx'
 
     abas_para_ignorar = {'Escala', 'Configuração', 'Dashboard', 'Ajuda'}
 
@@ -109,8 +161,7 @@ def render_escala():
             "dados": df.to_dict(orient='records')
         })
 
-    return render_template('escala.html', abas=abas)
-
+    return render_template('escala_individual.html', abas=abas)
 
 
 
