@@ -1,0 +1,105 @@
+{% extends "base_guardians.html" %}
+
+{% block title %}Central de Treinamentos{% endblock %}
+
+{% block content %}
+    <h1 class="text-center mb-4 text-warning">
+        Central de Treinamentos
+    </h1>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm bg-dark text-white p-4">
+                <div class="card-body">
+
+                    <h2 class="text-info mb-3"><i class="bi bi-patch-question-fill me-2"></i> Quizzes e Desafios Disponíveis</h2>
+                    <p>Complete os quizzes disponíveis para ganhar pontos e insígnias. Novos desafios são liberados periodicamente!</p>
+
+                <ul class="list-group list-group-flush bg-transparent">
+                 {# A variável agora é uma lista de dicionários, então usamos 'item' #}
+                    {% for item in available_quizzes %}
+                        <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center">
+                            <div>
+                        {# Acessamos os dados do quiz através de 'item.quiz' #}
+                                <strong>{{ item.quiz.title }}</strong>
+                                <span class="badge bg-secondary ms-2">{{ item.quiz.category.value }}</span>
+                                {% set total_points = item.quiz.questions|sum(attribute='points') %}
+                                <span class="badge bg-success">{{ total_points }} Pontos</span>
+                                <br>
+                                <small class="text-muted">{{ item.quiz.description or 'Complete este desafio para testar seus conhecimentos.' }}</small>
+                            </div>
+
+                            <div class="text-end">
+                                <a href="{{ url_for('guardians_bp.take_quiz', quiz_id=item.quiz.id) }}" class="btn btn-sm btn-warning">Responder Quiz</a>
+                                <div class="mt-2">
+                                    <small class="text-danger"><i class="bi bi-clock-fill"></i> {{ item.expiry_text }}</small>
+                                </div>
+                            </div>
+
+                        </li>
+                    {% else %}
+                        <li class="list-group-item bg-dark text-white text-center">
+                            <p class="mb-0">Nenhum quiz novo no momento. Você está em dia!</p>
+                            <small class="text-muted">Fique de olho, novos desafios aparecem aqui regularmente.</small>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                    <hr class="my-4">
+                    
+                    <h2 class="text-info mb-3"><i class="bi bi-book-half me-2"></i> Glossário Rápido de Segurança</h2>
+                    <div class="accordion" id="glossaryAccordion">
+                        <div class="accordion-item bg-dark text-white"><h2 class="accordion-header"><button class="accordion-button collapsed bg-secondary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">Phishing</button></h2><div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#glossaryAccordion"><div class="accordion-body text-muted">É uma tentativa de fraude onde um criminoso se passa por uma empresa ou pessoa confiável para roubar informações sensíveis (senhas, dados de cartão) através de e-mails, SMS ou mensagens.</div></div></div>
+                        <div class="accordion-item bg-dark text-white"><h2 class="accordion-header"><button class="accordion-button collapsed bg-secondary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">Malware</button></h2><div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#glossaryAccordion"><div class="accordion-body text-muted">Abreviação de "software malicioso". É um termo genérico para qualquer programa projetado para danificar ou obter acesso não autorizado a um computador (vírus, spyware, etc.).</div></div></div>
+                        <div class="accordion-item bg-dark text-white"><h2 class="accordion-header"><button class="accordion-button collapsed bg-secondary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">Ransomware</button></h2><div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#glossaryAccordion"><div class="accordion-body text-muted">Um tipo de malware que "sequestra" os arquivos do seu computador, criptografando-os, e exige um pagamento (resgate) para liberá-los.</div></div></div>
+                        <div class="accordion-item bg-dark text-white"><h2 class="accordion-header"><button class="accordion-button collapsed bg-secondary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour">Engenharia Social</button></h2><div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#glossaryAccordion"><div class="accordion-body text-muted">É a arte de manipular pessoas para que elas realizem ações ou divulguem informações confidenciais. O phishing é a forma mais comum de engenharia social.</div></div></div>
+                        
+                    </div>
+
+
+
+                    <hr class="my-4">
+
+                    <h2 class="text-info mb-3"><i class="bi bi-search me-2"></i> Como Identificar um E-mail Malicioso</h2>
+                    <p>Fique atento a estes 5 sinais de alerta. Um e-mail de phishing geralmente apresenta um ou mais destes indícios:</p>
+                    <div class="row g-4 mt-2">
+                        <div class="col-md-6"><div class="phishing-guide-card h-100"><span class="icon"><i class="bi bi-person-badge"></i></span><h5>Remetente Suspeito</h5><p class="text-muted small">Verifique o endereço de e-mail completo, não apenas o nome. Golpistas usam domínios parecidos com os oficiais.</p></div></div>
+                        <div class="col-md-6"><div class="phishing-guide-card h-100"><span class="icon"><i class="bi bi-megaphone-fill"></i></span><h5>Tom de Urgência ou Ameaça</h5><p class="text-muted small">E-mails que criam pânico, como "Sua conta será bloqueada em 24h" ou "Você ganhou um prêmio, resgate agora!", são um grande sinal de alerta.</p></div></div>
+                        <div class="col-md-6"><div class="phishing-guide-card h-100"><span class="icon"><i class="bi bi-link-45deg"></i></span><h5>Links e Anexos Inesperados</h5><p class="text-muted small">Passe o mouse sobre o link (sem clicar!) para ver o endereço real. Se parecer estranho, não clique. Nunca abra anexos que você não solicitou.</p></div></div>
+                        <div class="col-md-6"><div class="phishing-guide-card h-100"><span class="icon"><i class="bi bi-spellcheck"></i></span><h5>Erros de Gramática e Formatação</h5><p class="text-muted small">Muitos e-mails de phishing contêm erros de português, digitação ou um design estranho e pouco profissional.</p></div></div>
+                    </div>
+
+                    
+                   
+                    <hr class="my-4">
+
+                    <h2 class="text-info mb-3"><i class="bi bi-envelope-fill me-2"></i> Como Reportar um E-mail Suspeito (3 Passos)</h2>
+                    <div class="row g-4 mt-3">
+                        <div class="col-md-4">
+                            <div class="phishing-guide-card h-100 text-center">
+                                <span class="icon"><i class="bi bi-slash-circle-fill"></i></span>
+                                <h5>1. Não Interaja</h5>
+                                <p class="text-muted small">A regra de ouro: não clique em links, não baixe anexos e não responda ao e-mail suspeito.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="phishing-guide-card h-100 text-center">
+                                <span class="icon"><i class="bi bi-send-arrow-up-fill"></i></span>
+                                <h5>2. Encaminhe</h5>
+                                <p class="text-muted small">Encaminhe o e-mail como anexo para a nossa equipe de segurança: <strong>infosec@comnect.com.br</strong></p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="phishing-guide-card h-100 text-center">
+                                <span class="icon"><i class="bi bi-trash3-fill"></i></span>
+                                <h5>3. Apague</h5>
+                                <p class="text-muted small">Após encaminhar para a análise, apague o e-mail malicioso da sua caixa de entrada e da lixeira.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

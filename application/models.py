@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
 from sqlalchemy import UniqueConstraint
+from enum import Enum
 
 # Inicializa o db, que será importado no app.py
 db = SQLAlchemy()
@@ -236,16 +237,31 @@ class Guardians(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
+    ##Personalizar perfil
+    nickname = db.Column(db.String(100), nullable=True)
+    is_anonymous = db.Column(db.Boolean, default=False, nullable=False) # Para anonimato no perfil
+    
+    #Conquista ao lado do nome
+    featured_insignia_id = db.Column(db.Integer, db.ForeignKey('insignias.id'), nullable=True)
+    featured_insignia = db.relationship('Insignia')
+    
+    #Adicao de cor no nome
+    name_color = db.Column(db.String(7), nullable=True) # Para armazenar um código HEX, ex: #FFD700
+
+    
+    # Chave estrangeira para classe user
+    user_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), unique=True, nullable=False)
+
     # Informações pessoais
     nome = db.Column(db.String(100)) 
     email = db.Column(db.String(255), unique=True)
     grupo = db.Column(db.String(100))  # Equivale a department_name
+    
+    # Permissao de admin
+    is_admin = db.Column(db.Boolean, default=False)
 
     # Pontuação e ranking
     score_atual = db.Column(db.Integer, default=0)
-    level_id = db.Column(db.Integer)  # Ref para SecurityLevels.level_id
-    level_nome = db.Column(db.String(50))  # Nome do nível ("Recruta", etc.)
-    badge_icon_url = db.Column(db.String(255))  # Ícone do nível
     opt_in_real_name_ranking = db.Column(db.Boolean, default=False)
 
     # Dados do departamento (embutidos)
@@ -255,25 +271,24 @@ class Guardians(db.Model):
 
     # Últimas atividades
     ultima_atividade = db.Column(db.DateTime)
-    total_insignias = db.Column(db.Integer, default=0)
-    total_acoes = db.Column(db.Integer, default=0)
-    total_treinamentos = db.Column(db.Integer, default=0)
-    total_quizzes = db.Column(db.Integer, default=0)
-
-    # Treinamentos
-    modulos_concluidos = db.Column(db.Text)  # Lista ou JSON de módulos
-    pontuacao_quizzes = db.Column(db.Integer, default=0)
-    score_on_quiz = db.Column(db.Integer)  # Última pontuação no quiz
 
     # Dados adicionais
     avatar_url = db.Column(db.String(255))  # Imagem/avatar do colaborador
-    badges_desbloqueadas = db.Column(db.Text)  # JSON ou string com nomes das insígnias
-    acoes_json = db.Column(db.Text)  # JSON de ações realizadas
-    treinamentos_json = db.Column(db.Text)  # JSON de treinamentos feitos
 
     # Controle de criação/atualização
     criado_em = db.Column(db.DateTime, default=db.func.current_timestamp())
     atualizado_em = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+    
+    # Adicione a chave estrangeira para o nível de segurança
+    nivel_id = db.Column(db.Integer, db.ForeignKey('niveis_seguranca.id'))
+    nivel = db.relationship("NivelSeguranca")
+    
+    # Relacionamentos com as novas classes
+    historico_acoes = db.relationship("HistoricoAcao", back_populates="guardian", lazy='dynamic')
+    insignias_conquistadas = db.relationship("GuardianInsignia", back_populates="guardian", lazy='dynamic')
+    
+    current_streak = db.Column(db.Integer, default=0)
+    last_streak_date = db.Column(db.Date, nullable=True)
 
 class Grupos(db.Model):
     __tablename__ = 'grupos'
@@ -398,3 +413,111 @@ class DeviceAccess(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
+
+## COMNECT GUARDIANS ##    
+    
+class NivelSeguranca(db.Model):
+    __tablename__ = 'niveis_seguranca'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(50), nullable=False, unique=True) # Ex: Recruta, Vigilante
+    score_minimo = db.Column(db.Integer, nullable=False)
+    badge_icon_url = db.Column(db.String(255))
+
+class Insignia(db.Model):
+    __tablename__ = 'insignias'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False, unique=True)
+    descricao = db.Column(db.Text, nullable=False)
+    requisito_score = db.Column(db.Integer, default=0) # Pontuação mínima para obter a insígnia
+    caminho_imagem = db.Column(db.String(255))
+    
+    # Relacionamento com a tabela de junção
+    conquistas = db.relationship("GuardianInsignia", back_populates="insignia")
+    
+class HistoricoAcao(db.Model):
+    __tablename__ = 'historico_acoes'
+    id = db.Column(db.Integer, primary_key=True)
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), nullable=False)
+    data_evento = db.Column(db.DateTime, default=db.func.now())
+    descricao = db.Column(db.String(255), nullable=False) # Ex: "Reporte de Phishing Simulada"
+    pontuacao = db.Column(db.Integer, nullable=False)
+    
+    # Relacionamento com a classe Guardians
+    guardian = db.relationship("Guardians", back_populates="historico_acoes")
+    
+# Tabela de junção para insígnias (quem ganhou qual insígnia)
+class GuardianInsignia(db.Model):
+    __tablename__ = 'guardian_insignia'
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), primary_key=True)
+    insignia_id = db.Column(db.Integer, db.ForeignKey('insignias.id'), primary_key=True)
+    data_conquista = db.Column(db.DateTime, default=db.func.now())
+    
+    # Relacionamentos com as classes principais
+    guardian = db.relationship("Guardians", back_populates="insignias_conquistadas")
+    insignia = db.relationship("Insignia", back_populates="conquistas")
+
+# Eventos e Pontuacoes
+
+class EventoPontuacao(db.Model):
+    __tablename__ = 'eventos_pontuacao'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(120), unique=True, nullable=False)
+    pontuacao = db.Column(db.Integer, nullable=False)
+    descricao = db.Column(db.Text, nullable=True)
+
+    def __repr__(self):
+        return f'<Evento {self.nome} | Pontos: {self.pontuacao}>' 
+    
+    
+    
+## QUIZ DE SEGURANCA ##
+
+class QuizCategory(Enum):
+    COMUM = 'Comum'         # Ex: Os quizzes que aparecem a cada 2 dias
+    ESPECIAL = 'Especial'   # Ex: Os quizzes de 7/15 dias
+    HARDCORE = 'Hardcore'     # Ex: O quiz mensal
+
+class Quiz(db.Model):
+    __tablename__ = 'quizzes'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    
+    # NOVOS CAMPOS PARA AGENDAMENTO
+    activation_date = db.Column(db.Date, nullable=False) # Dia em que o quiz "vai ao ar"
+    duration_days = db.Column(db.Integer, nullable=False, default=1) # Por quantos dias fica disponível
+    
+    category = db.Column(db.Enum(QuizCategory), nullable=False, default=QuizCategory.COMUM)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    
+    questions = db.relationship('Question', back_populates='quiz', cascade="all, delete-orphan")
+    attempts = db.relationship('QuizAttempt', back_populates='quiz')
+
+# As classes Question, AnswerOption, e QuizAttempt permanecem exatamente as mesmas da versão anterior.
+class Question(db.Model):
+    __tablename__ = 'questions'
+    id = db.Column(db.Integer, primary_key=True)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id', ondelete='SET NULL'), nullable=True)
+    question_text = db.Column(db.Text, nullable=False)
+    points = db.Column(db.Integer, nullable=False, default=10)
+    quiz = db.relationship('Quiz', back_populates='questions')
+    options = db.relationship('AnswerOption', back_populates='question', cascade="all, delete-orphan")
+
+class AnswerOption(db.Model):
+    __tablename__ = 'answer_options'
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=False)
+    option_text = db.Column(db.String(500), nullable=False)
+    is_correct = db.Column(db.Boolean, default=False, nullable=False)
+    question = db.relationship('Question', back_populates='options')
+
+class QuizAttempt(db.Model):
+    __tablename__ = 'quiz_attempts'
+    id = db.Column(db.Integer, primary_key=True)
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), nullable=False)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=False)
+    score = db.Column(db.Integer, nullable=False)
+    completed_at = db.Column(db.DateTime, default=db.func.now())
+    guardian = db.relationship('Guardians')
+    quiz = db.relationship('Quiz', back_populates='attempts')
