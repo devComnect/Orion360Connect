@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, render_template, request, redirect, url_fo
 from modules.login.decorators import login_required
 from datetime import datetime
 import pandas as pd
+from modules.home.utils import carregar_abas_excel
 
 home_bp = Blueprint('home_bp', __name__)
 
@@ -80,7 +81,7 @@ import os
 @home_bp.route('/escala', methods=['GET'])
 @login_required
 def render_escala():
-    caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte_2026.xlsx'
+    caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte.xlsx'
     abas_para_ignorar = {'Escala', 'Configuração', 'Dashboard', 'Ajuda'}
 
     ordem_meses = [
@@ -106,32 +107,30 @@ def render_escala():
 
     for aba in abas_validas:
         try:
-            df = pd.read_excel(xls, sheet_name=aba)
+            # 🚀 Lê sem cabeçalho, mantém tudo exatamente como está no Excel
+            df = pd.read_excel(xls, sheet_name=aba, header=None)
 
-            # Converte datas para string
-            df = df.applymap(
-                lambda x: x.strftime('%Y-%m-%d') if isinstance(x, (pd.Timestamp, datetime)) and pd.notnull(x) else x
-            )
-
+            # Substitui NaN por vazio e reseta index
             df.fillna('', inplace=True)
+            df.reset_index(drop=True, inplace=True)
 
+            # Converte para lista de listas (ordem idêntica ao Excel)
             abas.append({
                 "nome": aba,
-                "dados": df.to_dict(orient='records')
+                "dados": df.values.tolist()
             })
 
         except Exception as e:
-            # Se erro ao processar uma aba, apenas pula
             print(f"[ERRO] Falha ao ler aba '{aba}': {e}")
             continue
 
     return render_template('escala.html', abas=abas)
 
 
+
 @home_bp.route('/escalaColaborador', methods=['GET'])
 def render_escala_individual():
-    caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte_2026.xlsx'
-
+    caminho_arquivo = r'C:\Users\Administrator\Desktop\AnalisysData\static\files\Suporte.xlsx'
     abas_para_ignorar = {'Escala', 'Configuração', 'Dashboard', 'Ajuda'}
 
     ordem_meses = [
@@ -139,27 +138,40 @@ def render_escala_individual():
         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
     ]
 
-    xls = pd.ExcelFile(caminho_arquivo)
+    # ✅ Verificação 1: Arquivo existe?
+    if not os.path.isfile(caminho_arquivo):
+        return f"Arquivo não encontrado: {caminho_arquivo}", 404
 
+    try:
+        # ✅ Carrega planilha (suporta .xlsx e .xlsm)
+        xls = pd.ExcelFile(caminho_arquivo, engine='openpyxl')
+    except Exception as e:
+        return f"Erro ao abrir o arquivo Excel: {str(e)}", 500
+
+    # ✅ Processa abas
     abas_validas = [aba for aba in xls.sheet_names if aba not in abas_para_ignorar]
     abas_validas.sort(key=lambda aba: ordem_meses.index(aba) if aba in ordem_meses else 999)
 
     abas = []
 
     for aba in abas_validas:
-        df = pd.read_excel(xls, sheet_name=aba)
+        try:
+            # 🚀 Lê sem cabeçalho, mantém tudo exatamente como está no Excel
+            df = pd.read_excel(xls, sheet_name=aba, header=None)
 
-        # Converte datas para string
-        df = df.applymap(
-            lambda x: x.strftime('%Y-%m-%d') if isinstance(x, (pd.Timestamp, datetime)) and pd.notnull(x) else x
-        )
+            # Substitui NaN por vazio e reseta index
+            df.fillna('', inplace=True)
+            df.reset_index(drop=True, inplace=True)
 
-        df.fillna('', inplace=True)
+            # Converte para lista de listas (ordem idêntica ao Excel)
+            abas.append({
+                "nome": aba,
+                "dados": df.values.tolist()
+            })
 
-        abas.append({
-            "nome": aba,
-            "dados": df.to_dict(orient='records')
-        })
+        except Exception as e:
+            print(f"[ERRO] Falha ao ler aba '{aba}': {e}")
+            continue
 
     return render_template('escala_individual.html', abas=abas)
 

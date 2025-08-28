@@ -114,3 +114,10 @@
     .planilha-container.active {
       display: block;
     }
+
+    .planilha-container { display: none; }
+  .planilha-container.active { display: block; }
+  .aba-btn.active {
+    background-color: #0d6efd;
+    color: white;
+  }
