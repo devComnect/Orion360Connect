@@ -17,11 +17,11 @@
           <a class="nav-link px-3 dropdown-toggle" href="#" id="guardiansDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             Guardians
           </a>
-          <ul class="dropdown-menu" aria-labelledby="guardiansDropdown" style="background-color: #121212;">
-              <li><a class="dropdown-item" href="{{ url_for('guardians_bp.rankings') }}">Rankings</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('guardians_bp.sobre') }}">Sobre o Programa</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('guardians_bp.central') }}">Central de Treinamentos</a></li>
-          </ul>
+           <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="guardiansDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.rankings') }}">Rankings</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.sobre') }}">Sobre o Programa</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.central') }}">Central de Treinamentos</a></li>
+                    </ul>
       </li>
     </ul>
 

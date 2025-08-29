@@ -9,7 +9,7 @@ from flask_migrate import Migrate
 from flask_apscheduler import APScheduler
 from werkzeug.security import generate_password_hash
 
-from application.models import db, User
+from application.models import db, User, Guardians
 from modules.home.routes import home_bp
 from modules.login.routes import login_bp
 from modules.deskmanager.authenticate.routes import auth_bp
@@ -22,6 +22,7 @@ from modules.relatorios.routes import relatorios_bp
 from modules.escala.routes import escala_bp
 from modules.insights.grupos.routes import grupos_bp
 from modules.guardians.routes import guardians_bp #guardians
+from modules.login.session_manager import SessionManager #add2.0
 
 from modules.tasks.utils import (
     processar_e_armazenar_performance,
@@ -35,6 +36,8 @@ from modules.tasks.utils import (
     importar_detalhes_chamadas_hoje,
     importar_registro_chamadas_incremental
 )
+
+
 
 # ----------------- LOGGING CONFIG -----------------
 log_dir = 'logs'
@@ -51,6 +54,28 @@ app_logger.addHandler(handler)
 # ---------------------------------------------------
 
 app = Flask(__name__)
+
+#adicao 2.0
+@app.context_processor
+def inject_global_vars():
+    """
+    Injeta variáveis globais em todos os templates para fácil acesso.
+    """
+    is_admin = False
+    # Verifica se o usuário está logado antes de tentar buscar no banco
+    if SessionManager.is_authenticated():
+        user_id = SessionManager.get("user_id")
+        if user_id:
+            # Busca o perfil de guardião para checar a permissão de admin
+            guardian = Guardians.query.filter_by(user_id=user_id).first()
+            if guardian and guardian.is_admin:
+                is_admin = True
+    
+    # Retorna um dicionário com as variáveis que estarão disponíveis em TODOS os templates
+    return dict(
+        SessionManager=SessionManager, 
+        is_guardian_admin=is_admin
+    )
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Slink1205@localhost/data'
 app.config['SQLALCHEMY_BINDS'] = {

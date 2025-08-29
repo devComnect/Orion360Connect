@@ -2,6 +2,12 @@
 /* == PAINEL DE CONTROLE DO PERFIL GAMIFICADO (CUSTOMIZE AQUI!) == */
 /* =================================================================== */
 
+body {
+      background-color: #121212;
+      color: #f1f1f1;
+      font-family: Arial, sans-serif;
+    }
+
 .gamified-profile-card {
     /* -- Cores Principais -- */
     --profile-bg-color: #2a2a2a;

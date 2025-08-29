@@ -1,9 +1,8 @@
 from functools import wraps
 from flask import redirect, url_for, request, flash
 from modules.login.session_manager import SessionManager
+from application.models import User
 
-
-USUARIOS_AUTORIZADOS = ['fsilva', 'avaz', 'lolegario']
 
 def login_required(f):
     @wraps(f)
@@ -12,10 +11,20 @@ def login_required(f):
             flash('Você precisa estar logado para acessar essa página.', 'warning')
             return redirect(url_for('login.login', next=request.url))
 
-        username = SessionManager.get('username')
-        if not username or username.strip().lower() not in [u.lower() for u in USUARIOS_AUTORIZADOS]:
-            flash('Você não tem permissão para acessar essa página.', 'danger')
-            return redirect(url_for('home_bp.render_login'))
+        # Busca o ID do usuário na sessão
+        user_id = SessionManager.get('user_id')
+        if not user_id:
+            flash('Sessão inválida. Por favor, faça o login novamente.', 'danger')
+            return redirect(url_for('login.login'))
+
+        # Busca o usuário no banco de dados a cada requisição
+        user = User.query.get(user_id)
+
+        # Verifica se o usuário existe e se é um administrador
+        if not user or not user.is_admin:
+            flash('Você nao tem permissão para acessar essa página.', 'danger')
+            SessionManager.logout_user() # Limpa a sessão por segurança
+            return redirect(url_for('login.login'))
 
         return f(*args, **kwargs)
     return decorated_function
