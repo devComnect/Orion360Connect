@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/icone.png') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/icone.png') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"> 
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_dashboard.css')}}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    {% include 'header/model-header-individual-nivel2.html' %}
+
+   
+<div class="container-fluid mt-2">
+    <!--<button id="toggle-theme" class="btn btn-light mb-1"> Modo Escuro</button>-->
+    <br>
+    <!-- SLA e Abertos VS Finalizados -->
+    <div class="row mt-2">
+        <!-- Abertos VS Finalizados -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header text-center">
+                    Abertos vs Status <i class="bi bi-pie-chart-fill"></i>
+                    <span class="badge bg-primary ms-2" id="mes-referencia"></span>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center" style="height: 280px;">
+                    <canvas id="statusChart" style="width: 100%; max-width: 800px;"></canvas>
+                </div>
+                
+            </div>
+        </div>
+
+        <div class="col-md-4">
+    <div class="card shadow-sm h-100">
+        <div class="card-header text-center">
+            Abertos vs Resolvidos <i class="bi bi-graph-up"></i>
+        </div>
+        <div class="card-body d-flex flex-column align-items-center" style="height: 320px;">
+
+            <!-- Resumo acima do gráfico, tudo em linha -->
+            <div id="resumoAbertosResolvidos" class="text-white small d-flex justify-content-center gap-3">
+                <p class="mb-0"><strong>Total Abertos:</strong> <span id="totalAbertos">-</span></p>
+                <p class="mb-0"><strong>Total Resolvidos:</strong> <span id="totalResolvidos">-</span></p>
+                <p class="mb-0"><strong>Diferença:</strong> <span id="diferencaAbertosResolvidos">-</span></p>
+            </div>
+
+            <canvas id="LinhaAbertosResolvidosChart"></canvas>
+        </div>
+    </div>
+</div>
+
+
+        
+
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header text-center">Tickets por Canal <i class="bi bi-sliders"></i></div>
+                <div class="card-body d-flex flex-column align-items-center" style="height: 280px;">
+                    <canvas id="TicketsCanalChart" style="width: 200%; max-width: 800px;"></canvas>
+                </div>
+            </div>
+        </div> 
+    </div>
+
+    
+
+    <!-- Quatro Gráficos - Terceira linha -->
+    <div class="row mt-5">
+       <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-header text-center py-2">
+                <small>SLA - Suporte</small> <i class="bi bi-alarm-fill"></i><br>
+                <small>Atendimento / Resolução</small>
+            </div>
+            <div class="card-body p-2 d-flex justify-content-between align-items-center" style="height: 220px;">
+                <canvas id="slaChart" style="width: 45%; height: 100%;"></canvas>
+                <canvas id="slaChart2" style="width: 45%; height: 100%;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLA Grupo -->
+    <div class="col-md-3">
+        <div class="card shadow-sm">
+            <div class="card-header text-center py-2">
+                <small>SLA - Por Grupo</small> <i class="bi bi-alarm-fill"></i><br>
+                <small>Atendimento / Resolução</small>
+            </div>
+            <div class="card-body p-2 d-flex justify-content-between align-items-center" style="height: 220px;">
+                <canvas id="slaGrupoChart" style="width: 45%; height: 100%;"></canvas>
+                <canvas id="slaGrupoChart2" style="width: 45%; height: 100%;"></canvas>
+            </div>
+        </div>
+    </div>
+        <!-- SLA - Bloco Unificado -->
+        
+
+        
+        
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-header text-center">Situação da Fila (Comnect) <i class="bi bi-list-task"></i></div>
+                <div class="card-body d-flex flex-column align-items-center" style="height: 220px;">
+                    <canvas id="SituacaoFilaChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-header text-center">Situação da Fila (Vyrtos) <i class="bi bi-list-task"></i></div>
+                <div class="card-body d-flex flex-column align-items-center" style="height: 220px;">
+                    <canvas id="SituacaoFilaVyrtusChart"></canvas>
+                </div>
+            </div>
+        </div> 
+    </div>
+    <br>
+
+    <div class="row mt-3">
+        <!--<div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header text-center">
+                    Operadores Online <i class="bi bi-people-fill"></i>
+                </div>
+            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                <ul class="list-group" id="agentList">
+                    <li class="list-group-item text-center text-muted">Carregando agentes...</li>
+                </ul>
+            </div>
+            </div>
+        </div>-->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header text-center">Ligações Atendidas por Operador (Comnect) <i class="bi bi-telephone-inbound-fill"></i></div>
+                <div class="card-body d-flex flex-column align-items-center" style="height: 250px;">
+                    <canvas id="LigacoesAtendidasOperadorChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header text-center">Ligações Atendidas por Operador (Vyrtos) <i class="bi bi-telephone-inbound-fill"></i></div>
+                <div class="card-body d-flex flex-column align-items-center" style="height: 250px;">
+                    <canvas id="LigacoesAtendidasOperadorChartVyrtos"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Preto para mostrar chamados expirados -->
+<div class="modal fade" id="modalChamadosExpirados" tabindex="-1" aria-labelledby="modalChamadosExpiradosLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="modalChamadosExpiradosLabel">Ocorrências Pendentes</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+        <ul id="listaChamados" class="list-unstyled mb-0"></ul>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal exclusivo para SLA por Grupo -->
+<div class="modal fade" id="modalChamadosGrupos" tabindex="-1" aria-labelledby="modalChamadosGruposLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="modalChamadosGruposLabel">Ocorrências Pendentes</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+        <ul id="listaChamadosGrupos" class="list-unstyled mb-0"></ul>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<br>
+<br><br><br><br><br><br><br><br>
+
+{% include 'js/dashboard_js.html' %}
+{% include 'js/dashboard_charts_js.html' %}
+
+
+
+</body>
+</html>

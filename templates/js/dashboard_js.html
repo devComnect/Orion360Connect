@@ -10,14 +10,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalInstance = new bootstrap.Modal(modalElement);
 
     function criarSlaChart(ctx, label, naoExpirado, quaseEstourando, expirado, codigosExpirados, codigosCriticos) {
-        const total = naoExpirado + quaseEstourando + expirado;
         return new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['Dentro do Prazo', 'Prazo Crítico', 'Expirado'],
                 datasets: [{
                     label: label,
-                    data: [naoExpirado, quaseEstourando, expirado],
+                    data: [naoExpirado || 0, quaseEstourando || 0, expirado || 0],
                     backgroundColor: ['#007bffcc', '#ffc107cc', '#dc3545cc'],
                     borderRadius: 6,
                     barThickness: 30
@@ -30,8 +29,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     tooltip: {
                         callbacks: {
                             label: ctx => {
-                                const value = ctx.raw;
-                                const percent = ((value / total) * 100).toFixed(1);
+                                const value = ctx.raw ?? 0;
+                                const dataset = ctx.chart.data.datasets[ctx.datasetIndex].data;
+                                const total = dataset.reduce((a, b) => a + (b || 0), 0);
+                                const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                 return `${value} (${percent}%)`;
                             }
                         }
@@ -40,7 +41,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         color: '#fff',
                         anchor: 'center',
                         align: 'top',
-                        formatter: val => ((val / total) * 100).toFixed(1) + '%',
+                        formatter: (val, ctx) => {
+                            const dataset = ctx.chart.data.datasets[ctx.datasetIndex].data;
+                            const total = dataset.reduce((a, b) => a + (b || 0), 0);
+                            return total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%';
+                        },
                         font: { weight: 'bold' }
                     }
                 },
@@ -53,10 +58,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         const idx = elements[0].index;
                         let codigos = [];
 
-                        if (idx === 1 && codigosCriticos.length > 0) { // Quase estourando
-                            codigos = codigosCriticos;
-                        } else if (idx === 2 && codigosExpirados.length > 0) { // Expirado
-                            codigos = codigosExpirados;
+                        if (idx === 1 && codigosCriticos.length > 0) {
+                            codigos = codigosCriticos; // Prazo crítico
+                        } else if (idx === 2 && codigosExpirados.length > 0) {
+                            codigos = codigosExpirados; // Expirados
                         }
 
                         if (codigos.length > 0) {
@@ -91,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.getElementById('slaChart').getContext('2d'),
                     'SLA - Atendimento',
                     data.sla1_nao_expirado,
-                    data.sla1_quase_estourando || 0,
+                    data.sla1_quase_estourando,
                     data.sla1_expirado,
                     data.codigos_sla1 || [],
                     data.codigos_sla1_critico || []
@@ -100,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     document.getElementById('slaChart2').getContext('2d'),
                     'SLA - Resolução',
                     data.sla2_nao_expirado,
-                    data.sla2_quase_estourando || 0,
+                    data.sla2_quase_estourando,
                     data.sla2_expirado,
                     data.codigos_sla2 || [],
                     data.codigos_sla2_critico || []
@@ -112,6 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(e => console.error('Erro na requisição SLA:', e));
 });
 </script>
+
 
 <!-- Bloco que traz as informações dos grupos -->
     <script>

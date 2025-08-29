@@ -44,6 +44,10 @@ def render_okrs():
 def render_dashboard_colaborador():
     return render_template('dashboard_colaboradores.html')
 
+@home_bp.route('/dashboardColaboradorNivel2', methods=['GET'])
+def render_dashboard_colaborador_nivel2():
+    return render_template('dashboard_colaboradores_nivel2.html')
+
 @home_bp.route('/performance', methods=['GET'])
 def render_performance():
     return redirect(url_for('login.render_login_operadores'))
