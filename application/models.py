@@ -467,9 +467,7 @@ class EventoPontuacao(db.Model):
 
     def __repr__(self):
         return f'<Evento {self.nome} | Pontos: {self.pontuacao}>' 
-    
-    
-    
+      
 ## QUIZ DE SEGURANCA ##
 
 class QuizCategory(Enum):
