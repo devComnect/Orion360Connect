@@ -1,0 +1,808 @@
+<!-- Script que me traz a relação de chamados reabertos-->
+<script>
+  let chamadosReabertosCodigos = [];
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Atualiza ao clicar no botão de filtro de dias
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarReabertos(dias);
+      });
+    });
+  });
+
+  function atualizarReabertos(dias, nomeOperador) {
+    fetch('/okrs/reabertosOkrs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias })
+    })
+    .then(response => response.json())
+    .then(data => {
+      const reabertosSpan = document.getElementById("chamado_reaberto");
+      const percentualSpan = document.getElementById("percentual_reaberto");
+
+      if (data.status === "success") {
+        const total = data.total_chamados || 0;
+        const reabertos = data.total_reabertos || 0;
+        chamadosReabertosCodigos = data.cod_chamados || [];
+
+        reabertosSpan.textContent = reabertos;
+
+        // Cálculo do percentual
+        let percentual = "-";
+        if (total > 0) {
+          percentual = ((reabertos / total) * 100).toFixed(1) + "%";
+        }
+
+        percentualSpan.textContent = percentual;
+      } else {
+        reabertosSpan.textContent = "Erro";
+        percentualSpan.textContent = "-";
+        chamadosReabertosCodigos = [];
+        console.error("Erro na resposta:", data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar reabertos:", error);
+      document.getElementById("chamado_reaberto").textContent = "Erro";
+      document.getElementById("percentual_reaberto").textContent = "-";
+      chamadosReabertosCodigos = [];
+    });
+  }
+
+  // Essa função já serve para qualquer lista de chamados (FCR, Reabertos, etc.)
+  function mostrarChamadosOperador(titulo, codigos) {
+  const lista = document.getElementById("listaCodigos");
+  const tituloModal = document.getElementById("modalCodigosLabel");
+
+  if (!lista || !tituloModal) return;
+
+  lista.innerHTML = "";
+  tituloModal.textContent = titulo;
+
+  if (!Array.isArray(codigos) || codigos.length === 0) {
+    const item = document.createElement("li");
+    item.className = "text-muted";
+    item.textContent = "Nenhum chamado encontrado.";
+    lista.appendChild(item);
+  } else {
+    codigos.forEach(codigo => {
+      const li = document.createElement("li");
+      li.style.marginBottom = "8px";
+
+      const link = document.createElement("a");
+      link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+      link.target = "_blank";
+      link.textContent = codigo;
+      link.style.color = "#ffc107";
+
+      li.appendChild(link);
+      lista.appendChild(li);
+    });
+  }
+
+  const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+  modal.show();
+}
+
+</script>
+
+<!-- Script do Gráfico -->
+<script>
+  document.addEventListener("DOMContentLoaded", async function () {
+    const ctx = document.getElementById('graficoEvolucaoOKRs').getContext('2d');
+
+    // Registrar o plugin de anotação do Chart.js
+    Chart.register(window['chartjs-plugin-annotation']);
+
+    // Buscar metas do backend
+    let metas = {};
+    try {
+      const response = await fetch('/okrs/getMetas');
+      if (!response.ok) throw new Error('Erro ao buscar metas');
+      metas = await response.json();
+    } catch (error) {
+      console.warn("Falha ao carregar metas:", error);
+    }
+
+    // Buscar dados reais de TMA e TMS agrupados por mês
+    let tmaTmsDados = [];
+    try {
+      const response = await fetch('/okrs/tmaTmsMensal'); // Ajuste rota conforme seu backend
+      if (!response.ok) throw new Error('Erro ao buscar dados TMA/TMS');
+      tmaTmsDados = await response.json();
+    } catch (error) {
+      console.warn("Falha ao carregar dados TMA/TMS:", error);
+    }
+
+    // Montar labels no formato "MM/YYYY" e dados TMA/TMS em minutos
+    const labels = tmaTmsDados.map(d => `${d.month.toString().padStart(2,'0')}/${d.year}`);
+    const tmaData = tmaTmsDados.map(d => d.avg_tma ? +d.avg_tma.toFixed(2) : null);
+    const tmsData = tmaTmsDados.map(d => d.avg_tms ? +d.avg_tms.toFixed(2) : null);
+
+    // Dados fixos exemplo para outras métricas (pode ajustar para buscar API também)
+    const dadosExemplo = {
+      labels: labels.length ? labels : ['01/2025', '02/2025', '03/2025', '04/2025', '05/2025', '06/2025'],
+      datasets: [
+        {
+          label: 'SLA Atendimento (%)',
+          data: [97, 95, 93, 96, 94, 98],
+          borderColor: '#4caf50',
+          backgroundColor: 'rgba(76, 175, 80, 0.4)',
+          tension: 0.3
+        },
+        {
+          label: 'SLA Solução (%)',
+          data: [96, 94, 92, 95, 93, 97],
+          borderColor: '#2196f3',
+          backgroundColor: 'rgba(33, 150, 243, 0.4)',
+          tension: 0.3
+        },
+        {
+          label: 'FCR (%)',
+          data: [85, 88, 86, 87, 90, 92],
+          borderColor: '#ff9800',
+          backgroundColor: 'rgba(255, 152, 0, 0.4)',
+          tension: 0.3
+        },
+        {
+          label: 'TMA (min)',
+          data: tmaData.length ? tmaData : [4, 4.5, 5.2, 4.7, 4.1, 3.9],
+          borderColor: '#e91e63',
+          backgroundColor: 'rgba(233, 30, 99, 0.4)',
+          tension: 0.3,
+          yAxisID: 'y'  // Garantindo que usa o eixo Y principal
+        },
+        {
+          label: 'TMS (min)',
+          data: tmsData.length ? tmsData : [1.5, 1.8, 2.0, 1.7, 1.6, 1.4],
+          borderColor: '#9c27b0',
+          backgroundColor: 'rgba(156, 39, 176, 0.4)',
+          tension: 0.3,
+          yAxisID: 'y'  // Também no eixo Y principal
+        },
+        {
+          label: 'CSAT (%)',
+          data: [94, 95, 92, 96, 97, 93],
+          borderColor: '#673ab7',
+          backgroundColor: 'rgba(103, 58, 183, 0.4)',
+          tension: 0.3,
+          yAxisID: 'y'
+        }
+      ]
+    };
+
+    // Definindo annotations dinamicamente com base nas metas
+    const annotations = {};
+
+    if (metas.csat) {
+      annotations.meta_csat = {
+        type: 'line',
+        yMin: metas.csat,
+        yMax: metas.csat,
+        borderColor: '#673ab7',
+        borderWidth: 2,
+        scaleID: 'y',  // ESSENCIAL PARA EVITAR ERRO
+        label: {
+          content: `Meta CSAT: ${metas.csat}%`,
+          enabled: true,
+          position: 'end',
+          backgroundColor: '#673ab7',
+          color: '#fff'
+        }
+      };
+    }
+
+    if (metas.fcr) {
+      annotations.meta_fcr = {
+        type: 'line',
+        yMin: metas.fcr,
+        yMax: metas.fcr,
+        borderColor: '#ff9800',
+        borderWidth: 2,
+        scaleID: 'y',
+        label: {
+          content: `Meta FCR: ${metas.fcr}%`,
+          enabled: true,
+          position: 'end',
+          backgroundColor: '#ff9800',
+          color: '#fff'
+        }
+      };
+    }
+
+    if (metas.tma) {
+      annotations.meta_tma = {
+        type: 'line',
+        yMin: metas.tma,
+        yMax: metas.tma,
+        borderColor: '#e91e63',
+        borderWidth: 2,
+        scaleID: 'y',
+        label: {
+          content: `Meta TMA: ${metas.tma} min`,
+          enabled: true,
+          position: 'end',
+          backgroundColor: '#e91e63',
+          color: '#fff'
+        }
+      };
+    }
+
+    if (metas.sla_atendimento_prazo) {
+      annotations.meta_sla_atendimento = {
+        type: 'line',
+        yMin: metas.sla_atendimento_prazo,
+        yMax: metas.sla_atendimento_prazo,
+        borderColor: '#4caf50',
+        borderWidth: 2,
+        scaleID: 'y',
+        label: {
+          content: `Meta SLA Atendimento: ${metas.sla_atendimento_prazo}%`,
+          enabled: true,
+          position: 'end',
+          backgroundColor: '#4caf50',
+          color: '#fff'
+        }
+      };
+    }
+
+    if (metas.sla_resolucao_prazo) {
+      annotations.meta_sla_resolucao = {
+        type: 'line',
+        yMin: metas.sla_resolucao_prazo,
+        yMax: metas.sla_resolucao_prazo,
+        borderColor: '#2196f3',
+        borderWidth: 2,
+        scaleID: 'y',
+        label: {
+          content: `Meta SLA Solução: ${metas.sla_resolucao_prazo}%`,
+          enabled: true,
+          position: 'end',
+          backgroundColor: '#2196f3',
+          color: '#fff'
+        }
+      };
+    }
+
+    // Criar gráfico
+    new Chart(ctx, {
+      type: 'line',
+      data: dadosExemplo,
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top', labels: { color: '#fff' } },
+          annotation: { annotations },
+          datalabels: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#fff' } },
+          x: { ticks: { color: '#fff' } }
+        }
+      }
+    });
+  });
+
+  // Exportar PDF (exemplo)
+  function exportarPDF() {
+    const element = document.body;
+    html2pdf().from(element).save('OKRs.pdf');
+  }
+
+  // Exportar Excel (exemplo)
+  function exportarExcel() {
+    alert('Funcionalidade de exportar Excel ainda não implementada.');
+  }
+</script>
+
+
+
+
+<!--Script que traz os chamados de first call resolution-->
+<script>
+  let chamadosFcrCodigos = [];
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Botões de filtro por período
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarFCR(dias);
+      });
+    });
+  });
+
+  function atualizarFCR(dias, nomeOperador) {
+    fetch('/okrs/fcrOkrs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias })
+    })
+    .then(response => response.json())
+    .then(data => {
+      const fcrSpan = document.getElementById("chamado_fcr");
+      const percentualSpan = document.getElementById("percentual_fcr");
+
+      if (data.status === "success") {
+        const totalFcr = data.total_fcr || 0;
+        const percentual = data.percentual_fcr ?? "-";
+
+        fcrSpan.textContent = totalFcr;
+        percentualSpan.textContent = typeof percentual === "number" ? percentual.toFixed(1) + "%" : percentual;
+
+        chamadosFcrCodigos = data.cod_chamados || [];
+      } else {
+        fcrSpan.textContent = "Erro";
+        percentualSpan.textContent = "-";
+        chamadosFcrCodigos = [];
+        console.error("Erro na resposta:", data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar FCR:", error);
+      document.getElementById("chamado_fcr").textContent = "Erro";
+      document.getElementById("percentual_fcr").textContent = "-";
+      chamadosFcrCodigos = [];
+    });
+  }
+
+  function mostrarChamadosOperador(titulo, codigos) {
+    const lista = document.getElementById("listaCodigos");
+    const tituloModal = document.getElementById("modalCodigosLabel");
+
+    if (!lista || !tituloModal) return;
+
+    lista.innerHTML = "";
+    tituloModal.textContent = titulo;
+
+    if (!Array.isArray(codigos) || codigos.length === 0) {
+      const item = document.createElement("li");
+      item.className = "text-muted";
+      item.textContent = "Nenhum chamado encontrado.";
+      lista.appendChild(item);
+    } else {
+      codigos.forEach(codigo => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "8px";
+
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+        link.target = "_blank";
+        link.textContent = codigo;
+        link.style.color = "#ffc107";
+
+        li.appendChild(link);
+        lista.appendChild(li);
+      });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+    modal.show();
+  }
+</script>
+
+<!--Script que traz o TMA e TMS-->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Define dias padrão
+    let diasSelecionados = 30;
+    carregarTmaTms(diasSelecionados);
+
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        // Remove classe active
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        // Adiciona active no clicado
+        this.classList.add('active');
+
+        diasSelecionados = parseInt(this.getAttribute('data-dias'), 10);
+        carregarTmaTms(diasSelecionados);
+      });
+    });
+  });
+
+  function carregarTmaTms(dias) {
+    fetch(`/okrs/tmaTmsOkrs?dias=${dias}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "success") {
+          document.getElementById("percentual-tma").innerText = data.mediana_tma;
+          document.getElementById("percentual-tms").innerText = data.mediana_tms;
+        } else {
+          console.error("Erro ao carregar TMA/TMS:", data.message);
+        }
+      })
+      .catch(err => {
+        console.error("Erro na requisição TMA/TMS:", err);
+      });
+  }
+</script>
+
+<!--Bloco que traz a relação de tempo maximo e minimo-->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+
+    // Chamada inicial para 1 dia
+    atualizarTminTmax(1);
+
+    // Atualiza ao clicar no botão de filtro de dias
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarTminTmax(dias);
+      });
+    });
+  });
+
+  function atualizarTminTmax(dias) {
+    fetch('/okrs/tminTmaxOkrs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias })
+    })
+    .then(response => response.json())
+    .then(data => {
+      const spanTmin = document.getElementById("percentual-tma-ligacoes");
+      const spanTmax = document.getElementById("percentual-tms-ligacoes");
+
+      if (data.status === "success") {
+        spanTmin.textContent = data.tmin_media || 0;
+        spanTmax.textContent = data.tmax_media || 0;
+      } else {
+        spanTmin.textContent = "Erro";
+        spanTmax.textContent = "Erro";
+        console.error("Erro na resposta:", data.message);
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao buscar TMIN/TMAX:", error);
+      document.getElementById("percentual-tma-ligacoes").textContent = "Erro";
+      document.getElementById("percentual-tms-ligacoes").textContent = "Erro";
+    });
+  }
+</script>
+
+<!--Script que traz o SLA expirados global-->
+<script>
+  let codigosAtendimento = [];
+  let codigosResolucao = [];
+
+  function mostrarCodigosSla(titulo, listaCodigos) {
+    const lista = document.getElementById("listaCodigos");
+    const tituloModal = document.getElementById("modalCodigosLabel");
+
+    if (!lista || !tituloModal) {
+      console.warn("Elemento do modal não encontrado.");
+      return;
+    }
+
+    lista.innerHTML = "";
+    tituloModal.textContent = titulo;
+
+    if (!Array.isArray(listaCodigos) || listaCodigos.length === 0) {
+      const item = document.createElement("li");
+      item.className = "text-muted";
+      item.textContent = "Nenhum chamado encontrado.";
+      lista.appendChild(item);
+    } else {
+      listaCodigos.forEach(codigo => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "8px";
+
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+        link.target = "_blank";
+        link.textContent = codigo;
+        link.style.color = "#ffc107";
+
+        li.appendChild(link);
+        lista.appendChild(li);
+      });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+    modal.show();
+  }
+
+  function carregarSlaGlobal(dias = 1) {
+    fetch('/okrs/slaOkrs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias: dias })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === "success") {
+        document.getElementById("sla_atendimento_expirado").textContent = data.percentual_atendimento + "%";
+        document.getElementById("sla_atendimento_prazo").textContent = data.percentual_prazo_atendimento + "%";
+        document.getElementById("sla_resolucao_expirado").textContent = data.percentual_resolucao + "%";
+        document.getElementById("percentual_prazo_resolucao").textContent = data.percentual_prazo_resolucao + "%";
+
+        codigosAtendimento = data.codigos_atendimento || [];
+        codigosResolucao = data.codigos_resolucao || [];
+      } else {
+        document.getElementById("sla_atendimento_expirado").textContent = "Erro";
+        document.getElementById("sla_resolucao_expirado").textContent = "Erro";
+      }
+    })
+    .catch(() => {
+      document.getElementById("sla_atendimento_expirado").textContent = "Erro";
+      document.getElementById("sla_resolucao_expirado").textContent = "Erro";
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    carregarSlaGlobal(1);
+  });
+
+  document.querySelectorAll(".filtro-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      const dias = parseInt(button.getAttribute("data-dias"), 10);
+      carregarSlaGlobal(dias);
+    });
+  });
+</script>
+
+<!--Script que retorna a relação de CES-->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const botoesFiltro = document.querySelectorAll(".filtro-btn");
+    const campoNota = document.getElementById("ces-nota");
+    const campoDescricao = document.getElementById("ces-descricao");
+
+    async function carregarCES(dias = 1) {
+        try {
+            const response = await fetch('/okrs/cesOkrs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ dias: dias })
+            });
+
+            const data = await response.json();
+
+            if (data.status === "success") {
+                campoNota.textContent = data.nota;
+                campoDescricao.textContent = data.descricao;
+
+                // Limpa classes de cor anteriores
+                campoDescricao.classList.remove("text-primary", "text-warning", "text-danger");
+
+                // Adiciona a classe conforme a descrição
+                switch (data.descricao) {
+                    case 'Baixo esforço':
+                        campoDescricao.classList.add('text-primary'); // azul
+                        break;
+                    case 'Esforço moderado':
+                        campoDescricao.classList.add('text-warning'); // amarelo
+                        break;
+                    case 'Alto esforço':
+                        campoDescricao.classList.add('text-danger'); // vermelho
+                        break;
+                    default:
+                        // sem estilo extra
+                        break;
+                }
+
+            } else {
+                campoNota.textContent = "Erro";
+                campoDescricao.textContent = "Erro";
+                campoDescricao.classList.remove("text-primary", "text-warning", "text-danger");
+                console.error(data.message);
+            }
+        } catch (error) {
+            campoNota.textContent = "Erro";
+            campoDescricao.textContent = "Erro";
+            campoDescricao.classList.remove("text-primary", "text-warning", "text-danger");
+            console.error(error);
+        }
+    }
+
+    botoesFiltro.forEach(button => {
+        button.addEventListener("click", function () {
+            botoesFiltro.forEach(btn => btn.classList.remove("active"));
+            this.classList.add("active");
+
+            const dias = parseInt(this.getAttribute("data-dias"), 10);
+            carregarCES(dias);
+        });
+    });
+
+    carregarCES(1);
+});
+
+</script>
+
+<!--Script que retorna a relação de NPS-->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+  // Carrega o card NPS com valor padrão 1 dia
+  atualizarNps(1);
+
+  // Seleciona todos os botões de filtro
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      // Remove classe active de todos os botões
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+      // Adiciona classe active no botão clicado
+      this.classList.add('active');
+
+      // Pega número de dias do atributo data-dias
+      const dias = parseInt(this.getAttribute('data-dias'), 10);
+      atualizarNps(dias);
+    });
+  });
+});
+
+function atualizarNps(dias) {
+  fetch('/okrs/npsOkrs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dias })
+  })
+  .then(res => res.json())
+  .then(data => {
+    const npsNullEl = document.getElementById("nps-null");
+    const npsRetornoEl = document.getElementById("nps-retorno");
+
+    if (!npsNullEl || !npsRetornoEl) {
+      console.warn("Elementos NPS não encontrados no DOM.");
+      return;
+    }
+
+    if (data.status && data.status !== "Sem dados suficientes") {
+      // Atualiza texto
+      npsNullEl.textContent = data.status;
+      npsRetornoEl.textContent = data.nps + "%";
+
+      // Remove classes antigas e adiciona nova classe conforme status
+      npsNullEl.className = 'value';       // reseta classes
+      npsRetornoEl.className = 'value';
+
+      switch (data.status) {
+        case 'Excelente':
+          npsNullEl.classList.add('text-success');
+          
+          break;
+        case 'Muito bom':
+          npsNullEl.classList.add('text-primary');
+          
+          break;
+        case 'Razoável':
+          npsNullEl.classList.add('text-warning');
+          
+          break;
+        case 'Ruim':
+          npsNullEl.classList.add('text-danger');
+          
+          break;
+        default:
+          // Sem estilo extra
+          break;
+      }
+
+    } else {
+      npsNullEl.textContent = "-";
+      npsRetornoEl.textContent = "0%";
+      npsNullEl.className = 'value';
+      npsRetornoEl.className = 'value';
+    }
+  })
+  .catch(err => {
+    console.error("Erro ao buscar dados do NPS:", err);
+    const npsNullEl = document.getElementById("nps-null");
+    const npsRetornoEl = document.getElementById("nps-retorno");
+    npsNullEl.textContent = "-";
+    npsRetornoEl.textContent = "0%";
+    npsNullEl.className = 'value';
+    npsRetornoEl.className = 'value';
+  });
+}
+
+</script>
+
+<!--Script que traz a pesquisa de satisfação-->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Carrega o card com o valor padrão 30 dias
+    atualizarCardPesquisaSatisfacao(1);
+
+    // Seleciona todos os botões de filtro
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        // Remove a classe active de todos os botões para estilização (opcional)
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        // Adiciona classe active no botão clicado (opcional)
+        this.classList.add('active');
+
+        // Pega o número de dias do data-attribute do botão clicado
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarCardPesquisaSatisfacao(dias);
+      });
+    });
+  });
+
+  function atualizarCardPesquisaSatisfacao(dias) {
+  fetch('/okrs/csatOkrs', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ dias })
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log("Dados recebidos:", data);
+
+    const csatPercentualEl = document.getElementById("csat-percentual");
+    const totalAvaliadoEl = document.getElementById("total-avaliado");
+
+    if (!csatPercentualEl || !totalAvaliadoEl) {
+      console.warn("Elementos do card de CSAT não encontrados.");
+      return;
+    }
+
+    if (data.status === 'success') {
+      csatPercentualEl.textContent = `${data.csat}%`;
+      totalAvaliadoEl.textContent = data.total_respondidas;
+    } else {
+      csatPercentualEl.textContent = '-';
+      totalAvaliadoEl.textContent = '-';
+      console.error("Erro ao buscar dados da pesquisa:", data);
+    }
+  })
+  .catch(error => {
+    document.getElementById("csat-percentual").textContent = '-';
+    document.getElementById("total-avaliado").textContent = '-';
+    console.error("Erro de conexão com a API de pesquisa:", error);
+  });
+}
+
+</script>
+
+<!--Script que persiste as metas no banco-->
+<script>
+document.getElementById('formMetas').addEventListener('submit', async function (e) {
+  e.preventDefault();
+
+  const formData = new FormData(this);
+  const data = {};
+
+  formData.forEach((value, key) => {
+    data[key] = value !== "" ? parseFloat(value) : null;
+  });
+
+  try {
+    const response = await fetch('okrs/setMetas', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      alert('✅ Metas salvas com sucesso!');
+      const modal = bootstrap.Modal.getInstance(document.getElementById('modalDefinirMetas'));
+      modal.hide();
+    } else {
+      alert('❌ Erro ao salvar metas: ' + result.message);
+    }
+
+  } catch (error) {
+    console.error('Erro na requisição:', error);
+    alert('❌ Ocorreu um erro ao enviar os dados.');
+  }
+});
+</script>

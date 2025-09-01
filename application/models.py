@@ -342,7 +342,30 @@ class RegistroChamadas(db.Model):
     sub_motivo = db.Column(db.String(20))
     desconexao_local = db.Column(db.String(20))
     data_importacao = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+class Metas(db.Model):
+    __tablename__ = 'metas'
     
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Campos numéricos de metas
+    reabertos = db.Column(db.Float, nullable=True)
+    fcr = db.Column(db.Float, nullable=True)
+    tma = db.Column(db.Float, nullable=True)
+    tms = db.Column(db.Float, nullable=True)
+    tmin = db.Column(db.Float, nullable=True)
+    tmax = db.Column(db.Float, nullable=True)
+    sla_atendimento_prazo = db.Column(db.Float, nullable=True)
+    sla_resolucao_prazo = db.Column(db.Float, nullable=True)
+    csat = db.Column(db.Float, nullable=True)
+
+    # Opcional: Data de criação e modificação
+    criado_em = db.Column(db.DateTime, server_default=db.func.now())
+    atualizado_em = db.Column(db.DateTime, onupdate=db.func.now())
+
+    def __repr__(self):
+        return f'<Metas {self.id}>'
+
 class ChamadasDetalhes(db.Model):
     __tablename__ = 'detalhes_chamadas'
 

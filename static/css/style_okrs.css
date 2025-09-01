@@ -5,27 +5,22 @@
 
   /* --- Layout Árvore com CSS Grid --- */
   .fluxograma {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: auto auto auto;
-    gap: 3rem 4rem;
-    position: relative;
-    padding-bottom: 3rem;
-    margin-bottom: 3rem;
-    color: white;
-    padding-top: 60px; /* Ajuste para não sobrepor o topo */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+    padding: 2rem;
+    background: #121212;
   }
 
   .fluxo-card {
-    min-width: 280px;
-    flex-shrink: 0;
-    background-color: #26262f;
-    border-radius: 10px;
-    padding: 1rem;
+    background: #26262f;
     color: white;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    position: relative;
     padding: 2rem;
+    border-radius: 10px;
+    min-width: 280px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
   }
 
   .fluxo-card h5 {
@@ -36,92 +31,71 @@
     text-shadow: 0 0 8px rgba(224,224,255,0.7);
   }
 
-  /* Posicionamento dos cards */
-  .nivel-1 {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .nivel-2-esq {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .nivel-2-dir {
-    grid-column: 3;
-    grid-row: 2;
-  }
-
-  .nivel-3 {
-    grid-column: 2;
-    grid-row: 3;
-  }
-
-  /* Linhas de conexão - usando pseudo elementos */
-
-  /* Linha vertical do topo para o meio (Nivel 1) */
-  .nivel-1::after {
-    content: "";
-    position: absolute;
-    bottom: -30px;
-    left: 50%;
-    width: 4px;
-    height: 30px;
-    background-color: #666;
-    transform: translateX(-50%);
-    z-index: 1;
-  }
-
-  /* Linhas horizontais que conectam os cards do nível 1 ao nível 2 */
-  .nivel-2-esq::before,
-  .nivel-2-dir::before {
-    content: "";
-    position: absolute;
-    top: -30px;
-    width: 50%;
-    height: 4px;
-    background-color: #666;
-    z-index: 1;
-  }
-
-  .nivel-2-esq::before {
-    right: 0;
-    left: auto;
-  }
-
-  .nivel-2-dir::before {
-    left: 0;
-    right: auto;
-  }
-
-  /* Linha vertical do nível 2 para o nível 3 */
-  .nivel-3::before {
-    content: "";
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    width: 4px;
-    height: 30px;
-    background-color: #666;
-    transform: translateX(-50%);
-    z-index: 1;
-  }
-
-  /* Linha horizontal que conecta o nível 2 esq. e dir. */
-  .fluxograma::before {
-    content: "";
-    position: absolute;
-    top: 120px; /* Ajuste para que a linha fique no meio entre os cards do nível 2 */
-    left: 30%; /* Alinha com a largura dos cards */
-    width: 40%;
-    height: 4px;
-    background-color: #666;
-    z-index: 0;
-  }
-
   /* Ajuste para links (a) não interferirem */
   .info-item a {
     color: #fff;
     text-decoration: underline;
     cursor: pointer;
+  }
+
+  .info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.info-item .value {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Card CSAT/NPS/CES */
+  .csat-card {
+    background: #2f2f37;
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .csat-card .card-body-compact {
+    padding: 1rem;
+  }
+
+  /* Título principal */
+  .csat-card .card-body-center h6 {
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #e0e0ff;
+  }
+
+  /* Colunas de métricas */
+  .csat-card .row.text-center > .col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Itens dentro da métrica (um abaixo do outro) */
+  .csat-card .info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .csat-card .info-item .value {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #fff;
+    margin-top: 0.2rem;
+  }
+
+  /* Título de cada métrica */
+  .csat-card h6.mb-2 {
+    margin-bottom: 0.5rem !important;
   }

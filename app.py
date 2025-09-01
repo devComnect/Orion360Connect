@@ -21,6 +21,7 @@ from modules.insights.routes import insights_bp
 from modules.relatorios.routes import relatorios_bp
 from modules.escala.routes import escala_bp
 from modules.insights.grupos.routes import grupos_bp
+from modules.okrs.routes import okrs_bp
 from modules.guardians.routes import guardians_bp #guardians
 from modules.login.session_manager import SessionManager #add2.0
 
@@ -106,6 +107,7 @@ app.register_blueprint(relatorios_bp)
 app.register_blueprint(escala_bp)
 app.register_blueprint(grupos_bp)
 app.register_blueprint(guardians_bp)
+app.register_blueprint(okrs_bp)
 
 # Init extensions
 db.init_app(app)
