@@ -5,15 +5,11 @@
 body {
       background-color: #121212;
       color: #f1f1f1;
-      font-family: Arial, sans-serif;
     }
 
 .gamified-profile-card {
     /* -- Cores Principais -- */
-    --profile-bg-color: #2a2a2a;
-    --profile-accent-color: var(--warning); /* Usando sua variável global --warning */
-    --profile-accent-text-color: var(--warning);
-    --profile-base-text-color: #ffffff;
+    --profile-bg-color: #2f2f37;
     --xp-bar-color: var(--success); /* Usando sua variável global --success */
 
     /* -- Tamanho do Avatar/Badge -- */
@@ -71,7 +67,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     
-    background-color: var(--dark);
+    background-color: rgb(233, 223, 89);
     border: var(--border-width) solid var(--profile-accent-color);
     color: var(--profile-accent-text-color);
     font-weight: bold;
@@ -89,10 +85,10 @@ body {
 /* O contêiner principal da barra, agora sem borda e com novo fundo */
 .gamified-xp-bar {
     margin-top: 20px;
-    background-color: #2a2a2a; /* Fundo um pouco mais claro para destacar */
-    border-radius: var(--border-radius, 12px);
+    background-color: #3f3f4b; /* Fundo um pouco mais claro para destacar */
+    border-radius: 16px;
     padding: 15px 20px; /* Mais preenchimento interno */
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4); /* Sombra interna sutil */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4); /* Sombra interna sutil */
 }
 
 /* O contêiner para as informações de XP (a linha acima da barra) */
@@ -315,7 +311,7 @@ body {
 
 /* Estilo para os cards de estatísticas (Ranking, Conquistas, etc.) */
 .gamified-stat-card {
-    background: linear-gradient(145deg, #3a3a3a, #2c2c2c); /* Gradiente sutil */
+    background: linear-gradient(145deg,#3f3f4b, #2c2c2c); /* Gradiente sutil */
     border: 1px solid #555;
     border-radius: 12px;
     padding: 20px;
@@ -380,17 +376,18 @@ body {
 /* ========================================================== */
 
 .profile-section-card {
-    background-color: #2a2a2a; /* Mesmo fundo da barra de EXP para consistência */
+    background-color: #3f3f4b; /* Mesmo fundo da barra de EXP para consistência */
     border-radius: var(--border-radius, 12px);
     padding: 20px;
     margin-top: 25px;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 
 .profile-section-card .section-header {
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #444;
+    border-bottom: 1px solid #ffffff;
     padding-bottom: 10px;
     margin-bottom: 15px;
 }
@@ -413,14 +410,17 @@ body {
 
 /* O contêiner principal do cabeçalho */
 .profile-header {
-    background-color: #2a2a2a; /* Fundo escuro sutil, igual às seções */
-    border-radius: var(--border-radius, 12px);
+    background-color: #2f2f37; /* Fundo escuro sutil, igual às seções */
+    border-radius: 16px;
     padding: 20px 25px;
-    margin-bottom: 30px;
+    margin-bottom: 10px;
     display: flex; /* Usamos flex para alinhar o ícone e os textos */
     align-items: center;
     border: 1px solid #444;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    width: 67%; /* ou 70%, ajuste conforme sua necessidade */
+    margin: 0 auto 10px auto; /* centraliza */
 }
 
 /* Ícone do usuário à esquerda */
@@ -439,11 +439,9 @@ body {
 /* Estilo para o NOME do usuário */
 .profile-header-name {
     margin: 0;
-    font-family: 'Poppins', sans-serif; /* Garante a nova fonte */
     font-size: 2.8rem; /* Um pouco maior para mais impacto */
     font-weight: 900; /* Super bold */
     line-height: 1.1;
-    text-transform: uppercase; /* Deixa o nome em maiúsculas */
     letter-spacing: 1.5px; /* Leve espaçamento entre as letras */
 
     background: linear-gradient(
@@ -483,12 +481,13 @@ body {
 /* == ESTILOS PARA A PÁGINA DE ANALYTICS      == */
 /* ============================================= */
 .analytics-card {
-    background: #2a2a2a;
-    border-radius: 12px;
+    background: #2f2f37;
+    border-radius: 16px;
     padding: 25px;
     text-align: center;
     border-top: 4px solid var(--accent);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 .analytics-card .card-icon {
     font-size: 2.5rem;

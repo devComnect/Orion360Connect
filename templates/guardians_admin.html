@@ -7,7 +7,16 @@
 {% block content %}
 
 {% import 'macros/admin_macros.html' as macros %}
-
+<br>
+<!-- Botão Voltar -->
+    <div class="row mb-3">
+      <div class="col-auto">
+        <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">
+           Voltar
+        </a>
+      </div>
+    </div>
+<br>
 <div class="container-fluid mt-4">
     <h1 class="text-center mb-4 text-white">Interface Administrativa</h1>
 
@@ -49,7 +58,7 @@
             <div class="tab-content">
                 
                 <div class="tab-pane fade show active" id="panel-overview" role="tabpanel">
-                    <p class="text-muted">Bem-vindo ao painel de controle!</p>
+                    <p class="text-white">Bem-vindo ao painel de controle!</p>
                     {{- macros.render_lancar_evento(colaboradores, eventos) -}}
                 </div>
 

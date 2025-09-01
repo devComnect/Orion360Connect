@@ -1,9 +1,18 @@
-{% extends "template_base.html" %}
+{% extends "base_guardians.html" %}
 
 {% block title %}Meu Perfil{% endblock %}
 
 {% block content %}
 <br>
+
+<!-- Botão Voltar -->
+    <div class="row mb-3">
+      <div class="col-auto">
+        <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">
+           Voltar
+        </a>
+      </div>
+    </div>
     <br>
 <div class="profile-header">
     <i class="bi bi-person-circle profile-header-icon"></i>
@@ -137,7 +146,7 @@
                                 <p class="small mt-1 mb-0">{{ insignia.nome }}</p>
                             </div>
                         {% else %}
-                            <p class="text-muted text-center">Você ainda não conquistou nenhuma insígnia. Continue participando!</p>
+                            <p class="text-white text-center">Você ainda não conquistou nenhuma insígnia. Continue participando!</p>
                         {% endfor %}
                     </div>
                 </div>
@@ -163,7 +172,7 @@
                                 </div>
                             </li>
                         {% else %}
-                            <li class="list-group-item bg-transparent text-white text-muted text-center">
+                            <li class="list-group-item bg-transparent text-white  text-center">
                                 Nenhuma atividade registrada.
                             </li>
                         {% endfor %}

@@ -3,8 +3,18 @@
 {% block title %}Rankings{% endblock %}
 
 {% block content %}
+<br>
+ <!-- Botão Voltar -->
+    <div class="row mb-3">
+      <div class="col-auto">
+        <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">
+           Voltar
+        </a>
+      </div>
+    </div>
+
 <div class="container mt-4">
-    <h1 class="text-center mb-4 text-warning">Ranking de Segurança</h1>
+    <h1 class="text-center mb-4 text-white">Ranking de Segurança</h1>
 
     <ul class="nav nav-pills justify-content-center mb-4" id="rankingTab" role="tablist">
         <li class="nav-item" role="presentation">
@@ -35,7 +45,7 @@
                                     <td>
                                         <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id) }}" class="text-white text-decoration-none">
                                             {# BLOCO ATUALIZADO: Lógica de Nome/Apelido e Insígnia #}
-                                            <strong {% if perfil.name_color %} style="color: {{ perfil.name_color }}; text-shadow: 0 0 5px {{ perfil.name_color }};" {% endif %}>
+                                            <strong {% if perfil.name_color %}  {% endif %}>
                                                 {% if perfil.opt_in_real_name_ranking %}
                                                     {{ perfil.nome }}
                                                 {% else %}
@@ -72,7 +82,7 @@
                                     <td>
                                         <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id) }}" class="text-white text-decoration-none">
                                             {# BLOCO ATUALIZADO: Lógica de Nome/Apelido e Insígnia #}
-                                            <strong {% if perfil.name_color %} style="color: {{ perfil.name_color }}; text-shadow: 0 0 5px {{ perfil.name_color }};" {% endif %}>
+                                            <strong {% if perfil.name_color %} {% endif %}>
                                                 {% if perfil.opt_in_real_name_ranking %}
                                                     {{ perfil.nome }}
                                                 {% else %}
