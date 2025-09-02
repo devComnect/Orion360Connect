@@ -173,13 +173,15 @@ def extrair_relatorios():
     table_chamados.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
         ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('ALIGN', (0,0), (-1,0), 'LEFT'),  # Centraliza só cabeçalho
+        ('ALIGN', (0,1), (-1,-1), 'LEFT'),   # Alinha o resto à esquerda
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,0), 11),
         ('BOTTOMPADDING', (0,0), (-1,0), 8),
         ('BACKGROUND', (0,1), (-1,-1), colors.beige),
         ('GRID', (0,0), (-1,-1), 0.5, colors.gray)
     ]))
+
     elements.append(Paragraph("Chamados", centered_style_section))
     elements.append(table_chamados)
     elements.append(Spacer(1,12))
@@ -198,7 +200,8 @@ def extrair_relatorios():
     table_ligacoes.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
         ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('ALIGN', (0,0), (-1,0), 'LEFT'),  # Centraliza só cabeçalho
+        ('ALIGN', (0,1), (-1,-1), 'LEFT'),   # Alinha o resto à esquerda
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,0), 11),
         ('BOTTOMPADDING', (0,0), (-1,0), 8),
@@ -217,7 +220,8 @@ def extrair_relatorios():
     table_pausas.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
         ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('ALIGN', (0,0), (-1,0), 'LEFT'),  # Centraliza só cabeçalho
+        ('ALIGN', (0,1), (-1,-1), 'LEFT'),   # Alinha o resto à esquerda
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,0), 11),
         ('BOTTOMPADDING', (0,0), (-1,0), 8),
@@ -329,7 +333,7 @@ def extrair_controle_acesso():
         ('BACKGROUND', (0, 0), (-1, 0), colors.darkgray),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
 
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 11),
 
@@ -444,7 +448,7 @@ def extrair_comparativo_relatorios():
     table_chamados.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
         ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,0), 11),
         ('BOTTOMPADDING', (0,0), (-1,0), 8),
@@ -467,7 +471,7 @@ def extrair_comparativo_relatorios():
     table_ligacoes.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
         ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,0), 11),
         ('BOTTOMPADDING', (0,0), (-1,0), 8),

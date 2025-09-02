@@ -1,9 +1,10 @@
 from flask import Blueprint, request, render_template, redirect, flash, url_for, current_app, session, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
-from application.models import db, User, PerformanceColaboradores
+from application.models import db, User, PerformanceColaboradores, Guardians, NivelSeguranca
 from datetime import datetime
 from modules.login.session_manager import SessionManager
 import logging
+from sqlalchemy import func
 
 login_bp = Blueprint('login', __name__)
 
