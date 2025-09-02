@@ -30,7 +30,7 @@
       <li><a href="/performance" class="nav-link">Performance</a></li>
       <li><a href="/dashboard_colaborador" class="nav-link">Dashboard</a></li>
       <li class="nav-item"><a href="/escalaColaborador" class="nav-link">Escala</a></li>
-       <li class="nav-item dropdown">
+       <!--<li class="nav-item dropdown">
           <a class="nav-link px-3 dropdown-toggle" href="#" id="guardiansDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             Guardians
           </a>
@@ -39,7 +39,7 @@
                         <li><a class="dropdown-item" href="{{ url_for('guardians_bp.sobre') }}">Sobre o Programa</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('guardians_bp.central') }}">Central de Treinamentos</a></li>
                     </ul>
-      </li>
+      </li>-->
     </ul>
 
     <!-- Logout -->
@@ -47,7 +47,7 @@
       <a href="{{ url_for('guardians_bp.meu_perfil') }}" class="btn btn-outline-light btn-sm me-2">
                         <i class="fas fa-user-circle me-1"></i> Meu Perfil
                     </a>
-      <form action="/logout" method="POST" class="d-inline">
+      <form action="/logout/colaboradores" method="POST" class="d-inline">
         <button type="submit" class="btn btn-danger btn-sm">
           <i class="fas fa-sign-out-alt me-1"></i> Sair
         </button>

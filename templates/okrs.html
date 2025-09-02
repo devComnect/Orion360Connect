@@ -121,17 +121,42 @@
       </div>
     </div>
 
-    <!-- Gráfico de Evolução Mensal dos OKRs -->
-  <div class="row mt-5">
-    <div class="col-12">
-      <div class="fluxo-card" style="position: relative; padding: 2rem;">
-        <h5 class="text-center mb-4" style="font-weight: 700; font-size: 1.5rem; color: #e0e0ff; text-shadow: 0 0 8px rgba(224,224,255,0.7);">
-          Evolução Mensal dos OKRs
-        </h5>
-        <canvas id="graficoEvolucaoOKRs" height="120"></canvas>
-      </div>
+  <!-- Gráficos de Evolução Mensal dos OKRs -->
+<div class="row mt-3">
+
+  <!-- Linha 1: TMA & TMS + SLA -->
+  <div class="col-md-6 mb-4">
+    <div class="fluxo-card" style="padding: 2rem;">
+      <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
+      <canvas id="graficoTmaTms" height="100"></canvas>
     </div>
+  </div>
+
+  <div class="col-md-6 mb-4">
+    <div class="fluxo-card" style="padding: 2rem;">
+      <h5 class="text-center mb-4">Evolução do SLA</h5>
+      <canvas id="graficoSLA" height="100"></canvas>
+    </div>
+  </div>
+
+  <!-- Linha 2: FCR + CSAT -->
+  <div class="col-md-6 mb-4">
+    <div class="fluxo-card" style="padding: 2rem;">
+      <h5 class="text-center mb-4">Evolução do FCR</h5>
+      <canvas id="graficoFCR" height="100"></canvas>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-4">
+    <div class="fluxo-card" style="padding: 2rem;">
+      <h5 class="text-center mb-4">Evolução do CSAT</h5>
+      <canvas id="graficoCSAT" height="100"></canvas>
+    </div>
+  </div>
+
 </div>
+
+
 
 
   </div> <!-- FIM da container-fluid -->
