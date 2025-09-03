@@ -334,59 +334,49 @@ def sla_insights_okrs():
         hoje = datetime.now()
         data_inicio = hoje - timedelta(days=dias)
 
-        # Filtro: status diferente de cancelado e dentro do período
+        # Chamados no período
         chamados = Chamado.query.filter(
             Chamado.nome_status != 'Cancelado',
             Chamado.data_criacao >= datetime.combine(data_inicio.date(), datetime.min.time()),
             Chamado.data_criacao <= datetime.combine(hoje.date(), datetime.max.time())
         ).all()
 
-        # Filtra os com SLA expirado
         expirados_atendimento = sum(1 for c in chamados if c.sla_atendimento == 'S')
         expirados_resolucao = sum(1 for c in chamados if c.sla_resolucao == 'S')
         chamados_atendimento_prazo = sum(1 for c in chamados if c.sla_atendimento == 'N')
         chamados_finalizado_prazo = sum(1 for c in chamados if c.sla_resolucao == 'N')
 
-        chamados_prazo = [
-            c for c in chamados if c.sla_atendimento == 'N' or c.sla_resolucao == 'N'
-        ]
-
-        # Lista completa de expirados para retornar os códigos
-        chamados_expirados = [
-            c for c in chamados if c.sla_atendimento == 'S' or c.sla_resolucao == 'S'
-        ]
-
         total_chamados = len(chamados)
 
         percentual_atendimento = round((expirados_atendimento / total_chamados) * 100, 2) if total_chamados else 0
         percentual_resolucao = round((expirados_resolucao / total_chamados) * 100, 2) if total_chamados else 0
-
         percentual_prazo_atendimento = round((chamados_atendimento_prazo/total_chamados) * 100, 2) if total_chamados else 0
         percentual_prazo_resolucao = round((chamados_finalizado_prazo/total_chamados) * 100, 2) if total_chamados else 0
+
+        # 🟡 Buscar metas do banco
+        metas = Metas.query.first()
 
         return jsonify({
             "status": "success",
             "total_chamados": total_chamados,
-            "prazo_atendimento": chamados_atendimento_prazo,
             "percentual_prazo_atendimento" : percentual_prazo_atendimento,
             "percentual_prazo_resolucao": percentual_prazo_resolucao,
-            "expirados_atendimento": expirados_atendimento,
-            "prazos_resolucao": chamados_finalizado_prazo,
-            "expirados_resolucao": expirados_resolucao,
             "percentual_atendimento": percentual_atendimento,
             "percentual_resolucao": percentual_resolucao,
-            "codigos_atendimento": [c.cod_chamado for c in chamados_expirados if c.sla_atendimento == 'S'],
-            "codigos_resolucao": [c.cod_chamado for c in chamados_expirados if c.sla_resolucao == 'S'],
-            "codigos_prazo_atendimento": [c.cod_chamado for c in chamados if c.sla_atendimento == 'N'],
-            "codigos_prazo_resolucao": [c.cod_chamado for c in chamados if c.sla_resolucao == 'N']
+            "codigos_atendimento": [c.cod_chamado for c in chamados if c.sla_atendimento == 'S'],
+            "codigos_resolucao": [c.cod_chamado for c in chamados if c.sla_resolucao == 'S'],
+            
+            # ✅ Envie as metas para o front-end
+            "meta_prazo_atendimento": metas.sla_atendimento_prazo,
+            "meta_prazo_resolucao": metas.sla_resolucao_prazo
         })
-
 
     except Exception as e:
         return jsonify({
             "status": "error",
             "message": str(e)
         }), 500
+
 
 @okrs_bp.route('/slaOkrsMes', methods=['POST'])
 def sla_okrs_mes():

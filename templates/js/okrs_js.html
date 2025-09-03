@@ -1,4 +1,4 @@
-<!--Metas globais-->
+<!--Metas globais para ser utilizada nas funções-->
 <script>
   let metasGlobais = {};
 
@@ -65,10 +65,10 @@
         if (metas.reabertos != null && total > 0) {
           const meta = metas.reabertos;
           if (percentualValor <= meta) {
-            icone.className = "bi bi-arrow-up-short text-success";
+            icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
             icone.title = "Dentro da meta";
           } else {
-            icone.className = "bi bi-arrow-down-short text-danger";
+            icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
             icone.title = "Acima da meta";
           }
         } else {
@@ -609,10 +609,10 @@
 
           if (metaFcr != null && percentualValor != null) {
             if (percentualValor >= metaFcr) {
-              icone.className = "bi bi-arrow-up-short text-success";
+              icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
               icone.title = "Dentro da meta";
             } else {
-              icone.className = "bi bi-arrow-down-short text-danger";
+              icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
               icone.title = "Abaixo da meta";
             }
           } else {
@@ -675,15 +675,12 @@
 <!--Script que traz o TMA e TMS-->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    // Define dias padrão
     let diasSelecionados = 30;
     carregarTmaTms(diasSelecionados);
 
     document.querySelectorAll('.filtro-btn').forEach(btn => {
       btn.addEventListener('click', function () {
-        // Remove classe active
         document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-        // Adiciona active no clicado
         this.classList.add('active');
 
         diasSelecionados = parseInt(this.getAttribute('data-dias'), 10);
@@ -699,6 +696,14 @@
         if (data.status === "success") {
           document.getElementById("percentual-tma").innerText = data.mediana_tma;
           document.getElementById("percentual-tms").innerText = data.mediana_tms;
+
+          // Pega as metas para comparar
+          fetch('/okrs/getMetas')
+            .then(res => res.json())
+            .then(metas => {
+              atualizarIconeTmaTms("icone_tma", data.mediana_tma, metas.tma, "baixo"); // Quanto menor, melhor
+              atualizarIconeTmaTms("icone_tms", data.mediana_tms, metas.tms, "baixo");
+            });
         } else {
           console.error("Erro ao carregar TMA/TMS:", data.message);
         }
@@ -707,7 +712,49 @@
         console.error("Erro na requisição TMA/TMS:", err);
       });
   }
+
+  function atualizarIconeTmaTms(idIcone, valorTexto, metaTexto) {
+  const icone = document.getElementById(idIcone);
+  if (!icone) return;
+
+  icone.className = "";
+
+  // Extrai minutos do texto (ex: "1.5 h" -> 90, "12 min" -> 12)
+  let valorMin = 0;
+
+  if (valorTexto.includes("h")) {
+    valorMin = parseFloat(valorTexto) * 60;
+  } else if (valorTexto.includes("dias")) {
+    valorMin = parseFloat(valorTexto) * 1440;
+  } else {
+    valorMin = parseFloat(valorTexto);
+  }
+
+  const metaMin = parseFloat(metaTexto);
+
+  if (isNaN(valorMin) || isNaN(metaMin)) {
+    icone.classList.add("d-none");
+    return;
+  }
+
+  const margem = 5;
+
+  if (valorMin <= metaMin) {
+    // Melhor que a meta → seta para baixo verde
+    icone.className = "bi bi-arrow-down-short text-success ms-2 fs-4";
+  } else if (valorMin <= metaMin + margem) {
+    // Aceitável (margem) → seta para baixo amarela
+    icone.className = "bi bi-arrow-down-short text-warning ms-2 fs-4";
+  } else {
+    // Pior que a meta → seta para cima vermelha
+    icone.className = "bi bi-arrow-up-short text-danger ms-2 fs-4";
+  }
+}
+
+
+  
 </script>
+
 
 <!--Bloco que traz a relação de tempo maximo e minimo-->
 <script>
@@ -816,7 +863,7 @@
         codigosAtendimento = data.codigos_atendimento || [];
         codigosResolucao = data.codigos_resolucao || [];
 
-        // Atualiza ícones com base na meta (verde para >= meta, amarelo para próximo, vermelho para abaixo)
+        // Atualiza ícones com base na meta
         atualizarIcone("icone_prazo_atendimento", data.percentual_prazo_atendimento, data.meta_prazo_atendimento);
         atualizarIcone("icone_prazo_resolucao", data.percentual_prazo_resolucao, data.meta_prazo_resolucao);
 
@@ -834,37 +881,35 @@
   }
 
   function atualizarIcone(idIcone, valorAtual, meta) {
-    const icone = document.getElementById(idIcone);
-    if (!icone) return;
+  const icone = document.getElementById(idIcone);
+  if (!icone) return;
 
-    // Reseta classes para ícone base
-    icone.className = "bi ms-2 fs-4";
+  // Resetar a classe
+  icone.className = "";
 
-    // Tenta converter para número, caso venha string com %
-    const valAtualNum = parseFloat(valorAtual);
-    const metaNum = parseFloat(meta);
+  // Limpar símbolo de porcentagem se houver
+  let valorLimpo = typeof valorAtual === "string" ? valorAtual.replace("%", "").trim() : valorAtual;
+  let valAtualNum = parseFloat(valorLimpo);
+  const metaNum = parseFloat(meta);
 
-    if (isNaN(valAtualNum) || isNaN(metaNum)) {
-      icone.classList.add("d-none");
-      return;
-    }
+  console.log(`[${idIcone}] Valor atual: ${valAtualNum}, Meta: ${metaNum}`);
 
-    const margem = 5; // margem para considerar "próximo da meta"
-
-    if (valAtualNum >= metaNum) {
-      // Verde, seta pra cima
-      icone.classList.remove("d-none");
-      icone.classList.add("bi-arrow-up-circle-fill", "text-success");
-    } else if (valAtualNum >= (metaNum - margem)) {
-      // Amarelo, seta pra cima (próximo)
-      icone.classList.remove("d-none");
-      icone.classList.add("bi-arrow-up-circle-fill", "text-warning");
-    } else {
-      // Vermelho, seta pra baixo
-      icone.classList.remove("d-none");
-      icone.classList.add("bi-arrow-down-circle-fill", "text-danger");
-    }
+  if (isNaN(valAtualNum) || isNaN(metaNum)) {
+    icone.classList.add("d-none");
+    return;
   }
+
+  const margem = 5;
+
+  if (valAtualNum >= metaNum) {
+    icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
+  } else if (valAtualNum >= (metaNum - margem)) {
+    icone.className = "bi bi-arrow-up-short text-warning ms-2 fs-4";
+  } else {
+    icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
+  }
+}
+
 
   function removerIcones() {
     ["icone_prazo_atendimento", "icone_prazo_resolucao"].forEach(id => {
@@ -884,6 +929,7 @@
     });
   });
 </script>
+
 
 <!--Script que retorna a relação de CES-->
 <script>
@@ -951,7 +997,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    carregarCES(1);
+    carregarCES(30);
 });
 
 </script>
@@ -960,7 +1006,7 @@ document.addEventListener("DOMContentLoaded", function () {
 <script>
   document.addEventListener("DOMContentLoaded", function () {
   // Carrega o card NPS com valor padrão 1 dia
-  atualizarNps(1);
+  atualizarNps(30);
 
   // Seleciona todos os botões de filtro
   document.querySelectorAll('.filtro-btn').forEach(btn => {
@@ -1047,18 +1093,15 @@ function atualizarNps(dias) {
 <!--Script que traz a pesquisa de satisfação-->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    // Carrega o card com o valor padrão 30 dias
-    atualizarCardPesquisaSatisfacao(1);
+    // Carrega o card com valor padrão (exemplo: 1 dia)
+    atualizarCardPesquisaSatisfacao(30);
 
-    // Seleciona todos os botões de filtro
+    // Botões de filtro (se houver)
     document.querySelectorAll('.filtro-btn').forEach(btn => {
       btn.addEventListener('click', function() {
-        // Remove a classe active de todos os botões para estilização (opcional)
         document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-        // Adiciona classe active no botão clicado (opcional)
         this.classList.add('active');
 
-        // Pega o número de dias do data-attribute do botão clicado
         const dias = parseInt(this.getAttribute('data-dias'), 10);
         atualizarCardPesquisaSatisfacao(dias);
       });
@@ -1066,41 +1109,74 @@ function atualizarNps(dias) {
   });
 
   function atualizarCardPesquisaSatisfacao(dias) {
-  fetch('/okrs/csatOkrs', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ dias })
-  })
-  .then(response => response.json())
-  .then(data => {
-    console.log("Dados recebidos:", data);
+    fetch('/okrs/csatOkrs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log("Dados recebidos:", data);
 
-    const csatPercentualEl = document.getElementById("csat-percentual");
-    const totalAvaliadoEl = document.getElementById("total-avaliado");
+      const csatPercentualEl = document.getElementById("csat-percentual");
+      const totalAvaliadoEl = document.getElementById("total-avaliado");
+      const iconeCsatEl = document.getElementById("icone_csat");
 
-    if (!csatPercentualEl || !totalAvaliadoEl) {
-      console.warn("Elementos do card de CSAT não encontrados.");
+      if (!csatPercentualEl || !totalAvaliadoEl || !iconeCsatEl) {
+        console.warn("Elementos do card de CSAT não encontrados.");
+        return;
+      }
+
+      if (data.status === 'success') {
+        csatPercentualEl.textContent = `${data.csat}%`;
+        totalAvaliadoEl.textContent = data.total_respondidas;
+
+        const metaCsat = 80; // Defina sua meta aqui (exemplo: 80%)
+        atualizarIconeCsat("icone_csat", data.csat, metaCsat, "alto");
+      } else {
+        csatPercentualEl.textContent = '-';
+        totalAvaliadoEl.textContent = '-';
+        iconeCsatEl.className = "d-none";
+        console.error("Erro ao buscar dados da pesquisa:", data);
+      }
+    })
+    .catch(error => {
+      document.getElementById("csat-percentual").textContent = '-';
+      document.getElementById("total-avaliado").textContent = '-';
+      document.getElementById("icone_csat").className = "d-none";
+      console.error("Erro de conexão com a API de pesquisa:", error);
+    });
+  }
+
+  function atualizarIconeCsat(idIcone, valorAtual, meta, direcaoMelhoria = "alto") {
+    const icone = document.getElementById(idIcone);
+    if (!icone) return;
+
+    icone.className = ""; // limpa classes
+
+    let valNum = parseFloat(String(valorAtual).replace("%", "").trim());
+    let metaNum = parseFloat(meta);
+
+    if (isNaN(valNum) || isNaN(metaNum)) {
+      icone.classList.add("d-none");
       return;
     }
 
-    if (data.status === 'success') {
-      csatPercentualEl.textContent = `${data.csat}%`;
-      totalAvaliadoEl.textContent = data.total_respondidas;
-    } else {
-      csatPercentualEl.textContent = '-';
-      totalAvaliadoEl.textContent = '-';
-      console.error("Erro ao buscar dados da pesquisa:", data);
-    }
-  })
-  .catch(error => {
-    document.getElementById("csat-percentual").textContent = '-';
-    document.getElementById("total-avaliado").textContent = '-';
-    console.error("Erro de conexão com a API de pesquisa:", error);
-  });
-}
+    const margem = 5;
 
+    const isMelhor = direcaoMelhoria === "alto" ? valNum >= metaNum : valNum <= metaNum;
+    const isAceitavel = direcaoMelhoria === "alto"
+      ? valNum >= metaNum - margem
+      : valNum <= metaNum + margem;
+
+    if (isMelhor) {
+      icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
+    } else if (isAceitavel) {
+      icone.className = "bi bi-arrow-up-short text-warning ms-2 fs-4";
+    } else {
+      icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
+    }
+  }
 </script>
 
 <!--Script que persiste as metas no banco-->
