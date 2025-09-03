@@ -1,18 +1,38 @@
-<!-- Script que me traz a relação de chamados reabertos-->
+<!--Metas globais-->
+<script>
+  let metasGlobais = {};
+
+  async function fetchMetas() {
+    try {
+      const res = await fetch('/okrs/getMetas');
+      metasGlobais = res.ok ? await res.json() : {};
+    } catch (err) {
+      console.error("Erro ao buscar metas:", err);
+      metasGlobais = {};
+    }
+  }
+
+  // Carrega as metas assim que o DOM estiver pronto
+  document.addEventListener("DOMContentLoaded", fetchMetas);
+</script>
+
+<!--Script que traz os Reabertos-->
 <script>
   let chamadosReabertosCodigos = [];
 
-  document.addEventListener("DOMContentLoaded", function () {
-    // Atualiza ao clicar no botão de filtro de dias
-    document.querySelectorAll('.filtro-btn').forEach(btn => {
-      btn.addEventListener('click', function () {
-        const dias = parseInt(this.getAttribute('data-dias'), 10);
-        atualizarReabertos(dias);
-      });
-    });
-  });
+  async function fetchMetas() {
+    try {
+      const res = await fetch('/okrs/getMetas');
+      return res.ok ? await res.json() : {};
+    } catch (err) {
+      console.error("Erro ao buscar metas:", err);
+      return {};
+    }
+  }
 
-  function atualizarReabertos(dias, nomeOperador) {
+  async function atualizarReabertos(dias) {
+    const metas = await fetchMetas();
+
     fetch('/okrs/reabertosOkrs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -22,6 +42,7 @@
     .then(data => {
       const reabertosSpan = document.getElementById("chamado_reaberto");
       const percentualSpan = document.getElementById("percentual_reaberto");
+      const icone = document.getElementById("icone_reaberto");
 
       if (data.status === "success") {
         const total = data.total_chamados || 0;
@@ -30,13 +51,31 @@
 
         reabertosSpan.textContent = reabertos;
 
-        // Cálculo do percentual
         let percentual = "-";
+        let percentualValor = 0;
+
         if (total > 0) {
-          percentual = ((reabertos / total) * 100).toFixed(1) + "%";
+          percentualValor = (reabertos / total) * 100;
+          percentual = percentualValor.toFixed(1) + "%";
         }
 
         percentualSpan.textContent = percentual;
+
+        // Avalia com a meta
+        if (metas.reabertos != null && total > 0) {
+          const meta = metas.reabertos;
+          if (percentualValor <= meta) {
+            icone.className = "bi bi-arrow-up-short text-success";
+            icone.title = "Dentro da meta";
+          } else {
+            icone.className = "bi bi-arrow-down-short text-danger";
+            icone.title = "Acima da meta";
+          }
+        } else {
+          icone.className = "";
+          icone.title = "";
+        }
+
       } else {
         reabertosSpan.textContent = "Erro";
         percentualSpan.textContent = "-";
@@ -52,41 +91,52 @@
     });
   }
 
-  // Essa função já serve para qualquer lista de chamados (FCR, Reabertos, etc.)
   function mostrarChamadosOperador(titulo, codigos) {
-  const lista = document.getElementById("listaCodigos");
-  const tituloModal = document.getElementById("modalCodigosLabel");
+    const lista = document.getElementById("listaCodigos");
+    const tituloModal = document.getElementById("modalCodigosLabel");
 
-  if (!lista || !tituloModal) return;
+    if (!lista || !tituloModal) return;
 
-  lista.innerHTML = "";
-  tituloModal.textContent = titulo;
+    lista.innerHTML = "";
+    tituloModal.textContent = titulo;
 
-  if (!Array.isArray(codigos) || codigos.length === 0) {
-    const item = document.createElement("li");
-    item.className = "text-muted";
-    item.textContent = "Nenhum chamado encontrado.";
-    lista.appendChild(item);
-  } else {
-    codigos.forEach(codigo => {
-      const li = document.createElement("li");
-      li.style.marginBottom = "8px";
+    if (!Array.isArray(codigos) || codigos.length === 0) {
+      const item = document.createElement("li");
+      item.className = "text-muted";
+      item.textContent = "Nenhum chamado encontrado.";
+      lista.appendChild(item);
+    } else {
+      codigos.forEach(codigo => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "8px";
 
-      const link = document.createElement("a");
-      link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
-      link.target = "_blank";
-      link.textContent = codigo;
-      link.style.color = "#ffc107";
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+        link.target = "_blank";
+        link.textContent = codigo;
+        link.style.color = "#ffc107";
 
-      li.appendChild(link);
-      lista.appendChild(li);
-    });
+        li.appendChild(link);
+        lista.appendChild(li);
+      });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+    modal.show();
   }
 
-  const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
-  modal.show();
-}
+  // Inicialização padrão
+  document.addEventListener("DOMContentLoaded", function () {
+    atualizarReabertos(30); // valor padrão de dias
 
+    // Filtro por dias
+    document.querySelectorAll('.filtro-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const dias = parseInt(this.getAttribute('data-dias'), 10);
+        atualizarReabertos(dias);
+      });
+    });
+  });
 </script>
 
 <!-- Script que traz o TMA e TMS-->
@@ -514,7 +564,6 @@
   let chamadosFcrCodigos = [];
 
   document.addEventListener("DOMContentLoaded", function () {
-    // Botões de filtro por período
     document.querySelectorAll('.filtro-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
@@ -523,40 +572,68 @@
         atualizarFCR(dias);
       });
     });
+
+    // Atualiza com valor padrão ao carregar
+    atualizarFCR(30); // 30 dias como padrão
   });
 
-  function atualizarFCR(dias, nomeOperador) {
-    fetch('/okrs/fcrOkrs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dias })
-    })
-    .then(response => response.json())
-    .then(data => {
+  async function atualizarFCR(dias, nomeOperador) {
+    try {
+      const res = await fetch('/okrs/fcrOkrs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias })
+      });
+
+      const data = await res.json();
+
       const fcrSpan = document.getElementById("chamado_fcr");
       const percentualSpan = document.getElementById("percentual_fcr");
+      const icone = document.getElementById("icone_fcr");
 
       if (data.status === "success") {
         const totalFcr = data.total_fcr || 0;
-        const percentual = data.percentual_fcr ?? "-";
+        const percentualRaw = data.percentual_fcr;
+        const percentual = typeof percentualRaw === "number" ? percentualRaw.toFixed(1) + "%" : "-";
+        const percentualValor = typeof percentualRaw === "number" ? percentualRaw : null;
 
         fcrSpan.textContent = totalFcr;
-        percentualSpan.textContent = typeof percentual === "number" ? percentual.toFixed(1) + "%" : percentual;
-
+        percentualSpan.textContent = percentual;
         chamadosFcrCodigos = data.cod_chamados || [];
+
+        // Buscar a meta e comparar
+        const metaRes = await fetch('/okrs/getMetas');
+        if (metaRes.ok) {
+          const metas = await metaRes.json();
+          const metaFcr = metas.fcr;
+
+          if (metaFcr != null && percentualValor != null) {
+            if (percentualValor >= metaFcr) {
+              icone.className = "bi bi-arrow-up-short text-success";
+              icone.title = "Dentro da meta";
+            } else {
+              icone.className = "bi bi-arrow-down-short text-danger";
+              icone.title = "Abaixo da meta";
+            }
+          } else {
+            icone.className = "";
+            icone.title = "";
+          }
+        }
+
       } else {
         fcrSpan.textContent = "Erro";
         percentualSpan.textContent = "-";
         chamadosFcrCodigos = [];
         console.error("Erro na resposta:", data.message);
       }
-    })
-    .catch(error => {
+    } catch (error) {
       console.error("Erro ao buscar FCR:", error);
       document.getElementById("chamado_fcr").textContent = "Erro";
       document.getElementById("percentual_fcr").textContent = "-";
+      document.getElementById("icone_fcr").className = "";
       chamadosFcrCodigos = [];
-    });
+    }
   }
 
   function mostrarChamadosOperador(titulo, codigos) {
@@ -593,6 +670,7 @@
     modal.show();
   }
 </script>
+
 
 <!--Script que traz o TMA e TMS-->
 <script>
@@ -729,6 +807,7 @@
     .then(response => response.json())
     .then(data => {
       if (data.status === "success") {
+        // Atualiza os textos
         document.getElementById("sla_atendimento_expirado").textContent = data.percentual_atendimento + "%";
         document.getElementById("sla_atendimento_prazo").textContent = data.percentual_prazo_atendimento + "%";
         document.getElementById("sla_resolucao_expirado").textContent = data.percentual_resolucao + "%";
@@ -736,14 +815,61 @@
 
         codigosAtendimento = data.codigos_atendimento || [];
         codigosResolucao = data.codigos_resolucao || [];
+
+        // Atualiza ícones com base na meta (verde para >= meta, amarelo para próximo, vermelho para abaixo)
+        atualizarIcone("icone_prazo_atendimento", data.percentual_prazo_atendimento, data.meta_prazo_atendimento);
+        atualizarIcone("icone_prazo_resolucao", data.percentual_prazo_resolucao, data.meta_prazo_resolucao);
+
       } else {
         document.getElementById("sla_atendimento_expirado").textContent = "Erro";
         document.getElementById("sla_resolucao_expirado").textContent = "Erro";
+        removerIcones();
       }
     })
     .catch(() => {
       document.getElementById("sla_atendimento_expirado").textContent = "Erro";
       document.getElementById("sla_resolucao_expirado").textContent = "Erro";
+      removerIcones();
+    });
+  }
+
+  function atualizarIcone(idIcone, valorAtual, meta) {
+    const icone = document.getElementById(idIcone);
+    if (!icone) return;
+
+    // Reseta classes para ícone base
+    icone.className = "bi ms-2 fs-4";
+
+    // Tenta converter para número, caso venha string com %
+    const valAtualNum = parseFloat(valorAtual);
+    const metaNum = parseFloat(meta);
+
+    if (isNaN(valAtualNum) || isNaN(metaNum)) {
+      icone.classList.add("d-none");
+      return;
+    }
+
+    const margem = 5; // margem para considerar "próximo da meta"
+
+    if (valAtualNum >= metaNum) {
+      // Verde, seta pra cima
+      icone.classList.remove("d-none");
+      icone.classList.add("bi-arrow-up-circle-fill", "text-success");
+    } else if (valAtualNum >= (metaNum - margem)) {
+      // Amarelo, seta pra cima (próximo)
+      icone.classList.remove("d-none");
+      icone.classList.add("bi-arrow-up-circle-fill", "text-warning");
+    } else {
+      // Vermelho, seta pra baixo
+      icone.classList.remove("d-none");
+      icone.classList.add("bi-arrow-down-circle-fill", "text-danger");
+    }
+  }
+
+  function removerIcones() {
+    ["icone_prazo_atendimento", "icone_prazo_resolucao"].forEach(id => {
+      const icone = document.getElementById(id);
+      if (icone) icone.className = "d-none";
     });
   }
 
@@ -1012,5 +1138,31 @@ document.getElementById('formMetas').addEventListener('submit', async function (
     console.error('Erro na requisição:', error);
     alert('❌ Ocorreu um erro ao enviar os dados.');
   }
+});
+</script>
+
+<!--Script que traz as metas nos cards-->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('/okrs/getMetas')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erro ao buscar metas');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Preenche os campos da interface com os dados da meta
+      document.getElementById('meta-csat').textContent = data.csat + ' %';
+      document.getElementById('meta-sla-atendimento').textContent = data.sla_atendimento_prazo + ' %';
+      document.getElementById('meta-sla-solucao').textContent = data.sla_resolucao_prazo + ' %';
+      document.getElementById('meta-reabertura').textContent = data.reabertos + ' %';
+      document.getElementById('meta-tma').textContent = data.tma + ' min';
+      document.getElementById('meta-tms').textContent = data.tms + ' h';
+      document.getElementById('meta-fcr').textContent = data.fcr + ' %';
+    })
+    .catch(error => {
+      console.error('Erro ao carregar metas:', error);
+    });
 });
 </script>
