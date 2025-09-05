@@ -8,17 +8,48 @@
 
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style_okrs.css') }}">
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Estilos customizados -->
-
   <!-- Plugin de Anotação (metas) -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
 </head>
+
+<style>
+  /* Carrossel - setas ajustadas */
+    #carouselGraficos .carousel-control-prev,
+    #carouselGraficos .carousel-control-next {
+      width: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+    }
+
+    #carouselGraficos .carousel-control-prev {
+      left: -20px; /* fora do conteúdo */
+    }
+
+    #carouselGraficos .carousel-control-next {
+      right: -20px; /* fora do conteúdo */
+    }
+
+    #carouselGraficos .carousel-control-prev-icon,
+    #carouselGraficos .carousel-control-next-icon {
+      background-color: rgba(0,0,0,0.6);
+      border-radius: 50%;
+      padding: 10px;
+      width: 35px;
+      height: 35px;
+      background-size: 50% 50%;
+    }
+
+    #carouselGraficos .carousel-inner .row {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+</style>
 
 <body>
   {% include 'header/model-header.html' %}
@@ -51,8 +82,10 @@
       <div class="col-auto">
         <div class="btn-group">
           <button class="btn btn-outline-secondary filtro-btn" data-dias="30">Mês</button>
+          <button class="btn btn-outline-secondary filtro-btn" data-dias="60">Bimestre</button>
           <button class="btn btn-outline-secondary filtro-btn" data-dias="90">Trimestre</button>
           <button class="btn btn-outline-secondary filtro-btn" data-dias="180">Semestre</button>
+          <button class="btn btn-outline-secondary filtro-btn" data-dias="365">Ano</button>
         </div>
       </div>
     </div>
@@ -249,12 +282,52 @@
           </div>
           </div>
         </div>
+
+
         <!-- SLIDE 2 – Gráficos (antes era o primeiro) -->
         <div class="carousel-item">
-          <h3 class="text-center">Evolução</h3><br>
-          <div class="row g-3">
+          <!-- SLIDE 1 – Fluxograma compacto (agora como primeiro e ativo) -->
+        <div class="carousel-item slide-compacto active">
+          <h3 class="text-center">Médias</h3>
+          <div class="fluxograma text-white p-2">
 
-            <!-- Linha 1: TMA & TMS + SLA -->
+            <div class="fluxo">
+            <h6 class="mb-2">CSAT (%)</h6>
+            <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-csat">--</span></div>
+          </div>
+
+          <div class="fluxo">
+            <h6 class="mb-2">SLA Atendimento (%)</h6>
+            <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
+          </div>
+
+          <div class="fluxo">
+            <h6 class="mb-2">SLA Solução (%)</h6>
+            <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
+          </div>
+
+          <div class="fluxo">
+            <h6 class="mb-2">Reabertura (%)</h6>
+            <div class="info-item2 text-center"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
+          </div>
+
+          <div class="fluxo">
+            <h6 class="mb-2">TMA (m)</h6>
+            <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
+          </div>
+
+          <div class="fluxo">
+            <h6 class="mb-2">TMS (h)</h6>
+            <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
+          </div>
+
+          <div class="fluxo">
+            <h6 class="mb-2">FCR (%)</h6>
+            <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
+          </div>
+
+          <br>
+          <div class="row g-3">
             <div class="col-md-6 mb-4">
               <div class="fluxo-card" style="padding: 2rem;">
                 <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
@@ -285,7 +358,11 @@
             </div>
 
           </div>
+          </div>
         </div>
+
+
+          
 
       </div>
 
@@ -327,6 +404,7 @@
     </div>
   </div>
 </div>
+
 
 <!-- Modal Definir Metas -->
 <div class="modal fade" id="modalDefinirMetas" tabindex="-1" aria-labelledby="modalDefinirMetasLabel" aria-hidden="true">

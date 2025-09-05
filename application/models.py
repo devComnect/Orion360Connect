@@ -17,8 +17,14 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)  # Nova coluna email
     name = db.Column(db.String(100), nullable=True)  # Nova coluna name (opcional)
     is_admin = db.Column(db.Boolean, default=False)
+    is_nivel2 = db.Column(db.Integer)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.TIMESTAMP, server_default=db.func.now())
+
+    @property
+    def admin_level(self):
+        # Retorna o valor bruto armazenado no banco
+        return int(self.__dict__.get('is_admin', 0))
 
     def __repr__(self):
         return f'<Usuario {self.username}>'

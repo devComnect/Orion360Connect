@@ -1,139 +1,10 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Insights Grupos</title>
-  <link rel="icon" href="{{ url_for('static', filename='img/icone.png') }}">
+{% extends "base_template.html" %}
+{% block title %}Grupos{% endblock %}
 
-  <!-- Bootstrap & Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Estilos customizados -->
-</head>
-
-<body>
-{% include 'header/model-header.html' %}
-
-<style>
- /* === Estilo Dark Exclusivo - Insights Grupos === */
-body {
-  background-color: #121212;
-  color: #f1f1f1;
-}
-
-/* === Cabeçalhos === */
-h2, h6 {
-  color: #e0e0ff;
-  font-weight: 600;
-  text-shadow: 0 0 6px rgba(224,224,255,0.3);
-}
-
-h2 {
-  font-size: 1.6rem;
-}
-
-h6 {
-  font-size: 0.95rem;
-  margin-bottom: 0.4rem;
-}
-
-/* === Botões === */
-.btn-outline-secondary {
-  border-color: #555;
-  color: #ddd;
-}
-
-.btn-outline-secondary:hover,
-.btn-outline-secondary.active {
-  background-color: #333;
-  color: #fff;
-  border-color: #777;
-}
-
-.btn-secondary {
-  background-color: #3f3f3f;
-  border-color: #3f3f3f;
-  color: #fff;
-}
-
-.btn-secondary:hover {
-  background-color: #555;
-  border-color: #555;
-}
-
-/* === Cards === */
-.card {
-  background: #2f2f37;
-  border: none;
-  border-radius: 16px;
-  color: #fff;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
-}
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 25px rgba(0,0,0,0.6);
-}
-
-.card-header {
-  background: transparent;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  color: #e0e0ff;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.card-body-compact {
-  padding: 1rem;
-}
-
-.card-body-center {
-  text-align: center;
-}
-
-/* === Itens internos dos cards === */
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.4rem;
-  font-size: 0.9rem;
-}
-
-.info-item:last-child {
-  margin-bottom: 0;
-}
-
-.value {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.value a {
-  color: #fff;
-  text-decoration: underline;
-}
-
-.value a:hover {
-  text-decoration: none;
-}
-
-/* === Listas dentro dos cards === */
-.list-group-item {
-  background: transparent !important;
-  border: none;
-  color: #fff;
-  padding: 0.5rem 0;
-  font-size: 0.9rem;
-}
-
-/* Carrossel - setas ajustadas */
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css_guardians/style_insights_grupos.css') }}">
+    <style>
+      /* Carrossel - setas ajustadas */
     #carouselGraficos .carousel-control-prev,
     #carouselGraficos .carousel-control-next {
       width: 40px;
@@ -164,43 +35,10 @@ h6 {
       padding-left: 15px;
       padding-right: 15px;
     }
+    </style>
+{% endblock %}
 
-/* === Gráficos Chart.js === */
-canvas {
-  max-height: 240px !important;
-}
-
-.chartjs-render-monitor {
-  background: transparent;
-}
-
-.chartjs-legend,
-.chartjs-title,
-.chartjs-axis {
-  color: #fff !important;
-}
-
-/* === Modais === */
-.modal-content {
-  background-color: #1e1e26 !important;
-  color: #f1f1f1;
-  border-radius: 16px;
-  border: none;
-  box-shadow: 0 6px 25px rgba(0,0,0,0.6);
-}
-
-.modal-header,
-.modal-footer {
-  border: none;
-}
-
-.btn-close-white {
-  filter: invert(1);
-}
-
-
-</style>
-
+{% block content %}
 <div class="container-fluid my-4 px-5">
   <div class="row mb-2">
         <div class="col-auto">
@@ -488,14 +326,7 @@ canvas {
   </div> <!-- FIM da .row -->
 </div>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Chart Data Labels (necessário para datalabels) -->
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-
-<!-- Bootstrap JS Bundle (inclui Popper) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 
 <!-- Modal para mostrar os códigos -->
@@ -551,11 +382,16 @@ canvas {
     </div>
   </div>
 </div>
+{% endblock %}
 
-<!-- Includes JavaScript -->
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
-{% include 'js/insights_grupos_js.html' %}
+    {% include 'js/insights_grupos_js.html' %}
+{% endblock %}
 
 
-</body>
-</html>
+
+
+

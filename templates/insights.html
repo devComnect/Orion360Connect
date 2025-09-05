@@ -1,85 +1,38 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Insights</title>
-  <link rel="icon" href="{{ url_for('static', filename='img/icone.png') }}">
+{% extends "base_template.html" %}
+{% block title %}Insights{% endblock %}
 
-  <!-- Bootstrap & Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style_insights.css') }}">
 
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_insights.css') }}">
+    <style>
+        /* Carrossel - setas ajustadas */
+        #carouselGraficos .carousel-control-prev,
+        #carouselGraficos .carousel-control-next {
+            width: 40px; top: 50%; transform: translateY(-50%); z-index: 10;
+        }
+        #carouselGraficos .carousel-control-prev { left: -20px; }
+        #carouselGraficos .carousel-control-next { right: -20px; }
+        #carouselGraficos .carousel-control-prev-icon,
+        #carouselGraficos .carousel-control-next-icon {
+            background-color: rgba(0,0,0,0.6); border-radius: 50%; padding: 10px;
+            width: 35px; height: 35px; background-size: 50% 50%;
+        }
+        #carouselGraficos .carousel-inner .row { padding-left: 15px; padding-right: 15px; }
 
-  <!-- Estilos customizados -->
+        /* Botões de filtro */
+        .btn-outline-secondary { border-color: #555; color: #ddd; }
+        .btn-outline-secondary:hover, .btn-outline-secondary.active { background-color: #333; color: #fff; border-color: #777; }
 
-<style>
+        /* Botões de operadores e grupos */
+        .btn-outline-primary { border-color: #3f51b5; color: #9fa8da; }
+        .btn-outline-primary:hover, .btn-outline-primary.active { background-color: #3f51b5; color: #fff; }
+    </style>
+{% endblock %}
 
-    /* Carrossel - setas ajustadas */
-    #carouselGraficos .carousel-control-prev,
-    #carouselGraficos .carousel-control-next {
-      width: 40px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 10;
-    }
 
-    #carouselGraficos .carousel-control-prev {
-      left: -20px; /* fora do conteúdo */
-    }
-
-    #carouselGraficos .carousel-control-next {
-      right: -20px; /* fora do conteúdo */
-    }
-
-    #carouselGraficos .carousel-control-prev-icon,
-    #carouselGraficos .carousel-control-next-icon {
-      background-color: rgba(0,0,0,0.6);
-      border-radius: 50%;
-      padding: 10px;
-      width: 35px;
-      height: 35px;
-      background-size: 50% 50%;
-    }
-
-    #carouselGraficos .carousel-inner .row {
-      padding-left: 15px;
-      padding-right: 15px;
-    }
-
-    /* Botões de filtro */
-    .btn-outline-secondary {
-      border-color: #555;
-      color: #ddd;
-    }
-    .btn-outline-secondary:hover,
-    .btn-outline-secondary.active {
-      background-color: #333;
-      color: #fff;
-      border-color: #777;
-    }
-
-    /* Botões de operadores e grupos */
-    .btn-outline-primary {
-      border-color: #3f51b5;
-      color: #9fa8da;
-    }
-    .btn-outline-primary:hover,
-    .btn-outline-primary.active {
-      background-color: #3f51b5;
-      color: #fff;
-    }
-</style>
-
-</head>
-
-{% include 'header/model-header.html' %}
-
+{% block content %}
 <div class="container-fluid my-4 px-5">
+
 
   <!-- Botão mestre para ocultar/mostrar os botões de Operadores/Grupos -->
   <div class="row mb-2">
@@ -92,7 +45,7 @@
 
   <!-- Botões de operadores -->
   <div class="row mb-4">
-    <div class="col-12 mb-3">
+    <div class="col-12 mb-3"> <!-- Adicionei 'mb-3' aqui -->
       <div class="d-flex flex-wrap gap-2 justify-content-center d-none" id="botoes-operadores">
         <button class="btn btn-outline-primary operador-btn active" data-operador="">
           <i class="bi bi-arrow-bar-right"></i>
@@ -100,7 +53,7 @@
       </div>
     </div>
     
-    <div class="col-12 mb-3"> 
+    <div class="col-12 mb-3"> <!-- Adicionei 'mb-3' aqui também -->
       <div class="d-flex flex-wrap gap-2 justify-content-center d-none" id="botoes-grupos">
         <button class="btn btn-outline-primary grupos-btn active" data-grupos="">
           <i class="bi bi-people-fill"></i>
@@ -407,7 +360,6 @@
                     </div>
                     <div class="card-body p-2 d-flex justify-content-center align-items-center flex-wrap" style="height: 270px;">
                       <canvas id="slaChart" class="mx-1" style="height: 130px; width: 130px;"></canvas>
-                      <canvas id="slaChart2" class="mx-1" style="height: 130px; width: 130px;"></canvas>
                     </div>
                   </div>
                 </div>
@@ -420,7 +372,6 @@
                     </div>
                     <div class="card-body p-2 d-flex justify-content-center align-items-center flex-wrap" style="height: 270px;">
                       <canvas id="slaGrupoChart" class="mx-1" style="height: 130px; width: 130px;"></canvas>
-                      <canvas id="slaGrupoChart2" class="mx-1" style="height: 130px; width: 130px;"></canvas>
                     </div>
                   </div>
                 </div>
@@ -512,6 +463,7 @@
   </div> <!-- FIM da .row -->
 </div>
 
+
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- Chart Data Labels (necessário para datalabels) -->
@@ -573,9 +525,15 @@
   </div>
 </div>
 
-<!-- Includes JavaScript -->
 
-{% include 'js/insights_js.html' %}
 
-</body>
-</html>
+{% endblock %}
+
+
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    {% include 'js/insights_js.html' %}
+{% endblock %}
+

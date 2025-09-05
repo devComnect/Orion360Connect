@@ -1,48 +1,59 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/icone.png') }}">
-  <link rel="shortcut icon" href="{{ url_for('static', filename='img/icone.png') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style_login.css')}}">
-      
+{% extends "base_template.html" %}
 
-</head>    
-<br>
-    <br>
-        <br>
-            <br>
-                <br>
-                    <br>
-                        <br>
-    <body>
-    <h1>Login Administrador</h1>
-        
-        <div class="message-flash">
-        <!-- Exibindo mensagens flash -->
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <ul>
-                    {% for message in messages %}
-                        <li>{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
+{% block title %}Login{% endblock %}
+
+{# Adiciona a classe especial ao <body> para o estilo de centralização #}
+{% block body_class %}login-page{% endblock %}
+
+{# ESTE BLOCO VAZIO REMOVE O HEADER APENAS NESTA PÁGINA #}
+{% block header %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="col-md-6 col-lg-4">
+            
+            <div class="text-center mb-4">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="width: 200px;">
+            </div>
+
+            <div class="Login">
+                <h2 class="h3 mb-3 fw-normal text-white">Login</h1>
+
+                {# Mensagens flash (alertas) #}
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category or 'danger' }} py-2 small" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('login.login') }}">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="username" id="username" placeholder="Usuário" required>
+                        <label for="username">Usuário</label>
+                    </div>
+                    <div class="form-floating">
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Senha" required>
+                        <label for="password">Senha</label>
+                    </div>
+                    <button class="w-100 btn btn-lg btn-warning mt-4" type="submit">Entrar</button>
+                </form>
+            </div>
+
         </div>
-        <div class="Login">
-        <form method="POST" action="{{ url_for('login.login') }}">
-                <input type="text" name="username" id="username" placeholder="Username" required>
-                <input type="password" name="password" id="password" placeholder="Password" required>
-                <button type="submit" class="btn-btn-primary">Enviar</button>
-            </form><br>
-        </div><br><br><br><br><br>
+    </div>
+</div>
+{% endblock %}
 
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block styles %}
+    {# Mantemos o link para o CSS específico do login aqui #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_login.css')}}">
+{% endblock %}
 
-    </body>
-</html>
+{% block scripts %}
+    {# A página de login geralmente não precisa de scripts extras #}
+{% endblock %}

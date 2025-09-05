@@ -1,13 +1,15 @@
 # modules/guardians/routes.py
 from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from flask_login import  current_user
-from modules.login.decorators import login_required
+from modules.login.decorators import login_required, admin_required
+from modules.login.session_manager import SessionManager
 from sqlalchemy import func, desc, and_, not_
 from application.models import db, Guardians, HistoricoAcao, NivelSeguranca, GuardianInsignia, Insignia, EventoPontuacao, Quiz, Question, AnswerOption, QuizCategory, QuizAttempt
 from datetime import datetime, date, timedelta
 from sqlalchemy.exc import IntegrityError
 import re
 from sqlalchemy.orm import joinedload
+
 
 guardians_bp = Blueprint('guardians_bp', __name__)
 
@@ -32,11 +34,6 @@ def atualizar_nivel_usuario(perfil_guardian):
         
     return False
 
-from flask import render_template, request, redirect, url_for, flash
-from sqlalchemy import desc
-from modules.login.session_manager import SessionManager
-from modules.login.decorators import login_required
-from application.models import Guardians, HistoricoAcao, NivelSeguranca, QuizAttempt
 
 @guardians_bp.route('/meu-perfil', defaults={'perfil_id': None})
 @guardians_bp.route('/meu-perfil/<int:perfil_id>')
@@ -110,7 +107,7 @@ def meu_perfil(perfil_id):
     quizzes_respondidos_count = QuizAttempt.query.filter_by(guardian_id=perfil_guardian.id).count()
 
     return render_template(
-        'meu_perfil.html',
+        'guardians/meu_perfil.html',
         perfil=perfil_guardian,
         is_own_profile=is_own_profile,
         historico=historico_paginado,
@@ -155,7 +152,7 @@ def rankings():
         func.sum(Guardians.score_atual).label('score_total')
     ).group_by(Guardians.departamento_nome).order_by(desc('score_total')).all()
 
-    return render_template('rankings.html', 
+    return render_template('guardians/rankings.html', 
                            ranking_global=ranking_global,
                            ranking_streak=ranking_streak,
                            ranking_departamento=ranking_departamento,
@@ -163,7 +160,7 @@ def rankings():
                            current_user_id=current_guardian_id)
 
 @guardians_bp.route('/sobre-o-programa')
-#@login_required
+@login_required
 def sobre():
     """
     Busca todos os eventos, níveis e insígnias para exibir
@@ -178,7 +175,7 @@ def sobre():
     # ADIÇÃO: Busca todas as insígnias (conquistas), ordenando por nome
     todas_insignias = Insignia.query.order_by(Insignia.nome).all()
 
-    return render_template('sobre_o_programa.html', 
+    return render_template('guardians/sobre_o_programa.html', 
                            eventos=todos_eventos, 
                            niveis=todos_niveis,
                            insignias=todas_insignias)
@@ -236,55 +233,71 @@ def central():
                 expiry_text = "Expira em menos de 1 hora!"
             available_quizzes_with_expiry.append({'quiz': quiz, 'expiry_text': expiry_text})
 
-    return render_template('central_de_treinamentos.html', available_quizzes=available_quizzes_with_expiry)
+    return render_template('guardians/central_de_treinamentos.html', available_quizzes=available_quizzes_with_expiry)
 
 
 @guardians_bp.route('/admin/quiz/<int:quiz_id>/visualizar')
-#@login_required
+@admin_required # Usa o decorator de ADMIN para garantir a permissão
 def view_quiz(quiz_id):
     """
     Permite que um admin visualize um quiz como se fosse um usuário,
     mas em um modo de pré-visualização (sem poder enviar).
     """
-    if not current_user.guardian or not current_user.guardian.is_admin:
-        flash('Você não tem permissão para acessar esta página.', 'danger')
-        return redirect(url_for('home_bp.render_home'))
-
+    # A verificação de admin agora é feita pelo decorator, então o 'if' antigo pode ser removido.
+    
     quiz = Quiz.query.get_or_404(quiz_id)
     
     # Reutilizamos o mesmo template do usuário, mas passamos uma flag 'is_preview'
-    return render_template('take_quiz.html', quiz=quiz, is_preview=True)
+    return render_template('guardians/take_quiz.html', quiz=quiz, is_preview=True)
 
 @guardians_bp.route('/quiz/<int:quiz_id>')
-#@login_required
+@login_required
 def take_quiz(quiz_id):
     """
     Mostra a página para responder a um quiz específico.
     """
     quiz = Quiz.query.get_or_404(quiz_id)
 
-    # Validação para garantir que o usuário não possa acessar um quiz que já respondeu pela URL
-    attempt = QuizAttempt.query.filter_by(guardian_id=current_user.guardian.id, quiz_id=quiz.id).first()
+    # --- LÓGICA CORRIGIDA PARA IDENTIFICAR O USUÁRIO ---
+    # 1. Busca o ID do usuário na sessão.
+    logged_in_user_id = SessionManager.get("user_id")
+    
+    # 2. Encontra o perfil de guardião correspondente.
+    guardian = Guardians.query.filter_by(user_id=logged_in_user_id).first()
+
+    if not guardian:
+        flash("Perfil de Guardião não encontrado para o usuário logado.", "danger")
+        return redirect(url_for('home_bp.render_home'))
+
+    # 3. Usa o ID do guardião correto para verificar se ele já respondeu ao quiz.
+    attempt = QuizAttempt.query.filter_by(guardian_id=guardian.id, quiz_id=quiz.id).first()
     if attempt:
         flash('Você já completou este quiz.', 'warning')
         return redirect(url_for('guardians_bp.central'))
 
-    return render_template('take_quiz.html', quiz=quiz)
+    return render_template('guardians/take_quiz.html', quiz=quiz)
 
 
 @guardians_bp.route('/quiz/submit', methods=['POST'])
-#@login_required
+@login_required # Usa o decorator de LOGIN para garantir que o usuário está logado
 def submit_quiz():
     """
     Recebe as respostas, calcula a pontuação COM BÔNUS DE OFENSIVA,
-    salva o resultado na sessão e redireciona para a página de resultados.
+    salva o resultado e redireciona.
     """
     try:
         quiz_id = request.form.get('quiz_id')
         quiz = Quiz.query.get(quiz_id)
-        guardian = current_user.guardian
+
+        # --- LÓGICA CORRIGIDA PARA ENCONTRAR O GUARDIÃO ---
+        logged_in_user_id = SessionManager.get("user_id")
+        guardian = Guardians.query.filter_by(user_id=logged_in_user_id).first()
+
+        if not guardian:
+            flash("Perfil de Guardião não encontrado.", "danger")
+            return redirect(url_for('guardians_bp.central'))
         
-        # Calcula a pontuação base do quiz (sem bônus)
+        # O resto da sua lógica de cálculo de score continua aqui...
         base_score = 0
         results_details = {}
         submitted_answers = {key: val for key, val in request.form.items() if key.startswith('question_')}
@@ -305,69 +318,55 @@ def submit_quiz():
                 'is_correct': is_user_correct
             }
 
-        # --- NOVA LÓGICA DE BÔNUS ---
         final_score, bonus_points = apply_streak_bonus(guardian, base_score)
         
-        # 1. Salva a tentativa do quiz (com a pontuação BASE, sem bônus)
         new_attempt = QuizAttempt(guardian_id=guardian.id, quiz_id=quiz.id, score=base_score)
         db.session.add(new_attempt)
 
-        # 2. Adiciona ao histórico com uma descrição que inclui o bônus, se houver
         if final_score > 0:
             descricao = f"Completou o quiz '{quiz.title}' e ganhou {base_score} pontos."
             if bonus_points > 0:
                 descricao += f" (+{bonus_points} pts de bônus de ofensiva!)"
-            
             history_entry = HistoricoAcao(guardian_id=guardian.id, descricao=descricao, pontuacao=final_score)
             db.session.add(history_entry)
         
-        # 3. Atualiza a pontuação total do guardião com a PONTUAÇÃO FINAL (com bônus)
         guardian.score_atual += final_score
-
-        # 4. Atualiza a ofensiva do usuário
         update_user_streak(guardian)
         
-        # 5. Checa se o usuário subiu de nível
         if atualizar_nivel_usuario(guardian):
-            flash(f"Parabéns! Você subiu para o nível {guardian.nivel.nome}!", 'info')
+            if guardian.nivel: # Checagem de segurança
+                 flash(f"Parabéns! Você subiu para o nível {guardian.nivel.nome}!", 'info')
+
+
 
         db.session.commit()
 
-        # Armazena os resultados para a página de feedback
-        session['quiz_results'] = {
-            'quiz_id': quiz.id,
-            'score': base_score,
-            'bonus': bonus_points,
-            'total_score': final_score,
-            'details': results_details,
-            'total_questions': len(quiz.questions)
-        }
+        session['quiz_results'] = { 'quiz_id': quiz.id, 'score': base_score, 'bonus': bonus_points, 'total_score': final_score, 'details': results_details, 'total_questions': len(quiz.questions) }
         
         return redirect(url_for('guardians_bp.quiz_result', quiz_id=quiz.id))
 
     except Exception as e:
         db.session.rollback()
-        flash(f'Ocorreu um erro ao processar seu quiz: {e}', 'danger')
+        print(f"ERRO AO PROCESSAR O QUIZ: {e}") 
+        flash(f'Ocorreu um erro ao processar seu quiz.', 'danger') # Removendo a variável 'e' do flash para uma msg mais limpa
         return redirect(url_for('guardians_bp.central'))
     
-    
+
 @guardians_bp.route('/quiz/<int:quiz_id>/resultado')
-#@login_required
+@login_required # Garante que apenas usuários logados vejam a página de resultado
 def quiz_result(quiz_id):
     """
     Exibe a página de resultados de um quiz que o usuário acabou de completar.
     """
-    # .pop() pega os resultados da sessão E os remove, para não aparecerem de novo.
     results = session.pop('quiz_results', None)
 
-    # Se o usuário acessar a URL diretamente sem ter feito o quiz, redireciona.
     if not results or results['quiz_id'] != quiz_id:
         flash('Resultados não encontrados. Por favor, complete um quiz primeiro.', 'warning')
         return redirect(url_for('guardians_bp.central'))
 
     quiz = Quiz.query.get_or_404(quiz_id)
     
-    return render_template('quiz_result.html', quiz=quiz, results=results)
+    return render_template('guardians/quiz_result.html', quiz=quiz, results=results)
 
 
 
@@ -851,7 +850,7 @@ def admin():
     quizzes = Quiz.query.order_by(Quiz.activation_date.desc()).all()
 
 
-    return render_template('guardians_admin.html', colaboradores=colaboradores, eventos=eventos, niveis=niveis, insignias=insignias, quizzes=quizzes)
+    return render_template('guardians/guardians_admin.html', colaboradores=colaboradores, eventos=eventos, niveis=niveis, insignias=insignias, quizzes=quizzes)
 
 
 
@@ -909,7 +908,7 @@ def analytics(guardian_id):
 
     all_guardians = Guardians.query.order_by(Guardians.nome).all()
 
-    return render_template('analytics.html', 
+    return render_template('guardians/analytics.html', 
                            active_guardians=active_guardians_count,
                            total_quizzes=total_quizzes_answered,
                            total_reports=total_reports_phishing, # Corrigido para usar a nova variável
@@ -969,7 +968,7 @@ def edit_profile():
         flash('Perfil atualizado com sucesso!', 'success')
         return redirect(url_for('guardians_bp.meu_perfil'))
 
-    return render_template('edit_profile.html', 
+    return render_template('guardians/edit_profile.html', 
                            guardian=guardian, 
                            earned_insignias=earned_insignias,
                            available_colors=available_colors)

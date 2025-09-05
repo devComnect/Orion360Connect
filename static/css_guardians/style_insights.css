@@ -1,0 +1,158 @@
+.carousel-control-prev,
+.carousel-control-next {
+  width: 5%; /* ou 3% se quiser mais estreito */
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.carousel-control-prev {
+  left: -5%;  /* empurra para fora da borda do carrossel */
+}
+
+.carousel-control-next {
+  right: -5%; /* empurra para fora da borda do carrossel */
+}
+
+
+/* Card CSAT/NPS/CES */
+  .csat-card {
+    background: #2f2f37;
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .csat-card .card-body-compact {
+    padding: 1rem;
+  }
+
+  /* Título principal */
+  .csat-card .card-body-center h6 {
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #e0e0ff;
+  }
+
+  /* Colunas de métricas */
+  .csat-card .row.text-center > .col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Itens dentro da métrica (um abaixo do outro) */
+  .csat-card .info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .csat-card .info-item .value {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #fff;
+    margin-top: 0.2rem;
+  }
+
+  /* Título de cada métrica */
+  .csat-card h6.mb-2 {
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .csat-card .row.text-center {
+      flex-direction: column;
+    }
+    .csat-card .row.text-center > .col {
+      margin-bottom: 1rem;
+    }
+  }
+    body {
+      background-color: #020202;
+      color: #f1f1f1;
+      
+    }
+
+    /* === Cards Modernos === */
+    .card {
+      background: #2f2f37;
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.6);
+    }
+
+    .card-header {
+      background: transparent;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: #e0e0ff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    .card-body-compact {
+      padding: 1rem;
+    }
+
+    .card-body-center {
+      text-align: center;
+    }
+
+    h6 {
+      color: #e0e0ff;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      text-shadow: 0 0 6px rgba(224,224,255,0.4);
+    }
+
+    /* === Itens dentro dos cards === */
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    .info-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .value {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .value a {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    /* === Gráficos (Chart.js) === */
+    canvas {
+      max-height: 230px !important;
+    }
+
+    .chartjs-render-monitor {
+      background: transparent;
+    }
+
+    /* Legendas e escalas */
+    .chartjs-legend,
+    .chartjs-title,
+    .chartjs-axis {
+      color: #fff !important;
+    }

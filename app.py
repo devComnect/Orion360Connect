@@ -56,26 +56,16 @@ app_logger.addHandler(handler)
 
 app = Flask(__name__)
 
-#adicao 2.0
 @app.context_processor
 def inject_global_vars():
     """
-    Injeta variáveis globais em todos os templates para fácil acesso.
+    Injeta variáveis globais em todos os templates a partir da sessão.
     """
-    is_admin = False
-    # Verifica se o usuário está logado antes de tentar buscar no banco
-    if SessionManager.is_authenticated():
-        user_id = SessionManager.get("user_id")
-        if user_id:
-            # Busca o perfil de guardião para checar a permissão de admin
-            guardian = Guardians.query.filter_by(user_id=user_id).first()
-            if guardian and guardian.is_admin:
-                is_admin = True
-    
-    # Retorna um dicionário com as variáveis que estarão disponíveis em TODOS os templates
     return dict(
-        SessionManager=SessionManager, 
-        is_guardian_admin=is_admin
+        is_authenticated=session.get('is_authenticated', False),
+        is_portal_admin=session.get('is_portal_admin', False),
+        is_guardian_admin=session.get('is_guardian_admin', False),
+        username=session.get('username')
     )
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Slink1205@localhost/data'

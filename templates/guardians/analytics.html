@@ -1,0 +1,98 @@
+{% extends "base_template.html" %}
+
+{% block title %}Analytics & Relatórios{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4 text-warning">Analytics & Relatórios</h1>
+
+    <div class="row g-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="analytics-card">
+                <div class="card-icon"><i class="bi bi-person-check-fill"></i></div>
+                <div class="card-value">{{ active_guardians }}</div>
+                <div class="card-label">Guardiões Ativos (Últimos 30 dias)</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="analytics-card">
+                <div class="card-icon"><i class="bi bi-patch-question-fill"></i></div>
+                <div class="card-value">{{ total_quizzes }}</div>
+                <div class="card-label">Total de Quizzes Respondidos</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="analytics-card">
+                <div class="card-icon"><i class="bi bi-shield-fill-exclamation"></i></div>
+                <div class="card-value">{{ total_reports }}</div>
+                <div class="card-label">Total de Phishings Reportados</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="analytics-card">
+                <div class="card-icon"><i class="bi bi-star-fill"></i></div>
+                <div class="card-value">{{ avg_score }}</div>
+                <div class="card-label">Média de Pontos por Guardião</div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <div class="card bg-dark text-white shadow">
+        <div class="card-header">
+            <h4 class="mb-0"><i class="bi bi-search me-2"></i>Consulta Individual de Desempenho</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('guardians_bp.analytics') }}">
+                <div class="input-group">
+                    <select class="form-control" name="guardian_id" required>
+                        <option value="">Selecione um colaborador para ver os detalhes...</option>
+                        {% for guardian in all_guardians %}
+                            <option value="{{ guardian.id }}" {% if selected_user and selected_user.id == guardian.id %}selected{% endif %}>
+                                {{ guardian.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-warning" type="submit">Buscar</button>
+                </div>
+            </form>
+
+            {# Esta seção só aparece se um usuário foi selecionado #}
+            {% if selected_user %}
+                <div class="mt-5">
+                    <h3 class="text-info">Relatório de {{ selected_user.nome }}</h3>
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>Histórico de Eventos</h5>
+                            <ul class="list-group list-group-flush">
+                                {% for acao in user_history %}
+                                    <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center">
+                                        <div>{{ acao.descricao }}<br><small class="text-muted">{{ acao.data_evento.strftime('%d/%m/%Y') }}</small></div>
+                                        {% if acao.pontuacao != 0 %}<span class="badge {{ 'bg-success' if acao.pontuacao > 0 else 'bg-danger' }} rounded-pill">{{ '+ ' if acao.pontuacao > 0 else '' }}{{ acao.pontuacao }}</span>{% endif %}
+                                    </li>
+                                {% else %}
+                                    <li class="list-group-item bg-dark text-white text-muted">Nenhum evento registrado.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Histórico de Quizzes</h5>
+                            <ul class="list-group list-group-flush">
+                                {% for attempt in user_quiz_attempts %}
+                                    <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center">
+                                        <div>{{ attempt.quiz.title if attempt.quiz else 'Quiz Excluído' }}<br><small class="text-muted">{{ attempt.completed_at.strftime('%d/%m/%Y') }}</small></div>
+                                        <span class="badge bg-info rounded-pill">{{ attempt.score }} pts</span>
+                                    </li>
+                                {% else %}
+                                    <li class="list-group-item bg-dark text-white text-muted">Nenhum quiz respondido.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from application.models import db, User, PerformanceColaboradores, Guardians, NivelSeguranca
 from datetime import datetime
 from modules.login.session_manager import SessionManager
+from modules.home.routes import render_performance_individual
 import logging
 from sqlalchemy import func
 
@@ -23,24 +24,51 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
-        # Buscando todos os administradores
-        usuarios_permitidos = User.query.filter_by(is_admin=1).all()
+        user = User.query.filter(func.lower(User.username) == func.lower(username)).first()
 
-        # Verificando se o usuário está na lista de administradores
-        if not any(user.username == username for user in usuarios_permitidos):
-            flash('Usuário não autorizado para acessar este sistema.', 'danger')
-            return render_template('login.html')
+        if user and user.password == password:
+            # Login de sessão
+            SessionManager.login_user(user)  # mantém compatibilidade
+            session['user_id'] = user.id
+            session['is_authenticated'] = True
+            session['is_portal_admin'] = user.is_admin
+            session['is_nivel2'] = int(user.is_nivel2 or 0)    # garante int, trata None como 0
 
-        # Buscando o usuário pelo nome de usuário
-        user = User.query.filter_by(username=username).first()
-        if not user:
-            flash('Usuário não encontrado.', 'danger')
-            return render_template('login.html')
+            # Vincula ou cria perfil Guardian
+            guardian = Guardians.query.filter_by(user_id=user.id).first()
+            if not guardian:
+                nivel_base = NivelSeguranca.query.order_by(NivelSeguranca.score_minimo.asc()).first()
+                if nivel_base:
+                    novo_guardian = Guardians(
+                        user_id=user.id,
+                        nome=user.name or user.username,
+                        email=user.email,
+                        nivel_id=nivel_base.id
+                    )
+                    db.session.add(novo_guardian)
+                    db.session.commit()
+                    flash('Seu perfil de Guardião foi criado!', 'success')
+                    guardian = novo_guardian
 
-        # Verificando a senha
-        if user.password == password:
-            SessionManager.login_user(user)
-            return redirect(url_for('home_bp.render_insights'))
+            session['is_guardian_admin'] = getattr(guardian, "is_admin", False)
+
+            # Redireciona baseado na permissão
+            if user.is_admin:
+                return redirect(url_for('home_bp.render_insights'))
+            
+            elif user.is_nivel2 == 1:
+                nome, dados = render_performance_individual(username)
+                session['nome'] = nome
+                session['dados'] = dados
+                return redirect(url_for('login.render_login_operadores'))
+            
+            else:
+                # Gera dados do colaborador e salva na sessão
+                nome, dados = render_performance_individual(username)
+                session['nome'] = nome
+                session['dados'] = dados
+                return redirect(url_for('home_bp.render_performance'))
+
         else:
             flash('Credenciais inválidas. Tente novamente.', 'danger')
 
@@ -49,13 +77,24 @@ def login():
 @login_bp.route('/logout', methods=['GET', 'POST'])
 def logout():
     try:
-        current_app.logger.info(f"Logout iniciado.")
+        current_app.logger.info("Logout iniciado.")
+        # Limpa dados do SessionManager
         SessionManager.logout_user()
-        return redirect(url_for('login.login'))
+
+        # Limpa variáveis extras da sessão
+        session.pop('is_authenticated', None)
+        session.pop('is_portal_admin', None)
+        session.pop('is_guardian_admin', None)
+        session.pop('nome', None)
+        session.pop('dados', None)
+        current_app.logger.info("Sessão limpa com sucesso.")
+        return redirect(url_for('login.home'))
+
     except Exception as e:
         current_app.logger.error(f"Erro no logout: {e}", exc_info=True)
         return f"Erro interno no logout: {str(e)}", 500
 
+#Adapta ou apagar essa rota posteriormente
 @login_bp.route('/login/colaboradores', methods=['GET', 'POST'])
 def login_colaboradores():
     if request.method == 'POST':
@@ -173,6 +212,7 @@ def login_colaboradores():
 
     return render_template('login_colaboradores.html')
 
+#Quando juntar tudo, lembrar de remover esta rota
 @login_bp.route('/render/colaboradores', methods=['GET'])
 def render_login_operadores():
     lista_nivel2 = ['Fernando', 'Eduardo', 'Chrysthyanne', 'Luciano']
@@ -183,6 +223,8 @@ def render_login_operadores():
 
     else:
         return render_template('colaboradores_individual.html', nome=nome)
+    
+
 
 @login_bp.route('/logout/colaboradores', methods=['POST', 'GET'])
 def logout_colaboradores():

@@ -1,6 +1,8 @@
-from flask import Blueprint, jsonify, render_template, request, redirect, url_for
+from flask import Blueprint, jsonify, render_template, request, redirect, url_for, flash
 #from flask_login import login_required
 from modules.login.decorators import login_required
+from application.models import db, User, PerformanceColaboradores
+from modules.login.session_manager import SessionManager
 from datetime import datetime
 import pandas as pd
 import os
@@ -45,3 +47,97 @@ def carregar_abas_excel(caminho_arquivo, abas_para_ignorar, ordem_meses, como_li
             continue
 
     return abas
+
+
+def render_performance_individual(username_view):
+    """
+    Busca os dados de performance de um colaborador específico (se fornecido na URL),
+    ou do colaborador logado.
+    """
+    target_username = None
+
+    # Decide qual usuário estamos visualizando
+    if username_view:
+        # Se um nome veio pela URL (ex: /performance/Eduardo), usamos ele
+        target_username = username_view
+    else:
+        # Se não, usamos o do usuário logado na sessão
+        target_username = SessionManager.get("username")
+
+    if not target_username:
+        flash("Sessão inválida ou nome de usuário não fornecido.", "warning")
+        return redirect(url_for('login.login'))
+
+    # Dicionários de mapeamento
+    OPERADORES_CREDENTIAL = {
+        "dneto": 2025, "gmaciel": 2022, "lkaizer": 2024, "msilva": 2021,
+        "esilva": 2029, "gmelo": 2023, "rragga": 2020, "halmeida": 2028,
+        "epinheiro": "Eduardo", "fzanella": "Fernando", "crodrigues": "Chrysthyanne"
+    }
+    OPERADORES_CONVERSION = {
+        "dneto": "Danilo", "gmaciel": "Gustavo", "lkaizer": "Lucas", "msilva": "Matheus",
+        "esilva": "Rafael", "gmelo": "Raysa", "rragga": "Renato", "halmeida": "Henrique",
+        "epinheiro": "Eduardo", "fzanella": "Fernando", "crodrigues": "Chrysthyanne"
+    }
+
+    operador_id = OPERADORES_CREDENTIAL.get(target_username)
+    nome_exibicao = OPERADORES_CONVERSION.get(target_username, target_username)
+
+    # Prepara um dicionário com valores padrão para garantir que a página não quebre
+    dados_performance = {
+        "ch_atendidas": 0, "ch_naoatendidas": 0, "tempo_online": 0,
+        "tempo_livre": 0, "tempo_servico": 0, "pimprod_Refeicao": 0,
+        "tempo_minatend": 0, "tempo_medatend": 0, "tempo_maxatend": 0
+    }
+
+    # Só busca no banco se o operador for válido
+    if operador_id:
+        hoje = datetime.now().date()
+        registros = PerformanceColaboradores.query.filter_by(operador_id=operador_id, data=hoje).all()
+        
+        if registros:
+            acumulado = {
+                "ch_atendidas": 0, "ch_naoatendidas": 0, "tempo_online": 0,
+                "tempo_livre": 0, "tempo_servico": 0, "pimprod_Refeicao": 0,
+                "tempo_minatend": None, "tempo_medatend": [], "tempo_maxatend": None
+            }
+            
+            for item in registros:
+                acumulado["ch_atendidas"] += item.ch_atendidas or 0
+                acumulado["ch_naoatendidas"] += item.ch_naoatendidas or 0
+                acumulado["tempo_online"] += item.tempo_online or 0
+                acumulado["tempo_livre"] += item.tempo_livre or 0
+                acumulado["tempo_servico"] += item.tempo_servico or 0
+                acumulado["pimprod_Refeicao"] += item.pimprod_refeicao or 0
+
+                if item.tempo_minatend is not None:
+                    if acumulado["tempo_minatend"] is None or item.tempo_minatend < acumulado["tempo_minatend"]:
+                        acumulado["tempo_minatend"] = item.tempo_minatend
+                
+                if item.tempo_maxatend is not None:
+                    if acumulado["tempo_maxatend"] is None or item.tempo_maxatend > acumulado["tempo_maxatend"]:
+                        acumulado["tempo_maxatend"] = item.tempo_maxatend
+
+                if item.tempo_medatend is not None:
+                    acumulado["tempo_medatend"].append(item.tempo_medatend)
+            
+            media_geral = (sum(acumulado["tempo_medatend"]) / len(acumulado["tempo_medatend"])) if acumulado["tempo_medatend"] else 0
+            
+            # Atualiza o dicionário com os dados encontrados
+            dados_performance.update({
+                "ch_atendidas": acumulado["ch_atendidas"],
+                "ch_naoatendidas": acumulado["ch_naoatendidas"],
+                "tempo_online": acumulado["tempo_online"],
+                "tempo_livre": acumulado["tempo_livre"],
+                "tempo_servico": acumulado["tempo_servico"],
+                "pimprod_Refeicao": acumulado["pimprod_Refeicao"],
+                "tempo_minatend": acumulado["tempo_minatend"] or 0,
+                "tempo_medatend": round(media_geral, 2),
+                "tempo_maxatend": acumulado["tempo_maxatend"] or 0
+            })
+
+            nome=nome_exibicao 
+            dados=dados_performance
+
+    # Renderiza o template unificado, passando os dados
+    return nome, dados

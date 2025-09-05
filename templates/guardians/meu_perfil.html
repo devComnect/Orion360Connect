@@ -1,0 +1,205 @@
+{% extends "base_template.html" %}
+
+{% block title %}Meu Perfil{% endblock %}
+
+{% block content %}
+
+
+<div class="profile-header">
+    <i class="bi bi-person-circle profile-header-icon"></i>
+    <div class="profile-header-text">
+        <h1 class="profile-header-name text-white">
+            {{ perfil.nome }}
+            {% if perfil.featured_insignia %}
+                <img src="{{ url_for('static', filename=perfil.featured_insignia.caminho_imagem) }}" 
+                     class="featured-insignia-badge"
+                     data-bs-toggle="tooltip" title="Insígnia em Destaque: {{ perfil.featured_insignia.nome }}">
+            {% endif %}
+        </h1>
+        {% if perfil.nickname %}
+            <p class="profile-header-nickname">"{{ perfil.nickname }}"</p>
+        {% endif %}
+        <p class="profile-header-department">{{ perfil.departamento_nome or 'Departamento não definido' }}</p>
+    </div>
+    {# Adiciona o botão de editar apenas se for o perfil do próprio usuário #}
+    {% if is_own_profile %}
+        <a href="{{ url_for('guardians_bp.edit_profile') }}" class="btn btn-outline-info ms-3">Editar Perfil</a>
+    {% endif %}
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="gamified-profile">
+            <div class="gamified-profile-card text-center text-white">
+                {% set streak = perfil.current_streak | default(0) %}
+
+                <div class="gamified-stats-box mb-4">
+                    <span class="level-indicator">Nível {{ nivel_atual.id if nivel_atual else 'N/A' }} - {{ nivel_atual.nome if nivel_atual else 'N/A' }}</span>
+                    <img src="{{ url_for('static', filename=nivel_atual.badge_icon_url) }}" alt="Insígnia do Nível" class="level-badge-img">
+                </div>
+                
+                <div class="streak-mini-card mt-3">
+                    <i class="bi bi-fire streak-mini-icon"></i>
+                    <span class="streak-mini-value">
+                        {# Exibição segura: checa se não é nulo, senão mostra 0 #}
+                        {% if perfil.current_streak is not none %}
+                            {{ perfil.current_streak }}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </span>
+                    <span class="streak-mini-label">Dias de Vigilante</span>
+
+                    {# Condição segura: checa se não é nulo ANTES de comparar com > 0 #}
+                    {% if perfil.current_streak is not none and perfil.current_streak > 0 %}
+                        <span class="streak-bonus-pill">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            +{{ [perfil.current_streak, 20] | min }}% XP
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="gamified-xp-bar mt-4">
+
+                    <div class="xp-bar-info">
+                        <div class="xp-info-box">
+                            <i class="bi bi-star-fill icon"></i>
+                            <div>
+                                <div class="label">Pontos XP</div>
+                                <div class="value">{{ perfil.score_atual }}</div>
+                            </div>
+                        </div>
+                        <div class="xp-info-box text-end">
+                            <div>
+                                <div class="label">Próximo Nível</div>
+                                <div class="value">{{ proximo_nivel.score_minimo if proximo_nivel else 'MAX' }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                   <div class="progress xp-progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             style="width: {{ progresso_percentual }}%;"
+                             aria-valuenow="{{ progresso_percentual }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                             {{ progresso_percentual }}%
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4 justify-content-center gamified-stats-row">
+
+                    {# Card de Ranking #}
+                    <div class="col-md-4 mb-3">
+                        <div class="gamified-stat-card text-white">
+                            <i class="bi bi-trophy-fill stat-icon"></i> {# Ícone de troféu #}
+                            <p class="stat-label">Ranking Atual</p>
+                            <p class="stat-value">{{ ranking_atual }}º</p>
+                        </div>
+                    </div>
+
+                    {# Card de Conquistas #}
+                    <div class="col-md-4 mb-3">
+                        <div class="gamified-stat-card text-white">
+                            <i class="bi bi-award-fill stat-icon"></i> {# Ícone de medalha #}
+                            <p class="stat-label">Conquistas</p>
+                            <p class="stat-value">{{ numero_conquistas }}</p>
+                        </div>
+                    </div>
+
+                    {# Card de Quizzes Respondidos #}
+                    <div class="col-md-4 mb-3">
+                        <div class="gamified-stat-card text-white">
+                            <i class="bi bi-check2-square stat-icon"></i> {# Ícone de checkmark quadrado #}
+                            <p class="stat-label">Quizzes Respondidos</p>
+                            <p class="stat-value">{{ quizzes_respondidos_count }}</p>
+                        </div>
+                    </div>
+                    
+                    
+
+                </div>
+
+                <div class="profile-section-card">
+                    <div class="section-header">
+                        <i class="bi bi-award-fill icon"></i>
+                        <h4>Minhas Conquistas</h4>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 justify-content-center">
+                        {% for insignia in insignias_ganhas %}
+                            <div class="text-center">
+                                <img src="{{ url_for('static', filename=insignia.caminho_imagem) }}"
+                                     alt="{{ insignia.nome }}"
+                                     class="insignia-preview"
+                                     data-bs-toggle="tooltip" data-bs-placement="top" title="{{ insignia.descricao }}">
+                                <p class="small mt-1 mb-0">{{ insignia.nome }}</p>
+                            </div>
+                        {% else %}
+                            <p class="text-white text-center">Você ainda não conquistou nenhuma insígnia. Continue participando!</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="profile-section-card">
+                    <div class="section-header">
+                        <i class="bi bi-clock-history icon"></i>
+                        <h4>Histórico de Atividades</h4>
+                    </div>
+
+                    <ul class="list-group list-group-flush bg-transparent mt-3">
+                        {# O loop agora itera sobre a lista paginada que a rota enviou #}
+                        {% for acao in historico %}
+                            <li class="list-group-item bg-transparent text-white d-flex justify-content-between align-items-center px-0">
+                                <div><strong>{{ acao.descricao }}</strong></div>
+                                <div class="text-end">
+                                    <small class="text-muted">{{ acao.data_evento.strftime('%d/%m/%Y %H:%M') if acao.data_evento else '' }}</small>
+                                    {% if acao.pontuacao != 0 %}
+                                        <span class="badge {{ 'bg-success' if acao.pontuacao > 0 else 'bg-danger' }} rounded-pill ms-2" style="width: 55px; vertical-align: middle;">
+                                            {{ '+ ' if acao.pontuacao > 0 else '' }}{{ acao.pontuacao }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item bg-transparent text-white  text-center">
+                                Nenhuma atividade registrada.
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                    {# Só mostra a paginação se houver mais de uma página no total #}
+                    {% if pagination.pages > 1 %}
+                    <nav aria-label="Navegação do Histórico" class="mt-4">
+                        <ul class="pagination justify-content-center pagination-sm">
+
+                            {# Botão 'Anterior' #}
+                            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id, page=pagination.prev_num) }}">&laquo;</a>
+                            </li>
+
+                            {# Loop para os números das páginas #}
+                            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                        <a class="page-link" href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id, page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {# Botão 'Próxima' #}
+                            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id, page=pagination.next_num) }}">&raquo;</a>
+                            </li>
+
+                        </ul>
+                    </nav>
+                    {% endif %}
+
+                </div>
+
+            </div> </div> </div> {% endblock %}
+

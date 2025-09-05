@@ -816,13 +816,31 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalElement = document.getElementById('modalChamadosGrupos');
     const listaChamados = document.getElementById('listaChamadosGrupos');
     const modalInstance = new bootstrap.Modal(modalElement);
+    const carousel = document.getElementById('carouselGraficos');
 
-    modalElement.addEventListener('shown.bs.modal', () => {
-        const botaoFechar = modalElement.querySelector('button.btn-close');
-        if (botaoFechar) botaoFechar.focus();
-    });
+    let chart1 = null;
+    let chart2 = null;
 
-    function criarSlaGrupoChart(ctx, label, naoExpirado, quaseEstourando, expirado, codigosCriticos, codigosExpirados) {
+    const grupo = sessionStorage.getItem("grupoSelecionado") || "";
+
+    let dadosSlaGrupo = null; // Armazena os dados para renderizar no momento certo
+
+    fetch('/grupos/slaAndamentoGrupos', {
+        method: 'POST',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ grupo: grupo })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            dadosSlaGrupo = data; // salva para uso futuro
+        } else {
+            console.error('Erro ao carregar dados de SLA por grupo:', data.message);
+        }
+    })
+    .catch(e => console.error('Erro na requisição SLA por grupo:', e));
+
+    const criarSlaGrupoChart = (ctx, label, naoExpirado, quaseEstourando, expirado, codigosCriticos, codigosExpirados) => {
         const total = naoExpirado + quaseEstourando + expirado;
         return new Chart(ctx, {
             type: 'bar',
@@ -896,42 +914,41 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             plugins: [ChartDataLabels]
         });
-    }
+    };
 
-    const grupo = sessionStorage.getItem("grupoSelecionado") || "";
+    // Ouça o evento de exibição do slide
+    carousel.addEventListener('slid.bs.carousel', event => {
+        const activeIndex = Array.from(carousel.querySelectorAll('.carousel-item')).findIndex(item => item.classList.contains('active'));
 
-    fetch('/grupos/slaAndamentoGrupos', {
-        method: 'POST',
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ grupo: grupo })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === "success") {
-            criarSlaGrupoChart(
-                document.getElementById('slaGrupoChart').getContext('2d'),
-                'SLA - Atendimento',
-                data.sla1_nao_expirado,
-                data.sla1_quase_estourando || 0,
-                data.sla1_expirado,
-                data.codigos_sla1_critico || [],
-                data.codigos_sla1 || []
-            );
-            criarSlaGrupoChart(
-                document.getElementById('slaGrupoChart2').getContext('2d'),
-                'SLA - Resolução',
-                data.sla2_nao_expirado,
-                data.sla2_quase_estourando || 0,
-                data.sla2_expirado,
-                data.codigos_sla2_critico || [],
-                data.codigos_sla2 || []
-            );
-        } else {
-            console.error('Erro ao carregar dados de SLA por grupo:', data.message);
+        // Slide 2 é o segundo (índice 1)
+        if (activeIndex === 1 && dadosSlaGrupo) {
+            if (!chart1 && !chart2) {
+                const ctx1 = document.getElementById('slaGrupoChart').getContext('2d');
+                const ctx2 = document.getElementById('slaGrupoChart2').getContext('2d');
+
+                chart1 = criarSlaGrupoChart(
+                    ctx1,
+                    'SLA - Atendimento',
+                    dadosSlaGrupo.sla1_nao_expirado,
+                    dadosSlaGrupo.sla1_quase_estourando || 0,
+                    dadosSlaGrupo.sla1_expirado,
+                    dadosSlaGrupo.codigos_sla1_critico || [],
+                    dadosSlaGrupo.codigos_sla1 || []
+                );
+                chart2 = criarSlaGrupoChart(
+                    ctx2,
+                    'SLA - Resolução',
+                    dadosSlaGrupo.sla2_nao_expirado,
+                    dadosSlaGrupo.sla2_quase_estourando || 0,
+                    dadosSlaGrupo.sla2_expirado,
+                    dadosSlaGrupo.codigos_sla2_critico || [],
+                    dadosSlaGrupo.codigos_sla2 || []
+                );
+            }
         }
-    })
-    .catch(e => console.error('Erro na requisição SLA por grupo:', e));
+    });
 });
+
 </script>
 
 <!-- Bloco que traz o TMA e TMS -->

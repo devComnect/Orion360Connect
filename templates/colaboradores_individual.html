@@ -1,293 +1,116 @@
-{% include 'header/model-header-individual.html' %}
-<body>
+{% extends "base_template.html" %}
 
-<div class="container-fluid my-4 px-5">
-  <h3 class="text-center mb-4"><span>Desempenho de</span> <span id="colaboradorNome">Colaborador</span></h3>
+{% block title %}Minha Performance{% endblock %}
 
-  <div class="row justify-content-center mb-4">
-    <div class="col-auto">
-      <div class="btn-group" role="group" aria-label="Filtros de período">
-        <button type="button" class="btn btn-outline-secondary active filtro-btn" data-dias="1">1 dia</button>
-        <button type="button" class="btn btn-outline-secondary filtro-btn" data-dias="7">7 dias</button>
-        <button type="button" class="btn btn-outline-secondary filtro-btn" data-dias="15">15 dias</button>    
-      </div>
-    </div>
-  </div>
+{% block styles %}
+    {# Colocamos os dois arquivos de estilo aqui para garantir #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_colaboradores.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_colaboradores_individual.css')}}">
+{% endblock %}
 
-  <!-- Cards principais -->
-  <div class="row g-3">
-    <!-- Ligações -->
-    <div class="col">
-      <div class="card shadow-sm h-100">
-        <div class="card-body card-body-compact">
-          <div class="card-body card-body-center">
-          <h6>Ligações</h6></div>
-          <div class="info-item">
-            <span>Atendidas</span>
-            <span class="value" id="ch_atendidas">-</span>
-          </div>
-          <div class="info-item">
-            <span>Efetuadas</span>
-            <span class="value" id="ch-efetuadas">-</span>
-          </div>
-          <div class="info-item">
-            <span>Não Atendidas</span>
-            <span class="value" id="ch_naoatendidas">-</span>
-          </div>
-          <div class="info-item">
-            <span>Transferidas</span>
-            <span class="value" id="ch-transferidas">-</span>
-          </div>
+{% block content %}
+
+    <h3 class="text-center mb-4"><span>Desempenho de</span> <span id="colaboradorNome">{{ nome }}</span></h3>
+
+    <div class="row justify-content-center mb-4">
+        <div class="col-auto">
+            <div class="btn-group" role="group" aria-label="Filtros de período">
+                <button type="button" class="btn btn-outline-secondary active filtro-btn" data-dias="1">1 dia</button>
+                <button type="button" class="btn btn-outline-secondary filtro-btn" data-dias="7">7 dias</button>
+                <button type="button" class="btn btn-outline-secondary filtro-btn" data-dias="15">15 dias</button>
+            </div>
         </div>
-      </div>
     </div>
 
-    <div class="col">
-      <div class="card shadow-sm h-100">
-        <div class="card-body card-body-compact">
-          <div class="card-body card-body-center">
-            <h6>Chamados</h6>
-          </div>
-
-          <!-- Atendidos -->
-          <div class="info-item">
-            <span>Atendidos</span>
-            <span class="value" id="total_chamados">-</span>
-          </div>
-
-          <!-- Abertos (com link clicável) -->
-          <div class="info-item">
-            <span>Abertos</span>
-            <span class="value text-danger">
-              <a href="#" onclick="mostrarChamadosOperador('Chamados Abertos do Operador', chamadosAbertosCodigos)">
-                <span id="chamado_aberto">-</span>
-              </a>
-            </span>
-          </div>
-
-          <div class="info-item">
-            <span>Reabertos</span>
-            <span class="value text-white">
-              <a href="#" onclick="mostrarChamadosOperador('Chamados Reabertos do Operador', chamadosReabertosCodigos)">
-                <span id="chamado_reaberto">-</span></a> / <span id="percentual_reaberto">-</span>
-            </span>
-          </div>
-
-          <!-- FCR -->
-          <div class="info-item">
-            <span>FCR</span>
-            <span class="value text-white">
-              <a href="#" onclick="mostrarChamadosOperador('Chamados com FCR do Operador', chamadosFcrCodigos)">
-            <span id="chamado_fcr">-</span></a> / <span id="percentual_fcr">-</span>
-            </span>
-          </div>
+    <div class="row g-3">
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body card-body-compact">
+                    <div class="card-body card-body-center"><h6>Ligações</h6></div>
+                    <div class="info-item"><span>Atendidas</span><span class="value" id="ch_atendidas">-</span></div>
+                    <div class="info-item"><span>Efetuadas</span><span class="value" id="ch-efetuadas">-</span></div>
+                    <div class="info-item"><span>Não Atendidas</span><span class="value" id="ch_naoatendidas">-</span></div>
+                    <div class="info-item"><span>Transferidas</span><span class="value" id="ch-transferidas">-</span></div>
+                </div>
+            </div>
         </div>
-      </div>
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body card-body-compact">
+                    <div class="card-body card-body-center"><h6>Chamados</h6></div>
+                    <div class="info-item"><span>Atendidos</span><span class="value" id="total_chamados">-</span></div>
+                    <div class="info-item"><span>Abertos</span><span class="value text-danger"><a href="#" onclick="mostrarChamadosOperador('Chamados Abertos do Operador', chamadosAbertosCodigos)"><span id="chamado_aberto">-</span></a></span></div>
+                    <div class="info-item"><span>Reabertos</span><span class="value text-white"><a href="#" onclick="mostrarChamadosOperador('Chamados Reabertos do Operador', chamadosReabertosCodigos)"><span id="chamado_reaberto">-</span></a> / <span id="percentual_reaberto">-</span></span></div>
+                    <div class="info-item"><span>FCR</span><span class="value text-white"><a href="#" onclick="mostrarChamadosOperador('Chamados com FCR do Operador', chamadosFcrCodigos)"><span id="chamado_fcr">-</span></a> / <span id="percentual_fcr">-</span></span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body card-body-compact">
+                    <div class="card-body card-body-center"><h6>Tempo Médio</h6></div>
+                    <div class="card-body card-body-center"><h6>Ligações</h6></div>
+                    <div class="info-item"><span>Online</span><span class="value" id="tempo_online">-</span></div>
+                    <div class="info-item"><span>Serviço</span><span class="value" id="tempo_servico">-</span></div>
+                    <div class="info-item"><span class="text-success">TMIN</span><span class="value" id="percentual-tma-ligacoes">-</span></div>
+                    <div class="info-item"><span class="text-danger">TMAX</span><span class="value" id="percentual-tms-ligacoes">-</span></div>
+                    <div class="card-body card-body-center"><h6>Chamados</h6></div>
+                    <div class="info-item"><span class="text-warning">TMA</span><span class="value" id="percentual-tma">-</span></div>
+                    <div class="info-item"><span class="text-success">TMS</span><span class="value" id="percentual-tms">-</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body card-body-compact">
+                    <div class="card-body card-body-center"><h6>SLA</h6></div>
+                    <h6 class="text-center mb-2">Atendimento</h6>
+                    <div class="info-item"><span class="text-danger">Expirados</span><span class="value"><a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)"><span id="sla-atendimento-expirado">-</span></a></span></div>
+                    <div class="info-item"><span class="text-success">No Prazo</span><span class="value" id="sla-atendimento-prazo">-</span></div>
+                    <h6 class="text-center mt-3 mb-2">Resolução</h6>
+                    <div class="info-item"><span class="text-danger">Expirados</span><span class="value"><a href="#" onclick="mostrarCodigosSla('Resolução Expirada', codigosResolucao)"><span id="sla-resolucao-expirado">-</span></a></span></div>
+                    <div class="info-item"><span class="text-success">No Prazo</span><span class="value" id="percentual_prazo_resolucao">-</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100 csat-card">
+                <div class="card-body card-body-compact card-body-center">
+                    <h6>CSAT</h6>
+                    <div class="info-item"><span class="text-success d-block">Satisfação</span><span class="value"><span class="value" id="csat-percentual" style="cursor:pointer; text-decoration: underline;">0%</span></span></div>
+                    <div class="info-item"><span class="text-primary d-block">Total Avaliado</span><span class="value"><span class="value" id="total-avaliado">0</span></span></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-
-     <div class="col">
-  <div class="card shadow-sm h-100">
-    <div class="card-body card-body-compact">
-      <div class="card-body card-body-center">
-        <h6>Tempo Médio</h6>
-      </div>
-      <div class="card-body card-body-center">
-        <h6>Ligações</h6>
-      </div>
-      <div class="info-item">
-        <span>Online</span>
-        <span class="value" id="tempo_online">-</span>
-      </div>
-      <div class="info-item">
-        <span>Serviço</span>
-        <span class="value" id="tempo_servico">-</span>
-      </div>
-      <div class="info-item">
-        <span class="text-success">TMIN</span>
-        <span class="value" id="percentual-tma-ligacoes">-</span>
-      </div>
-      <div class="info-item">
-        <span class="text-danger">TMAX</span>
-        <span class="value" id="percentual-tms-ligacoes">-</span>
-      </div>
-      <div class="card-body card-body-center">
-        <h6>Chamados</h6>
-      </div>
-      <div class="info-item">
-        <span class="text-warning">TMA</span>
-        <span class="value" id="percentual-tma">-</span>
-      </div>
-      <div class="info-item">
-        <span class="text-success">TMS</span>
-        <span class="value" id="percentual-tms">-</span>
-      </div>
-      
+    <div class="row g-3 mt-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm card-grafico-pequeno"><div class="card-header text-center">Distribuição do Tempo</div><div class="card-body"><canvas id="tempoDistribuicaoChart"></canvas><div id="info-pausas" class="mt-3 text-center small text-white"></div></div></div>
+        </div>
+        <div class="col-md-5">
+            <div class="card shadow-sm card-grafico-pequeno"><div class="card-header text-center">Ligações vs Chamados</div><div class="card-body"><div id="resumoChamados" class="mb-3 text-white small d-flex justify-content-center gap-4 flex-wrap"><div><strong>Total de Chamados:</strong> <span id="totalTickets">-</span></div><div><strong>Total de Ligações:</strong> <span id="totalLigacoes">-</span></div><div><strong>Não Registrados:</strong> <span id="diferencaChamados">-</span></div></div><canvas id="atendidasVsTickets"></canvas></div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm card-grafico-pequeno"><div class="card-header text-center">SLA de Atendimento e Resolução</div><div class="card-body d-flex justify-content-center align-items-center"><canvas id="slaChartAtendimentoResolucao"></canvas></div></div>
+        </div>
     </div>
-  </div>
 </div>
 
-    <div class="col">
-      <div class="card shadow-sm h-100">
-        <div class="card-body card-body-compact">
-          
-          <!-- Título principal -->
-          <div class="card-body card-body-center">
-            <h6>SLA</h6>
-          </div>
-
-          <!-- Atendimento -->
-          <h6 class="text-center mb-2">Atendimento</h6>
-          <div class="info-item">
-            <span class="text-danger">Expirados</span>
-            <span class="value">
-              <a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)">
-                <span id="sla-atendimento-expirado">-</span>
-              </a>
-            </span>
-          </div>
-          <div class="info-item">
-            <span class="text-success">No Prazo</span>
-            <span class="value" id="sla-atendimento-prazo">-</span>
-          </div>
-
-          <!-- Resolução -->
-          <h6 class="text-center mt-3 mb-2">Resolução</h6>
-          <div class="info-item">
-            <span class="text-danger">Expirados</span>
-            <span class="value">
-              <a href="#" onclick="mostrarCodigosSla('Resolução Expirada', codigosResolucao)">
-                <span id="sla-resolucao-expirado">-</span>
-              </a>
-            </span>
-          </div>
-          <div class="info-item">
-            <span class="text-success">No Prazo</span>
-            <span class="value" id="percentual_prazo_resolucao">-</span>
-          </div>
-
-        </div>
-      </div>
-    </div>
-    
-    <!-- Pesquisa de Satisfação -->
-    <div class="col">
-      <div class="card shadow-sm h-100 csat-card">
-        <div class="card-body card-body-compact card-body-center">
-          <h6>CSAT</h6>
-
-          <div class="info-item">
-            <span class="text-success d-block">Satisfação</span>
-            <span class="value">
-              <span class="value" id="csat-percentual" style="cursor:pointer; text-decoration: underline;">0%</span>
-            </span>
-          </div>
-
-          <div class="info-item">
-           <span class="text-primary d-block">Total Avaliado</span>
-            <span class="value">
-              <!--<a href="#" id="link-retorno" data-bs-toggle="modal" data-bs-target="#modalComentariosPesquisa">-->
-                <span class="value" id="total-avaliado">0</span>
-              </a>
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-  <!-- Gráficos -->
-  <div class="row g-3 mt-4">
-    <!-- Distribuição do Tempo -->
-    <div class="col-md-3">
-      <div class="card shadow-sm card-grafico-pequeno">
-        <div class="card-header text-center">Distribuição do Tempo</div>
-        <div class="card-body">
-          <canvas id="tempoDistribuicaoChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Ligações vs Tickets -->
-    <div class="col-md-5">
-      <div class="card shadow-sm card-grafico-pequeno">
-        <div class="card-header text-center">Ligações vs Chamados</div>
-        <div class="card-body">
-          <div id="resumoChamados" class="mb-3 text-center text-white small">
-            <p><strong>Total de Chamados:</strong> <span id="totalTickets">-</span></p>
-            <p><strong>Total de Ligações:</strong> <span id="totalLigacoes">-</span></p>
-            <p><strong>Não Registrados:</strong> <span id="diferencaChamados">-</span></p>
-          </div>
-          <canvas id="atendidasVsTickets"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- SLA -->
-    <div class="col-md-4">
-      <div class="card shadow-sm card-grafico-pequeno">
-        <div class="card-header text-center">SLA de Atendimento e Resolução</div>
-        <div class="card-body d-flex justify-content-center align-items-center">
-          <canvas id="slaChartAtendimentoResolucao"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
+<div class="modal fade" id="modalChamadosExpirados" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content" style="background-color: #121212; color: #f1f1f1;"><div class="modal-header border-0"><h5 class="modal-title">Chamados Expirados</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body" style="max-height: 400px; overflow-y: auto;"><ul id="listaChamados" style="list-style:none; padding-left: 0;"></ul></div><div class="modal-footer border-0"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div></div></div>
 </div>
-
-<!-- Modais -->
-<div class="modal fade" id="modalChamadosExpirados" tabindex="-1" aria-labelledby="modalChamadosExpiradosLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalChamadosExpiradosLabel">Chamados Expirados</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaChamados" style="list-style:none; padding-left: 0;"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
+<div class="modal fade" id="modalComentariosPesquisa" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content" style="background-color: #121212; color: #f1f1f1;"><div class="modal-header border-0"><h5 class="modal-title">Comentários da Pesquisa</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body" style="max-height: 400px; overflow-y: auto;"><ul id="listaComentarios" style="list-style:none; padding-left: 0;"></ul></div><div class="modal-footer border-0"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div></div></div>
 </div>
-
-<div class="modal fade" id="modalComentariosPesquisa" tabindex="-1" aria-labelledby="modalComentariosPesquisaLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalComentariosPesquisaLabel">Comentários da Pesquisa</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaComentarios" style="list-style:none; padding-left: 0;"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
+<div class="modal fade" id="modalCodigos" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content" style="background-color: #121212; color: #f1f1f1;"><div class="modal-header border-0"><h5 class="modal-title">Chamados</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body" style="max-height: 400px; overflow-y: auto;"><ul id="listaCodigos" class="list-unstyled mb-0"></ul></div><div class="modal-footer border-0"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div></div></div>
 </div>
+{% endblock %}
 
-<!-- Modal para mostrar os códigos -->
-<div class="modal fade" id="modalCodigos" tabindex="-1" aria-labelledby="modalCodigosLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalCodigosLabel">Chamados</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaCodigos" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
 
-{% include 'js/colaboradores_js.html' %}
-</body>
-</html>
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% include 'js/colaboradores_js.html' %}
+{% endblock %}

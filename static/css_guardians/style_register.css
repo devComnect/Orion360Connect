@@ -1,0 +1,67 @@
+/* Estilos aplicados APENAS à página com a classe .register-page */
+body.register-page {
+    background-color: #121212;
+    color: #f1f1f1;
+}
+
+/* Título na página de registro */
+.register-page h1 {
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #fff; /* Garante que o H1 seja branco */
+}
+
+/* Card para o formulário na página de registro */
+.register-page .card {
+    background: #2f2f37;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Cabeçalho do Card na página de registro */
+.register-page .card-header {
+    background-color: #1f1f27;
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.2rem;
+    padding: 1rem;
+    border-radius: 15px 15px 0 0; /* Bordas arredondadas */
+}
+
+/* Corpo do Card na página de registro */
+.register-page .card-body {
+    background-color: #2f2f37;
+    padding: 30px;
+    border-radius: 0 0 15px 15px;
+}
+
+/* Estilo dos campos de input na página de registro */
+.register-page .form-control {
+    background-color: #1f1f27;
+    color: #f1f1f1;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 1rem;
+    margin-bottom: 15px;
+}
+
+.register-page .form-control:focus {
+    border-color: #3f51b5;
+    background-color: #2f2f37;
+    box-shadow: 0 0 5px rgba(63, 81, 181, 0.5);
+}
+
+/* Placeholder visível no fundo escuro */
+.register-page .form-control::placeholder {
+    color: #aaa;
+    opacity: 1;
+}
+
+.register-page .form-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ddd;
+}

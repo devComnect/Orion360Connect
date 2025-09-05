@@ -1,0 +1,68 @@
+{% extends "base_template.html" %}
+
+{% block title %}Resultado: {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card bg-dark text-white">
+                <div class="card-header text-center">
+                    <h2 class="text-warning">Resultado do Quiz: {{ quiz.title }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info text-center">
+                        <h4>Você acertou {{ results.correct_answers }} de {{ results.total_questions }} perguntas e ganhou <strong>{{ results.score }} pontos</strong>!</h4>
+                    </div>
+
+                    <hr class="my-4">
+
+                    {% for question in quiz.questions %}
+                        {% set question_result = results.details[question.id|string] %}
+                        <div class="mb-4">
+                            <h5>
+                                {% if question_result.is_correct %}
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                                {{ loop.index }}. {{ question.question_text }}
+                                <span class="badge bg-info float-end">{{ question.points }} pts</span>
+                            </h5>
+                            
+                            <ul class="list-group mt-3 ms-3">
+                                {% for option in question.options %}
+                                    {% set is_correct = option.id == question_result.correct_option_id %}
+                                    {% set is_submitted = option.id == question_result.submitted_option_id %}
+
+                                    {# Lógica para definir a cor de fundo de cada opção #}
+                                    {% set item_class = '' %}
+                                    {% if is_correct %}
+                                        {% set item_class = 'list-group-item-success' %} {# A resposta correta é sempre verde #}
+                                    {% elif is_submitted and not is_correct %}
+                                        {% set item_class = 'list-group-item-danger' %} {# A resposta errada que o usuário marcou é vermelha #}
+                                    {% endif %}
+                                    
+                                    <li class="list-group-item bg-dark text-white {{ item_class }}">
+                                        {% if is_submitted and is_correct %}
+                                            <i class="bi bi-check-lg"></i> {% elif is_submitted and not is_correct %}
+                                            <i class="bi bi-x-lg"></i> {% elif is_correct and not is_submitted %}
+                                            <i class="bi bi-arrow-right"></i> {% else %}
+                                            <i class="bi bi-circle" style="opacity: 0.2;"></i> {% endif %}
+                                        
+                                        {{ option.option_text }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endfor %}
+
+                    <div class="d-grid gap-2 mt-5">
+                        <a href="{{ url_for('guardians_bp.central') }}" class="btn btn-lg btn-warning">Voltar para a Central de Treinamentos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

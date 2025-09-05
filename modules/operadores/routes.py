@@ -468,8 +468,6 @@ def listar_p_satisfacao():
         "referencia_chamados": referencias_chamados
     })
 
-
-
 @operadores_bp.route('/performanceColaboradoresRender/n2', methods=['POST'])
 def performance_colaboradores_render_n2():
     session.pop('dados', None)
