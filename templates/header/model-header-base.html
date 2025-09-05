@@ -26,19 +26,27 @@
                 
                 {# Se for Admin do Portal, mostra TODOS os links principais #}
                 {% if is_portal_admin %}
+                    {# Menu para admin do portal #}
                     <li class="nav-item"><a href="/insights" class="nav-link">Insights</a></li>
                     <li class="nav-item"><a href="/dashboard" class="nav-link">Dashboard</a></li>
                     <li class="nav-item"><a href="/okrs" class="nav-link">OKRs</a></li>
                     <li class="nav-item"><a href="/relatorios" class="nav-link">Relatórios</a></li>
                     <li class="nav-item"><a href="/escala" class="nav-link">Escala</a></li>
                     <li class="nav-item"><a href="/register" class="nav-link">Gerenciamento</a></li>
-                
-                {# Se não for Admin do Portal, mostra os links de usuário comum #}
+
+                {% elif is_nivel2 == 1 %}
+                    {# Menu para usuário Nível 2 #}
+                    <li><a href="{{ url_for('home_bp.render_performance_n2') }}" class="nav-link">Performance</a></li>
+                    <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
+                    <li><a href="/relatoriosIndividual" class="nav-link">Relatórios</a></li>
+
                 {% else %}
+                    {# Menu para usuário comum #}
                     <li><a href="{{ url_for('home_bp.render_performance') }}" class="nav-link">Performance</a></li>
                     <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
                     <li class="nav-item"><a href="/escala" class="nav-link">Escala</a></li>
                 {% endif %}
+
                 
                 <li class="nav-item dropdown">
                     <a class="nav-link px-3 dropdown-toggle" href="#" id="guardiansDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">

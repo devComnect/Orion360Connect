@@ -56,7 +56,9 @@ def render_performance():
 
 @home_bp.route('/performance/colaboradoresN2', methods=['GET'])
 def render_performance_n2():
-    return render_template('colaboradores_individual_nivel2.html')
+    nome = session.get('nome')
+    dados = session.get('dados')
+    return render_template('colaboradores_individual_nivel2.html', nome=nome, dados=dados)
 
 @home_bp.route('/guardians', methods=['GET'])
 @login_required

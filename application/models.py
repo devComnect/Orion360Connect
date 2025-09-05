@@ -22,9 +22,8 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.TIMESTAMP, server_default=db.func.now())
 
     @property
-    def admin_level(self):
-        # Retorna o valor bruto armazenado no banco
-        return int(self.__dict__.get('is_admin', 0))
+    def is_nivel2_user(self):
+        return int(self.is_nivel2 or 0) == 1
 
     def __repr__(self):
         return f'<Usuario {self.username}>'

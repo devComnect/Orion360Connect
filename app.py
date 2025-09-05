@@ -65,6 +65,7 @@ def inject_global_vars():
         is_authenticated=session.get('is_authenticated', False),
         is_portal_admin=session.get('is_portal_admin', False),
         is_guardian_admin=session.get('is_guardian_admin', False),
+        is_nivel2=int(session.get('is_nivel2', 0)),  # <-- Adicionado aqui
         username=session.get('username')
     )
 
