@@ -24,7 +24,7 @@
 
     <div class="row g-3">
         <div class="col">
-            <div class="card shadow-sm h-100">
+            <div class="card  h-100">
                 <div class="card-body card-body-compact">
                     <div class="card-body card-body-center"><h6>Ligações</h6></div>
                     <div class="info-item"><span>Atendidas</span><span class="value" id="ch_atendidas">-</span></div>
@@ -35,7 +35,7 @@
             </div>
         </div>
         <div class="col">
-            <div class="card shadow-sm h-100">
+            <div class="card  h-100">
                 <div class="card-body card-body-compact">
                     <div class="card-body card-body-center"><h6>Chamados</h6></div>
                     <div class="info-item"><span>Atendidos</span><span class="value" id="total_chamados">-</span></div>
@@ -46,7 +46,7 @@
             </div>
         </div>
         <div class="col">
-            <div class="card shadow-sm h-100">
+            <div class="card  h-100">
                 <div class="card-body card-body-compact">
                     <div class="card-body card-body-center"><h6>Tempo Médio</h6></div>
                     <div class="card-body card-body-center"><h6>Ligações</h6></div>
@@ -61,7 +61,7 @@
             </div>
         </div>
         <div class="col">
-            <div class="card shadow-sm h-100">
+            <div class="card  h-100">
                 <div class="card-body card-body-compact">
                     <div class="card-body card-body-center"><h6>SLA</h6></div>
                     <h6 class="text-center mb-2">Atendimento</h6>
@@ -74,7 +74,7 @@
             </div>
         </div>
         <div class="col">
-            <div class="card shadow-sm h-100 csat-card">
+            <div class="card  h-100 csat-card">
                 <div class="card-body card-body-compact card-body-center">
                     <h6>CSAT</h6>
                     <div class="info-item"><span class="text-success d-block">Satisfação</span><span class="value"><span class="value" id="csat-percentual" style="cursor:pointer; text-decoration: underline;">0%</span></span></div>
@@ -86,13 +86,13 @@
 
     <div class="row g-3 mt-4">
         <div class="col-md-3">
-            <div class="card shadow-sm card-grafico-pequeno"><div class="card-header text-center">Distribuição do Tempo</div><div class="card-body"><canvas id="tempoDistribuicaoChart"></canvas><div id="info-pausas" class="mt-3 text-center small text-white"></div></div></div>
+            <div class="card  card-grafico-pequeno"><div class="card-header text-center">Distribuição do Tempo</div><div class="card-body"><canvas id="tempoDistribuicaoChart"></canvas><div id="info-pausas" class="mt-3 text-center small text-white"></div></div></div>
         </div>
         <div class="col-md-5">
-            <div class="card shadow-sm card-grafico-pequeno"><div class="card-header text-center">Ligações vs Chamados</div><div class="card-body"><div id="resumoChamados" class="mb-3 text-white small d-flex justify-content-center gap-4 flex-wrap"><div><strong>Total de Chamados:</strong> <span id="totalTickets">-</span></div><div><strong>Total de Ligações:</strong> <span id="totalLigacoes">-</span></div><div><strong>Não Registrados:</strong> <span id="diferencaChamados">-</span></div></div><canvas id="atendidasVsTickets"></canvas></div></div>
+            <div class="card  card-grafico-pequeno"><div class="card-header text-center">Ligações vs Chamados</div><div class="card-body"><div id="resumoChamados" class="mb-3 text-white small d-flex justify-content-center gap-4 flex-wrap"><div><strong>Total de Chamados:</strong> <span id="totalTickets">-</span></div><div><strong>Total de Ligações:</strong> <span id="totalLigacoes">-</span></div><div><strong>Não Registrados:</strong> <span id="diferencaChamados">-</span></div></div><canvas id="atendidasVsTickets"></canvas></div></div>
         </div>
         <div class="col-md-4">
-            <div class="card shadow-sm card-grafico-pequeno"><div class="card-header text-center">SLA de Atendimento e Resolução</div><div class="card-body d-flex justify-content-center align-items-center"><canvas id="slaChartAtendimentoResolucao"></canvas></div></div>
+            <div class="card  card-grafico-pequeno"><div class="card-header text-center">SLA de Atendimento e Resolução</div><div class="card-body d-flex justify-content-center align-items-center"><canvas id="slaChartAtendimentoResolucao"></canvas></div></div>
         </div>
     </div>
 </div>

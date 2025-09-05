@@ -1,132 +1,74 @@
-/* Reset de margens e padding */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Corpo da página */
-body {
-    font-family: Arial, sans-serif;
+/* Aplica-se apenas à página de login */
+body.login-page {
     background-color: #24262a;
-    color: #333;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    text-align: center;
-    margin: 0;
+    padding: 10px;
 }
 
-/* Estilo do título */
-h1 {
-    font-size: 2.5em;
-    margin-bottom: 20px;
-    color: #fdfcfc;
-}
-
-/* Container do formulário de login */
-.Login {
-    background-color: #3d4448;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+/* Container geral que envolve logo + formulário */
+.login-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
     width: 100%;
     max-width: 400px;
-
 }
 
-/* Estilo dos campos de entrada */
-input {
+
+
+/* Formulário de login */
+.Login {
+    background-color: #3d4448;
+    padding: 30px 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     width: 100%;
-    padding: 15px;
-    margin: 10px 0;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1em;
 }
 
-/* Estilo do botão */
-button {
-    padding: 15px;
-    background-color: #007bff;
-    color: white;
+/* Título */
+.Login h2 {
+    font-size: 2rem;
+    color: #ffffff;
+}
+
+/* Campos */
+.Login input {
+    background-color: #f8f9fa;
+    color: #000;
+}
+
+.Login label {
+    color: #777;
+}
+
+/* Botão */
+.Login button {
+    background-color: #ffc107;
+    color: #000;
     border: none;
-    border-radius: 5px;
-    font-size: 1.2em;
-    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
 }
 
-button:hover {
-    background-color: #0056b3;
+.Login button:hover {
+    background-color: #e0a800;
 }
 
-.message-flash{
-    color: red;
+/* Link de esqueci a senha */
+.forgot-password {
+    color: #ccc;
+    font-size: 0.9em;
+    text-decoration: none;
 }
 
-body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    margin: 0;
-    padding-bottom: 300px; /* Ajuste conforme necessário para dar espaço ao footer */
+.forgot-password:hover {
+    color: #fff;
+    text-decoration: underline;
 }
-
-/* Corpo da página */
-body.index-page {
-    font-family: Arial, sans-serif;
-    background-color: #4e4f5000;
-    color: #212020;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    min-height: 100vh;
-}
-
-.h1 {
-    align-items: center;
-}
-
-/* Container do Header */
-.container-fluid.container-xl {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 30px;
-    margin: 0;  /* Remove qualquer margem padrão */
-    width: 100%;
-    max-width: 100%;
-    padding-left: 2;
-    padding-right: 2;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1), 
-            0px 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-
-/* Adiciona um espaçamento superior ao conteúdo para evitar sobreposição */
-body > .form {
-    margin-top: 100px;
-}
-
-
-h1 {
-    font-size: 1.8rem;
-    margin-bottom: 20px;
-    color: #dedede;
-}
-
-
-h2 {
-    margin-top: 30px;
-    font-size: 1.5rem;
-    color: #343a40;
-}
-
-
-
-
-
-
-

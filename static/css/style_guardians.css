@@ -1,46 +1,40 @@
-/* =================================================================== */
-/* == PAINEL DE CONTROLE DO PERFIL GAMIFICADO (CUSTOMIZE AQUI!) == */
-/* =================================================================== */
 
-body {
-      background-color: #121212;
-      color: #f1f1f1;
-    }
-
-.gamified-profile-card {
-    /* -- Cores Principais -- */
-    --profile-bg-color: #2f2f37;
-    --xp-bar-color: var(--success); /* Usando sua variável global --success */
-
-    /* -- Tamanho do Avatar/Badge -- */
-    --avatar-size: 400px; /* Altere aqui para mudar o tamanho do avatar */
-    
-    /* -- Bordas e Sombra -- */
-    --border-width: 3px;
-    --border-radius: 12px;
-    --shadow-color: rgba(255, 193, 7, 0.2); /* Sombra com a cor do sotaque */
-
-    /* -- Fontes e Espaçamento -- */
-    --level-font-size: 20px;
-    --card-padding: 30px;
+:root {
+    /* Define uma variável global para a cor do texto secundário no tema escuro */
+    --muted-text-dark-theme: #a9a9a9; /* Um cinza claro e legível */
 }
 
+/* Regra global para corrigir textos secundários em tema escuro */
+body.bg-dark .text-muted {
+    color: var(--muted-text-dark-theme) !important;
+}
+
+
+
+
 /* =================================================================== */
-/* == ESTILOS DO PERFIL (NÃO PRECISA MEXER AQUI) == */
+/* == ESTILOS UNIFICADOS PARA O PERFIL DO GUARDIÃO                  == */
 /* =================================================================== */
 
-/* Card Principal */
+/* --- Variáveis de Customização --- */
 .gamified-profile-card {
-    background-color: var(--profile-bg-color);
+    --avatar-size: 400px;
+    --border-radius: 12px;
+    --card-padding: 30px;
+    --level-font-size: 20px;
+}
+
+/* --- Card Principal --- */
+.gamified-profile-card {
+    background-color: #2f2f37;
     border-radius: var(--border-radius);
     padding: var(--card-padding);
     position: relative;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5); /* Sombra um pouco mais forte */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
     min-height: 450px;
-    color: var(--profile-base-text-color);
 }
 
-/* Caixa que contém o Avatar */
+/* --- Avatar e Nível --- */
 .gamified-stats-box {
     position: relative;
     width: var(--avatar-size); 
@@ -48,28 +42,24 @@ body {
     margin: 0 auto;
 }
 
-/* A imagem do Avatar/Badge em si */
 .level-badge-img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Garante que a foto do avatar não fique distorcida */
+    object-fit: cover;
     border-radius: 50%;
-    border: calc(var(--border-width) + 1px) solid var(--profile-accent-color);
+    border: 4px solid var(--warning);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    background-color: #333; /* Cor de fundo caso a imagem não carregue */
+    background-color: #333;
 }
 
-/* O indicador de Nível (Ex: "Vigilante") */
 .level-indicator {
     position: absolute;
-    /* Ajusta a posição para ficar sempre em cima do avatar, mesmo se o tamanho mudar */
     top: calc(var(--level-font-size) / -2); 
     left: 50%;
     transform: translateX(-50%);
-    
-    background-color: rgb(233, 223, 89);
-    border: var(--border-width) solid var(--profile-accent-color);
-    color: var(--profile-accent-text-color);
+    background-color: #0d6efd;
+    border: 3px solid var(--warning);
+    color: var(--warning);
     font-weight: bold;
     padding: 2px 15px;
     border-radius: 50px;
@@ -78,20 +68,15 @@ body {
     white-space: nowrap;
 }
 
-/* ========================================================== */
-/* == ESTILOS OTIMIZADOS PARA A BARRA DE EXPERIÊNCIA (EXP) == */
-/* ========================================================== */
-
-/* O contêiner principal da barra, agora sem borda e com novo fundo */
+/* --- Barra de Experiência (EXP) --- */
 .gamified-xp-bar {
     margin-top: 20px;
-    background-color: #3f3f4b; /* Fundo um pouco mais claro para destacar */
+    background-color: #2a2a2a;
     border-radius: 16px;
-    padding: 15px 20px; /* Mais preenchimento interno */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.4); /* Sombra interna sutil */
+    padding: 15px 20px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
 }
 
-/* O contêiner para as informações de XP (a linha acima da barra) */
 .xp-bar-info {
     display: flex;
     justify-content: space-between;
@@ -99,57 +84,24 @@ body {
     margin-bottom: 15px;
 }
 
-/* Estilo para as caixas de informação individuais (XP e Próximo) */
-.xp-info-box {
-    display: flex;
-    align-items: center;
-}
+.xp-info-box { display: flex; align-items: center; }
+.xp-info-box .icon { font-size: 1.5rem; color: #0d6efd; margin-right: 10px; }
+.xp-info-box .label { font-size: 0.7rem; text-transform: uppercase; color: #aaa; line-height: 1; }
+.xp-info-box .value { font-size: 1.2rem; font-weight: bold; color: #fff; line-height: 1; }
 
-.xp-info-box .icon {
-    font-size: 1.5rem;
-    color: var(--accent); /* Cor azul para os ícones */
-    margin-right: 10px;
-}
-
-.xp-info-box .label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    color: #aaa;
-    line-height: 1;
-}
-
-.xp-info-box .value {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #fff;
-    line-height: 1;
-}
-
-/* Estilo para a barra de progresso em si, para dar um visual mais moderno */
+/* A "calha" da barra de progresso */
 .progress.xp-progress {
     height: 25px;
-    background-color: rgba(0,0,0,0.3);
+    background-color: rgba(0, 0, 0, 0.4) !important;
     border-radius: 50px;
     padding: 3px;
-    border: 1px solid #444;
+    border: 1px solid #555;
 }
 
-.progress.xp-progress .progress-bar {
+/* Estilo para o PREENCHIMENTO da barra, agora com especificidade máxima */
+.progress.xp-progress .progress-bar.progress-bar-striped {
     border-radius: 50px;
-    background: linear-gradient(45deg, var(--warning), #ffc107); /* Gradiente para a barra */
-    color: #333; /* Cor do texto mais escura para melhor contraste */
     font-weight: bold;
-}
-
-/* =================================================================== */
-/* == CORREÇÕES GERAIS (REMOVENDO !IMPORTANT) == */
-/* =================================================================== */
-
-/* Ao adicionar a classe principal, aumentamos a especificidade e podemos remover o "!important" */
-.gamified-profile-card .list-group-item {
-    color: #fff;
-    background-color: #1e1e1e;
-    border-color: #444;
 }
 
 /* ============================================= */
@@ -218,31 +170,63 @@ body {
 }
 
 /* ============================================= */
-/* == ESTILOS DA PÁGINA DE RANKING (VERSÃO 2.0) == */
+/* == ESTILOS DA PÁGINA DE RANKING (VERSÃO CORRIGIDA) == */
 /* ============================================= */
 
-/* Estilos para a tabela de ranking */
+/* Estilo para os botões das abas (Por Pontos, Dias de Vigilante, etc.) */
+.nav-pills .nav-link {
+    background-color: #2a2a2a;
+    color: #ccc;
+    font-weight: bold;
+    border: 1px solid #444;
+    margin: 0 5px;
+    transition: all 0.2s ease-in-out;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #3a3a3a;
+    border-color: var(--accent); /* Borda azul no hover */
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--warning); /* Fundo dourado para a aba ativa */
+    color: #fff; /* Texto escuro para contraste */
+    border-color: var(--warning);
+}
+
+/* Tabela de Ranking com linhas divisórias */
 .ranking-table {
-    border-collapse: separate;
-    border-spacing: 0 10px; /* Adiciona espaçamento vertical entre as linhas */
+    width: 100%;
+    border-collapse: collapse; /* Remove o espaçamento entre as linhas */
 }
 
 .ranking-table th {
     border-bottom: 2px solid var(--warning) !important;
+    padding-bottom: 1rem;
 }
 
 .ranking-table td {
     vertical-align: middle !important;
 }
 
+.ranking-row td {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #3a3a3a; /* A NOVA LINHA DIVISÓRIA */
+}
+
+/* Remove a linha da última posição para um acabamento limpo */
+.ranking-row:last-child td {
+    border-bottom: none;
+}
+
 .ranking-row {
-    transition: all 0.2s ease-in-out;
-    border-radius: .25rem;
+    transition: background-color 0.2s ease-in-out;
 }
 
 .ranking-row:hover {
     background-color: rgba(255, 255, 255, 0.05) !important;
-    transform: scale(1.02);
+    transform: none; /* Remove o efeito de scale que não faz mais sentido */
 }
 
 .ranking-avatar {
@@ -253,7 +237,6 @@ body {
     object-fit: cover;
 }
 
-/* Estilos para as medalhas e números do ranking */
 .rank-position {
     font-size: 1.5rem;
     font-weight: bold;
@@ -266,7 +249,6 @@ body {
 .rank-medal.bronze { color: #CD7F32; }
 .rank-number { color: #aaa; }
 
-/* Destaque para o usuário logado (continua o mesmo) */
 .current-user-highlight {
     background-color: rgba(72, 149, 239, 0.2) !important;
     border-left: 4px solid var(--accent);
@@ -314,7 +296,6 @@ body {
     background: linear-gradient(145deg,#3f3f4b, #2c2c2c); /* Gradiente sutil */
     border: 1px solid #555;
     border-radius: 12px;
-    padding: 20px;
     text-align: center;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -334,7 +315,7 @@ body {
 /* Ícone da estatística (Troféu, Medalha, Checkmark) */
 .gamified-stat-card .stat-icon {
     font-size: 2.5rem;
-    color: var(--accent); /* Cor azul para destaque no ícone */
+    color: #fff; /* Cor azul para destaque no ícone */
     margin-bottom: 10px;
 }
 
@@ -394,7 +375,7 @@ body {
 
 .profile-section-card .section-header .icon {
     font-size: 1.8rem;
-    color: var(--accent); /* Cor azul dos ícones */
+    color: #fff; /* Cor azul dos ícones */
     margin-right: 15px;
 }
 
@@ -426,7 +407,7 @@ body {
 /* Ícone do usuário à esquerda */
 .profile-header-icon {
     font-size: 3rem; /* Tamanho do ícone */
-    color: var(--accent); /* Cor azul de destaque */
+    color: #fff;
     margin-right: 20px;
 }
 
@@ -510,7 +491,7 @@ body {
 /* ============================================= */
 
 .streak-mini-card {
-    background-color: var(--accent); /* Fundo amarelo/laranja para contraste */
+    background-color: #0d6efd; /* Fundo amarelo/laranja para contraste */
     color: #ffffff; /* Texto escuro para legibilidade no fundo claro */
     border-radius: 10px;
     padding: 10px 15px;
@@ -519,7 +500,6 @@ body {
     justify-content: center; /* Centraliza o conteúdo horizontalmente */
     gap: 8px; /* Espaçamento entre os elementos */
     font-weight: bold;
-    box-shadow: 0 4px 12px rgba(76, 201, 240, 0.4); /* Sombra azulada */
     transition: transform 0.2s ease-in-out;
     width: fit-content; /* Ajusta a largura ao conteúdo */
     margin-left: auto;   /* Centraliza o card na coluna */
@@ -701,3 +681,43 @@ body {
 
 .color-selector .form-check { display: flex; align-items: center; margin-bottom: 8px; }
 .color-swatch { display: inline-block; width: 20px; height: 20px; border-radius: 50%; margin-right: 10px; border: 1px solid #555; }
+
+/* ========================================================== */
+/* == ESTILOS PARA FORMULÁRIOS NO TEMA ESCURO (ADMIN, ETC.) == */
+/* ========================================================== */
+
+/* 1. Corrige a cor dos RÓTULOS (ex: "Nome do evento", "Pontos") */
+.card.bg-dark .form-label {
+    color: var(--muted-text-dark-theme);
+}
+
+/* 2. Corrige a cor do TEXTO DIGITADO e do FUNDO dos campos */
+body.bg-dark .form-control,
+body.bg-dark .form-select {
+    background-color: #2a2a2a;
+    color: #f1f1f1;
+    border: 1px solid #444;
+}
+
+/* 3. Garante que o campo continue escuro ao ser selecionado (foco) */
+body.bg-dark .form-control:focus,
+body.bg-dark .form-select:focus {
+    background-color: #3a3a3a;
+    color: #f1f1f1;
+    border-color: var(--accent); /* Usa a cor de destaque azul */
+    box-shadow: none;
+}
+
+/* 4. Corrige a cor do TEXTO DE EXEMPLO (placeholder, ex: "texto da resposta") */
+body.bg-dark .form-control::placeholder { /* Padrão */
+  color: var(--muted-text-dark-theme);
+  opacity: 0.7;
+}
+body.bg-dark .form-control::-webkit-input-placeholder { /* Chrome, Safari, etc. */
+  color: var(--muted-text-dark-theme);
+  opacity: 0.7;
+}
+body.bg-dark .form-control::-moz-placeholder { /* Firefox */
+  color: var(--muted-text-dark-theme);
+  opacity: 0.7;
+}

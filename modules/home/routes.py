@@ -44,10 +44,6 @@ def render_login_colaboradores():
 def render_okrs():
     return render_template('okrs.html')
 
-@home_bp.route('/dashboardColaboradorNivel2', methods=['GET'])
-def render_dashboard_colaborador_nivel2():
-    return render_template('dashboard_colaboradores_nivel2.html')
-
 @home_bp.route('/performance', methods=['GET'])
 def render_performance():
     nome = session.get('nome')

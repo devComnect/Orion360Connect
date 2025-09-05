@@ -1,48 +1,78 @@
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{# templates/header/model-header.html - VERSÃO FINAL COM PERMISSÕES #}
+<meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Desempenho do Colaborador</title>
 <header class="app-header shadow-sm">
-  <div class="container d-flex justify-content-between align-items-center flex-wrap">
-    <!-- Logo -->
-    <div class="logo">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo do Projeto" class="logo-img" style="height: 40px;">
-    </div>
+    <div class="container d-flex justify-content-between align-items-center flex-wrap">
+        <div class="logo">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo do Projeto" class="logo-img" style="height: 40px;">
+            </a>
+        </div>
 
-    <!-- Navegação centralizada -->
-    <ul class="nav justify-content-center mb-0">
-      <li class="nav-item"><a href="/insights" class="nav-link">Insights</a></li>
-      <li class="nav-item"><a href="/dashboard" class="nav-link">Dashboard</a></li>
-      <li class="nav-item"><a href="/okrs" class="nav-link">OKRs</a></li>
-      <li class="nav-item"><a href="/relatorios" class="nav-link">Relatórios</a></li>
-      <li class="nav-item"><a href="/escala" class="nav-link">Escala</a></li>
-      <li class="nav-item"><a href="/register" class="nav-link">Gerenciamento</a></li>
-      <li class="nav-item dropdown">
-          <a class="nav-link px-3 dropdown-toggle" href="#" id="guardiansDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Guardians
-          </a>
-           <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="guardiansDropdown">
+        {% if is_authenticated %}
+            <ul class="nav justify-content-center mb-0">
+                
+                {# Se for Admin do Portal, mostra TODOS os links principais #}
+                {% if is_portal_admin %}
+                    {# Menu para admin do portal #}
+                    <li class="nav-item"><a href="/insights" class="nav-link">Insights</a></li>
+                    <li class="nav-item"><a href="/dashboard" class="nav-link">Dashboard</a></li>
+                    <li class="nav-item"><a href="/okrs" class="nav-link">OKRs</a></li>
+                    <li class="nav-item"><a href="/relatorios" class="nav-link">Relatórios</a></li>
+                    <li class="nav-item"><a href="/escala" class="nav-link">Escala</a></li>
+                    <li class="nav-item"><a href="/register" class="nav-link">Gerenciamento</a></li>
+
+                {% elif is_nivel2 == 1 %}
+                    {# Menu para usuário Nível 2 #}
+                    <li><a href="{{ url_for('home_bp.render_performance_n2') }}" class="nav-link">Performance</a></li>
+                    <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
+                    <li><a href="/relatoriosIndividual" class="nav-link">Relatórios</a></li>
+
+                {% else %}
+                    {# Menu para usuário comum #}
+                    <li><a href="{{ url_for('home_bp.render_performance') }}" class="nav-link">Performance</a></li>
+                    <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
+                    <li class="nav-item"><a href="/escala" class="nav-link">Escala</a></li>
+                {% endif %}
+
+                
+                <li class="nav-item dropdown">
+                    <a class="nav-link px-3 dropdown-toggle" href="#" id="guardiansDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Guardiões
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="guardiansDropdown">
                         <li><a class="dropdown-item" href="{{ url_for('guardians_bp.rankings') }}">Rankings</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('guardians_bp.sobre') }}">Sobre o Programa</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('guardians_bp.central') }}">Central de Treinamentos</a></li>
                     </ul>
-      </li>
-    </ul>
+                </li>
+            </ul>
+        {% endif %}
 
-    <!-- Logout -->
-    <div class="logout-container">
-      <a href="{{ url_for('guardians_bp.admin') }}" class="btn btn-warning btn-sm me-2">
+        <div class="logout-container d-flex align-items-center">
+            {% if is_authenticated %}
+                {# O botão "Painel Admin" SÓ APARECE se for Admin Guardians #}
+                {% if is_guardian_admin %}
+                    <a href="{{ url_for('guardians_bp.admin') }}" class="btn btn-warning btn-sm me-2">
                         <i class="bi bi-shield-lock-fill me-1"></i> Painel Admin
                     </a>
-      <a href="{{ url_for('guardians_bp.meu_perfil') }}" class="btn btn-outline-light btn-sm me-2">
-                        <i class="fas fa-user-circle me-1"></i> Meu Perfil
-                    </a>
-      <form action="/logout" method="POST" class="d-inline">
-        <button type="submit" class="btn btn-danger btn-sm">
-          <i class="fas fa-sign-out-alt me-1"></i> Sair
-        </button>
-      </form>
+                {% endif %}
+                <a href="{{ url_for('guardians_bp.meu_perfil') }}" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-person-circle me-1"></i> Meu Perfil
+                </a>
+                <form action="{{ url_for('login.logout') }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="bi bi-box-arrow-right me-1"></i> Sair
+                    </button>
+                </form>
+            {% else %}
+                <a href="{{ url_for('login.login') }}" class="btn btn-success btn-sm">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Entrar
+                </a>
+            {% endif %}
+        </div>
     </div>
-  </div>
 </header>
-
 
 
 <style>
