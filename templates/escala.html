@@ -51,6 +51,5 @@
     <script type="application/json" id="dados-json">
         {{ abas | tojson | safe }}
     </script>
-    {% include 'footer/model-footer.html' %}
     <script src="{{ url_for('static', filename='js/escala.js') }}"></script>
 {% endblock %}

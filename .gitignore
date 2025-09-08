@@ -1,0 +1,49 @@
+app.py
+# Arquivos de Bytecode e otimizados do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Diretórios de ambiente virtual
+# (Padrões comuns, adicione o seu se for diferente)
+venv/
+.venv/
+env/
+.env/
+ENV/
+.ENV/
+
+# Arquivos de dependências e pacotes
+dist/
+build/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+.pytest_cache/
+celerybeat-schedule
+*.so
+
+# Logs e bancos de dados de desenvolvimento
+*.log
+*.sqlite3
+*.db
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de configuração de IDEs populares
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Arquivos de segredos e variáveis de ambiente
+# NUNCA versione estes arquivos!
+.env
+*.env.*
+!*.env.example
+
+# Arquivos de cobertura de testes
+.coverage
+htmlcov/
