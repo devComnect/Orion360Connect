@@ -326,9 +326,6 @@
   </div> <!-- FIM da .row -->
 </div>
 
-
-
-
 <!-- Modal para mostrar os códigos -->
  <div class="modal fade" id="modalCodigos" tabindex="-1" aria-labelledby="modalCodigosLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -388,7 +385,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
-    {% include 'js/insights_grupos_js.html' %}
+    <script src="{{ url_for('static', filename='js/insights_grupos.js') }}"></script>
 {% endblock %}
 
 

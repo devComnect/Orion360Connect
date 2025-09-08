@@ -1,0 +1,192 @@
+
+<!--Bloco que realiza o cadastro do colaborador-->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  const form = document.getElementById('form-cadastro');
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();  // impede envio tradicional
+
+    const nome = form.nome.value.trim();
+    const username = form.username.value.trim();
+    const email = form.email.value.trim();
+    const senha = form.senha.value;
+    const confirmarSenha = form['confirmar-senha'].value;
+    const nivelAcesso = form['nivel-acesso'].value;
+
+    // Validação simples de senha
+    if (senha !== confirmarSenha) {
+      alert('As senhas não coincidem!');
+      return;
+    }
+
+    try {
+      const response = await fetch('/setColaboradores', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nome: nome,
+          username: username,
+          email: email,
+          senha: senha,
+          nivel_acesso: nivelAcesso
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        alert(data.message);
+        form.reset();
+      } else {
+        alert(data.message || 'Erro desconhecido.');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar:', error);
+      alert('Erro no servidor. Tente novamente mais tarde.');
+    }
+  });
+
+});
+</script>
+
+<!--Bloco que realiza o delete do colaborador-->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const formDelete = document.querySelector('form[action="/deletar_usuario"]');
+
+  formDelete.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const emailUsernameInput = document.getElementById("del-email-username");
+    const emailUsername = emailUsernameInput.value.trim();
+
+    if (!emailUsername) {
+      alert("Por favor, informe o e-mail ou username para exclusão.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/deleteColaboradores", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          "email-username": emailUsername
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        alert(data.message);
+        formDelete.reset();
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error("Erro ao excluir usuário:", error);
+      alert("Erro no servidor. Tente novamente mais tarde.");
+    }
+  });
+});
+</script>
+
+<!--Bloco que edita as informações do colaborador-->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const formEdicao = document.getElementById("form-edicao");
+
+  formEdicao.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const emailOriginal = document.getElementById("email-original").value;
+    const nome = document.getElementById("edit-nome").value.trim();
+    const username = document.getElementById("edit-username").value.trim();
+    const email = document.getElementById("edit-email").value.trim();
+    const senha = document.getElementById("edit-senha").value;
+    const nivelAcesso = document.getElementById("edit-nivel-acesso").value;
+
+    const payload = {
+      email_original: emailOriginal,
+      nome: nome,
+      username: username,
+      email: email,
+      senha: senha,
+      nivel_acesso: nivelAcesso
+    };
+
+    try {
+      const response = await fetch("/updateColaboradores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        alert(data.message);
+        formEdicao.reset();
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar usuário:", error);
+      alert("Erro no servidor. Tente novamente mais tarde.");
+    }
+  });
+});
+</script>
+
+<!--Bloco que realiza a alteração de senha do colaborador-->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('edit-username-colaborador').value.trim();
+      const senha = document.getElementById('edit-senha-colaborador').value.trim();
+
+      if (!username || !senha) {
+        alert('Por favor, preencha o username e a nova senha.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/alterar_senha_colaborador', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, senha })
+        });
+
+        const contentType = response.headers.get('content-type');
+
+        if (contentType && contentType.indexOf('application/json') !== -1) {
+          const result = await response.json();
+
+          if (response.ok) {
+            alert(result.message || 'Senha atualizada com sucesso!');
+            form.reset();
+          } else {
+            alert(result.error || 'Erro ao atualizar a senha.');
+          }
+        } else {
+          const text = await response.text();
+          alert('Erro inesperado (não JSON):\n' + text);
+        }
+      } catch (error) {
+        alert('Erro na requisição: ' + error.message);
+      }
+    });
+  });
+</script>
+

@@ -46,43 +46,6 @@
     </div>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('form-alterar-senha');
-
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const username = document.getElementById('edit-username-colaborador').value.trim();
-        const senha = document.getElementById('edit-senha-colaborador').value.trim();
-
-        if (!username || !senha) {
-          alert('Por favor, preencha o username e a nova senha.');
-          return;
-        }
-
-        try {
-          const response = await fetch('/alterar_senha_colaborador', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username, senha })
-          });
-
-          const result = await response.json();
-
-          if (response.ok) {
-            alert(result.message || 'Senha atualizada com sucesso!');
-            form.reset();
-          } else {
-            alert(result.error || 'Erro ao atualizar a senha.');
-          }
-        } catch (error) {
-          alert('Erro na requisição: ' + error.message);
-        }
-      });
-    });
-  </script>
+  <script src="{{ url_for('static', filename='js/register.js') }}"></script>
 </body>
 </html>

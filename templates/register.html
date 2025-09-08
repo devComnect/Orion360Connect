@@ -140,5 +140,6 @@
 {% endblock %}
 
 {% block scripts %}
-    {% include 'js/register_js.html' %}
+        <script src="{{ url_for('static', filename='js/register.js') }}"></script>
+
 {% endblock %}

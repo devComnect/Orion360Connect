@@ -458,7 +458,7 @@
 
 
 {% block scripts %}
-  {% include 'js/okrs_js.html' %}
+  <script src="{{ url_for('static', filename='js/okrs.js') }}"></script>
 
   <!-- Chart Data Labels -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
