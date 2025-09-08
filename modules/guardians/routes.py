@@ -724,28 +724,27 @@ def admin():
                 try:
                     # 1. Apaga o histórico de ações (como já fazia)
                     HistoricoAcao.query.filter_by(guardian_id=perfil_id).delete()
-
+ 
                     # 2. NOVA LINHA: Apaga todas as insígnias conquistadas pelo usuário
                     GuardianInsignia.query.filter_by(guardian_id=perfil_id).delete()
-
+ 
                     # 3. NOVA LINHA: Apaga todas as tentativas de quizzes do usuário
                     QuizAttempt.query.filter_by(guardian_id=perfil_id).delete()
-
+ 
                     # 4. Zera a pontuação, dias de vigilante e atualiza o nivel
                     perfil_guardian.score_atual = 0
                     atualizar_nivel_usuario(perfil_guardian) # Atualiza para o nível mais baixo
                     perfil_guardian.current_streak = 0
                     perfil_guardian.last_streak_date = None
-
+ 
                     db.session.commit()
                     flash(f"O progresso de {perfil_guardian.nome} (histórico, conquistas e quizzes) foi completamente zerado.", 'success')
-
+ 
                 except Exception as e:
                     db.session.rollback()
                     flash(f"Ocorreu um erro ao zerar o histórico: {e}", 'danger')
             else:
                 flash("Perfil de colaborador não encontrado.", 'danger')
-                
             return redirect(url_for('guardians_bp.admin') + '#panel-profiles')
 
         
