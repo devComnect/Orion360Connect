@@ -51,8 +51,6 @@
     <script type="application/json" id="dados-json">
         {{ abas | tojson | safe }}
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.1/dist/js/tabulator.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    {% include 'footer/model-footer.html' %}
     <script src="{{ url_for('static', filename='js/escala.js') }}"></script>
 {% endblock %}
