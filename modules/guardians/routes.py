@@ -731,9 +731,11 @@ def admin():
                     # 3. NOVA LINHA: Apaga todas as tentativas de quizzes do usuário
                     QuizAttempt.query.filter_by(guardian_id=perfil_id).delete()
 
-                    # 4. Zera a pontuação e atualiza o nível
+                    # 4. Zera a pontuação, dias de vigilante e atualiza o nivel
                     perfil_guardian.score_atual = 0
                     atualizar_nivel_usuario(perfil_guardian) # Atualiza para o nível mais baixo
+                    perfil_guardian.current_streak = 0
+                    perfil_guardian.last_streak_date = None
 
                     db.session.commit()
                     flash(f"O progresso de {perfil_guardian.nome} (histórico, conquistas e quizzes) foi completamente zerado.", 'success')

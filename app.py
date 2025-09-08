@@ -69,10 +69,10 @@ def inject_global_vars():
         username=session.get('username')
     )
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:%40Slink1205@localhost/data'
-app.config['SQLALCHEMY_BINDS'] = {
-    'door_access': 'mysql+pymysql://sec_report:%40Comnect2025@172.16.30.50/AccessDoors'
-}
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://dev_user:%40Slink1205@127.0.0.1/data'
+#app.config['SQLALCHEMY_BINDS'] = {
+#    'door_access': 'mysql+pymysql://sec_report:%40Comnect2025@172.16.30.50/AccessDoors'
+#}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'LjKbe9TBQKXExJw'
 
@@ -186,80 +186,80 @@ def tarefa_importar_detalhes_chamadas():
 # APScheduler
 scheduler = APScheduler()
 
-with app.app_context():
-    db.create_all()
+# with app.app_context():
+#     db.create_all()
 
-    # Create admin user if missing
-    if not User.query.filter_by(username='admin').first():
-        admin = User(username='admin', password=generate_password_hash('admin123'), is_admin=True)
-        db.session.add(admin)
-        db.session.commit()
-        logging.info("Usuário admin criado com sucesso.")
+#     # Create admin user if missing
+#     if not User.query.filter_by(username='admin').first():
+#         admin = User(username='admin', password=generate_password_hash('admin123'), is_admin=True)
+#         db.session.add(admin)
+#         db.session.commit()
+#         logging.info("Usuário admin criado com sucesso.")
 
-    scheduler.init_app(app)
+#     scheduler.init_app(app)
 
-    scheduler.add_job(
-        id='job_processa_performance_horaria',
-        func=tarefa_horaria_processar_performance,
-        trigger='interval',
-        minutes=15
-    )
+#     scheduler.add_job(
+#         id='job_processa_performance_horaria',
+#         func=tarefa_horaria_processar_performance,
+#         trigger='interval',
+#         minutes=15
+#     )
 
-    scheduler.add_job(
-        id='job_processa_detalhes_chamadas',
-        func=tarefa_importar_detalhes_chamadas,
-        trigger='interval',
-        minutes=5
-    )
+#     scheduler.add_job(
+#         id='job_processa_detalhes_chamadas',
+#         func=tarefa_importar_detalhes_chamadas,
+#         trigger='interval',
+#         minutes=5
+#     )
 
-    scheduler.add_job(
-        id='job_import_eventos',
-        func=tarefa_importar_eventos,
-        trigger='interval',
-        minutes=10
-    )
+#     scheduler.add_job(
+#         id='job_import_eventos',
+#         func=tarefa_importar_eventos,
+#         trigger='interval',
+#         minutes=10
+#     )
 
-    scheduler.add_job(
-        id='job_processa_registro_chamadas_saida',
-        func=tarefa_importar_registro_chamadas_saida_incremental,
-        trigger='interval',
-        minutes=15
-    )
+#     scheduler.add_job(
+#         id='job_processa_registro_chamadas_saida',
+#         func=tarefa_importar_registro_chamadas_saida_incremental,
+#         trigger='interval',
+#         minutes=15
+#     )
 
-    scheduler.add_job(
-        id='job_processa_performance_horaria_vyrtos',
-        func=tarefa_horaria_processar_performance_vyrtos,
-        trigger='interval',
-        minutes=15
-    )
+#     scheduler.add_job(
+#         id='job_processa_performance_horaria_vyrtos',
+#         func=tarefa_horaria_processar_performance_vyrtos,
+#         trigger='interval',
+#         minutes=15
+#     )
 
-    scheduler.add_job(
-        id='job_importar_chamados',
-        func=tarefa_importar_chamados,
-        trigger='interval',
-        minutes=5
-    )
+#     scheduler.add_job(
+#         id='job_importar_chamados',
+#         func=tarefa_importar_chamados,
+#         trigger='interval',
+#         minutes=5
+#     )
 
-    scheduler.add_job(
-        id='job_importar_psatisfacao',
-        func=tarefa_importar_psatisfacao,
-        trigger='interval',
-        minutes=5
-    )
+#     scheduler.add_job(
+#         id='job_importar_psatisfacao',
+#         func=tarefa_importar_psatisfacao,
+#         trigger='interval',
+#         minutes=5
+#     )
 
-    scheduler.add_job(
-        id='job_importar_fcr_reabertos',
-        func=tarefa_importar_fcr_reabertos,
-        trigger='interval',
-        minutes=5
-    )
+#     scheduler.add_job(
+#         id='job_importar_fcr_reabertos',
+#         func=tarefa_importar_fcr_reabertos,
+#         trigger='interval',
+#         minutes=5
+#     )
 
-    scheduler.start()
-    logging.info("Tarefas agendadas iniciadas.")
+#     scheduler.start()
+#     logging.info("Tarefas agendadas iniciadas.")
 
 # Debug logs do APScheduler
 logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
 # Run app
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=9000, debug=False)
+    app.run(host='0.0.0.0', port=1212, debug=False)
