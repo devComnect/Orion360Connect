@@ -1795,7 +1795,10 @@ function atualizarNps(dias) {
 
 // Script que retorna as ligações atendidas-->
 document.addEventListener("DOMContentLoaded", function () {
-  // Atualiza ao clicar no botão de filtro de dias
+  // Chama automaticamente com filtro padrão = 1 ao renderizar
+  atualizarLigacoes(1);
+
+  // Atualiza ao clicar nos botões de filtro de dias
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const dias = parseInt(this.getAttribute('data-dias'), 10);
@@ -1824,22 +1827,27 @@ function atualizarLigacoes(dias) {
 }
 
 
-// Script que retorna as ligações não atendidas-->
+
+// Script que retorna as ligações não atendidas
 document.addEventListener("DOMContentLoaded", function () {
-  // Atualiza ao clicar no botão de filtro de dias
+  // Chama automaticamente com filtro padrão = hoje ao renderizar
+  atualizarLigacoesPerdidas(1);
+
+  // Atualiza ao clicar nos botões de filtro de dias
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
-      const dias = parseInt(this.getAttribute('data-dias'), 10);
+      const dias = this.getAttribute('data-dias'); 
       atualizarLigacoesPerdidas(dias);
     });
   });
 });
 
-function atualizarLigacoesPerdidas(dias) {
+// Script que traz as ligações perdidas
+function atualizarLigacoesPerdidas(filtro) {
   fetch('/insights/ligacoesPerdidas', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dias })
+    body: JSON.stringify({ dias: filtro })
   })
   .then(response => response.json())
   .then(data => {
@@ -1854,44 +1862,46 @@ function atualizarLigacoesPerdidas(dias) {
   });
 }
 
-// Script que retorna as ligações efetuadas-->
+
+// Script que retorna as ligações efetuadas
+document.addEventListener("DOMContentLoaded", function () {
   const botoesPeriodo = document.querySelectorAll(".filtro-btn");
 
+  // Chamada inicial: somente hoje
+  carregarChamadasEfetuadas(1);
+
+  // Clique nos botões de período
   botoesPeriodo.forEach(button => {
     button.addEventListener("click", function () {
       botoesPeriodo.forEach(btn => btn.classList.remove("active"));
       this.classList.add("active");
 
-      const dias = parseInt(this.getAttribute("data-dias"), 10);
+      const dias = this.getAttribute("data-dias"); // pode ser "7", "15" etc.
       carregarChamadasEfetuadas(dias);
     });
   });
+});
 
-  // chamada inicial
-  carregarChamadasEfetuadas(1);
+async function carregarChamadasEfetuadas(filtro) {
+  try {
+    const response = await fetch('/insights/chamadasEfetuadas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias: filtro })
+    });
 
-  async function carregarChamadasEfetuadas(dias) {
-    try {
-      const response = await fetch('/insights/chamadasEfetuadas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ dias })
-      });
+    const data = await response.json();
 
-      const data = await response.json();
-
-      if (data.status === "success") {
-        const total = data.total_ligacoes || 0;
-        document.getElementById("ch-efetuadas").textContent = total;
-      } else {
-        console.error("Erro na resposta:", data.message);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar chamadas efetuadas:", error);
+    if (data.status === "success") {
+      const total = data.total_ligacoes || 0;
+      document.getElementById("ch-efetuadas").textContent = total;
+    } else {
+      console.error("Erro na resposta:", data.message);
     }
+  } catch (error) {
+    console.error("Erro ao buscar chamadas efetuadas:", error);
   }
+}
 
 //Bloco que traz a relação de chamadas transferidas-->
   document.addEventListener("DOMContentLoaded", function () {

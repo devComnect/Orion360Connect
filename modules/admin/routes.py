@@ -4,7 +4,7 @@ import modules.tasks.utils as utils
 from modules.deskmanager.authenticate.routes import token_desk
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_date
-from application.models import db, Chamado, DesempenhoAtendente
+from application.models import db, Chamado
 from sqlalchemy import extract, func
 from modules.auth.utils import authenticate, authenticate_relatorio
 from settings.endpoints import CREDENTIALS
@@ -76,106 +76,7 @@ def relacao_admin_abertos_vs_resolvido_periodo():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-@admin_bp.route('/v2/report/attendants_performance', methods=['POST'])
-def importar_ligacoes_atendidas():
 
-    try:
-        # 1. Autenticar com usuário fixo
-        auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
-        if "access_token" not in auth_response:
-            return jsonify({"status": "error", "message": "Falha na autenticação", "detalhes": auth_response}), 401
-
-        access_token = auth_response["access_token"]
-
-        hoje = datetime.now()
-
-        # Obtém o primeiro dia do mês atual
-        primeiro_dia_mes = datetime.now().replace(day=1)
-    
-        # Obtém o último dia do mês atual
-        ultimo_dia_mes = (primeiro_dia_mes.replace(month=primeiro_dia_mes.month % 12 + 1, day=1) - timedelta(days=1))
-
-        # 2. Montar parâmetros
-        class Params:
-            initial_date = primeiro_dia_mes.strftime('%Y-%m-%d')
-            final_date = ultimo_dia_mes.strftime('%Y-%m-%d')
-            initial_hour = "00:00:00"
-            final_hour = "23:59:59"
-            week = ""
-            agents = [2020, 2021, 2022, 2023, 2024, 2025, 2028, 2029]
-            queues = [1]
-            options = {
-                "sort": {"data": -1},
-                "offset": 0,
-                "count": 1000
-            }
-            conf = {}
-
-        # 3. Requisição à API utilitária
-        response = utils.atendentePerformance(access_token, Params)
-        #print(response)
-        dados_atendentes = response.get("result", {}).get("data", [])
-
-
-        if not dados_atendentes:
-            return jsonify({"status": "error", "message": "Nenhum dado retornado"}), 204
-
-        # 4. Inserir no banco (com limpeza antes)
-        with db.session.begin():
-            db.session.query(DesempenhoAtendente).delete()
-
-            for item in dados_atendentes:
-                nome = item.get("atendente")
-                data_str = item.get("data")
-                try:
-                    data = datetime.strptime(data_str, "%Y-%m-%d").date()
-                except Exception:
-                    continue
-
-                novo = DesempenhoAtendente(
-                    nome=nome,
-                    chamadas_atendidas=item.get("ch_atendidas"),
-                    data=data,
-                    tempo_online=item.get("tempo_online"),
-                    tempo_servico=item.get("tempo_servico"),
-                    tempo_totalatend=item.get("tempo_totalatend"),
-                )
-                db.session.add(novo)
-
-        # 6. CONSULTA AJUSTADA - Aqui está a mudança principal
-        resultados = (
-            db.session.query(
-                DesempenhoAtendente.nome,
-                db.func.sum(DesempenhoAtendente.chamadas_atendidas).label('total')
-            )
-            .filter(
-                DesempenhoAtendente.data.between(
-                    primeiro_dia_mes.date(),
-                    ultimo_dia_mes.date()
-                )
-            )
-            .group_by(DesempenhoAtendente.nome)
-            .all()
-        )
-
-        dados_grafico = [
-            {"nome": nome, "total": total}
-            for nome, total in resultados
-        ]
-
-        return jsonify({
-            "status": "success",
-            "data": dados_grafico,
-            "registros_importados": len(dados_atendentes)
-        })
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            "status": "error",
-            "message": "Erro inesperado",
-            "details": str(e)
-        }), 500
 
 # Rota que traz total de chamados abertos no período de uma semana
 @admin_bp.route('/ChamadosSuporteSemanal', methods=['POST'])

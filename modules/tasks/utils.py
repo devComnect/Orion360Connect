@@ -1,11 +1,12 @@
 import requests, json
 import settings.endpoints as endpoints
 from urllib.parse import urlencode
-from application.models import db, RegistroChamadas, ChamadasDetalhes, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Grupos, Chamado, Categoria, PesquisaSatisfacao, EventosAtendentes, RelatorioColaboradores
+from application.models import db, RegistroChamadas, ChamadasDetalhes, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Grupos, Chamado, Categoria, PesquisaSatisfacao, EventosAtendentes, RelatorioColaboradores
 from modules.auth.utils import authenticate, authenticate_relatorio
 from modules.deskmanager.authenticate.routes import token_desk
 import modules.tasks.utils as utils
 from settings.endpoints import CREDENTIALS, RELATORIO_CHAMADOS_SUPORTE
+from sqlalchemy.exc import IntegrityError
 from flask import jsonify, current_app as app
 import json
 from datetime import timedelta, datetime
@@ -174,24 +175,34 @@ def gerar_intervalos(data_inicial, data_final, tamanho=15):
         yield (atual, proximo)
         atual = proximo + timedelta(days=1)
 
+import logging
+from logging.handlers import RotatingFileHandler
+
+# Configuração do log
+logging.basicConfig(
+    filename="app.log",
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
 def processar_e_armazenar_performance(dias=180, incremental=False):
     hoje = datetime.now().date()
-    ontem = hoje - timedelta(days=1)
     
     if dias != 180 and not incremental:
+        logging.error("Somente o intervalo de 180 dias é permitido para carga completa.")
         raise ValueError("Somente o intervalo de 180 dias é permitido para carga completa.")
 
     # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
+        logging.error("Falha na autenticação")
         return {"status": "error", "message": "Falha na autenticação"}
     access_token = auth_response["access_token"]
 
-    # Datas de busca
     data_inicial = hoje - timedelta(days=dias - 1)
     data_final = hoje
 
-    # IDs e nomes dos operadores
     OPERADORES_MAP = {
         2020: "Renato",
         2021: "Matheus",
@@ -205,20 +216,21 @@ def processar_e_armazenar_performance(dias=180, incremental=False):
 
     operadores_ids = list(OPERADORES_MAP.keys())
 
-    # Limpa somente se for carga completa
+    # Limpa a tabela antes da carga completa
     if not incremental:
         try:
             PerformanceColaboradores.query.delete()
             db.session.commit()
-            print("Tabela de PerformanceColaboradores limpa com sucesso.")
+            logging.info("Tabela PerformanceColaboradores limpa com sucesso.")
         except Exception as e:
             db.session.rollback()
+            logging.exception(f"Erro ao limpar a tabela: {str(e)}")
             return {"status": "error", "message": f"Erro ao limpar a tabela: {str(e)}"}
 
     for operador_id in operadores_ids:
         nome_operador = OPERADORES_MAP.get(operador_id, "Desconhecido")
 
-        for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):  # usar intervalos menores
+        for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):
             offset = 0
             total_registros = 0
 
@@ -232,29 +244,21 @@ def processar_e_armazenar_performance(dias=180, incremental=False):
                     "week": [],
                     "agents": [operador_id],
                     "queues": [1],
-                    "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
+                    "options": {"sort": {"data": 1}, "offset": offset, "count": -1},
                     "conf": {}
                 }
 
-                print(f"[{nome_operador}] Buscando {inicio} até {fim}, offset {offset}")
+                logging.info(f"[{nome_operador}] Buscando {inicio} até {fim}, offset {offset}")
                 response = utils.atendentePerformanceData(access_token, params)
                 dados = response.get("result", {}).get("data", [])
 
                 if not dados:
+                    logging.info(f"[{nome_operador}] Nenhum dado retornado para {inicio} até {fim}, offset {offset}")
                     break
 
                 for item in dados:
                     try:
                         data_registro = datetime.strptime(item["data"], "%Y-%m-%d").date()
-
-                        # Evita duplicidade se incremental
-                        if incremental:
-                            exists = PerformanceColaboradores.query.filter_by(
-                                operador_id=operador_id,
-                                data=data_registro
-                            ).first()
-                            if exists:
-                                continue
 
                         registro = PerformanceColaboradores(
                             name=nome_operador,
@@ -269,21 +273,37 @@ def processar_e_armazenar_performance(dias=180, incremental=False):
                             tempo_minatend=item.get("tempo_minatend"),
                             tempo_medatend=item.get("tempo_medatend"),
                             tempo_maxatend=item.get("tempo_maxatend"),
+                            pimprod_Toalete_1=item.get("pimprod_Toalete_1"),
+                            pimprod_Lanche_5=item.get("pimprod_Lanche_5"),
+                            pimprod_Pessoal_6=item.get("pimprod_Pessoal_6"),
                             data_importacao=datetime.now()
                         )
+
                         db.session.add(registro)
                         total_registros += 1
+
                     except Exception as e:
-                        print(f"[ERRO] {nome_operador} em {item.get('data')}: {str(e)}")
+                        logging.exception(f"[ERRO] {nome_operador} em {item.get('data')}: {str(e)}")
 
-                db.session.flush()
-                offset += 1000  # Próxima página
+                try:
+                    db.session.commit()
+                except IntegrityError as e:
+                    db.session.rollback()
+                    logging.warning(f"[{nome_operador}] Registro já existe para {inicio} até {fim}, offset {offset}: {str(e)}")
+                except Exception as e:
+                    db.session.rollback()
+                    logging.exception(f"[ERRO] Falha ao salvar registros para {nome_operador}: {str(e)}")
 
-            print(f"[{nome_operador}] Total inserido de {inicio} a {fim}: {total_registros}")
+                offset += 1000
 
-        db.session.commit()
+            logging.info(f"[{nome_operador}] Total processado de {inicio} a {fim}: {total_registros}")
 
-    return {"status": "success", "message": "Dados inseridos com sucesso (modo incremental)." if incremental else "Carga completa realizada com sucesso."}
+    logging.info("Carga completa finalizada.")
+    return {
+        "status": "success",
+        "message": "Carga completa realizada com sucesso."
+    }
+
 
 def processar_e_armazenar_performance_incremental():
     try:
@@ -472,7 +492,6 @@ def processar_e_armazenar_performance_incremental():
     except Exception as e:
         app.logger.error(f"Erro na tarefa processar_e_armazenar_performance_incremental: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 def processar_e_armazenar_performance_vyrtos_incremental():
     hoje = datetime.now().date()
@@ -1325,6 +1344,7 @@ def processar_e_armazenar_eventos():
         for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):
             offset = 0
             total_registros = 0
+            total_atualizados = 0
 
             while True:
                 params = {
@@ -1362,7 +1382,7 @@ def processar_e_armazenar_eventos():
                         data_fim = parse_datetime(item.get("dataFim"))
 
                         if not item.get("evento") and not data_inicio:
-                            print(f"⚠️ [{nome_operador}] Evento descartado (sem evento e sem dataInicio): {item}")
+                            print(f"[{nome_operador}] Evento descartado (sem evento e sem dataInicio): {item}")
                             continue
 
                         existe = EventosAtendentes.query.filter_by(
@@ -1372,9 +1392,41 @@ def processar_e_armazenar_eventos():
                         ).first()
 
                         if existe:
-                            print(f"⏭️ [{nome_operador}] Evento já existe: {item.get('evento')} em {data_inicio}")
+                            atualizado = False
+
+                            if existe.parametro != (item.get("parametro") or None):
+                                existe.parametro = item.get("parametro") or None
+                                atualizado = True
+
+                            if existe.nome_pausa != (item.get("nomePausa") or None):
+                                existe.nome_pausa = item.get("nomePausa") or None
+                                atualizado = True
+
+                            if existe.data_fim != data_fim:
+                                existe.data_fim = data_fim
+                                atualizado = True
+
+                            if existe.sinaliza_duracao != parse_bool(item.get("sinalizaDuracao")):
+                                existe.sinaliza_duracao = parse_bool(item.get("sinalizaDuracao"))
+                                atualizado = True
+
+                            if existe.duracao != parse_timedelta(item.get("duracao")):
+                                existe.duracao = parse_timedelta(item.get("duracao"))
+                                atualizado = True
+
+                            if existe.complemento != (item.get("complemento") or None):
+                                existe.complemento = item.get("complemento") or None
+                                atualizado = True
+
+                            if atualizado:
+                                existe.data_importacao = datetime.utcnow()
+                                total_atualizados += 1
+                                print(f"✏️ [{nome_operador}] Evento atualizado: {item.get('evento')} em {data_inicio}")
+                            else:
+                                print(f"⏭️ [{nome_operador}] Evento já existe e está igual. Pulando.")
                             continue
 
+                        # Se não existir, cria um novo
                         registro = EventosAtendentes(
                             data=data_evento,
                             atendente=operador_id,
@@ -1393,19 +1445,19 @@ def processar_e_armazenar_eventos():
                         total_registros += 1
 
                     except Exception as e:
-                        print(f"❌ [{nome_operador}] Erro ao processar item: {e} | Dados: {item}")
+                        print(f"[{nome_operador}] Erro ao processar item: {e} | Dados: {item}")
 
                 try:
                     db.session.commit()
                 except Exception as e:
                     db.session.rollback()
-                    print(f"❌ Erro ao salvar registros no banco: {e}")
+                    print(f"Erro ao salvar registros no banco: {e}")
 
                 offset += 1000
 
-            print(f"✅ [{nome_operador}] Total eventos inseridos de {inicio} a {fim}: {total_registros}")
+            print(f"[{nome_operador}] Total novos: {total_registros}, atualizados: {total_atualizados}")
 
-    return {"status": "success", "message": f"Eventos importados apenas do dia {hoje}."}
+    return {"status": "success", "message": f"Eventos importados e atualizados apenas do dia {hoje}."}
 
 def importar_categorias():
     token = token_desk()

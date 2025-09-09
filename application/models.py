@@ -28,18 +28,6 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return f'<Usuario {self.username}>'
     
-class DesempenhoAtendente(db.Model):
-    __tablename__ = 'desempenho_atendente'
-
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(255))
-    chamadas_atendidas = db.Column(db.Integer)
-    data = db.Column(db.Date)
-    tempo_online = db.Column(db.Integer)
-    tempo_servico = db.Column(db.Integer)
-    tempo_totalatend = db.Column(db.Integer)
-    data_importacao = db.Column(db.DateTime, default=datetime.utcnow)
-
 class DesempenhoAtendenteVyrtos(db.Model):
     __tablename__ = 'desempenho_atendente_vyrtos'
 
