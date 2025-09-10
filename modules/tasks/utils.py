@@ -178,13 +178,6 @@ def gerar_intervalos(data_inicial, data_final, tamanho=15):
 import logging
 from logging.handlers import RotatingFileHandler
 
-# Configuração do log
-logging.basicConfig(
-    filename="app.log",
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
 
 def processar_e_armazenar_performance(dias=180, incremental=False):
     hoje = datetime.now().date()
@@ -303,7 +296,6 @@ def processar_e_armazenar_performance(dias=180, incremental=False):
         "status": "success",
         "message": "Carga completa realizada com sucesso."
     }
-
 
 def processar_e_armazenar_performance_incremental():
     try:

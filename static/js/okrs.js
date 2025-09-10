@@ -293,7 +293,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 
 
-//Script que traz a evoução do SLA com o passar dos periodos-->
+//Script que traz a evolução do SLA com o passar dos periodos-->
 
 document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
