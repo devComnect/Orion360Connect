@@ -10,6 +10,8 @@ from sqlalchemy.exc import IntegrityError
 from flask import jsonify, current_app as app
 import json
 from datetime import timedelta, datetime
+import logging
+
 
 
 def get_relatorio(token, params):
@@ -174,10 +176,6 @@ def gerar_intervalos(data_inicial, data_final, tamanho=15):
         proximo = min(atual + timedelta(days=tamanho - 1), data_final)
         yield (atual, proximo)
         atual = proximo + timedelta(days=1)
-
-import logging
-from logging.handlers import RotatingFileHandler
-
 
 def processar_e_armazenar_performance(dias=180, incremental=False):
     hoje = datetime.now().date()
@@ -596,12 +594,9 @@ def processar_e_armazenar_performance_vyrtos_incremental():
         "message": f"{total_registros} registros inseridos no modo incremental (Vyrtos)."
     }
 
-def processar_e_armazenar_performance_vyrtos(dias=180, incremental=False):
+def processar_e_armazenar_performance_vyrtos(incremental=True):
     hoje = datetime.now().date()
     
-    if dias != 180 and not incremental:
-        raise ValueError("Somente o intervalo de 180 dias é permitido para carga completa.")
-
     # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
@@ -609,7 +604,7 @@ def processar_e_armazenar_performance_vyrtos(dias=180, incremental=False):
     access_token = auth_response["access_token"]
 
     # Datas de busca
-    data_inicial = hoje - timedelta(days=dias - 1)
+    data_inicial = hoje 
     data_final = hoje
 
     # IDs e nomes dos operadores
@@ -623,15 +618,6 @@ def processar_e_armazenar_performance_vyrtos(dias=180, incremental=False):
         2028: "Henrique",
         2029: "Rafael"
     }
-
-    if not incremental:
-        try:
-            DesempenhoAtendenteVyrtos.query.delete()
-            db.session.commit()
-            print("🧹 Tabela desempenho_atendente_vyrtos limpa com sucesso.")
-        except Exception as e:
-            db.session.rollback()
-            return {"status": "error", "message": f"Erro ao limpar a tabela: {str(e)}"}
 
     for operador_id, nome_operador in OPERADORES_MAP.items():
         total_registros_operador = 0

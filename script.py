@@ -4,6 +4,6 @@ from modules.tasks.utils import importar_detalhes_chamadas_hoje,importar_registr
 
 with app.app_context():
     print("Tarefa em execução!")
-    processar_e_armazenar_performance()
+    processar_e_armazenar_performance_vyrtos()
 
 
