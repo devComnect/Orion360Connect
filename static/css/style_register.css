@@ -1,8 +1,4 @@
-/* Estilos aplicados APENAS à página com a classe .register-page */
-body.register-page {
-    background-color: #121212;
-    color: #f1f1f1;
-}
+
 
 /* Título na página de registro */
 .register-page h1 {
@@ -18,6 +14,12 @@ body.register-page {
     border: none;
     border-radius: 15px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Centraliza e limita a largura dos cards */
+.custom-card-container {
+    max-width: 1300px; /* ou 960px, se quiser mais compacto */
+    margin: 0 auto;
 }
 
 /* Cabeçalho do Card na página de registro */

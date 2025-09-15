@@ -2,7 +2,7 @@
 
 {% block body_class %}register-page{% endblock %}
 
-{% block title %}Registro de user{% endblock %}
+{% block title %}Gerenciamento{% endblock %}
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style_register.css') }}">
@@ -23,7 +23,7 @@
 
     <!-- Formulários lado a lado usando o grid do Bootstrap -->
   <div class="row justify-content-center">
-    <div class="col-lg-10">
+    <div class="col-lg-10 custom-card-container">
         <div class="row mt-5">
           <!-- Formulário de Cadastro -->
           <div class="col-md-4 mb-4">
@@ -105,6 +105,7 @@
                     <label for="edit-nivel-acesso" class="form-label">Nível de Acesso</label>
                     <select class="form-select" id="edit-nivel-acesso" name="nivel_acesso" required>
                       <option value="admin">Administrador</option>
+                      <!--<option value="nivel2">Nível 2</option>-->
                       <option value="user">Usuário</option>
                     </select>
                   </div>

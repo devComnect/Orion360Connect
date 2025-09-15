@@ -10,7 +10,6 @@ function copiarChamados() {
 </script>
 
 <!-- Bloco que traz a relação de tempo livre, refeição e serviço-->
-<!-- Bloco que traz a relação de tempo livre, refeição e serviço-->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   function formatarTempo(segundos) {
@@ -105,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       pausasDetalhes.forEach(pausa => {
         const li = document.createElement("li");
-        li.textContent = `${pausa.nome_pausa} (Parâmetro: ${pausa.parametro}) - Total: ${pausa.total}`;
+        li.textContent = `${pausa.nome_pausa} - Total: ${pausa.total} - Duração: ${pausa.duracao}`;
         lista.appendChild(li);
       });
     }
