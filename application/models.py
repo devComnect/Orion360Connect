@@ -265,9 +265,11 @@ class Guardians(db.Model):
     # Permissao de admin
     is_admin = db.Column(db.Boolean, default=False)
 
-    # Pontuação e ranking
+    # Pontuação , ranking e anonimato
     score_atual = db.Column(db.Integer, default=0)
     opt_in_real_name_ranking = db.Column(db.Boolean, default=False)
+    is_anonymous = db.Column(db.Boolean, nullable=False, default=False)
+
 
     # Dados do departamento (embutidos)
     departamento_id = db.Column(db.Integer)  # Departments.department_id
@@ -279,6 +281,13 @@ class Guardians(db.Model):
 
     # Dados adicionais
     avatar_url = db.Column(db.String(255))  # Imagem/avatar do colaborador
+    
+    #Add patrulha diaria
+    last_patrol_date = db.Column(db.Date, nullable=True)
+    
+    # Coluna para contar a sequência de quizzes com nota máxima.
+    perfect_quiz_streak = db.Column(db.Integer, nullable=False, default=0)
+
 
     # Controle de criação/atualização
     criado_em = db.Column(db.DateTime, default=db.func.current_timestamp())
@@ -291,9 +300,10 @@ class Guardians(db.Model):
     # Relacionamentos com as novas classes
     historico_acoes = db.relationship("HistoricoAcao", back_populates="guardian", lazy='dynamic')
     insignias_conquistadas = db.relationship("GuardianInsignia", back_populates="guardian", lazy='dynamic')
-    
     current_streak = db.Column(db.Integer, default=0)
     last_streak_date = db.Column(db.Date, nullable=True)
+    quiz_attempts = db.relationship("QuizAttempt", back_populates="guardian", cascade="all, delete-orphan", lazy='dynamic')
+
 
 class Grupos(db.Model):
     __tablename__ = 'grupos'
@@ -459,6 +469,9 @@ class Insignia(db.Model):
     requisito_score = db.Column(db.Integer, default=0) # Pontuação mínima para obter a insígnia
     caminho_imagem = db.Column(db.String(255))
     
+    achievement_code = db.Column(db.String(50), nullable=False, unique=True, index=True)  #id para conquistas automaticas
+
+    
     # Relacionamento com a tabela de junção
     conquistas = db.relationship("GuardianInsignia", back_populates="insignia")
     
@@ -480,6 +493,7 @@ class GuardianInsignia(db.Model):
     insignia_id = db.Column(db.Integer, db.ForeignKey('insignias.id'), primary_key=True)
     data_conquista = db.Column(db.DateTime, default=db.func.now())
     
+    
     # Relacionamentos com as classes principais
     guardian = db.relationship("Guardians", back_populates="insignias_conquistadas")
     insignia = db.relationship("Insignia", back_populates="conquistas")
@@ -499,9 +513,9 @@ class EventoPontuacao(db.Model):
 ## QUIZ DE SEGURANCA ##
 
 class QuizCategory(Enum):
-    COMUM = 'Comum'         # Ex: Os quizzes que aparecem a cada 2 dias
-    ESPECIAL = 'Especial'   # Ex: Os quizzes de 7/15 dias
-    HARDCORE = 'Hardcore'     # Ex: O quiz mensal
+    COMUM = 'Comum'         
+    ESPECIAL = 'Especial'  
+    HARDCORE = 'Hardcore'    
 
 class Quiz(db.Model):
     __tablename__ = 'quizzes'
@@ -512,6 +526,8 @@ class Quiz(db.Model):
     # NOVOS CAMPOS PARA AGENDAMENTO
     activation_date = db.Column(db.Date, nullable=False) # Dia em que o quiz "vai ao ar"
     duration_days = db.Column(db.Integer, nullable=False, default=1) # Por quantos dias fica disponível
+    time_limit_seconds = db.Column(db.Integer, nullable=True)
+
     
     category = db.Column(db.Enum(QuizCategory), nullable=False, default=QuizCategory.COMUM)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
@@ -520,7 +536,6 @@ class Quiz(db.Model):
     questions = db.relationship('Question', back_populates='quiz', cascade="all, delete-orphan")
     attempts = db.relationship('QuizAttempt', back_populates='quiz')
 
-# As classes Question, AnswerOption, e QuizAttempt permanecem exatamente as mesmas da versão anterior.
 class Question(db.Model):
     __tablename__ = 'questions'
     id = db.Column(db.Integer, primary_key=True)
@@ -544,6 +559,20 @@ class QuizAttempt(db.Model):
     guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), nullable=False)
     quiz_id = db.Column(db.Integer, db.ForeignKey('quizzes.id'), nullable=False)
     score = db.Column(db.Integer, nullable=False)
-    completed_at = db.Column(db.DateTime, default=db.func.now())
+    completed_at = db.Column(db.DateTime, nullable=True)
     guardian = db.relationship('Guardians')
     quiz = db.relationship('Quiz', back_populates='attempts')
+    answers = db.relationship('UserAnswer', back_populates='attempt', cascade="all, delete-orphan")
+    started_at = db.Column(db.DateTime, nullable=False)
+
+    
+class UserAnswer(db.Model):
+    __tablename__ = 'user_answers'
+    id = db.Column(db.Integer, primary_key=True)
+    quiz_attempt_id = db.Column(db.Integer, db.ForeignKey('quiz_attempts.id'), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('questions.id'), nullable=False)
+    selected_option_id = db.Column(db.Integer, db.ForeignKey('answer_options.id'), nullable=False)
+    
+    attempt = db.relationship('QuizAttempt', back_populates='answers')
+    question = db.relationship('Question')
+    selected_option = db.relationship('AnswerOption')
