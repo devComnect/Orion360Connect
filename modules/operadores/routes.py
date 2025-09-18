@@ -204,7 +204,7 @@ def get_performance_colaboradores():
     duracao_produtiva = timedelta()
     duracao_improdutiva = timedelta()
 
-    # === BUSCA PAUSAS (traz todos os registros; agregamos no Python)
+    # === BUSCA PAUSAS 
     pausas_rows = db.session.query(
         EventosAtendentes.nome_pausa,
         EventosAtendentes.parametro,
