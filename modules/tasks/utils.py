@@ -1,14 +1,16 @@
 import requests, json
 import settings.endpoints as endpoints
 from urllib.parse import urlencode
-from application.models import db, RegistroChamadas, ChamadasDetalhes, DesempenhoAtendente, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Grupos, Chamado, Categoria, PesquisaSatisfacao, EventosAtendentes, RelatorioColaboradores
+from application.models import db, RegistroChamadas, ChamadasDetalhes, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Grupos, Chamado, Categoria, PesquisaSatisfacao, EventosAtendentes, RelatorioColaboradores
 from modules.auth.utils import authenticate, authenticate_relatorio
 from modules.deskmanager.authenticate.routes import token_desk
 import modules.tasks.utils as utils
 from settings.endpoints import CREDENTIALS, RELATORIO_CHAMADOS_SUPORTE
+from sqlalchemy.exc import IntegrityError
 from flask import jsonify, current_app as app
 import json
 from datetime import timedelta, datetime
+import logging
 
 
 def get_relatorio(token, params):
@@ -176,22 +178,21 @@ def gerar_intervalos(data_inicial, data_final, tamanho=15):
 
 def processar_e_armazenar_performance(dias=180, incremental=False):
     hoje = datetime.now().date()
-    ontem = hoje - timedelta(days=1)
     
     if dias != 180 and not incremental:
+        logging.error("Somente o intervalo de 180 dias é permitido para carga completa.")
         raise ValueError("Somente o intervalo de 180 dias é permitido para carga completa.")
 
     # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
+        logging.error("Falha na autenticação")
         return {"status": "error", "message": "Falha na autenticação"}
     access_token = auth_response["access_token"]
 
-    # Datas de busca
     data_inicial = hoje - timedelta(days=dias - 1)
     data_final = hoje
 
-    # IDs e nomes dos operadores
     OPERADORES_MAP = {
         2020: "Renato",
         2021: "Matheus",
@@ -205,20 +206,21 @@ def processar_e_armazenar_performance(dias=180, incremental=False):
 
     operadores_ids = list(OPERADORES_MAP.keys())
 
-    # Limpa somente se for carga completa
+    # Limpa a tabela antes da carga completa
     if not incremental:
         try:
             PerformanceColaboradores.query.delete()
             db.session.commit()
-            print("Tabela de PerformanceColaboradores limpa com sucesso.")
+            logging.info("Tabela PerformanceColaboradores limpa com sucesso.")
         except Exception as e:
             db.session.rollback()
+            logging.exception(f"Erro ao limpar a tabela: {str(e)}")
             return {"status": "error", "message": f"Erro ao limpar a tabela: {str(e)}"}
 
     for operador_id in operadores_ids:
         nome_operador = OPERADORES_MAP.get(operador_id, "Desconhecido")
 
-        for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):  # usar intervalos menores
+        for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):
             offset = 0
             total_registros = 0
 
@@ -232,29 +234,21 @@ def processar_e_armazenar_performance(dias=180, incremental=False):
                     "week": [],
                     "agents": [operador_id],
                     "queues": [1],
-                    "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
+                    "options": {"sort": {"data": 1}, "offset": offset, "count": -1},
                     "conf": {}
                 }
 
-                print(f"[{nome_operador}] Buscando {inicio} até {fim}, offset {offset}")
+                logging.info(f"[{nome_operador}] Buscando {inicio} até {fim}, offset {offset}")
                 response = utils.atendentePerformanceData(access_token, params)
                 dados = response.get("result", {}).get("data", [])
 
                 if not dados:
+                    logging.info(f"[{nome_operador}] Nenhum dado retornado para {inicio} até {fim}, offset {offset}")
                     break
 
                 for item in dados:
                     try:
                         data_registro = datetime.strptime(item["data"], "%Y-%m-%d").date()
-
-                        # Evita duplicidade se incremental
-                        if incremental:
-                            exists = PerformanceColaboradores.query.filter_by(
-                                operador_id=operador_id,
-                                data=data_registro
-                            ).first()
-                            if exists:
-                                continue
 
                         registro = PerformanceColaboradores(
                             name=nome_operador,
@@ -269,21 +263,36 @@ def processar_e_armazenar_performance(dias=180, incremental=False):
                             tempo_minatend=item.get("tempo_minatend"),
                             tempo_medatend=item.get("tempo_medatend"),
                             tempo_maxatend=item.get("tempo_maxatend"),
+                            pimprod_Toalete_1=item.get("pimprod_Toalete_1"),
+                            pimprod_Lanche_5=item.get("pimprod_Lanche_5"),
+                            pimprod_Pessoal_6=item.get("pimprod_Pessoal_6"),
                             data_importacao=datetime.now()
                         )
+
                         db.session.add(registro)
                         total_registros += 1
+
                     except Exception as e:
-                        print(f"[ERRO] {nome_operador} em {item.get('data')}: {str(e)}")
+                        logging.exception(f"[ERRO] {nome_operador} em {item.get('data')}: {str(e)}")
 
-                db.session.flush()
-                offset += 1000  # Próxima página
+                try:
+                    db.session.commit()
+                except IntegrityError as e:
+                    db.session.rollback()
+                    logging.warning(f"[{nome_operador}] Registro já existe para {inicio} até {fim}, offset {offset}: {str(e)}")
+                except Exception as e:
+                    db.session.rollback()
+                    logging.exception(f"[ERRO] Falha ao salvar registros para {nome_operador}: {str(e)}")
 
-            print(f"[{nome_operador}] Total inserido de {inicio} a {fim}: {total_registros}")
+                offset += 1000
 
-        db.session.commit()
+            logging.info(f"[{nome_operador}] Total processado de {inicio} a {fim}: {total_registros}")
 
-    return {"status": "success", "message": "Dados inseridos com sucesso (modo incremental)." if incremental else "Carga completa realizada com sucesso."}
+    logging.info("Carga completa finalizada.")
+    return {
+        "status": "success",
+        "message": "Carga completa realizada com sucesso."
+    }
 
 def processar_e_armazenar_performance_incremental():
     try:
@@ -473,7 +482,6 @@ def processar_e_armazenar_performance_incremental():
         app.logger.error(f"Erro na tarefa processar_e_armazenar_performance_incremental: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
 def processar_e_armazenar_performance_vyrtos_incremental():
     hoje = datetime.now().date()
     data_inicio = hoje - timedelta(days=2)
@@ -585,12 +593,9 @@ def processar_e_armazenar_performance_vyrtos_incremental():
         "message": f"{total_registros} registros inseridos no modo incremental (Vyrtos)."
     }
 
-def processar_e_armazenar_performance_vyrtos(dias=180, incremental=False):
+def processar_e_armazenar_performance_vyrtos(incremental=True):
     hoje = datetime.now().date()
     
-    if dias != 180 and not incremental:
-        raise ValueError("Somente o intervalo de 180 dias é permitido para carga completa.")
-
     # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
@@ -598,7 +603,7 @@ def processar_e_armazenar_performance_vyrtos(dias=180, incremental=False):
     access_token = auth_response["access_token"]
 
     # Datas de busca
-    data_inicial = hoje - timedelta(days=dias - 1)
+    data_inicial = hoje 
     data_final = hoje
 
     # IDs e nomes dos operadores
@@ -612,15 +617,6 @@ def processar_e_armazenar_performance_vyrtos(dias=180, incremental=False):
         2028: "Henrique",
         2029: "Rafael"
     }
-
-    if not incremental:
-        try:
-            DesempenhoAtendenteVyrtos.query.delete()
-            db.session.commit()
-            print("🧹 Tabela desempenho_atendente_vyrtos limpa com sucesso.")
-        except Exception as e:
-            db.session.rollback()
-            return {"status": "error", "message": f"Erro ao limpar a tabela: {str(e)}"}
 
     for operador_id, nome_operador in OPERADORES_MAP.items():
         total_registros_operador = 0
@@ -1254,6 +1250,278 @@ def importar_grupos():
         "total_api": len(grupos_api),
     }
 
+from datetime import datetime, timedelta
+from sqlalchemy import text
+
+def repopular_eventos_180d():
+    hoje = datetime.now().date()
+    data_inicial = hoje - timedelta(days=180)
+    data_final = hoje
+
+    print(f"♻️ Zerando tabela eventos_atendente e importando dados de {data_inicial} até {data_final}")
+
+    # Limpar a tabela antes de repopular usando DELETE
+    try:
+        db.session.execute(text("DELETE FROM eventos_atendente"))
+        db.session.commit()
+        print("🗑️ Tabela eventos_atendente zerada com sucesso.")
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Erro ao apagar registros: {e}")
+        return {"status": "error", "message": "Falha ao limpar tabela"}
+
+    # Autenticação
+    auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
+    if "access_token" not in auth_response:
+        print("❌ Falha na autenticação")
+        return {"status": "error", "message": "Falha na autenticação"}
+    access_token = auth_response["access_token"]
+
+    # Mapeamento operadores
+    OPERADORES_MAP = {
+        2020: "Renato Ragga",
+        2021: "Matheus",
+        2022: "Gustavo",
+        2023: "Raysa",
+        2024: "Lucas",
+        2025: "Danilo",
+        2028: "Henrique",
+        2029: "Rafael"
+    }
+
+    operadores_ids = list(OPERADORES_MAP.keys())
+
+    # Funções auxiliares
+    def parse_data(data_str):
+        if not data_str or str(data_str).strip() in ["-", ""]:
+            return None
+        for fmt in ["%d/%m/%Y", "%Y/%m/%d", "%Y-%m-%d"]:
+            try:
+                return datetime.strptime(data_str, fmt).date()
+            except ValueError:
+                continue
+        print(f"⚠️ Data inválida recebida: {data_str}")
+        return None
+
+    def parse_datetime(dt_str):
+        if not dt_str or str(dt_str).strip() in ["-", ""]:
+            return None
+        for fmt in ["%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M:%S", "%Y/%m/%d %H:%M:%S"]:
+            try:
+                return datetime.strptime(dt_str, fmt)
+            except ValueError:
+                continue
+        print(f"⚠️ Datetime inválido recebido: {dt_str}")
+        return None
+
+    def parse_timedelta(valor):
+        if not valor or str(valor).strip() in ["-", ""]:
+            return None
+        try:
+            h, m, s = map(int, valor.split(":"))
+            return timedelta(hours=h, minutes=m, seconds=s)
+        except Exception as e:
+            print(f"⚠️ Erro ao parsear timedelta '{valor}': {e}")
+            return None
+
+    def parse_bool(valor):
+        return str(valor).strip() in ["1", "True", "true"]
+
+    # Coleta de eventos
+    for operador_id in operadores_ids:
+        nome_operador = OPERADORES_MAP.get(operador_id, "Desconhecido")
+        print(f"\n👤 Processando operador {nome_operador} (ID {operador_id})")
+
+        for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):
+            offset = 0
+            total_registros = 0
+
+            while True:
+                params = {
+                    "initial_date": inicio.strftime('%d/%m/%Y'),
+                    "final_date": fim.strftime('%d/%m/%Y'),
+                    "initial_hour": "00:00:00",
+                    "final_hour": "23:59:59",
+                    "fixed": 0,
+                    "week": [],
+                    "agents": [operador_id],
+                    "queues": [1],
+                    "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
+                    "conf": {}
+                }
+
+                print(f"➡️ [{nome_operador}] Buscando eventos de {inicio} até {fim}, offset {offset}")
+                response = utils.atendenteEventosData(access_token, params)
+
+                if not response:
+                    print(f"❌ [{nome_operador}] Resposta vazia da API")
+                    break
+
+                dados = response.get("result", {}).get("data", [])
+                print(f"📦 [{nome_operador}] Registros recebidos: {len(dados)}")
+
+                if not dados:
+                    break
+
+                for item in dados:
+                    try:
+                        data_evento = parse_data(item.get("data"))
+                        data_inicio = parse_datetime(item.get("dataInicio"))
+                        data_fim = parse_datetime(item.get("dataFim"))
+
+                        duracao_calc = None
+                        if data_inicio and data_fim:
+                            duracao_calc = data_fim - data_inicio
+                        else:
+                            duracao_calc = parse_timedelta(item.get("duracao"))
+
+                        registro = EventosAtendentes(
+                            data=data_evento,
+                            atendente=operador_id,
+                            nome_atendente=nome_operador,
+                            evento=item.get("evento") or "-",
+                            parametro=item.get("parametro") or None,
+                            nome_pausa=item.get("nomePausa") or None,
+                            data_inicio=data_inicio,
+                            data_fim=data_fim,
+                            sinaliza_duracao=parse_bool(item.get("sinalizaDuracao")),
+                            duracao=duracao_calc,
+                            complemento=item.get("complemento") or None,
+                            data_importacao=datetime.utcnow()
+                        )
+                        db.session.add(registro)
+                        total_registros += 1
+
+                    except Exception as e:
+                        print(f"[{nome_operador}] Erro ao processar item: {e} | Dados: {item}")
+
+                try:
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"❌ Erro ao salvar registros no banco: {e}")
+
+                offset += 1000
+
+            print(f"[{nome_operador}] Total novos inseridos: {total_registros}")
+
+    return {"status": "success", "message": f"Tabela repopulada com eventos dos últimos 180 dias ({data_inicial} até {data_final})."}
+
+
+from datetime import datetime, timedelta
+from sqlalchemy import text
+
+def repopular_eventos_operador_180d(operador_id: int, nome_operador: str = None):
+    from sqlalchemy import text
+    hoje = datetime.now().date()
+    data_inicial = hoje - timedelta(days=180)
+    data_final = hoje
+
+    if not nome_operador:
+        nome_operador = f"Operador {operador_id}"
+
+    print(f"♻️ Iniciando importação de eventos do operador {operador_id} de {data_inicial} até {data_final}")
+
+    # Limpar eventos do operador
+    try:
+        db.session.execute(text(f"DELETE FROM eventos_atendente WHERE atendente = {operador_id}"))
+        db.session.commit()
+        print(f"🗑️ Eventos do operador {operador_id} apagados com sucesso.")
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Erro ao apagar registros: {e}")
+        return {"status": "error", "message": "Falha ao limpar tabela"}
+
+    # Autenticação
+    auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
+    if "access_token" not in auth_response:
+        print("❌ Falha na autenticação")
+        return {"status": "error", "message": "Falha na autenticação"}
+    access_token = auth_response["access_token"]
+
+    # Função auxiliar para converter strings de data/hora
+    def parse_datetime_safe(dt_str):
+        if not dt_str or dt_str.strip() in ["-", ""]:
+            return None
+        for fmt in ["%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M:%S", "%Y/%m/%d %H:%M:%S"]:
+            try:
+                return datetime.strptime(dt_str, fmt)
+            except ValueError:
+                continue
+        return None
+
+    # Função auxiliar para converter duração
+    def parse_timedelta_safe(valor):
+        if not valor or valor.strip() in ["-", ""]:
+            return None
+        try:
+            h, m, s = map(int, valor.split(":"))
+            return timedelta(hours=h, minutes=m, seconds=s)
+        except:
+            return None
+
+    # Intervalos menores para não sobrecarregar a API
+    for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=7):  # 7 dias por vez
+        offset = 0
+        total_registros = 0
+
+        while True:
+            params = {
+                "initial_date": inicio.strftime('%d/%m/%Y'),
+                "final_date": fim.strftime('%d/%m/%Y'),
+                "initial_hour": "00:00:00",
+                "final_hour": "23:59:59",
+                "fixed": 0,
+                "week": [],
+                "agents": [operador_id],
+                "queues": [1],
+                "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
+                "conf": {}
+            }
+
+            print(f"➡️ [{nome_operador}] Buscando eventos de {inicio} até {fim}, offset {offset}")
+            response = utils.atendenteEventosData(access_token, params)
+            dados = response.get("result", {}).get("data", []) if response else []
+
+            if not dados:
+                break
+
+            for item in dados:
+                data_inicio = parse_datetime_safe(item.get("dataInicio"))
+                data_fim = parse_datetime_safe(item.get("dataFim"))
+                duracao_calc = (data_fim - data_inicio) if data_inicio and data_fim else parse_timedelta_safe(item.get("duracao"))
+
+                registro = EventosAtendentes(
+                    data=data_inicio.date() if data_inicio else None,
+                    atendente=operador_id,
+                    nome_atendente=nome_operador,
+                    evento=item.get("evento") or "-",
+                    parametro=item.get("parametro"),
+                    nome_pausa=item.get("nomePausa"),
+                    data_inicio=data_inicio,
+                    data_fim=data_fim,
+                    sinaliza_duracao=str(item.get("sinalizaDuracao")).strip() in ["1", "True", "true"],
+                    duracao=duracao_calc,
+                    complemento=item.get("complemento"),
+                    data_importacao=datetime.utcnow()
+                )
+                db.session.add(registro)
+                total_registros += 1
+
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                print(f"❌ Erro ao salvar registros: {e}")
+
+            offset += 1000
+
+        print(f"[{nome_operador}] Total novos inseridos no período {inicio} até {fim}: {total_registros}")
+
+    return {"status": "success", "message": f"Eventos do operador {operador_id} importados com sucesso de {data_inicial} até {data_final}."}
+
+
+
 def processar_e_armazenar_eventos():
     hoje = datetime.now().date()
     data_inicial = hoje
@@ -1325,6 +1593,7 @@ def processar_e_armazenar_eventos():
         for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):
             offset = 0
             total_registros = 0
+            total_atualizados = 0
 
             while True:
                 params = {
@@ -1362,50 +1631,108 @@ def processar_e_armazenar_eventos():
                         data_fim = parse_datetime(item.get("dataFim"))
 
                         if not item.get("evento") and not data_inicio:
-                            print(f"⚠️ [{nome_operador}] Evento descartado (sem evento e sem dataInicio): {item}")
+                            print(f"[{nome_operador}] Evento descartado (sem evento e sem dataInicio): {item}")
                             continue
 
+                        # Busca registro existente pelo atendente + data_inicio
                         existe = EventosAtendentes.query.filter_by(
                             atendente=operador_id,
-                            data_inicio=data_inicio,
-                            evento=item.get("evento")
+                            data_inicio=data_inicio
                         ).first()
 
                         if existe:
-                            print(f"⏭️ [{nome_operador}] Evento já existe: {item.get('evento')} em {data_inicio}")
-                            continue
+                            atualizado = False
 
-                        registro = EventosAtendentes(
-                            data=data_evento,
-                            atendente=operador_id,
-                            nome_atendente=nome_operador,
-                            evento=item.get("evento") or "-",
-                            parametro=item.get("parametro") or None,
-                            nome_pausa=item.get("nomePausa") or None,
-                            data_inicio=data_inicio,
-                            data_fim=data_fim,
-                            sinaliza_duracao=parse_bool(item.get("sinalizaDuracao")),
-                            duracao=parse_timedelta(item.get("duracao")),
-                            complemento=item.get("complemento") or None,
-                            data_importacao=datetime.utcnow()
-                        )
-                        db.session.add(registro)
-                        total_registros += 1
+                            # parametro
+                            novo_parametro = item.get("parametro") or None
+                            if existe.parametro != novo_parametro:
+                                print(f"✏️ Atualizando parametro: {existe.parametro} -> {novo_parametro}")
+                                existe.parametro = novo_parametro
+                                atualizado = True
+
+                            # nome_pausa
+                            novo_nome_pausa = item.get("nomePausa") or None
+                            if existe.nome_pausa != novo_nome_pausa:
+                                print(f"✏️ Atualizando nome_pausa: {existe.nome_pausa} -> {novo_nome_pausa}")
+                                existe.nome_pausa = novo_nome_pausa
+                                atualizado = True
+
+                            # data_fim (sempre atualiza se vier preenchido)
+                            if data_fim and existe.data_fim != data_fim:
+                                print(f"⏱ Atualizando data_fim: {existe.data_fim} -> {data_fim}")
+                                existe.data_fim = data_fim
+                                atualizado = True
+
+                                # recalcula duração
+                                if existe.data_inicio and data_fim:
+                                    nova_duracao = data_fim - existe.data_inicio
+                                    if existe.duracao != nova_duracao:
+                                        print(f"⏱ Recalculando duração: {existe.duracao} -> {nova_duracao}")
+                                        existe.duracao = nova_duracao
+                                        atualizado = True
+
+                            # sinaliza_duracao
+                            nova_sinaliza = parse_bool(item.get("sinalizaDuracao"))
+                            if existe.sinaliza_duracao != nova_sinaliza:
+                                print(f"✏️ Atualizando sinaliza_duracao: {existe.sinaliza_duracao} -> {nova_sinaliza}")
+                                existe.sinaliza_duracao = nova_sinaliza
+                                atualizado = True
+
+                            # complemento
+                            novo_complemento = item.get("complemento") or None
+                            if existe.complemento != novo_complemento:
+                                print(f"✏️ Atualizando complemento: {existe.complemento} -> {novo_complemento}")
+                                existe.complemento = novo_complemento
+                                atualizado = True
+
+                            if atualizado:
+                                existe.data_importacao = datetime.utcnow()
+                                total_atualizados += 1
+                                print(f"✅ [{nome_operador}] Evento atualizado em {data_inicio}")
+                            else:
+                                print(f"⏭️ [{nome_operador}] Evento já existe e está igual. Pulando.")
+
+                        else:
+                            # Se não existir, cria novo
+                            duracao_calc = None
+                            if data_inicio and data_fim:
+                                duracao_calc = data_fim - data_inicio
+                            else:
+                                duracao_calc = parse_timedelta(item.get("duracao"))
+
+                            registro = EventosAtendentes(
+                                data=data_evento,
+                                atendente=operador_id,
+                                nome_atendente=nome_operador,
+                                evento=item.get("evento") or "-",
+                                parametro=item.get("parametro") or None,
+                                nome_pausa=item.get("nomePausa") or None,
+                                data_inicio=data_inicio,
+                                data_fim=data_fim,
+                                sinaliza_duracao=parse_bool(item.get("sinalizaDuracao")),
+                                duracao=duracao_calc,
+                                complemento=item.get("complemento") or None,
+                                data_importacao=datetime.utcnow()
+                            )
+                            db.session.add(registro)
+                            total_registros += 1
+                            print(f"➕ [{nome_operador}] Novo evento inserido em {data_inicio}")
 
                     except Exception as e:
-                        print(f"❌ [{nome_operador}] Erro ao processar item: {e} | Dados: {item}")
+                        print(f"[{nome_operador}] Erro ao processar item: {e} | Dados: {item}")
 
                 try:
                     db.session.commit()
                 except Exception as e:
                     db.session.rollback()
-                    print(f"❌ Erro ao salvar registros no banco: {e}")
+                    print(f"Erro ao salvar registros no banco: {e}")
 
                 offset += 1000
 
-            print(f"✅ [{nome_operador}] Total eventos inseridos de {inicio} a {fim}: {total_registros}")
+            print(f"[{nome_operador}] Total novos: {total_registros}, atualizados: {total_atualizados}")
 
-    return {"status": "success", "message": f"Eventos importados apenas do dia {hoje}."}
+    return {"status": "success", "message": f"Eventos importados e atualizados apenas do dia {hoje}."}
+
 
 def importar_categorias():
     token = token_desk()

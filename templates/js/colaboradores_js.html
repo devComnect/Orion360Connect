@@ -11,153 +11,152 @@ function copiarChamados() {
 
 <!-- Bloco que traz a relação de tempo livre, refeição e serviço-->
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    function formatarTempo(segundos) {
-      const horas = Math.floor(segundos / 3600);
-      const minutos = Math.floor((segundos % 3600) / 60);
-      return horas > 0 ? `${horas}h ${minutos}min` : `${minutos}min`;
-    }
+document.addEventListener("DOMContentLoaded", () => {
+  function formatarTempo(segundos) {
+    const horas = Math.floor(segundos / 3600);
+    const minutos = Math.floor((segundos % 3600) / 60);
+    return horas > 0 ? `${horas}h ${minutos}min` : `${minutos}min`;
+  }
 
-    const colaborador = "{{ nome }}";
-    document.getElementById("colaboradorNome").textContent = colaborador;
+  const colaborador = "{{ nome }}";
+  document.getElementById("colaboradorNome").textContent = colaborador;
 
-    let chartDistribuicao = null;
+  let chartDistribuicao = null;
+  let pausasDetalhes = []; // array global para o modal
 
-    function atualizarCampos(dados) {
-      document.getElementById("ch_atendidas").textContent = dados.ch_atendidas || 0;
-      document.getElementById("ch_naoatendidas").textContent = dados.ch_naoatendidas || 0;
-      document.getElementById("tempo_online").textContent = formatarTempo(dados.tempo_online || 0);
-      document.getElementById("tempo_servico").textContent = formatarTempo(dados.tempo_servico || 0);
+  function atualizarCampos(dados) {
+    document.getElementById("ch_atendidas").textContent = dados.ch_atendidas || 0;
+    document.getElementById("ch_naoatendidas").textContent = dados.ch_naoatendidas || 0;
+    document.getElementById("tempo_online").textContent = formatarTempo(dados.tempo_online || 0);
+    document.getElementById("tempo_servico").textContent = formatarTempo(dados.tempo_servico || 0);
 
-      const tempoOnline = dados.tempo_online || 0;
-      const tempoLivre = dados.tempo_livre || 0;
-      const tempoServico = dados.tempo_servico || 0;
-      const tempoRefeicao = dados.pimprod_refeicao || 0;
-      const totalTempo = tempoOnline + tempoLivre + tempoServico + tempoRefeicao;
+    const tempoOnline = dados.tempo_online || 0;
+    const tempoLivre = dados.tempo_livre || 0;
+    const tempoServico = dados.tempo_servico || 0;
+    const tempoRefeicao = dados.pimprod_refeicao || 0;
+    const totalTempo = tempoOnline + tempoLivre + tempoServico + tempoRefeicao;
 
-      // Gráfico: composição das atividades
-      const distribuicaoPercentual = [
-        ((tempoLivre + tempoOnline) / totalTempo) * 100,  // Tempo Livre + Online
-        (tempoServico / totalTempo) * 100,                // Tempo em Serviço
-        (tempoRefeicao / totalTempo) * 100                // Tempo de Refeição
-      ].map(v => +v.toFixed(2));
+    // Gráfico: composição das atividades
+    const distribuicaoPercentual = [
+      ((tempoLivre + tempoOnline) / totalTempo) * 100,
+      (tempoServico / totalTempo) * 100,
+      (tempoRefeicao / totalTempo) * 100
+    ].map(v => +v.toFixed(2));
 
-      if (chartDistribuicao) {
-        chartDistribuicao.data.datasets[0].data = distribuicaoPercentual;
-        chartDistribuicao.update();
-      } else {
-        const ctx = document.getElementById("tempoDistribuicaoChart").getContext('2d');
-        chartDistribuicao = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: ["Livre + Online", "Serviço", "Refeição"],
-            datasets: [{
-              data: distribuicaoPercentual,
-              backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                position: 'bottom',
-                labels: { color: '#fff' }
-              },
-              datalabels: {
-                color: '#fff',
-                formatter: value => `${value.toFixed(1)}%`,
-                font: { weight: 'bold', size: 14 }
-              }
+    if (chartDistribuicao) {
+      chartDistribuicao.data.datasets[0].data = distribuicaoPercentual;
+      chartDistribuicao.update();
+    } else {
+      const ctx = document.getElementById("tempoDistribuicaoChart").getContext('2d');
+      chartDistribuicao = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ["Livre + Online", "Serviço", "Refeição"],
+          datasets: [{ data: distribuicaoPercentual, backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc'] }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#fff' } },
+            datalabels: {
+              color: '#fff',
+              formatter: value => `${value.toFixed(1)}%`,
+              font: { weight: 'bold', size: 14 }
             }
-          },
-          plugins: [ChartDataLabels]
-        });
-      }
-
-      // --- Legenda adicional para pausas produtivas/improdutivas dentro do tempo livre ---
-      const pausasProdutivas = dados.pausas_produtivas || 0;
-      const pausasImprodutivas = dados.pausas_improdutivas || 0;
-      const totalPausas = pausasProdutivas + pausasImprodutivas;
-
-      let legendaPausas = "";
-
-      if (tempoLivre > 0 && totalPausas > 0) {
-        // Porcentagem das pausas produtivas e improdutivas em relação ao total de pausas
-        const percentProdRel = ((pausasProdutivas / totalPausas) * 100).toFixed(0);
-        const percentImprodRel = ((pausasImprodutivas / totalPausas) * 100).toFixed(0);
-
-        // Porcentagem do tempo livre no total para contextualizar
-        const percentTempoLivre = ((tempoLivre / totalTempo) * 100).toFixed(1);
-
-        legendaPausas = `
-          <strong>Tempo Livre (${percentTempoLivre}%) composto por:</strong><br>
-          • <span style="color:#ADFF2F;">${pausasProdutivas} Pausas Produtivas</span> (${percentProdRel}%)<br>
-          • <span style="color:#e74a3b;">${pausasImprodutivas} Pausas Improdutivas</span> (${percentImprodRel}%)
-        `;
-      } else {
-        legendaPausas = `Tempo Livre sem pausas registradas.`;
-      }
-
-      document.getElementById("info-pausas").innerHTML = legendaPausas;
-    }
-
-    async function atualizarTotalChamados(dias = 1) {
-      try {
-        const response = await fetch("/operadores/ChamadosSuporte/ticketsOperador", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nome: colaborador, dias })
-        });
-
-        const result = await response.json();
-        if (result.status === "success") {
-          document.getElementById("total_chamados").textContent = result.total_chamados;
-        } else {
-          document.getElementById("total_chamados").textContent = "0";
-          console.error("Erro:", result.message);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar total de chamados:", error);
-        document.getElementById("total_chamados").textContent = "Erro";
-      }
-    }
-
-    async function atualizarPerformance(dias = 1) {
-      try {
-        const response = await fetch("/operadores/performanceColaboradores", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nome: colaborador, dias: dias.toString() })
-        });
-
-        const result = await response.json();
-        if (result.status === "success") {
-          atualizarCampos(result.dados);
-        } else {
-          console.error("Erro ao buscar dados de performance:", result.message);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar dados de performance:", error);
-      }
-    }
-
-    document.querySelectorAll(".filtro-btn").forEach(button => {
-      button.addEventListener("click", async () => {
-        const dias = button.getAttribute("data-dias").toString();
-
-        document.querySelectorAll(".filtro-btn").forEach(btn => btn.classList.remove("active"));
-        button.classList.add("active");
-
-        await atualizarTotalChamados(dias);
-        await atualizarPerformance(dias);
+          }
+        },
+        plugins: [ChartDataLabels]
       });
-    });
+    }
 
-    // Carrega dados iniciais (ontem)
-    atualizarTotalChamados(1);
-    atualizarPerformance(1);
+    // --- Pausas detalhadas ---
+    const pausasProdutivas = dados.pausas_produtivas || 0;
+    const pausasImprodutivas = dados.pausas_improdutivas || 0;
+    const totalPausas = pausasProdutivas + pausasImprodutivas;
+
+    pausasDetalhes = dados.pausas_detalhadas || [];
+
+    let legendaPausas = "";
+    if (tempoLivre > 0 && totalPausas > 0) {
+      const percentTempoLivre = ((tempoLivre / totalTempo) * 100).toFixed(1);
+
+      legendaPausas = `
+        <strong>Tempo Livre (${percentTempoLivre}%) composto por:</strong><br>
+        • <span style="color:#ADFF2F;">${pausasProdutivas} Pausas Produtivas</span><br>
+        • <span style="color:#e74a3b;">${pausasImprodutivas} Pausas Improdutivas</span><br>
+        <a href="#" onclick="mostrarPausas()" style="color:#fff; text-decoration: underline; cursor:pointer;">
+          Ver detalhes das pausas
+        </a>
+      `;
+    } else {
+      legendaPausas = `Tempo Livre sem pausas registradas.`;
+    }
+
+    document.getElementById("info-pausas").innerHTML = legendaPausas;
+  }
+
+  // --- Modal de pausas ---
+  window.mostrarPausas = function() {
+    const lista = document.getElementById("listaPausas");
+    lista.innerHTML = "";
+    if (!pausasDetalhes || pausasDetalhes.length === 0) {
+      lista.innerHTML = "<li>Nenhuma pausa registrada.</li>";
+    } else {
+      pausasDetalhes.forEach(pausa => {
+        const li = document.createElement("li");
+        li.textContent = `${pausa.nome_pausa} - Total: ${pausa.total} - Duração: ${pausa.duracao}`;
+        lista.appendChild(li);
+      });
+    }
+    const modal = new bootstrap.Modal(document.getElementById("modalPausas"));
+    modal.show();
+  }
+
+  async function atualizarTotalChamados(dias = 1) {
+    try {
+      const response = await fetch("/operadores/ChamadosSuporte/ticketsOperador", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: colaborador, dias })
+      });
+      const result = await response.json();
+      document.getElementById("total_chamados").textContent = result.status === "success" ? result.total_chamados : "0";
+    } catch (error) {
+      console.error("Erro ao buscar total de chamados:", error);
+      document.getElementById("total_chamados").textContent = "Erro";
+    }
+  }
+
+  async function atualizarPerformance(dias = 1) {
+    try {
+      const response = await fetch("/operadores/performanceColaboradores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: colaborador, dias: dias.toString() })
+      });
+      const result = await response.json();
+      if (result.status === "success") atualizarCampos(result.dados);
+    } catch (error) {
+      console.error("Erro ao buscar dados de performance:", error);
+    }
+  }
+
+  document.querySelectorAll(".filtro-btn").forEach(button => {
+    button.addEventListener("click", async () => {
+      const dias = button.getAttribute("data-dias").toString();
+      document.querySelectorAll(".filtro-btn").forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+      await atualizarTotalChamados(dias);
+      await atualizarPerformance(dias);
+    });
   });
+
+  // Carrega dados iniciais (ontem)
+  atualizarTotalChamados(1);
+  atualizarPerformance(1);
+});
 </script>
+
 
 
 
@@ -168,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const ctx = document.getElementById("atendidasVsTickets").getContext("2d");
     let chartInstance = null;
 
-    async function carregarLigaçõesVsTickets(dias = 30) {
+    async function carregarLigaçõesVsTickets(dias = 1) {
         try {
             const response = await fetch("/operadores/ChamadosSuporte/ticketsTelefoneVsAtendidas", {
                 method: "POST",

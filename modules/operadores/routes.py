@@ -4,7 +4,7 @@ from application.models import db, ChamadasDetalhes, DesempenhoAtendenteVyrtos, 
 from modules.auth.utils import authenticate, authenticate_relatorio
 from application.models import Chamado
 from settings.endpoints import CREDENTIALS
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, time
 from sqlalchemy import func, cast, Date, and_, or_
 
 
@@ -99,26 +99,57 @@ def render_operadores():
 
     return render_template('colaboradores.html', nome=nome, dados=dados)
 
+def _parse_duration_to_timedelta(val):
+    """
+    Converte vários formatos possíveis de 'duracao' para timedelta:
+    - timedelta -> retorna direto
+    - datetime/time -> usa hora/minuto/segundo como delta desde 00:00:00
+    - int/float -> interpreta como segundos
+    - str -> tenta vários formatos: "YYYY-%m-%d %H:%M:%S", "HH:MM:SS", "MM:SS" ou número em segundos
+    - None/indeterminado -> timedelta(0)
+    """
+    if val is None:
+        return timedelta()
+    if isinstance(val, timedelta):
+        return val
+    if isinstance(val, datetime):
+        return timedelta(hours=val.hour, minutes=val.minute, seconds=val.second)
+    if isinstance(val, time):
+        return timedelta(hours=val.hour, minutes=val.minute, seconds=val.second)
+    if isinstance(val, (int, float)):
+        return timedelta(seconds=int(val))
+    if isinstance(val, str):
+        s = val.strip()
+        # tenta formatos conhecidos
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%H:%M:%S", "%M:%S"):
+            try:
+                dt = datetime.strptime(s, fmt)
+                return timedelta(hours=dt.hour, minutes=dt.minute, seconds=dt.second)
+            except Exception:
+                continue
+        # tenta interpretar como número de segundos
+        try:
+            secs = float(s)
+            return timedelta(seconds=int(secs))
+        except Exception:
+            return timedelta()
+    # fallback
+    return timedelta()
+
+def _format_timedelta(td: timedelta) -> str:
+    total_seconds = int(td.total_seconds())
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
 @operadores_bp.route('/performanceColaboradores', methods=['POST'])
 def get_performance_colaboradores():
     data = request.get_json()
-    nome = data.get('nome', '').strip().title()  # normaliza o nome
+    nome = data.get('nome', '').strip().title()
     dias_str = str(data.get('dias'))
 
-    if not nome:
-        return jsonify({"status": "error", "message": "Nome do operador não fornecido"}), 400
-
-    # Busca o operador_id diretamente no banco usando o nome
-    operador = PerformanceColaboradores.query.filter_by(name=nome).first()
-
-    if not operador:
-        return jsonify({"status": "error", "message": f"Operador '{nome}' não encontrado"}), 404
-
-    operador_id = operador.operador_id
-
     hoje = datetime.now().date()
-    ontem = hoje - timedelta(days=1)
-
     try:
         dias = int(dias_str)
     except ValueError:
@@ -126,38 +157,106 @@ def get_performance_colaboradores():
 
     data_inicial = hoje - timedelta(days=dias)
 
+    atendimentos_result = db.session.query(
+    cast(ChamadasDetalhes.data, Date).label('dia'),
+    func.count(ChamadasDetalhes.id)
+    ).filter(
+        ChamadasDetalhes.tipo == 'Atendida',
+        ChamadasDetalhes.nomeAtendente.ilike(f"%{nome}%"),
+        cast(ChamadasDetalhes.data, Date) >= data_inicial,
+        cast(ChamadasDetalhes.data, Date) <= hoje,
+        or_(
+            ChamadasDetalhes.transferencia.is_(None),
+            ChamadasDetalhes.transferencia == '-',
+            ~ChamadasDetalhes.transferencia.ilike('%Ramal%')
+        ),
+        # <<< Aqui entra a lógica >>>
+        #func.time_to_sec(ChamadasDetalhes.tempoAtendimento) >= 10
+    ).group_by(
+        cast(ChamadasDetalhes.data, Date)
+    ).all()
+
+    atendimentos_por_dia_map = {d: total for d, total in atendimentos_result}
+    ch_atendidas = sum(atendimentos_por_dia_map.values())
+
+    # === CONTAGEM DE CHAMADAS NÃO ATENDIDAS
+    nao_atendidas_result = db.session.query(
+        func.count(EventosAtendentes.id)
+    ).filter(
+        EventosAtendentes.nome_atendente.ilike(f"%{nome}%"),
+        EventosAtendentes.evento == 'Chamada N&atilde;o Atendida',
+        EventosAtendentes.data >= data_inicial,
+        EventosAtendentes.data <= hoje
+    ).scalar() or 0
+
+    # === PERFORMANCE GERAL
     registros = PerformanceColaboradores.query.filter(
-        PerformanceColaboradores.operador_id == operador_id,
+        PerformanceColaboradores.name.ilike(f"%{nome}%"),
         PerformanceColaboradores.data >= data_inicial,
         PerformanceColaboradores.data <= hoje
     ).all()
 
+    # acumuladores
     pausas_produtivas = 0
     pausas_improdutivas = 0
+    pausas_detalhadas = []
 
-    # Buscar pausas
-    pausas = db.session.query(
+    duracao_produtiva = timedelta()
+    duracao_improdutiva = timedelta()
+
+    # === BUSCA PAUSAS 
+    pausas_rows = db.session.query(
+        EventosAtendentes.nome_pausa,
         EventosAtendentes.parametro,
-        func.count().label('total')
+        EventosAtendentes.duracao
     ).filter(
-        func.lower(EventosAtendentes.nome_atendente) == nome.lower(),  # ← aqui!
+        EventosAtendentes.nome_atendente.ilike(f"%{nome}%"),
         EventosAtendentes.data >= data_inicial,
         EventosAtendentes.data <= hoje,
-        EventosAtendentes.evento == 'Pausa'
-    ).group_by(EventosAtendentes.parametro).all()
+        EventosAtendentes.evento == 'Pausa',
+        EventosAtendentes.nome_pausa != 'Refeicao'
+    ).all()
 
-    # Classificar
-    for parametro, total in pausas:
-        if str(parametro) in ['3']:
-            pausas_produtivas += total
+    # agrupa por (nome_pausa, parametro)
+    pausa_map = {}  # key -> {'nome_pausa', 'parametro', 'total', 'duracao' (timedelta)}
+    for row in pausas_rows:
+        # a ordem retornada segue a query: nome_pausa, parametro, duracao
+        nome_pausa, parametro, duracao_raw = row
+        delta = _parse_duration_to_timedelta(duracao_raw)
+
+        key = (nome_pausa, str(parametro))
+        entry = pausa_map.get(key)
+        if not entry:
+            entry = {
+                "nome_pausa": nome_pausa,
+                "parametro": parametro,
+                "total": 0,
+                "duracao": timedelta()
+            }
+            pausa_map[key] = entry
+
+        entry["total"] += 1
+        entry["duracao"] += delta
+
+        # contabiliza produtiva/improdutiva global
+        if str(parametro) in ['3', '4', '7']:
+            duracao_produtiva += delta
+            pausas_produtivas += 1
         else:
-            pausas_improdutivas += total
+            duracao_improdutiva += delta
+            pausas_improdutivas += 1
 
+    # monta lista detalhada final
+    for entry in pausa_map.values():
+        pausas_detalhadas.append({
+            "nome_pausa": entry["nome_pausa"],
+            "parametro": entry["parametro"],
+            "total": entry["total"],
+            "duracao": _format_timedelta(entry["duracao"])
+        })
 
-    # Inicializa os acumuladores
+    # === consolida demais métricas
     acumulado = {
-        "ch_atendidas": 0,
-        "ch_naoatendidas": 0,
         "tempo_online": 0,
         "tempo_livre": 0,
         "tempo_servico": 0,
@@ -168,8 +267,6 @@ def get_performance_colaboradores():
     }
 
     for r in registros:
-        acumulado["ch_atendidas"] += r.ch_atendidas
-        acumulado["ch_naoatendidas"] += r.ch_naoatendidas
         acumulado["tempo_online"] += r.tempo_online
         acumulado["tempo_livre"] += r.tempo_livre
         acumulado["tempo_servico"] += r.tempo_servico
@@ -191,8 +288,8 @@ def get_performance_colaboradores():
 
     dados = {
         "periodo": dias_str,
-        "ch_atendidas": acumulado["ch_atendidas"],
-        "ch_naoatendidas": acumulado["ch_naoatendidas"],
+        "ch_atendidas": ch_atendidas,
+        "ch_naoatendidas": nao_atendidas_result,
         "tempo_online": acumulado["tempo_online"],
         "tempo_livre": acumulado["tempo_livre"],
         "tempo_servico": acumulado["tempo_servico"],
@@ -202,6 +299,9 @@ def get_performance_colaboradores():
         "tempo_maxatend": acumulado["tempo_maxatend"] or 0,
         "pausas_produtivas": pausas_produtivas,
         "pausas_improdutivas": pausas_improdutivas,
+        "pausas_detalhadas": pausas_detalhadas,
+        "duracao_produtiva": _format_timedelta(duracao_produtiva),
+        "duracao_improdutiva": _format_timedelta(duracao_improdutiva)
     }
 
     return jsonify({"status": "success", "dados": dados})
@@ -270,11 +370,7 @@ def chamados_telefone_vs_atendidas():
         if not nome_operador:
             return jsonify({'status': 'error', 'message': 'Nome do operador não fornecido'}), 400
 
-        operador = PerformanceColaboradores.query.filter_by(name=nome_operador).first()
-        if not operador:
-            return jsonify({'status': 'error', 'message': f"Operador '{nome_operador}' não encontrado"}), 404
-
-        operador_id = operador.operador_id
+        
 
         # Trata o número de dias informado
         try:
@@ -318,10 +414,13 @@ def chamados_telefone_vs_atendidas():
                 ChamadasDetalhes.transferencia.is_(None),
                 ChamadasDetalhes.transferencia == '-',
                 ~ChamadasDetalhes.transferencia.ilike('%Ramal%')
-            )
+            ),
+            # <<< Filtro de duração mínima >>>
+            #func.time_to_sec(ChamadasDetalhes.tempoAtendimento) >= 10
         ).group_by(
             cast(ChamadasDetalhes.data, Date)
         ).all()
+
 
         atendimentos_por_dia_map = {data: total for data, total in atendimentos_result}
         atendimentos_por_dia = [atendimentos_por_dia_map.get(dia, 0) for dia in lista_dias]
@@ -433,39 +532,38 @@ def listar_p_satisfacao():
         )
     ).all()
 
-    respostas_convertidas = []
-    referencias_chamados = []
+    # Usamos dict para garantir unicidade por referência
+    respostas_unicas = {}
 
     for alternativa, referencia in alternativas_brutas:
+        if referencia in respostas_unicas:
+            continue  # ignora duplicados
         valor = alternativa.strip()
+        numero = None
         if valor.isdigit():
-            numero = int(valor)
-            if 0 <= numero <= 10:
-                respostas_convertidas.append(numero)
-                referencias_chamados.append(referencia)
+            n = int(valor)
+            if 0 <= n <= 10:
+                numero = n
         elif valor in CSAT_MAP:
-            respostas_convertidas.append(CSAT_MAP[valor])
-            referencias_chamados.append(referencia)
+            numero = CSAT_MAP[valor]
 
-    total_respondidas = len(respostas_convertidas)
+        if numero is not None:
+            respostas_unicas[referencia] = numero
 
-    respostas_satisfatorias = sum(1 for nota in respostas_convertidas if nota >= 7)
-
+    total_respondidas = len(respostas_unicas)
+    respostas_satisfatorias = sum(1 for nota in respostas_unicas.values() if nota >= 7)
     csat = round((respostas_satisfatorias / total_respondidas) * 100, 2) if total_respondidas else 0
 
-    # Apenas os chamados das respostas satisfatórias (>=7)
-    referencias_satisfatorias = [
-        referencias_chamados[i]
-        for i, nota in enumerate(respostas_convertidas)
-        if nota >= 7
-    ]
+    # Apenas referências satisfatórias
+    referencias_satisfatorias = [ref for ref, nota in respostas_unicas.items() if nota >= 7]
 
     return jsonify({
         "status": "success",
         "total_respondidas": total_respondidas,
         "respostas_satisfatorias": respostas_satisfatorias,
         "csat": csat,
-        "referencia_chamados": referencias_chamados
+        "referencia_chamados": list(respostas_unicas.keys()),
+        "referencias_satisfatorias": referencias_satisfatorias
     })
 
 @operadores_bp.route('/performanceColaboradoresRender/n2', methods=['POST'])

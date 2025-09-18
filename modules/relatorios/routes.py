@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, send_file, make_response
-from application.models import Chamado, db,  PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess, EventosAtendentes
+from application.models import Chamado, db, RelatorioColaboradores, PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess, EventosAtendentes
 from datetime import datetime, time
-from modules.relatorios.utils import get_turno
+from modules.relatorios.utils import get_turno, get_turno_ligacao
 from collections import Counter
 from io import BytesIO
 from fpdf import FPDF
@@ -15,6 +15,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
+from reportlab.platypus import PageBreak
 import os
 
 
@@ -129,6 +130,17 @@ def extrair_relatorios():
         PerformanceColaboradores.name.ilike(f'%{operador}%')
     ).scalar() or 0
 
+    # Obtenha os registros de FCR e filtre diretamente na aplicação
+    registros_fcr = RelatorioColaboradores.query.filter(
+    func.lower(RelatorioColaboradores.operador) == operador,
+            RelatorioColaboradores.data_criacao >= dt_inicio,
+            RelatorioColaboradores.data_criacao <= dt_final,
+            RelatorioColaboradores.nome_status == 'Resolvido'
+        ).all()
+
+    fcr_registros = [r for r in registros_fcr if r.first_call == 'S']
+    total_fcr = len(fcr_registros)
+
     total_ligacoes_minatend /= 60
     total_ligacoes_maxatend /= 60
 
@@ -163,6 +175,7 @@ def extrair_relatorios():
     data_chamados = [['Descrição', 'Total']]
     data_chamados.extend([
         ['Total de chamados', str(total_chamados)],
+        ['Total First Call Resolution', str(total_fcr)],
         ['SLA Atendimento (Prazo)', f"{percentual_prazo_atendimento}%"],
         ['SLA Atendimento (expirado)', f"{percentual_atendimento}%"],
         ['SLA Resolução (Prazo)', f"{percentual_prazo_resolucao}%"],
@@ -362,7 +375,7 @@ def extrair_comparativo_relatorios():
     hora_inicio = request.form.get('hora_inicio_comp')
     data_final = request.form.get('data_final_comp')
     hora_final = request.form.get('hora_final_comp')
-    nome = request.form.get('nome_operador')  # opcional
+    nome = request.form.get('nome_operador')
 
     if not all([data_inicio, hora_inicio, data_final, hora_final]):
         return {"status": "error", "message": "Parâmetros ausentes"}, 400
@@ -380,11 +393,10 @@ def extrair_comparativo_relatorios():
     )
     if nome:
         query_chamados = query_chamados.filter(Chamado.operador.ilike(f'%{nome}%'))
-        
+
     chamados = query_chamados.order_by(Chamado.data_criacao).all()
     total_chamados = len(chamados)
 
-    # Percentuais de SLA
     expirados_atendimento = sum(1 for c in chamados if c.sla_atendimento == 'S')
     expirados_resolucao = sum(1 for c in chamados if c.sla_resolucao == 'S')
     chamados_atendimento_prazo = sum(1 for c in chamados if c.sla_atendimento == 'N')
@@ -395,18 +407,52 @@ def extrair_comparativo_relatorios():
     percentual_prazo_atendimento = round((chamados_atendimento_prazo / total_chamados) * 100, 2) if total_chamados else 0
     percentual_prazo_resolucao = round((chamados_finalizado_prazo / total_chamados) * 100, 2) if total_chamados else 0
 
-    # ---------- PERFORMANCE ----------
-    performance = PerformanceColaboradores.query.filter(
-        PerformanceColaboradores.data >= dt_inicio.date(),
-        PerformanceColaboradores.data <= dt_final.date()
-    ).order_by(PerformanceColaboradores.data).all()
-    total_ligacoes_atendidas = sum(p.ch_atendidas or 0 for p in performance)
-    total_ligacoes_naoatendidas = sum(p.ch_naoatendidas or 0 for p in performance)
+    # ---------- LIGAÇÕES (ChamadasDetalhes) com filtro de hora válida ----------
+    def is_hora_valida(hora_str):
+        try:
+            if not hora_str or len(hora_str.strip()) < 5:
+                return False
+            hms = hora_str.strip().split(" ")[0]
+            datetime.strptime(hms, '%H:%M:%S')
+            return True
+        except Exception:
+            return False
+
+    query_ligacoes_geral = ChamadasDetalhes.query.filter(
+        ChamadasDetalhes.data >= dt_inicio.date(),
+        ChamadasDetalhes.data <= dt_final.date(),
+    )
+    if nome:
+        query_ligacoes_geral = query_ligacoes_geral.filter(
+            ChamadasDetalhes.nomeAtendente.ilike(f"%{nome}%")
+        )
+    ligacoes_geral = query_ligacoes_geral.all()
+
+    # Filtrar ligações válidas para usar no gráfico e total de "atendidas" consistente
+    ligacoes_validas = [
+        l for l in ligacoes_geral
+        if is_hora_valida(l.horaEntradaPos)
+    ]
+
+    total_ligacoes_atendidas = sum(1 for l in ligacoes_validas if l.tipo == 'Atendida')
+    # Ajuste: dependendo dos tipos existentes no banco, substituir o tipo de "não atendida" correto
+    total_ligacoes_naoatendidas = sum(1 for l in ligacoes_validas if l.tipo != 'Atendida')
+    # Se quiser usar um tipo específico, por exemplo "Não Atendida", "Abandonada", etc,
+    #troque a condição acima para refletir o que for aplicável.
+
+    # Também contabilizar quantas foram desconsideradas por hora inválida
+    ligacoes_atendidas_invalidas = sum(
+        1 for l in ligacoes_geral
+        if l.tipo == 'Atendida' and not is_hora_valida(l.horaEntradaPos)
+    )
+
+    # Manter o cálculo de transferidas ou de ligações efetuadas conforme necessidade
     total_ligacoes_efetuadas = db.session.query(func.count()).filter(
         RegistroChamadas.status == 'Atendida',
         RegistroChamadas.data_hora >= dt_inicio,
-        RegistroChamadas.data_hora <= dt_final
+        RegistroChamadas.data_hora <= dt_final,
     ).scalar() or 0
+
     query_transferidas = db.session.query(func.count()).filter(
         ChamadasDetalhes.transferencia.ilike('%Ramal%'),
         ChamadasDetalhes.data >= dt_inicio.date(),
@@ -416,18 +462,34 @@ def extrair_comparativo_relatorios():
         query_transferidas = query_transferidas.filter(ChamadasDetalhes.nomeAtendente.ilike(f'%{nome}%'))
     total_ligacoes_transferidas = query_transferidas.scalar() or 0
 
-    # ---------- TABELAS ----------
+    # ---------- FCR ----------
+    registros_fcr = RelatorioColaboradores.query.filter(
+        RelatorioColaboradores.data_criacao >= dt_inicio,
+        RelatorioColaboradores.data_criacao <= dt_final,
+        RelatorioColaboradores.nome_status == 'Resolvido'
+    ).all()
+
+    fcr_registros = [r for r in registros_fcr if r.first_call == 'S']
+    total_fcr = len(fcr_registros)
+
+    reabertos_registros = RelatorioColaboradores.query.filter(
+        func.date(RelatorioColaboradores.data_criacao) >= dt_inicio,
+        func.date(RelatorioColaboradores.data_criacao) <= dt_final,
+    ).all()
+
+    reabertos = [r for r in reabertos_registros if r.reaberto == 'Reaberto']
+    total_reabertos = len(reabertos)
+
+    # ---------- PDF SETUP ----------
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4)
     elements = []
     styles = getSampleStyleSheet()
 
-    # Centralizados
     centered_title = ParagraphStyle('centered_title', parent=styles['Title'], alignment=TA_CENTER)
     centered_subtitle = ParagraphStyle('centered_subtitle', parent=styles['Normal'], alignment=TA_CENTER)
     centered_section = ParagraphStyle('centered_section', parent=styles['Heading2'], alignment=TA_CENTER)
 
-    # Título
     elements.append(Paragraph("Relatório Comparativo", centered_title))
     elements.append(Spacer(1, 12))
     elements.append(Paragraph(f"Período: {dt_inicio.strftime('%d/%m/%Y %H:%M')} a {dt_final.strftime('%d/%m/%Y %H:%M')}", centered_subtitle))
@@ -435,15 +497,15 @@ def extrair_comparativo_relatorios():
 
     # ---------- Tabela de Chamados ----------
     data_chamados = [
-        ['Descrição', 'Total']
-    ]
-    data_chamados.extend([
+        ['Descrição', 'Total'],
         ['Total de chamados', str(total_chamados)],
+        ['Total First Call Resolution', str(total_fcr)],
+        ['Total Chamados Reabertos', str(total_reabertos)],
         ['SLA Atendimento (Prazo)', f"{percentual_prazo_atendimento}%"],
         ['SLA Atendimento (Expirado)', f"{percentual_atendimento}%"],
         ['SLA Resolução (Prazo)', f"{percentual_prazo_resolucao}%"],
         ['SLA Resolução (Expirado)', f"{percentual_resolucao}%"]
-    ])
+    ]
     table_chamados = Table(data_chamados, colWidths=[250, 100])
     table_chamados.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
@@ -458,6 +520,8 @@ def extrair_comparativo_relatorios():
     elements.append(Paragraph("Chamados", centered_section))
     elements.append(table_chamados)
     elements.append(Spacer(1, 12))
+
+    
 
     # ---------- Tabela de Ligações ----------
     data_ligacoes = [
@@ -482,7 +546,8 @@ def extrair_comparativo_relatorios():
     elements.append(table_ligacoes)
     elements.append(Spacer(1, 12))
 
-    # ---------- Gráfico de Pizza por Turno ----------
+    elements.append(PageBreak())
+    # ---------- Gráfico de Chamados por Turno ----------
     turnos = [get_turno(ch.data_criacao) for ch in chamados]
     turno_counts = Counter(turnos)
     if turno_counts:
@@ -502,13 +567,46 @@ def extrair_comparativo_relatorios():
         img_buffer.seek(0)
         elements.append(Paragraph("Distribuição de Chamados por Turno", centered_section))
         elements.append(Image(img_buffer, width=200, height=200))
-        elements.append(Spacer(1,12))
+        elements.append(Spacer(1, 12))
 
-    # ---------- Build PDF ----------
+    # ---------- Gráfico de Ligações por Turno ----------
+    turnos_ligacoes = []
+    for l in ligacoes_validas:
+        try:
+            hora = l.horaEntradaPos.strip().split(" ")[0]
+            dt_hora = datetime.strptime(hora, "%H:%M:%S")
+            turno = get_turno(dt_hora)
+            turnos_ligacoes.append(turno)
+        except:
+            continue
+
+    turno_counts_ligacoes = Counter(turnos_ligacoes)
+    if turno_counts_ligacoes:
+        labels_lig = list(turno_counts_ligacoes.keys())
+        sizes_lig = list(turno_counts_ligacoes.values())
+        colors_pizza = ['#4CAF50', '#2196F3', '#FF5722']
+
+        plt.figure(figsize=(4.5, 4.5))
+        plt.pie(sizes_lig, labels=labels_lig,
+                autopct=lambda pct: f"{int(round(pct/100.*sum(sizes_lig)))}\n({pct:.1f}%)",
+                startangle=140, colors=colors_pizza)
+        plt.axis('equal')
+        img_buffer_lig = BytesIO()
+        plt.savefig(img_buffer_lig, format='PNG', bbox_inches='tight')
+        plt.close()
+
+        from reportlab.platypus import Image
+        img_buffer_lig.seek(0)
+        elements.append(Paragraph("Distribuição de Ligações por Turno", centered_section))
+        elements.append(Image(img_buffer_lig, width=200, height=200))
+        elements.append(Spacer(1, 12))
+
+    # ---------- FINALIZAÇÃO ----------
     doc.build(elements)
     buffer.seek(0)
     filename = f"relatorio_comparativo_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
+
 
 @relatorios_bp.route("/getOperadores", methods=['GET'])
 def get_operadores():

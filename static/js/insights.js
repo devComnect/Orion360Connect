@@ -43,9 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
     carregarChamados(1);
 });
 
-
 // Script que traz os botões com os nomes dos operadores-->
-
 document.addEventListener('DOMContentLoaded', function () {
 
     async function carregarOperadores() {
@@ -323,84 +321,134 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 //Script que traz o SLA expirados global-->
+let codigosAtendimento = [];
+let codigosResolucao = [];
 
-  let codigosAtendimento = [];
-  let codigosResolucao = [];
+function mostrarCodigosSla(titulo, listaCodigos) {
+  const lista = document.getElementById("listaCodigos");
+  const tituloModal = document.getElementById("modalCodigosLabel");
 
-  function mostrarCodigosSla(titulo, listaCodigos) {
-    const lista = document.getElementById("listaCodigos");
-    const tituloModal = document.getElementById("modalCodigosLabel");
+  if (!lista || !tituloModal) return;
 
-    if (!lista || !tituloModal) {
-      console.warn("Elemento do modal não encontrado.");
-      return;
-    }
+  lista.innerHTML = "";
+  tituloModal.textContent = titulo;
 
-    lista.innerHTML = "";
-    tituloModal.textContent = titulo;
+  if (!Array.isArray(listaCodigos) || listaCodigos.length === 0) {
+    const item = document.createElement("li");
+    item.className = "text-muted";
+    item.textContent = "Nenhum chamado encontrado.";
+    lista.appendChild(item);
+  } else {
+    listaCodigos.forEach(codigo => {
+      const li = document.createElement("li");
+      li.style.marginBottom = "8px";
 
-    if (!Array.isArray(listaCodigos) || listaCodigos.length === 0) {
-      const item = document.createElement("li");
-      item.className = "text-muted";
-      item.textContent = "Nenhum chamado encontrado.";
-      lista.appendChild(item);
-    } else {
-      listaCodigos.forEach(codigo => {
-        const li = document.createElement("li");
-        li.style.marginBottom = "8px";
+      const link = document.createElement("a");
+      link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+      link.target = "_blank";
+      link.textContent = codigo;
+      link.style.color = "#ffc107";
 
-        const link = document.createElement("a");
-        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
-        link.target = "_blank";
-        link.textContent = codigo;
-        link.style.color = "#ffc107";
-
-        li.appendChild(link);
-        lista.appendChild(li);
-      });
-    }
-
-    const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
-    modal.show();
+      li.appendChild(link);
+      lista.appendChild(li);
+    });
   }
 
-  function carregarSlaGlobal(dias = 1) {
-    fetch('/insights/sla', {
+  const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+  modal.show();
+}
+
+async function carregarSlaGlobal(dias = 1) {
+  try {
+    const res = await fetch('/insights/sla', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dias: dias })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === "success") {
-        document.getElementById("sla_atendimento_expirado").textContent = data.percentual_atendimento + "%";
-        document.getElementById("sla_atendimento_prazo").textContent = data.percentual_prazo_atendimento + "%";
-        document.getElementById("sla_resolucao_expirado").textContent = data.percentual_resolucao + "%";
-        document.getElementById("percentual_prazo_resolucao").textContent = data.percentual_prazo_resolucao + "%";
+      body: JSON.stringify({ dias })
+    });
 
-        codigosAtendimento = data.codigos_atendimento || [];
-        codigosResolucao = data.codigos_resolucao || [];
-      } else {
-        document.getElementById("sla_atendimento_expirado").textContent = "Erro";
-        document.getElementById("sla_resolucao_expirado").textContent = "Erro";
+    const data = await res.json();
+
+    if (data.status === "success") {
+      // Exibição com %
+      document.getElementById("sla_atendimento_expirado").textContent = data.percentual_atendimento + "%";
+      document.getElementById("sla_atendimento_prazo").textContent = data.percentual_prazo_atendimento + "%";
+      document.getElementById("sla_resolucao_expirado").textContent = data.percentual_resolucao + "%";
+      document.getElementById("percentual_prazo_resolucao").textContent = data.percentual_prazo_resolucao + "%";
+
+      codigosAtendimento = data.codigos_atendimento || [];
+      codigosResolucao = data.codigos_resolucao || [];
+
+      const metasRes = await fetch('/okrs/getMetas');
+      if (metasRes.ok) {
+        const metas = await metasRes.json();
+
+        // Atualiza ícones com lógica correta SLA (quanto maior, melhor)
+        atualizarIconeSla("icone_prazo_atendimento", data.percentual_prazo_atendimento, metas.prazo_atendimento);
+        atualizarIconeSla("icone_prazo_resolucao", data.percentual_prazo_resolucao, metas.prazo_resolucao);
       }
-    })
-    .catch(() => {
+
+    } else {
       document.getElementById("sla_atendimento_expirado").textContent = "Erro";
       document.getElementById("sla_resolucao_expirado").textContent = "Erro";
-    });
+      mostrarIconesPadrao();
+    }
+  } catch (err) {
+    console.error("Erro na requisição SLA:", err);
+    document.getElementById("sla_atendimento_expirado").textContent = "Erro";
+    document.getElementById("sla_resolucao_expirado").textContent = "Erro";
+    mostrarIconesPadrao();
+  }
+}
+
+function atualizarIconeSla(idIcone, valorAtual, meta) {
+  const icone = document.getElementById(idIcone);
+  if (!icone) return;
+
+  // Limpa classes antigas
+  icone.className = "";
+
+  // Conversão segura (apenas números)
+  let valNum = parseFloat(String(valorAtual || "0").replace(",", ".").replace("%", "").trim());
+  let metaNum = parseFloat(String(meta || "0").replace(",", ".").replace("%", "").trim());
+
+  const margem = 5; // margem de alerta amarelo
+
+  if (isNaN(valNum) || isNaN(metaNum)) {
+    icone.className = "bi-dash-lg text-muted ms-2 fs-4";
+    return;
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    carregarSlaGlobal(1);
-  });
+  if (valNum >= metaNum) {
+    // Verde para cima: atingiu ou ultrapassou a meta
+    icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
+  } else if (valNum >= (metaNum - margem)) {
+    // Amarelo para cima: próximo da meta
+    icone.className = "bi bi-arrow-up-short text-warning ms-2 fs-4";
+  } else {
+    // Vermelho para baixo: abaixo da meta
+    icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
+  }
+}
 
-  document.querySelectorAll(".filtro-btn").forEach(button => {
-    button.addEventListener("click", () => {
-      const dias = parseInt(button.getAttribute("data-dias"), 10);
-      carregarSlaGlobal(dias);
-    });
+function mostrarIconesPadrao() {
+  ["icone_prazo_atendimento", "icone_prazo_resolucao"].forEach(id => {
+    const icone = document.getElementById(id);
+    if (icone) icone.className = "bi-dash-lg text-muted ms-2 fs-4";
   });
+}
+
+// Inicialização
+document.addEventListener("DOMContentLoaded", function () {
+  carregarSlaGlobal(1);
+});
+
+document.querySelectorAll(".filtro-btn").forEach(button => {
+  button.addEventListener("click", () => {
+    const dias = parseInt(button.getAttribute("data-dias"), 10);
+    carregarSlaGlobal(dias);
+  });
+});
+
 
 // Script que traz o top 5 de chamados filtrado por grupos-->
 
@@ -1406,38 +1454,86 @@ function carregarTopCategorias(dias = 1) {
 
 // Script que traz o TMA eo TMS -->
   document.addEventListener("DOMContentLoaded", function () {
-    // Define dias padrão
-    let diasSelecionados = 30;
-    carregarTmaTms(diasSelecionados);
+  let diasSelecionados = 30;
+  carregarTmaTms(diasSelecionados);
 
-    document.querySelectorAll('.filtro-btn').forEach(btn => {
-      btn.addEventListener('click', function () {
-        // Remove classe active
-        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-        // Adiciona active no clicado
-        this.classList.add('active');
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
 
-        diasSelecionados = parseInt(this.getAttribute('data-dias'), 10);
-        carregarTmaTms(diasSelecionados);
-      });
+      diasSelecionados = parseInt(this.getAttribute('data-dias'), 10);
+      carregarTmaTms(diasSelecionados);
     });
   });
+});
 
-  function carregarTmaTms(dias) {
-    fetch(`/insights/tma_tms?dias=${dias}`)
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === "success") {
-          document.getElementById("percentual-tma").innerText = data.mediana_tma;
-          document.getElementById("percentual-tms").innerText = data.mediana_tms;
-        } else {
-          console.error("Erro ao carregar TMA/TMS:", data.message);
-        }
-      })
-      .catch(err => {
-        console.error("Erro na requisição TMA/TMS:", err);
-      });
+async function carregarTmaTms(dias) {
+  try {
+    const res = await fetch(`/insights/tma_tms?dias=${dias}`);
+    const data = await res.json();
+
+    if (data.status === "success") {
+      document.getElementById("percentual-tma").innerText = data.mediana_tma;
+      document.getElementById("percentual-tms").innerText = data.mediana_tms;
+
+      // Busca metas separadamente
+      const metasRes = await fetch('/okrs/getMetas');
+      const metas = await metasRes.json();
+
+      atualizarIconeTmaTms("icone_tma", data.mediana_tma, metas.tma, "baixo"); // Quanto menor, melhor
+      atualizarIconeTmaTms("icone_tms", data.mediana_tms, metas.tms, "baixo");
+    } else {
+      console.error("Erro ao carregar TMA/TMS:", data.message);
+    }
+  } catch (err) {
+    console.error("Erro na requisição TMA/TMS:", err);
   }
+}
+
+function atualizarIconeTmaTms(idIcone, valorTexto, metaTexto, sentido = "baixo") {
+  const icone = document.getElementById(idIcone);
+  if (!icone) return;
+
+  icone.className = "";
+
+  // Converte valores de texto para minutos (ex: "1.5 h" -> 90, "12 min" -> 12)
+  let valorMin = 0;
+  if (valorTexto.includes("h")) {
+    valorMin = parseFloat(valorTexto) * 60;
+  } else if (valorTexto.includes("dias")) {
+    valorMin = parseFloat(valorTexto) * 1440;
+  } else {
+    valorMin = parseFloat(valorTexto);
+  }
+
+  const metaMin = parseFloat(metaTexto);
+
+  if (isNaN(valorMin) || isNaN(metaMin)) {
+    icone.classList.add("d-none");
+    return;
+  }
+
+  const margem = 5; // margem aceitável
+
+  if (sentido === "baixo") {
+    if (valorMin <= metaMin) {
+      icone.className = "bi bi-arrow-down-short text-success ms-2 fs-4";
+    } else if (valorMin <= metaMin + margem) {
+      icone.className = "bi bi-arrow-down-short text-warning ms-2 fs-4";
+    } else {
+      icone.className = "bi bi-arrow-up-short text-danger ms-2 fs-4";
+    }
+  } else {
+    if (valorMin >= metaMin) {
+      icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
+    } else if (valorMin >= metaMin - margem) {
+      icone.className = "bi bi-arrow-up-short text-warning ms-2 fs-4";
+    } else {
+      icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
+    }
+  }
+}
 
 // Script do botão mestre (não interfere nos demais scripts) -->
   document.addEventListener("DOMContentLoaded", function () {
@@ -1467,88 +1563,118 @@ function carregarTopCategorias(dias = 1) {
     });
   });
 
-// Script que busca os chamados FCR -->
-  let chamadosFcrCodigos = [];
+// Script que traz os chamados de FCR com lógica de ícone
+let chamadosFcrCodigos = [];
 
-  document.addEventListener("DOMContentLoaded", function () {
-    // Botões de filtro por período
-    document.querySelectorAll('.filtro-btn').forEach(btn => {
-      btn.addEventListener('click', function () {
-        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        const dias = parseInt(this.getAttribute('data-dias'), 10);
-        atualizarFCR(dias);
-      });
+document.addEventListener("DOMContentLoaded", function () {
+  // Botões de filtro por período
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      const dias = parseInt(this.getAttribute('data-dias'), 10);
+      atualizarFCR(dias);
     });
   });
 
-  function atualizarFCR(dias, nomeOperador) {
-    fetch('/insights/fcr', {
+  // Carrega dados iniciais
+  atualizarFCR(1); // padrão 30 dias
+});
+
+async function atualizarFCR(dias, nomeOperador) {
+  try {
+    const res = await fetch('/insights/fcr', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ dias })
-    })
-    .then(response => response.json())
-    .then(data => {
-      const fcrSpan = document.getElementById("chamado_fcr");
-      const percentualSpan = document.getElementById("percentual_fcr");
+    });
 
-      if (data.status === "success") {
-        const totalFcr = data.total_fcr || 0;
-        const percentual = data.percentual_fcr ?? "-";
+    const data = await res.json();
 
-        fcrSpan.textContent = totalFcr;
-        percentualSpan.textContent = typeof percentual === "number" ? percentual.toFixed(1) + "%" : percentual;
+    const fcrSpan = document.getElementById("chamado_fcr");
+    const percentualSpan = document.getElementById("percentual_fcr");
+    const icone = document.getElementById("icone_fcr");
 
-        chamadosFcrCodigos = data.cod_chamados || [];
-      } else {
-        fcrSpan.textContent = "Erro";
-        percentualSpan.textContent = "-";
-        chamadosFcrCodigos = [];
-        console.error("Erro na resposta:", data.message);
+    if (data.status === "success") {
+      const totalFcr = data.total_fcr || 0;
+      const percentualRaw = data.percentual_fcr;
+      const percentual = typeof percentualRaw === "number" ? percentualRaw.toFixed(1) + "%" : "-";
+      const percentualValor = typeof percentualRaw === "number" ? percentualRaw : null;
+
+      fcrSpan.textContent = totalFcr;
+      percentualSpan.textContent = percentual;
+      chamadosFcrCodigos = data.cod_chamados || [];
+
+      // Buscar a meta e comparar
+      const metaRes = await fetch('/okrs/getMetas');
+      if (metaRes.ok) {
+        const metas = await metaRes.json();
+        const metaFcr = metas.fcr;
+
+        if (metaFcr != null && percentualValor != null) {
+          if (percentualValor >= metaFcr) {
+            icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
+            icone.title = "Dentro da meta";
+          } else {
+            icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
+            icone.title = "Abaixo da meta";
+          }
+        } else {
+          icone.className = "";
+          icone.title = "";
+        }
       }
-    })
-    .catch(error => {
-      console.error("Erro ao buscar FCR:", error);
-      document.getElementById("chamado_fcr").textContent = "Erro";
-      document.getElementById("percentual_fcr").textContent = "-";
+
+    } else {
+      fcrSpan.textContent = "Erro";
+      percentualSpan.textContent = "-";
+      icone.className = "";
       chamadosFcrCodigos = [];
+      console.error("Erro na resposta:", data.message);
+    }
+  } catch (error) {
+    console.error("Erro ao buscar FCR:", error);
+    document.getElementById("chamado_fcr").textContent = "Erro";
+    document.getElementById("percentual_fcr").textContent = "-";
+    document.getElementById("icone_fcr").className = "";
+    chamadosFcrCodigos = [];
+  }
+}
+
+function mostrarChamadosOperador(titulo, codigos) {
+  const lista = document.getElementById("listaCodigos");
+  const tituloModal = document.getElementById("modalCodigosLabel");
+
+  if (!lista || !tituloModal) return;
+
+  lista.innerHTML = "";
+  tituloModal.textContent = titulo;
+
+  if (!Array.isArray(codigos) || codigos.length === 0) {
+    const item = document.createElement("li");
+    item.className = "text-muted";
+    item.textContent = "Nenhum chamado encontrado.";
+    lista.appendChild(item);
+  } else {
+    codigos.forEach(codigo => {
+      const li = document.createElement("li");
+      li.style.marginBottom = "8px";
+
+      const link = document.createElement("a");
+      link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
+      link.target = "_blank";
+      link.textContent = codigo;
+      link.style.color = "#ffc107";
+
+      li.appendChild(link);
+      lista.appendChild(li);
     });
   }
 
-  function mostrarChamadosOperador(titulo, codigos) {
-    const lista = document.getElementById("listaCodigos");
-    const tituloModal = document.getElementById("modalCodigosLabel");
+  const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
+  modal.show();
+}
 
-    if (!lista || !tituloModal) return;
-
-    lista.innerHTML = "";
-    tituloModal.textContent = titulo;
-
-    if (!Array.isArray(codigos) || codigos.length === 0) {
-      const item = document.createElement("li");
-      item.className = "text-muted";
-      item.textContent = "Nenhum chamado encontrado.";
-      lista.appendChild(item);
-    } else {
-      codigos.forEach(codigo => {
-        const li = document.createElement("li");
-        li.style.marginBottom = "8px";
-
-        const link = document.createElement("a");
-        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigo}`;
-        link.target = "_blank";
-        link.textContent = codigo;
-        link.style.color = "#ffc107";
-
-        li.appendChild(link);
-        lista.appendChild(li);
-      });
-    }
-
-    const modal = new bootstrap.Modal(document.getElementById("modalCodigos"));
-    modal.show();
-  }
 
 //Script que retorna a relação de CES-->
 document.addEventListener("DOMContentLoaded", function () {
@@ -1706,57 +1832,97 @@ function atualizarNps(dias) {
 
 
 // Script que me traz a relação de chamados reabertos-->
-  let chamadosReabertosCodigos = [];
+let chamadosReabertosCodigos = [];
 
-  document.addEventListener("DOMContentLoaded", function () {
-    // Atualiza ao clicar no botão de filtro de dias
-    document.querySelectorAll('.filtro-btn').forEach(btn => {
-      btn.addEventListener('click', function () {
-        const dias = parseInt(this.getAttribute('data-dias'), 10);
-        atualizarReabertos(dias);
-      });
+async function fetchMetas() {
+  try {
+    const res = await fetch('/okrs/getMetas');
+    return res.ok ? await res.json() : {};
+  } catch (err) {
+    console.error("Erro ao buscar metas:", err);
+    return {};
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Atualiza ao clicar no botão de filtro de dias
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const dias = parseInt(this.getAttribute('data-dias'), 10);
+      const nomeOperador = "{{ nome }}"; // se quiser passar
+      atualizarReabertos(dias, nomeOperador);
     });
   });
 
-  function atualizarReabertos(dias, nomeOperador) {
-    fetch('/insights/reabertos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dias })
-    })
-    .then(response => response.json())
-    .then(data => {
-      const reabertosSpan = document.getElementById("chamado_reaberto");
-      const percentualSpan = document.getElementById("percentual_reaberto");
+  // Carregar dados iniciais
+  atualizarReabertos(1, "{{ nome }}");
+});
 
-      if (data.status === "success") {
-        const total = data.total_chamados || 0;
-        const reabertos = data.total_reabertos || 0;
-        chamadosReabertosCodigos = data.cod_chamados || [];
+async function atualizarReabertos(dias, nomeOperador) {
+  const metas = await fetchMetas();
 
-        reabertosSpan.textContent = reabertos;
+  fetch('/insights/reabertos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dias })
+  })
+  .then(response => response.json())
+  .then(data => {
+    const reabertosSpan = document.getElementById("chamado_reaberto");
+    const percentualSpan = document.getElementById("percentual_reaberto");
+    const icone = document.getElementById("icone_reaberto");
 
-        // Cálculo do percentual
-        let percentual = "-";
-        if (total > 0) {
-          percentual = ((reabertos / total) * 100).toFixed(1) + "%";
-        }
+    if (data.status === "success") {
+      const total = data.total_chamados || 0;
+      const reabertos = data.total_reabertos || 0;
+      chamadosReabertosCodigos = data.cod_chamados || [];
 
-        percentualSpan.textContent = percentual;
-      } else {
-        reabertosSpan.textContent = "Erro";
-        percentualSpan.textContent = "-";
-        chamadosReabertosCodigos = [];
-        console.error("Erro na resposta:", data.message);
+      reabertosSpan.textContent = reabertos;
+
+      let percentual = "-";
+      let percentualValor = 0;
+
+      if (total > 0) {
+        percentualValor = (reabertos / total) * 100;
+        percentual = percentualValor.toFixed(1) + "%";
       }
-    })
-    .catch(error => {
-      console.error("Erro ao buscar reabertos:", error);
-      document.getElementById("chamado_reaberto").textContent = "Erro";
-      document.getElementById("percentual_reaberto").textContent = "-";
+
+      percentualSpan.textContent = percentual;
+
+      // Avalia com a meta
+      if (metas.reabertos != null && total > 0) {
+        const meta = metas.reabertos;
+        if (percentualValor <= meta) {
+          icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
+          icone.title = "Dentro da meta";
+        } else {
+          icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
+          icone.title = "Acima da meta";
+        }
+      } else {
+        icone.className = "";
+        icone.title = "";
+      }
+
+    } else {
+      reabertosSpan.textContent = "Erro";
+      percentualSpan.textContent = "-";
+      icone.className = "";
+      icone.title = "";
       chamadosReabertosCodigos = [];
-    });
-  }
+      console.error("Erro na resposta:", data.message);
+    }
+  })
+  .catch(error => {
+    console.error("Erro ao buscar reabertos:", error);
+    reabertosSpan.textContent = "Erro";
+    percentualSpan.textContent = "-";
+    icone.className = "";
+    icone.title = "";
+    chamadosReabertosCodigos = [];
+  });
+}
+
 
   // Essa função já serve para qualquer lista de chamados (FCR, Reabertos, etc.)
   function mostrarChamadosOperador(titulo, codigos) {
@@ -1795,7 +1961,10 @@ function atualizarNps(dias) {
 
 // Script que retorna as ligações atendidas-->
 document.addEventListener("DOMContentLoaded", function () {
-  // Atualiza ao clicar no botão de filtro de dias
+  // Chama automaticamente com filtro padrão = 1 ao renderizar
+  atualizarLigacoes(1);
+
+  // Atualiza ao clicar nos botões de filtro de dias
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const dias = parseInt(this.getAttribute('data-dias'), 10);
@@ -1824,22 +1993,27 @@ function atualizarLigacoes(dias) {
 }
 
 
-// Script que retorna as ligações não atendidas-->
+
+// Script que retorna as ligações não atendidas
 document.addEventListener("DOMContentLoaded", function () {
-  // Atualiza ao clicar no botão de filtro de dias
+  // Chama automaticamente com filtro padrão = hoje ao renderizar
+  atualizarLigacoesPerdidas(1);
+
+  // Atualiza ao clicar nos botões de filtro de dias
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
-      const dias = parseInt(this.getAttribute('data-dias'), 10);
+      const dias = this.getAttribute('data-dias'); 
       atualizarLigacoesPerdidas(dias);
     });
   });
 });
 
-function atualizarLigacoesPerdidas(dias) {
+// Script que traz as ligações perdidas
+function atualizarLigacoesPerdidas(filtro) {
   fetch('/insights/ligacoesPerdidas', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dias })
+    body: JSON.stringify({ dias: filtro })
   })
   .then(response => response.json())
   .then(data => {
@@ -1854,44 +2028,46 @@ function atualizarLigacoesPerdidas(dias) {
   });
 }
 
-// Script que retorna as ligações efetuadas-->
+
+// Script que retorna as ligações efetuadas
+document.addEventListener("DOMContentLoaded", function () {
   const botoesPeriodo = document.querySelectorAll(".filtro-btn");
 
+  // Chamada inicial: somente hoje
+  carregarChamadasEfetuadas(1);
+
+  // Clique nos botões de período
   botoesPeriodo.forEach(button => {
     button.addEventListener("click", function () {
       botoesPeriodo.forEach(btn => btn.classList.remove("active"));
       this.classList.add("active");
 
-      const dias = parseInt(this.getAttribute("data-dias"), 10);
+      const dias = this.getAttribute("data-dias"); // pode ser "7", "15" etc.
       carregarChamadasEfetuadas(dias);
     });
   });
+});
 
-  // chamada inicial
-  carregarChamadasEfetuadas(1);
+async function carregarChamadasEfetuadas(filtro) {
+  try {
+    const response = await fetch('/insights/chamadasEfetuadas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dias: filtro })
+    });
 
-  async function carregarChamadasEfetuadas(dias) {
-    try {
-      const response = await fetch('/insights/chamadasEfetuadas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ dias })
-      });
+    const data = await response.json();
 
-      const data = await response.json();
-
-      if (data.status === "success") {
-        const total = data.total_ligacoes || 0;
-        document.getElementById("ch-efetuadas").textContent = total;
-      } else {
-        console.error("Erro na resposta:", data.message);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar chamadas efetuadas:", error);
+    if (data.status === "success") {
+      const total = data.total_ligacoes || 0;
+      document.getElementById("ch-efetuadas").textContent = total;
+    } else {
+      console.error("Erro na resposta:", data.message);
     }
+  } catch (error) {
+    console.error("Erro ao buscar chamadas efetuadas:", error);
   }
+}
 
 //Bloco que traz a relação de chamadas transferidas-->
   document.addEventListener("DOMContentLoaded", function () {

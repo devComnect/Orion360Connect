@@ -83,299 +83,179 @@
     <!-- Fluxograma - layout em árvore -->
     <div class="fluxograma text-white">
 
-      <!-- Nível 1 -->
-      <div class="fluxo-card nivel-1">
-        <h6>Chamados</h6>
+  <!-- Gráficos de Evolução Mensal dos OKRs -->
+  <div class="row mt-3 gx-4">
+    <div class="col-12">
+      <div id="carouselGraficos" class="carousel slide" data-bs-interval="false" data-bs-ride="false">
+        <div class="carousel-inner">
 
-        <div class="info-item">
-          <span>Reabertos</span>
-          <span class="value text-white">
-            <a href="#" onclick="mostrarChamadosOperador('Chamados Reabertos do Operador', chamadosReabertosCodigos)">
-              <span id="chamado_reaberto">0</span>
-            </a>
-            / <span id="percentual_reaberto">0%</span>
-            <i id="icone_reaberto" class="bi ms-2 fs-4"></i>
-          </span>
-        </div>
-
-        <div class="info-item">
-          <span>FCR</span>
-          <span class="value text-white">
-            <a href="#" onclick="mostrarChamadosOperador('Chamados com FCR do Operador', chamadosFcrCodigos)">
-              <span id="chamado_fcr">0</span>
-            </a>
-            / <span id="percentual_fcr">0%</span>
-            <i id="icone_fcr" class="bi ms-2 fs-4"></i>
-          </span>
-        </div>
-      </div>
-
-
-
-      <!-- Nível 2 esquerdo -->
-      <div class="fluxo-card nivel-2-esq">
-        <h6>Tempo Médio</h6>
-        <h6 class="text-center mb-2">Chamados</h6>
-        <div class="info-item">
-          <span class="text-warning">TMA</span>
-          <span class="value">
-            <span id="percentual-tma">0</span>
-            <i id="icone_tma" class="bi ms-2 fs-4"></i>
-          </span>
-        </div>
-
-        <div class="info-item">
-          <span class="text-success">TMS</span>
-          <span class="value">
-            <span id="percentual-tms">0</span>
-            <i id="icone_tms" class="bi ms-2 fs-4"></i>
-          </span>
-        </div>
-        <h6 class="text-center mt-3 mb-2">Ligações</h6>
-        <div class="info-item"><span class="text-success">TMIN</span><span class="value" id="percentual-tma-ligacoes">0</span></div>
-        <div class="info-item"><span class="text-danger">TMAX</span><span class="value" id="percentual-tms-ligacoes">0</span></div>
-      </div>
-
-      <!-- Nível 2 direito -->
-    <div class="fluxo-card nivel-2-dir">
-      <h6>SLA</h6>
-      <h6 class="text-center mb-2">Atendimento</h6>
-      <div class="info-item">
-        <span class="text-danger">Expirados</span>
-        <span class="value">
-          <a href="#" onclick="mostrarCodigosSla('Atendimento Expirado', codigosAtendimento)">
-            <span id="sla_atendimento_expirado">0%</span>
-          </a>
-        </span>
-      </div>
-      <div class="info-item">
-        <span class="text-success">No Prazo</span>
-        <span class="value">
-          <span id="sla_atendimento_prazo">0%</span>
-          <i id="icone_prazo_atendimento" class="bi ms-2 fs-4"></i>
-        </span>
-      </div>
-
-      <h6 class="text-center mt-3 mb-2">Resolução</h6>
-      <div class="info-item">
-        <span class="text-danger">Expirados</span>
-        <span class="value">
-          <a href="#" onclick="mostrarCodigosSla('Resolução Expirada', codigosResolucao)">
-            <span id="sla_resolucao_expirado">-</span>
-          </a>
-        </span>
-      </div>
-      <div class="info-item">
-        <span class="text-success">No Prazo</span>
-        <span class="value">
-          <span id="percentual_prazo_resolucao">0%</span>
-          <i id="icone_prazo_resolucao" class="bi ms-2 fs-4"></i>
-        </span>
-      </div>
-    </div>
-
-      <!-- Nível 3 -->
-      <div class="fluxo-card nivel-3">
-        <h6>Satisfação</h6>
-        <div class="info-item">
-          <span>CSAT</span>
-          <span class="value">
-            <span id="csat-percentual">0%</span>
-            <i id="icone_csat" class="bi ms-2 fs-4"></i>
-          </span>
-        </div>
-        <div class="info-item"><span>Total Avaliado</span><span class="value" id="total-avaliado">0</span></div>
-        <div class="info-item"><span>CES</span><span class="value" id="ces-nota">0</span></div>
-        <div class="info-item"><span>Classificação</span><span class="value" id="ces-descricao">-</span></div>
-        <div class="info-item"><span>NPS</span><span class="value" id="nps-retorno">0</span></div>
-        <div class="info-item"><span>Classificação </span><span class="value" id="nps-null">0</span></div>
-      </div>
-
-
-<!-- Gráficos de Evolução Mensal dos OKRs -->
-<div class="row mt-3 gx-4">
-  <div class="col-12">
-    <div id="carouselGraficos" class="carousel slide" data-bs-interval="false" data-bs-ride="false">
-      <div class="carousel-inner">
-
-        <!-- SLIDE 1 – Fluxograma compacto (agora como primeiro e ativo) -->
-        <div class="carousel-item slide-compacto active">
-          <h3 class="text-center">Metas</h3>
-          <div class="fluxograma text-white p-2">
-
-            <div class="fluxo">
-            <h6 class="mb-2">CSAT (%)</h6>
-            <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-csat">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">SLA Atendimento (%)</h6>
-            <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">SLA Solução (%)</h6>
-            <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">Reabertura (%)</h6>
-            <div class="info-item2 text-center"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">TMA (m)</h6>
-            <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">TMS (h)</h6>
-            <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">FCR (%)</h6>
-            <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
-          </div>
-
-          <br>
-          <div class="row g-3">
-            <div class="col-md-6 mb-4">
-              <div class="fluxo-card" style="padding: 2rem;">
-                <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
-                <canvas id="graficoTmaTms" height="80"></canvas>
-              </div>
-            </div>
-
-            <div class="col-md-6 mb-4">
-              <div class="fluxo-card" style="padding: 2rem;">
-                <h5 class="text-center mb-4">Evolução do SLA</h5>
-                <canvas id="graficoSLA" height="80"></canvas>
-              </div>
-            </div>
-
-            <!-- Linha 2: FCR + CSAT -->
-            <div class="col-md-6 mb-4">
-              <div class="fluxo-card" style="padding: 2rem;">
-                <h5 class="text-center mb-4">Evolução do FCR</h5>
-                <canvas id="graficoFCR" height="80"></canvas>
-              </div>
-            </div>
-
-            <div class="col-md-6 mb-4">
-              <div class="fluxo-card" style="padding: 2rem;">
-                <h5 class="text-center mb-4">Evolução do CSAT</h5>
-                <canvas id="graficoCSAT" height="80"></canvas>
-              </div>
-            </div>
-
-          </div>
-          </div>
-        </div>
-
-
-        <!-- SLIDE 2 – Gráficos (antes era o primeiro) -->
-        <div class="carousel-item">
           <!-- SLIDE 1 – Fluxograma compacto (agora como primeiro e ativo) -->
-        <div class="carousel-item slide-compacto active">
-          <h3 class="text-center">Médias</h3>
-          <div class="fluxograma text-white p-2">
+          <div class="carousel-item slide-compacto active">
+            <h3 class="text-center">Metas</h3>
+            <div class="fluxograma text-white p-2">
+
+              <div class="fluxo">
+              <h6 class="mb-2">CSAT (%)</h6>
+              <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-csat">--</span></div>
+            </div>
 
             <div class="fluxo">
-            <h6 class="mb-2">CSAT (%)</h6>
-            <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-csat">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">SLA Atendimento (%)</h6>
-            <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">SLA Solução (%)</h6>
-            <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">Reabertura (%)</h6>
-            <div class="info-item2 text-center"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">TMA (m)</h6>
-            <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">TMS (h)</h6>
-            <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
-          </div>
-
-          <div class="fluxo">
-            <h6 class="mb-2">FCR (%)</h6>
-            <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
-          </div>
-
-          <br>
-          <div class="row g-3">
-            <div class="col-md-6 mb-4">
-              <div class="fluxo-card" style="padding: 2rem;">
-                <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
-                <canvas id="graficoTmaTms" height="80"></canvas>
-              </div>
+              <h6 class="mb-2">SLA Atendimento (%)</h6>
+              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
             </div>
 
-            <div class="col-md-6 mb-4">
-              <div class="fluxo-card" style="padding: 2rem;">
-                <h5 class="text-center mb-4">Evolução do SLA</h5>
-                <canvas id="graficoSLA" height="80"></canvas>
-              </div>
+            <div class="fluxo">
+              <h6 class="mb-2">SLA Solução (%)</h6>
+              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
             </div>
 
-            <!-- Linha 2: FCR + CSAT -->
-            <div class="col-md-6 mb-4">
-              <div class="fluxo-card" style="padding: 2rem;">
-                <h5 class="text-center mb-4">Evolução do FCR</h5>
-                <canvas id="graficoFCR" height="80"></canvas>
-              </div>
+            <div class="fluxo">
+              <h6 class="mb-2">Reabertura (%)</h6>
+              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
             </div>
 
-            <div class="col-md-6 mb-4">
-              <div class="fluxo-card" style="padding: 2rem;">
-                <h5 class="text-center mb-4">Evolução do CSAT</h5>
-                <canvas id="graficoCSAT" height="80"></canvas>
-              </div>
+            <div class="fluxo">
+              <h6 class="mb-2">TMA (m)</h6>
+              <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
             </div>
 
+            <div class="fluxo">
+              <h6 class="mb-2">TMS (h)</h6>
+              <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
+            </div>
+
+            <div class="fluxo">
+              <h6 class="mb-2">FCR (%)</h6>
+              <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
+            </div>
+
+            <br>
+            <div class="row g-3">
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card" style="padding: 2rem;">
+                  <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
+                  <canvas id="graficoTmaTms" height="80"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card" style="padding: 2rem;">
+                  <h5 class="text-center mb-4">Evolução do SLA</h5>
+                  <canvas id="graficoSLA" height="80"></canvas>
+                </div>
+              </div>
+
+              <!-- Linha 2: FCR + CSAT -->
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card" style="padding: 2rem;">
+                  <h5 class="text-center mb-4">Evolução do FCR</h5>
+                  <canvas id="graficoFCR" height="80"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card" style="padding: 2rem;">
+                  <h5 class="text-center mb-4">Evolução do CSAT</h5>
+                  <canvas id="graficoCSAT" height="80"></canvas>
+                </div>
+              </div>
+
+            </div>
+            </div>
           </div>
+
+
+          <!-- SLIDE 2 – Gráficos (antes era o primeiro) -->
+          <div class="carousel-item">
+            <!-- SLIDE 1 – Fluxograma compacto (agora como primeiro e ativo) -->
+          <div class="carousel-item slide-compacto active">
+            <h3 class="text-center">Médias</h3>
+            <div class="fluxograma text-white p-2">
+
+              <div class="fluxo">
+              <h6 class="mb-2">CSAT (%)</h6>
+              <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-csat">--</span></div>
+            </div>
+
+            <div class="fluxo">
+              <h6 class="mb-2">SLA Atendimento (%)</h6>
+              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
+            </div>
+
+            <div class="fluxo">
+              <h6 class="mb-2">SLA Solução (%)</h6>
+              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
+            </div>
+
+            <div class="fluxo">
+              <h6 class="mb-2">Reabertura (%)</h6>
+              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
+            </div>
+
+            <div class="fluxo">
+              <h6 class="mb-2">TMA (m)</h6>
+              <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
+            </div>
+
+            <div class="fluxo">
+              <h6 class="mb-2">TMS (h)</h6>
+              <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
+            </div>
+
+            <div class="fluxo">
+              <h6 class="mb-2">FCR (%)</h6>
+              <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
+            </div>
+
+            <br>
+            <div class="row g-3">
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card" style="padding: 2rem;">
+                  <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
+                  <canvas id="graficoTmaTms" height="80"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card" style="padding: 2rem;">
+                  <h5 class="text-center mb-4">Evolução do SLA</h5>
+                  <canvas id="graficoSLA" height="80"></canvas>
+                </div>
+              </div>
+
+              <!-- Linha 2: FCR + CSAT -->
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card" style="padding: 2rem;">
+                  <h5 class="text-center mb-4">Evolução do FCR</h5>
+                  <canvas id="graficoFCR" height="80"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card" style="padding: 2rem;">
+                  <h5 class="text-center mb-4">Evolução do CSAT</h5>
+                  <canvas id="graficoCSAT" height="80"></canvas>
+                </div>
+              </div>
+            </div>
+            </div>
           </div>
         </div>
 
-
-          
+        <!-- Controles de navegação do carrossel -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselGraficos" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon bg-dark rounded-circle" aria-hidden="true"></span>
+          <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselGraficos" data-bs-slide="next">
+          <span class="carousel-control-next-icon bg-dark rounded-circle" aria-hidden="true"></span>
+          <span class="visually-hidden">Próximo</span>
+        </button>
 
       </div>
-
-      <!-- Controles de navegação do carrossel -->
-      <button class="carousel-control-prev" type="button" data-bs-target="#carouselGraficos" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon bg-dark rounded-circle" aria-hidden="true"></span>
-        <span class="visually-hidden">Anterior</span>
-      </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#carouselGraficos" data-bs-slide="next">
-        <span class="carousel-control-next-icon bg-dark rounded-circle" aria-hidden="true"></span>
-        <span class="visually-hidden">Próximo</span>
-      </button>
-
     </div>
   </div>
-</div>
-
-
-
-
-
-
-  </div> <!-- FIM da container-fluid -->
+</div> <!-- FIM da container-fluid -->
 
   <!-- Modal para mostrar os códigos -->
 <div class="modal fade" id="modalCodigos" tabindex="-1" aria-labelledby="modalCodigosLabel" aria-hidden="true">

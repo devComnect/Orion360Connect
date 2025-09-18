@@ -7,6 +7,7 @@ from datetime import datetime
 import pandas as pd
 import os
 from modules.home.utils import render_performance_individual
+from modules.operadores.utils import calcular_performance_colaborador
 
 
 home_bp = Blueprint('home_bp', __name__)
@@ -46,14 +47,20 @@ def render_okrs():
 
 @home_bp.route('/performance', methods=['GET'])
 def render_performance():
-    nome = session.get('nome')
-    dados = session.get('dados')
-    return render_template('colaboradores_individual.html', nome=nome, dados=dados)
+    nome = session.get("nome") 
+    if not nome:
+        nome = "Colaborador"  
+    dados = calcular_performance_colaborador(nome, 1)  
+
+    return render_template("colaboradores_individual.html", nome=nome, dados=dados)
 
 @home_bp.route('/performance/colaboradoresN2', methods=['GET'])
 def render_performance_n2():
     nome = session.get('nome')
-    dados = session.get('dados')
+    if not nome:
+        nome = "Colaborador"  
+    dados = calcular_performance_colaborador(nome, 1)  
+
     return render_template('colaboradores_individual_nivel2.html', nome=nome, dados=dados)
 
 @home_bp.route('/guardians', methods=['GET'])

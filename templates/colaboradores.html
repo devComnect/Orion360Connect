@@ -221,18 +221,19 @@
 
   <!-- Gráficos -->
   <div class="row g-4 mt-6">
-    <!-- Distribuição do Tempo -->
     <div class="col-md-3">
-      <div class="card  card-grafico-pequeno">
+      <div class="card card-grafico-pequeno">
         <div class="card-header text-center">Distribuição do Tempo</div>
         <div class="card-body">
-        <canvas id="tempoDistribuicaoChart"></canvas>
-        <div id="info-pausas" class="mt-3 text-center small text-white">
-          <!-- conteúdo será injetado via JS -->
-        </div>
-      </div>
-        
+          <canvas id="tempoDistribuicaoChart"></canvas>
 
+          <!-- Link para abrir o modal de pausas -->
+          <div id="info-pausas" class="mt-3 text-center small text-white">
+            <a href="#" onclick="mostrarPausas()" style="text-decoration: underline; cursor: pointer;">
+              Ver detalhes das pausas
+            </a>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -260,6 +261,24 @@
         <div class="card-body d-flex justify-content-center align-items-center">
           <canvas id="slaChartAtendimentoResolucao"></canvas>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Pausas -->
+<div class="modal fade" id="modalPausas" tabindex="-1" aria-labelledby="modalPausasLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="modalPausasLabel">Detalhes das Pausas</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+        <ul id="listaPausas" class="list-unstyled mb-0"></ul>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
       </div>
     </div>
   </div>

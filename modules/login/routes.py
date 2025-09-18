@@ -58,7 +58,6 @@ def login():
             print(f"DEBUG login: user={user.username}, is_admin={user.is_admin}, is_nivel2={user.is_nivel2} ({type(user.is_nivel2)})")
 
 
-
             # Redireciona baseado na permissão
             if user.is_admin:
                 return redirect(url_for('home_bp.render_insights'))
