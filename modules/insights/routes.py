@@ -9,8 +9,6 @@ from sqlalchemy import func, and_, or_,cast, Date
 import numpy as np
 import re
 
-
-
 insights_bp = Blueprint('insights_bp', __name__, url_prefix='/insights')
 
 # Rota que traz os chamados criados no grupo do Suporte  
@@ -962,8 +960,10 @@ def get_ligacoes_atendidas():
             ChamadasDetalhes.tipo == 'Atendida',
             cast(ChamadasDetalhes.data, Date) >= data_inicio,
             cast(ChamadasDetalhes.data, Date) <= hoje,
-            
+            # Filtro de duração mínima
+            #func.time_to_sec(ChamadasDetalhes.tempoAtendimento) >= 10
         ).scalar() or 0  # garante que não seja None
+
 
         return jsonify({
             "status": "success",
@@ -975,7 +975,6 @@ def get_ligacoes_atendidas():
             "status": "error",
             "message": str(e)
         }), 500
-
 
 @insights_bp.route('/ligacoesPerdidas', methods=['POST'])
 def get_ligacoes_nao_atendidas():
@@ -1002,7 +1001,6 @@ def get_ligacoes_nao_atendidas():
             "message": str(e)
         }), 500
 
-
 '''@insights_bp.route('/ligacoesPerdidas', methods=['POST'])
 def get_ligacoes_nao_atendidas():
     try:
@@ -1027,7 +1025,6 @@ def get_ligacoes_nao_atendidas():
             "status": "error",
             "message": str(e)
         }), 500'''
-
 
 @insights_bp.route('/chamadasEfetuadas', methods=['POST'])
 def get_ligacoes_efetuadas():

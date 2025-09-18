@@ -4,7 +4,7 @@ from modules.tasks.utils import repopular_eventos_operador_180d,repopular_evento
 
 with app.app_context():
     print("Tarefa em execução!")
-    repopular_eventos_operador_180d(operador_id=2021, nome_operador='Matheus')
+    repopular_eventos_operador_180d(operador_id=2023, nome_operador='Raysa')
 
 
 

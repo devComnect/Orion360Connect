@@ -157,10 +157,9 @@ def get_performance_colaboradores():
 
     data_inicial = hoje - timedelta(days=dias)
 
-    # === CONTAGEM DE CHAMADAS ATENDIDAS
     atendimentos_result = db.session.query(
-        cast(ChamadasDetalhes.data, Date).label('dia'),
-        func.count(ChamadasDetalhes.id)
+    cast(ChamadasDetalhes.data, Date).label('dia'),
+    func.count(ChamadasDetalhes.id)
     ).filter(
         ChamadasDetalhes.tipo == 'Atendida',
         ChamadasDetalhes.nomeAtendente.ilike(f"%{nome}%"),
@@ -170,7 +169,9 @@ def get_performance_colaboradores():
             ChamadasDetalhes.transferencia.is_(None),
             ChamadasDetalhes.transferencia == '-',
             ~ChamadasDetalhes.transferencia.ilike('%Ramal%')
-        )
+        ),
+        # <<< Aqui entra a lógica >>>
+        #func.time_to_sec(ChamadasDetalhes.tempoAtendimento) >= 10
     ).group_by(
         cast(ChamadasDetalhes.data, Date)
     ).all()
@@ -238,7 +239,7 @@ def get_performance_colaboradores():
         entry["duracao"] += delta
 
         # contabiliza produtiva/improdutiva global
-        if str(parametro) in ['3', '4']:
+        if str(parametro) in ['3', '4', '7']:
             duracao_produtiva += delta
             pausas_produtivas += 1
         else:
@@ -413,10 +414,13 @@ def chamados_telefone_vs_atendidas():
                 ChamadasDetalhes.transferencia.is_(None),
                 ChamadasDetalhes.transferencia == '-',
                 ~ChamadasDetalhes.transferencia.ilike('%Ramal%')
-            )
+            ),
+            # <<< Filtro de duração mínima >>>
+            #func.time_to_sec(ChamadasDetalhes.tempoAtendimento) >= 10
         ).group_by(
             cast(ChamadasDetalhes.data, Date)
         ).all()
+
 
         atendimentos_por_dia_map = {data: total for data, total in atendimentos_result}
         atendimentos_por_dia = [atendimentos_por_dia_map.get(dia, 0) for dia in lista_dias]
