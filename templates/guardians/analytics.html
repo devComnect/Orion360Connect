@@ -4,7 +4,11 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="text-center mb-4 text-warning">Analytics & Relatórios</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-warning mb-0">Analytics & Relatórios</h2>
+            <a href="{{ url_for('guardians_bp.admin') }}" class="btn btn-outline-secondary">Voltar ao Painel Admin</a>
+    </div>
+    
 
     <div class="row g-4">
         <div class="col-lg-3 col-md-6">
@@ -36,63 +40,37 @@
             </div>
         </div>
     </div>
-
-    <hr class="my-5">
-
-    <div class="card bg-dark text-white shadow">
-        <div class="card-header">
-            <h4 class="mb-0"><i class="bi bi-search me-2"></i>Consulta Individual de Desempenho</h4>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('guardians_bp.analytics') }}">
-                <div class="input-group">
-                    <select class="form-control" name="guardian_id" required>
-                        <option value="">Selecione um colaborador para ver os detalhes...</option>
-                        {% for guardian in all_guardians %}
-                            <option value="{{ guardian.id }}" {% if selected_user and selected_user.id == guardian.id %}selected{% endif %}>
-                                {{ guardian.nome }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <button class="btn btn-warning" type="submit">Buscar</button>
-                </div>
-            </form>
-
-            {# Esta seção só aparece se um usuário foi selecionado #}
-            {% if selected_user %}
-                <div class="mt-5">
-                    <h3 class="text-info">Relatório de {{ selected_user.nome }}</h3>
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <h5>Histórico de Eventos</h5>
-                            <ul class="list-group list-group-flush">
-                                {% for acao in user_history %}
-                                    <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center">
-                                        <div>{{ acao.descricao }}<br><small class="text-muted">{{ acao.data_evento.strftime('%d/%m/%Y') }}</small></div>
-                                        {% if acao.pontuacao != 0 %}<span class="badge {{ 'bg-success' if acao.pontuacao > 0 else 'bg-danger' }} rounded-pill">{{ '+ ' if acao.pontuacao > 0 else '' }}{{ acao.pontuacao }}</span>{% endif %}
-                                    </li>
-                                {% else %}
-                                    <li class="list-group-item bg-dark text-white text-muted">Nenhum evento registrado.</li>
-                                {% endfor %}
-                            </ul>
+    
+        <div class="row mt-5">
+        <div class="col-12">
+            <a href="{{ url_for('guardians_bp.quiz_hub') }}" class="text-decoration-none">
+                <div class="card analytics-hub-link-card">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="card-title text-warning mb-1">Análise de Quizzes</h4>
+                            <p class="card-text text-muted mb-0">
+                                Explore o desempenho geral, analise perguntas específicas e identifique pontos de dificuldade na equipe.
+                            </p>
                         </div>
-                        <div class="col-md-6">
-                            <h5>Histórico de Quizzes</h5>
-                            <ul class="list-group list-group-flush">
-                                {% for attempt in user_quiz_attempts %}
-                                    <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center">
-                                        <div>{{ attempt.quiz.title if attempt.quiz else 'Quiz Excluído' }}<br><small class="text-muted">{{ attempt.completed_at.strftime('%d/%m/%Y') }}</small></div>
-                                        <span class="badge bg-info rounded-pill">{{ attempt.score }} pts</span>
-                                    </li>
-                                {% else %}
-                                    <li class="list-group-item bg-dark text-white text-muted">Nenhum quiz respondido.</li>
-                                {% endfor %}
-                            </ul>
+                        <i class="bi bi-arrow-right-circle-fill display-4 text-warning"></i>
+                    </div>
+                    <a/>
+                </div>
+
+        <hr class="my-5">
+            <div class="col-12">
+                <a href="{{ url_for('guardians_bp.report_hub') }}" class="text-decoration-none">
+                    <div class="card analytics-hub-link-card">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <h4 class="card-title text-warning mb-1">Relatório Individual de Desempenho</h4>
+                                <p class="card-text text-muted mb-0">
+                                    Selecione um colaborador para ver em detalhe sua pontuação, histórico de quizzes, conquistas e mais.
+                                </p>
+                            </div>
+                            <i class="bi bi-arrow-right-circle-fill display-4 text-warning"></i>
                         </div>
                     </div>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+                </a>
+            </div>
 {% endblock %}

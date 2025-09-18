@@ -4,6 +4,7 @@
 
 {% block content %}
 
+
     <h1 class="text-center mb-4 text-white">
         Sobre o Programa Guardiões da Comnect
     </h1>
@@ -15,13 +16,14 @@
                     
                     <h2 class="text-info mb-3"><i class="bi bi-bullseye me-2"></i> Nosso Objetivo</h2>
                     <p>O programa <strong>Guardiões da Comnect</strong> foi criado para fortalecer nossa cultura de segurança cibernética e física. Através de um sistema de gamificação, incentivamos o aprendizado, a conscientização e a adoção de boas práticas de segurança no dia a dia. Juntos, somos a primeira linha de defesa da empresa!</p>
-                    <hr class="my-4">
-
-                    <h2 class="text-info mb-3"><i class="bi bi-shield-fill-check me-2"></i> Como Funciona</h2>
-                    <p>O portal de Guardiões usa um sistema de pontuação para medir o seu desempenho. As principais mecânicas do jogo são:</p>
                     
+                    
+                    <hr class="my-4">
                     <div class="feature-highlight-card mt-4">
-                        <ul class="rules-list">
+                            <h2 class="text-info mb-3">
+                                <i class="bi bi-shield-fill-check me-2"></i> Como Funciona</h2>
+                                <p class="text-muted">O portal de Guardiões usa um sistema de pontuação para medir o seu desempenho. As principais mecânicas do jogo são:</p>
+                            <ul class="rules-list">
                             <li>
                                 <i class="bi bi-star-fill text-warning"></i>
                                 <div><strong>Pontuação:</strong> Você ganha pontos por ações positivas e pode ter pontos deduzidos por falhas.</div>
@@ -57,7 +59,7 @@
                         </li>
                         <li>
                             <i class="bi bi-shield-fill-check text-warning"></i>
-                            <div><strong>Limite de Bônus:</strong> O bônus máximo é de <strong>20%</strong> (alcançado com 10 dias de ofensiva).</div>
+                            <div><strong>Limite de Bônus:</strong> O bônus máximo é de <strong>20%</strong> (alcançado com 20 dias de ofensiva).</div>
                         </li>
                         <li>
                             <i class="bi bi-calendar-heart text-info"></i>
@@ -71,8 +73,44 @@
                     </div>
 
                     <hr class="my-4">
-                    
-                    
+                        <div class="feature-highlight-card h-100">
+                            <h2 class="text-info mb-3">
+                                <i class="bi bi-shield-check icon"></i>
+                                Patrulha Diária
+                            </h2>
+                            <p class="text-muted">
+                                Uma ação diária para manter suas habilidades afiadas, a segurança em dia e sua ofensiva ativa.
+                            </p>
+
+                            <ul class="rules-list">
+                                <li>
+                                    <i class="bi bi-calendar-check text-success"></i>
+                                    <div>
+                                        <strong>Disponibilidade Diária:</strong> Uma nova patrulha fica disponível todos os dias para você completar.
+                                    </div>
+                                </li>
+                                <li>
+                                    <i class="bi bi-stars text-warning"></i>
+                                    <div>
+                                        <strong>Recompensa de XP:</strong> Concede de <strong>1 a 10 pontos de XP</strong> aleatoriamente, que são multiplicados pelo seu bônus de ofensiva.
+                                    </div>
+                                </li>
+                                <li>
+                                    <i class="bi bi-fire text-danger"></i>
+                                    <div>
+                                        <strong>Mantém a Ofensiva:</strong> Completar a patrulha é uma das maneiras de manter sua contagem de 'Dias de Vigilante' ativa.
+                                    </div>
+                                </li>
+                                <li>
+                                    <i class="bi bi-mouse text-primary"></i>
+                                    <div>
+                                        <strong>Como Acessar:</strong> Encontre o botão flutuante com o escudo na sua página de <a href="{{ url_for('guardians_bp.meu_perfil') }}">Meu Perfil</a>.
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
 
                     <h2 class="text-info mb-3"><i class="bi bi-clipboard-data-fill me-2"></i> Regras de Pontuação</h2>
                     <p>A seguir estão as ações que geram pontos no programa:</p>
@@ -99,7 +137,7 @@
                     <div class="row g-3 mt-3">
                         {% for nivel in niveis %}
                         <div class="col-md-6 col-lg-4">
-                            <div class="card bg-secondary text-white text-center h-100">
+                            <div class="card insignia-card text-white text-center h-100">
                                 <div class="card-body">
                                     <img src="{{ url_for('static', filename=nivel.badge_icon_url) }}" alt="Badge {{ nivel.nome }}" class="mb-3 level-badge-preview">
                                     <h5 class="card-title text-warning">{{ nivel.nome }}</h5>
@@ -112,32 +150,49 @@
                             <div class="col-12"><p class="text-center text-muted">Nenhum nível de segurança cadastrado.</p></div>
                         {% endfor %}
                     </div>
-                    <hr class="my-4">
+                        <hr class="my-4">
 
-                    <h2 class="text-info mb-3"><i class="bi bi-award-fill me-2"></i> Galeria de Conquistas (Insígnias)</h2>
-                    <p>Complete tarefas específicas e atinja marcos para desbloquear estas insígnias especiais e exibi-las em seu perfil!</p>
-                    <div class="row g-3 mt-3">
-                        {% for insignia in insignias %}
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <div class="card bg-secondary text-white text-center h-100 p-2">
-                                <img src="{{ url_for('static', filename=insignia.caminho_imagem) }}" 
-                                     alt="Insígnia {{ insignia.nome }}" 
-                                     class="mx-auto mt-2 insignia-preview" 
-                                     data-bs-toggle="tooltip" data-bs-placement="top" title="{{ insignia.descricao }}">
-                                <div class="card-body">
-                                    <h6 class="card-title" style="font-size: 0.9rem;">{{ insignia.nome }}</h6>
+                        {# 1. CORREÇÃO: Título com nova cor #}
+                         <h2 class="text-center text-info mb-4">Galeria de Conquistas</h2>
+
+                        {# Loop para cada categoria de conquista #}
+                        {% for category_name, insignias_in_category in categorized_achievements.items() %}
+                            {% if insignias_in_category %}
+                                <div class="mb-5">
+                                    {# TÍTULO DA SUBSEÇÃO: Centralizado, sem linha e com nova margem #}
+                                    <h4 class="text-white text-center mb-4">{{ category_name }}</h4>
+
+                                    {# 2. LINHA DE CARDS: 'justify-content-center' adicionado para centralizar os cards #}
+                                    <div class="row g-3 justify-content-center">
+                                        {% for insignia in insignias_in_category %}
+                                            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                                                <div class="card insignia-card text-white text-center h-100 p-2">
+                                                    <img src="{{ url_for('static', filename=insignia.caminho_imagem) }}" 
+                                                         alt="{{ insignia.nome }}" 
+                                                         class="mx-auto mt-2 insignia-preview"
+                                                         data-bs-toggle="tooltip" 
+                                                         data-bs-placement="top" 
+                                                         title="{{ insignia.descricao }}">
+                                                    <div class="card-body">
+                                                        <h6 class="card-title" style="font-size: 0.9rem;">{{ insignia.nome }}</h6>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        {% else %}
-                            <div class="col-12"><p class="text-center text-muted">Nenhuma conquista cadastrada no programa.</p></div>
+                            {% endif %}
                         {% endfor %}
                     </div>
 
                 </div>
             </div>
+
+    <footer class="app-footer">
+        <div class="beta-badge">
+            <i class="bi bi-tools me-1"></i> Portal em Versão Beta 1.01
         </div>
-    </div>
+    </footer>
 {% endblock %}
 
 {% block scripts %}
