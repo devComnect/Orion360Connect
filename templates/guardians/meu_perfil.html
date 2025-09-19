@@ -3,8 +3,6 @@
 {% block title %}Meu Perfil{% endblock %}
 
 {% block content %}
-
-
 <div class="profile-header">
     <i class="bi bi-person-circle profile-header-icon"></i>
     <div class="profile-header-text">
@@ -34,7 +32,8 @@
                 {% set streak = perfil.current_streak | default(0) %}
 
                 <div class="gamified-stats-box mb-4">
-                    <span class="level-indicator">Nível {{ nivel_atual.id if nivel_atual else 'N/A' }} - {{ nivel_atual.nome if nivel_atual else 'N/A' }}</span>
+                    <span class="level-indicator" id="level-indicator-trigger" tabindex="0" data-bs-toggle="popover">
+Nível {{ nivel_atual.id if nivel_atual else 'N/A' }} - {{ nivel_atual.nome if nivel_atual else 'N/A' }}</span>
                     <img src="{{ url_for('static', filename=nivel_atual.badge_icon_url) }}" alt="Insígnia do Nível" class="level-badge-img">
                 </div>
                 
@@ -88,41 +87,42 @@
                         </div>
                     </div>
                 </div>
+                    <div class="row mt-4 justify-content-center gamified-stats-row">
 
-                <div class="row mt-4 justify-content-center gamified-stats-row">
+                        <div class="col-md-3 mb-3">
+                            <div class="gamified-stat-card text-white">
+                                <i class="bi bi-trophy-fill stat-icon"></i>
+                                <p class="stat-label">Ranking Atual</p>
+                                <p class="stat-value">{{ ranking_atual }}º</p>
+                            </div>
+                        </div>
 
-                    {# Card de Ranking #}
-                    <div class="col-md-4 mb-3">
-                        <div class="gamified-stat-card text-white">
-                            <i class="bi bi-trophy-fill stat-icon"></i> {# Ícone de troféu #}
-                            <p class="stat-label">Ranking Atual</p>
-                            <p class="stat-value">{{ ranking_atual }}º</p>
+                        <div class="col-md-3 mb-3">
+                            <div class="gamified-stat-card text-white">
+                                <i class="bi bi-award-fill stat-icon"></i>
+                                <p class="stat-label">Conquistas</p>
+                                <p class="stat-value">{{ numero_conquistas }}</p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <div class="gamified-stat-card text-white">
+                                <i class="bi bi-check2-square stat-icon"></i>
+                                <p class="stat-label">Quizzes Respondidos</p>
+                                <p class="stat-value">{{ quizzes_respondidos_count }}</p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <div class="gamified-stat-card text-white">
+                                <i class="bi bi-calendar-check stat-icon"></i>
+                                <p class="stat-label">Patrulhas Diárias</p>
+                                <p class="stat-value">{{ patrols_completed_count }}</p>
+                            </div>
                         </div>
                     </div>
 
-                    {# Card de Conquistas #}
-                    <div class="col-md-4 mb-3">
-                        <div class="gamified-stat-card text-white">
-                            <i class="bi bi-award-fill stat-icon"></i> {# Ícone de medalha #}
-                            <p class="stat-label">Conquistas</p>
-                            <p class="stat-value">{{ numero_conquistas }}</p>
-                        </div>
-                    </div>
-
-                    {# Card de Quizzes Respondidos #}
-                    <div class="col-md-4 mb-3">
-                        <div class="gamified-stat-card text-white">
-                            <i class="bi bi-check2-square stat-icon"></i> {# Ícone de checkmark quadrado #}
-                            <p class="stat-label">Quizzes Respondidos</p>
-                            <p class="stat-value">{{ quizzes_respondidos_count }}</p>
-                        </div>
-                    </div>
-                    
-                    
-
-                </div>
-
-                <div class="profile-section-card">
+                                <div class="profile-section-card">
                     <div class="section-header">
                         <i class="bi bi-award-fill icon"></i>
                         <h4>Minhas Conquistas</h4>
@@ -198,8 +198,141 @@
                         </ul>
                     </nav>
                     {% endif %}
+                </div>
+            </div> </div> </div> </div>
 
+
+
+        {% if is_own_profile %}
+                <div class="toast-container position-fixed bottom-0 end-0 p-3">
+                    <div id="patrolToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header">
+                            <i class="bi bi-calendar-check rounded me-2"></i>
+                            <strong class="me-auto">Patrulha Diária</strong>
+                            <small>agora</small>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body" id="patrol-toast-body">
+                            Mensagem de resultado aqui.
+                        </div>
+                    </div>
                 </div>
 
-            </div> </div> </div> {% endblock %}
+                <div class="daily-patrol-container">
+                    <span class="tooltip-wrapper" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="left" 
+                          title="{% if patrol_completed_today %}Patrulha já concluída hoje!{% else %}Clique para realizar sua patrulha diária e ganhar XP.{% endif %}">
 
+                        <button id="daily-patrol-btn" 
+                                class="btn patrol-btn-floating {% if not patrol_completed_today %}patrol-active{% endif %}" 
+                                {% if patrol_completed_today %}disabled{% endif %}>
+
+                            {# ÍCONE CORRIGIDO AQUI #}
+                            <i class="bi bi-calendar-check"></i>
+
+                        </button>
+                    </span>
+                </div>
+        {% endif %}
+
+{% endblock %}
+    
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    
+    // Inicializa TODOS os tooltips na página
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+//     var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+//     var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        
+//         if (popoverTriggerEl) {
+//             const popover = new bootstrap.Popover(popoverTriggerEl, {
+//                 html: true,
+//                 title: '<i class="bi bi-bar-chart-steps me-2"></i> Trilha de Níveis',
+//                 // A MÁGICA ESTÁ AQUI: Usamos uma função para o conteúdo
+//                 content: function () {
+//                     // Esta função é chamada TODA VEZ que o popover vai aparecer,
+//                     // garantindo que ele sempre pegue o conteúdo atualizado da tabela.
+//                     return document.getElementById('level-popover-content').innerHTML;
+//                 },
+//                 trigger: 'hover focus', // Mostra no hover e no foco
+//                 placement: 'bottom',
+//                 container: 'body' // Previne problemas de layout
+//             });
+//         }
+//     });
+
+    const patrolBtn = document.getElementById('daily-patrol-btn');
+    const toastEl = document.getElementById('patrolToast');
+    
+    if (patrolBtn && toastEl) {
+        const toastBody = document.getElementById('patrol-toast-body');
+        const patrolToast = new bootstrap.Toast(toastEl);
+        
+        patrolBtn.addEventListener('click', async function() {
+            this.classList.add('is-clicked');
+            setTimeout(() => { this.classList.remove('is-clicked'); }, 200);
+            
+            this.classList.remove('patrol-active');
+            this.disabled = true;
+
+            const wrapper = this.parentElement; // Pega o span-envelope
+            const tooltip = bootstrap.Tooltip.getInstance(wrapper); // Pega a instância do tooltip
+
+            try {
+                const response = await fetch("{{ url_for('guardians_bp.daily_patrol') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+
+                if (response.ok) {
+                    toastBody.innerHTML = `<strong>${data.message}</strong><br>Você ganhou <span class="text-warning">${data.total_points} XP!</span>`;
+                    patrolToast.show();
+                    
+                    // --- ATUALIZAÇÃO FORÇADA E CORRETA DO TOOLTIP ---
+                    // 1. Muda o atributo HTML para a próxima vez que a página carregar
+                    wrapper.setAttribute('data-bs-original-title', 'Patrulha já concluída hoje!');
+
+                    // 2. FORÇA a atualização do tooltip que está ativo na memória do Bootstrap
+                    if (tooltip) {
+                        tooltip.setContent({ '.tooltip-inner': 'Patrulha já concluída hoje!' });
+                    }
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000); // 2000 milissegundos = 2 segundos
+
+                    
+                } else {
+                    // Lógica de erro (ex: já fez hoje)
+                    toastBody.textContent = data.message;
+                    patrolToast.show();
+                    // Reabilita o botão se o erro for 'patrulha já feita'
+                    this.disabled = false; 
+                }
+            } catch (error) {
+                // Lógica de erro de conexão
+                toastBody.textContent = 'Erro de conexão. Tente novamente.';
+                patrolToast.show();
+                this.disabled = false;
+                this.classList.add('patrol-active');
+            }
+        });
+    }
+});
+
+
+</script>
+    
+
+
+    
+{% endblock %}

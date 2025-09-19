@@ -55,14 +55,28 @@
                     </div>
                     <div class="btn-group" role="group" aria-label="Ações do Perfil">
                         <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id) }}" class="btn btn-sm btn-outline-primary">Ver</a>
-                        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#editModalPerfil" data-id="{{ perfil.id }}" data-score="{{ perfil.score_atual }}" data-is-admin="{{ 'true' if perfil.is_admin else 'false' }}" data-departamento="{{ perfil.departamento_nome or '' }}" data-opt-in="{{ 'true' if perfil.opt_in_real_name_ranking else 'false' }}">
+                        
+                        {# BOTÃO EDITAR ATUALIZADO COM O NOVO DATA-ATTRIBUTE #}
+                        <button type="button" class="btn btn-sm btn-outline-info" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editModalPerfil" 
+                                data-id="{{ perfil.id }}" 
+                                data-score="{{ perfil.score_atual }}"
+                                data-streak="{{ perfil.current_streak or 0 }}"
+                                data-is-admin="{{ 'true' if perfil.is_admin else 'false' }}" 
+                                data-departamento="{{ perfil.departamento_nome or '' }}" 
+                                data-opt-in="{{ 'true' if perfil.opt_in_real_name_ranking else 'false' }}">
                             Editar
                         </button>
+                        
                         <form action="{{ url_for('guardians_bp.admin') }}" method="POST" class="d-inline">
                             <input type="hidden" name="action" value="zerar_historico">
                             <input type="hidden" name="perfil_id" value="{{ perfil.id }}">
                             <button type="submit" class="btn btn-sm btn-outline-warning">Zerar</button>
                         </form>
+                        
+                        {# FORMULÁRIO DE EDITAR OFENSIVA FOI REMOVIDO DAQUI #}
+                        
                         <form action="{{ url_for('guardians_bp.admin') }}" method="POST" class="d-inline">
                             <input type="hidden" name="action" value="excluir_perfil">
                             <input type="hidden" name="perfil_id" value="{{ perfil.id }}">
@@ -99,12 +113,14 @@
                             <input type="hidden" name="action" value="criar_quiz">
                             <div class="row">
                                 <div class="col-md-6 mb-3"><label class="form-label">Título do Quiz</label><input type="text" name="title" class="form-control" required></div>
-                                <div class="col-md-6 mb-3"><label class="form-label">Descrição</label><textarea name="description" class="form-control"></textarea></div>
-                            </div>
+                                <div class="col-md-2 mb-3"><label for="quiz-time-limit" class="form-label">Tempo Limite</label><input type="number" name="time_limit_seconds" id="quiz-time-limit" class="form-control" placeholder="Em segundos"></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Categoria</label><select name="category" class="form-control"><option value="COMUM">Comum</option><option value="ESPECIAL">Especial</option><option value="HARDCORE">Hardcore</option></select></div>
                             <div class="row">
-                                <div class="col-md-4 mb-3"><label class="form-label">Data de Ativação</label><input type="date" name="activation_date" class="form-control" required></div>
-                                <div class="col-md-4 mb-3"><label class="form-label">Duração (dias)</label><input type="number" name="duration_days" class="form-control" value="1" required></div>
-                                <div class="col-md-4 mb-3"><label class="form-label">Categoria</label><select name="category" class="form-control"><option value="COMUM">Comum</option><option value="ESPECIAL">Especial</option><option value="HARDCORE">Hardcore</option></select></div>
+                                <div class="col-md-6 mb-3"><label class="form-label">Descrição</label><textarea name="description" class="form-control"></textarea></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Data de Ativação</label><input type="date" name="activation_date" class="form-control" required></div>
+                                <div class="col-md-2 mb-3"><label class="form-label">Duração (Dias)</label><input type="number" name="duration_days" class="form-control" value="1" required></div>
+                                
+                            </div>
                             </div>
                             <hr class="my-4">
                             <h5 class="text-center">Perguntas do Quiz</h5>
@@ -129,6 +145,7 @@
                                     <div><strong>{{ quiz.title }}</strong> - <span class="badge bg-secondary">{{ quiz.category.value }}</span><br><small class="text-muted">Ativa em: {{ quiz.activation_date.strftime('%d/%m/%Y') }} por {{ quiz.duration_days }} dia(s)</small></div>
                                     <div>
                                         <a href="{{ url_for('guardians_bp.view_quiz', quiz_id=quiz.id) }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye-fill"></i> Visualizar</a>
+                                        
                                         <form action="{{ url_for('guardians_bp.admin') }}" method="POST" class="d-inline">
                                             <input type="hidden" name="action" value="excluir_quiz">
                                             <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
@@ -230,6 +247,7 @@
             <h5 class="text-center mb-3">Criar Nova Insígnia</h5>
             <div class="mb-2"><input type="text" class="form-control" name="nome" placeholder="Nome da conquista" required></div>
             <div class="mb-2"><input type="text" class="form-control" name="descricao" placeholder="Descrição (como obter)"></div>
+            <div class="mb-2"><input type="text" class="form-control" name="achievement_code" placeholder="Código de Referência (Ex: SCORE_1000)" id="insignia-code" required></div>
             <div class="mb-2"><input type="text" class="form-control" name="caminho_imagem" placeholder="Caminho da imagem (ex: img/insignias/expert.png)" required></div>
             <div class="mb-3"><input type="number" class="form-control" name="requisito_score" placeholder="Pontuação mínima (opcional)"></div>
             <div class="text-center"><button class="btn btn-info w-100" type="submit">Adicionar Conquista</button></div>
@@ -242,7 +260,7 @@
                     <li class="list-group-item bg-dark text-white d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center"><img src="{{ url_for('static', filename=insignia.caminho_imagem) }}" alt="{{ insignia.nome }}" style="width: 40px; height: 40px; margin-right: 15px; border-radius: 5px;"><div><strong>{{ insignia.nome }}</strong><br><small class="text-muted">{{ insignia.descricao or 'Sem descrição' }}</small></div></div>
                         <div>
-                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#editModalInsignia" data-id="{{ insignia.id }}" data-nome="{{ insignia.nome }}" data-descricao="{{ insignia.descricao or '' }}" data-requisito-score="{{ insignia.requisito_score or '' }}" data-caminho-imagem="{{ insignia.caminho_imagem }}">Editar</button>
+                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#editModalInsignia" data-id="{{ insignia.id }}" data-nome="{{ insignia.nome }}" data-descricao="{{ insignia.descricao or '' }}" data-requisito-score="{{ insignia.requisito_score or '' }}" data-caminho-imagem="{{ insignia.caminho_imagem }}" data-code="{{ insignia.achievement_code }}">Editar</button>
                             <form action="{{ url_for('guardians_bp.admin') }}" method="POST" class="d-inline">
                                 <input type="hidden" name="action" value="excluir_insignia">
                                 <input type="hidden" name="insignia_id" value="{{ insignia.id }}">
@@ -318,8 +336,55 @@
 {% macro render_modais() %}
 <div class="modal fade" id="editModalEvento" tabindex="-1" aria-labelledby="editModalEventoLabel" aria-hidden="true"><div class="modal-dialog"><div class="modal-content bg-dark text-white"><div class="modal-header"><h5 class="modal-title" id="editModalEventoLabel">Editar Evento</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><form action="{{ url_for('guardians_bp.admin') }}" method="POST"><div class="modal-body"><input type="hidden" name="action" value="editar_evento"><input type="hidden" name="evento_id" id="edit-evento-id"><div class="mb-3"><label for="edit-nome" class="form-label">Nome do Evento</label><input type="text" class="form-control" id="edit-nome" name="nome" required></div><div class="mb-3"><label for="edit-pontuacao" class="form-label">Pontuação</label><input type="number" class="form-control" id="edit-pontuacao" name="pontuacao" required></div><div class="mb-3"><label for="edit-descricao" class="form-label">Descrição (Opcional)</label><textarea class="form-control" id="edit-descricao" name="descricao"></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-info">Salvar Alterações</button></div></form></div></div></div>
 <div class="modal fade" id="editModalNivel" tabindex="-1" aria-labelledby="editModalNivelLabel" aria-hidden="true"><div class="modal-dialog"><div class="modal-content bg-dark text-white"><div class="modal-header"><h5 class="modal-title" id="editModalNivelLabel">Editar Nível</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><form action="{{ url_for('guardians_bp.admin') }}" method="POST"><div class="modal-body"><input type="hidden" name="action" value="editar_nivel"><input type="hidden" name="nivel_id" id="edit-nivel-id"><div class="mb-3"><label for="edit-nivel-nome" class="form-label">Nome do Nível</label><input type="text" class="form-control" id="edit-nivel-nome" name="nome" required></div><div class="mb-3"><label for="edit-nivel-score" class="form-label">Pontuação Mínima</label><input type="number" class="form-control" id="edit-nivel-score" name="score_minimo" required></div><div class="mb-3"><label for="edit-nivel-url" class="form-label">Caminho da Imagem do Ícone</label><input type="text" class="form-control" id="edit-nivel-url" name="badge_icon_url" required></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-info">Salvar Alterações</button></div></form></div></div></div>
-<div class="modal fade" id="editModalInsignia" tabindex="-1" aria-labelledby="editModalInsigniaLabel" aria-hidden="true"><div class="modal-dialog"><div class="modal-content bg-dark text-white"><div class="modal-header"><h5 class="modal-title" id="editModalInsigniaLabel">Editar Insígnia</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><form action="{{ url_for('guardians_bp.admin') }}" method="POST"><div class="modal-body"><input type="hidden" name="action" value="editar_insignia"><input type="hidden" name="insignia_id" id="edit-insignia-id"><div class="mb-3"><label for="edit-insignia-nome" class="form-label">Nome da Insígnia</label><input type="text" class="form-control" id="edit-insignia-nome" name="nome" required></div><div class="mb-3"><label for="edit-insignia-descricao" class="form-label">Descrição</label><textarea class="form-control" id="edit-insignia-descricao" name="descricao"></textarea></div><div class="mb-3"><label for="edit-insignia-score" class="form-label">Pontuação Mínima</label><input type="number" class="form-control" id="edit-insignia-score" name="requisito_score"></div><div class="mb-3"><label for="edit-insignia-url" class="form-label">Caminho da Imagem</label><input type="text" class="form-control" id="edit-insignia-url" name="caminho_imagem" required></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-info">Salvar Alterações</button></div></form></div></div></div>
-<div class="modal fade" id="editModalPerfil" tabindex="-1" aria-labelledby="editModalPerfilLabel" aria-hidden="true"><div class="modal-dialog"><div class="modal-content bg-dark text-white"><div class="modal-header"><h5 class="modal-title" id="editModalPerfilLabel">Editar Perfil de <span id="perfil-nome"></span></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><form action="{{ url_for('guardians_bp.admin') }}" method="POST"><div class="modal-body"><input type="hidden" name="action" value="editar_perfil"><input type="hidden" name="perfil_id" id="edit-perfil-id"><div class="mb-3"><label for="edit-score-atualizado" class="form-label">Pontuação Atualizada</label><input type="number" class="form-control" id="edit-score-atualizado" name="score_atualizado" required></div><div class="mb-3"><label for="edit-departamento" class="form-label">Departamento</label><input type="text" class="form-control" id="edit-departamento" name="departamento_atualizado" required></div><div class="mb-3 form-check"><input type="checkbox" class="form-check-input" id="edit-is-admin" name="is_admin"><label class="form-check-label" for="edit-is-admin">Permissão de Admin</label></div><div class="mb-3 form-check"><input type="checkbox" class="form-check-input" id="edit-opt-in-ranking" name="opt_in_ranking"><label class="form-check-label" for="edit-opt-in-ranking">Optar por exibir nome no ranking</label></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-info">Salvar Alterações</button></div></form></div></div></div>
+<div class="modal fade" id="editModalInsignia" tabindex="-1" aria-labelledby="editModalInsigniaLabel" aria-hidden="true"><div class="modal-dialog"><div class="modal-content bg-dark text-white"><div class="modal-header"><h5 class="modal-title" id="editModalInsigniaLabel">Editar Insígnia</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div><form action="{{ url_for('guardians_bp.admin') }}" method="POST"><div class="modal-body"><input type="hidden" name="action" value="editar_insignia"><input type="hidden" name="insignia_id" id="edit-insignia-id"><div class="mb-3"><label for="edit-insignia-nome" class="form-label">Nome da Conquista</label><input type="text" class="form-control" id="edit-insignia-nome" name="nome" required></div><div class="mb-3"><label for="edit-insignia-code" class="form-label">Código de Referência</label><input type="text" class="form-control" id="edit-insignia-code" name="achievement_code" required></div><div class="mb-3"><label for="edit-insignia-descricao" class="form-label">Descrição</label><textarea class="form-control" id="edit-insignia-descricao" name="descricao"></textarea></div><div class="mb-3"><label for="edit-insignia-score" class="form-label">Pontuação Mínima</label><input type="number" class="form-control" id="edit-insignia-score" name="requisito_score"></div><div class="mb-3"><label for="edit-insignia-url" class="form-label">Caminho da Imagem</label><input type="text" class="form-control" id="edit-insignia-url" name="caminho_imagem" required></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-info">Salvar Alterações</button></div></form></div></div></div>
+<div class="modal fade" id="editModalPerfil" tabindex="-1" aria-labelledby="editModalPerfilLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalPerfilLabel">Editar Perfil de <span id="perfil-nome"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form action="{{ url_for('guardians_bp.admin') }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="editar_perfil"> 
+                    <input type="hidden" name="perfil_id" id="edit-perfil-id">
+
+                    <div class="mb-3">
+                        <label for="edit-score-atualizado" class="form-label">Pontuação Atualizada</label>
+                        <input type="number" class="form-control" id="edit-score-atualizado" name="score_atual" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit-streak" class="form-label">Dias de Vigilante (Ofensiva)</label>
+                        <input type="number" class="form-control" id="edit-streak" name="current_streak" min="0">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit-departamento" class="form-label">Departamento</label>
+                        <input type="text" class="form-control" id="edit-departamento" name="departamento" required>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="edit-is-admin" name="is_admin">
+                        <label class="form-check-label" for="edit-is-admin">Permissão de Admin</label>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="edit-opt-in-ranking" name="opt_in_ranking">
+                        <label class="form-check-label" for="edit-opt-in-ranking">Optar por exibir nome no ranking</label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info">Salvar Alterações</button> 
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
 {% endmacro %}
 
 
@@ -346,56 +411,126 @@
         </div>
     </div>
     <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        
+        // --- LÓGICA PARA POPULAR O MODAL DE EVENTOS ---
         var editModalEvento = document.getElementById('editModalEvento');
-        editModalEvento.addEventListener('show.bs.modal', function (event) { var button = event.relatedTarget; var eventoId = button.getAttribute('data-id'); var eventoNome = button.getAttribute('data-nome'); var eventoPontuacao = button.getAttribute('data-pontuacao'); var eventoDescricao = button.getAttribute('data-descricao'); var modalIdInput = editModalEvento.querySelector('#edit-evento-id'); var modalNomeInput = editModalEvento.querySelector('#edit-nome'); var modalPontuacaoInput = editModalEvento.querySelector('#edit-pontuacao'); var modalDescricaoInput = editModalEvento.querySelector('#edit-descricao'); modalIdInput.value = eventoId; modalNomeInput.value = eventoNome; modalPontuacaoInput.value = eventoPontuacao; modalDescricaoInput.value = eventoDescricao; });
+        if (editModalEvento) {
+            editModalEvento.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var eventoId = button.getAttribute('data-id');
+                var eventoNome = button.getAttribute('data-nome');
+                var eventoPontuacao = button.getAttribute('data-pontuacao');
+                var eventoDescricao = button.getAttribute('data-descricao');
+                editModalEvento.querySelector('#edit-evento-id').value = eventoId;
+                editModalEvento.querySelector('#edit-nome').value = eventoNome;
+                editModalEvento.querySelector('#edit-pontuacao').value = eventoPontuacao;
+                editModalEvento.querySelector('#edit-descricao').value = eventoDescricao;
+            });
+        }
+
+        // --- LÓGICA PARA POPULAR O MODAL DE NÍVEIS ---
         var editModalNivel = document.getElementById('editModalNivel');
-        editModalNivel.addEventListener('show.bs.modal', function (event) { var button = event.relatedTarget; var nivelId = button.getAttribute('data-id'); var nivelNome = button.getAttribute('data-nome'); var nivelScore = button.getAttribute('data-score-minimo'); var nivelUrl = button.getAttribute('data-badge-url'); var modalIdInput = editModalNivel.querySelector('#edit-nivel-id'); var modalNomeInput = editModalNivel.querySelector('#edit-nivel-nome'); var modalScoreInput = editModalNivel.querySelector('#edit-nivel-score'); var modalUrlInput = editModalNivel.querySelector('#edit-nivel-url'); modalIdInput.value = nivelId; modalNomeInput.value = nivelNome; modalScoreInput.value = nivelScore; modalUrlInput.value = nivelUrl; });
+        if (editModalNivel) {
+            editModalNivel.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var nivelId = button.getAttribute('data-id');
+                var nivelNome = button.getAttribute('data-nome');
+                var nivelScore = button.getAttribute('data-score-minimo');
+                var nivelUrl = button.getAttribute('data-badge-url');
+                editModalNivel.querySelector('#edit-nivel-id').value = nivelId;
+                editModalNivel.querySelector('#edit-nivel-nome').value = nivelNome;
+                editModalNivel.querySelector('#edit-nivel-score').value = nivelScore;
+                editModalNivel.querySelector('#edit-nivel-url').value = nivelUrl;
+            });
+        }
+
+        // --- LÓGICA PARA POPULAR O MODAL DE INSÍGNIAS (CONQUISTAS) ---
         var editModalInsignia = document.getElementById('editModalInsignia');
-        editModalInsignia.addEventListener('show.bs.modal', function (event) { var button = event.relatedTarget; var insigniaId = button.getAttribute('data-id'); var insigniaNome = button.getAttribute('data-nome'); var insigniaDescricao = button.getAttribute('data-descricao'); var insigniaScore = button.getAttribute('data-requisito-score'); var insigniaUrl = button.getAttribute('data-caminho-imagem'); var modalIdInput = editModalInsignia.querySelector('#edit-insignia-id'); var modalNomeInput = editModalInsignia.querySelector('#edit-insignia-nome'); var modalDescricaoInput = editModalInsignia.querySelector('#edit-insignia-descricao'); var modalScoreInput = editModalInsignia.querySelector('#edit-insignia-score'); var modalUrlInput = editModalInsignia.querySelector('#edit-insignia-url'); modalIdInput.value = insigniaId; modalNomeInput.value = insigniaNome; modalDescricaoInput.value = insigniaDescricao; modalScoreInput.value = insigniaScore; modalUrlInput.value = insigniaUrl; });
+        if (editModalInsignia) {
+            editModalInsignia.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var insigniaId = button.getAttribute('data-id');
+                var insigniaNome = button.getAttribute('data-nome');
+                var insigniaDescricao = button.getAttribute('data-descricao');
+                var insigniaScore = button.getAttribute('data-requisito-score');
+                var insigniaUrl = button.getAttribute('data-caminho-imagem');
+                var insigniaCode = button.getAttribute('data-code'); // Pega o novo código
+                
+                editModalInsignia.querySelector('#edit-insignia-id').value = insigniaId;
+                editModalInsignia.querySelector('#edit-insignia-nome').value = insigniaNome;
+                editModalInsignia.querySelector('#edit-insignia-descricao').value = insigniaDescricao;
+                editModalInsignia.querySelector('#edit-insignia-score').value = insigniaScore;
+                editModalInsignia.querySelector('#edit-insignia-url').value = insigniaUrl;
+                editModalInsignia.querySelector('#edit-insignia-code').value = insigniaCode; // Preenche o novo campo
+            });
+        }
+
+        // --- LÓGICA PARA POPULAR O MODAL DE PERFIS ---
         var editModalPerfil = document.getElementById('editModalPerfil');
-        editModalPerfil.addEventListener('show.bs.modal', function (event) { var button = event.relatedTarget; var perfilId = button.getAttribute('data-id'); var perfilNome = button.closest('li').querySelector('strong').textContent; var perfilScore = button.getAttribute('data-score'); var perfilIsAdmin = button.getAttribute('data-is-admin') === 'true'; var perfilDepartamento = button.getAttribute('data-departamento'); var perfilOptIn = button.getAttribute('data-opt-in') === 'true'; var modalIdInput = editModalPerfil.querySelector('#edit-perfil-id'); var modalNomeSpan = editModalPerfil.querySelector('#perfil-nome'); var modalScoreInput = editModalPerfil.querySelector('#edit-score-atualizado'); var modalDepartamentoInput = editModalPerfil.querySelector('#edit-departamento'); var modalIsAdminInput = editModalPerfil.querySelector('#edit-is-admin'); var modalOptInInput = editModalPerfil.querySelector('#edit-opt-in-ranking'); modalIdInput.value = perfilId; modalNomeSpan.textContent = perfilNome; modalScoreInput.value = perfilScore; modalDepartamentoInput.value = perfilDepartamento; modalIsAdminInput.checked = perfilIsAdmin; modalOptInInput.checked = perfilOptIn; });
-        document.addEventListener('DOMContentLoaded', function () {
-            const questionsContainer = document.getElementById('questions-container');
-            const addQuestionBtn = document.getElementById('add-question-btn');
-            const questionTemplate = document.getElementById('question-template');
-            const optionTemplate = document.getElementById('option-template');
-            let questionIndex = 0;
-
-            if (addQuestionBtn) {
-                addQuestionBtn.addEventListener('click', addQuestion);
-                questionsContainer.addEventListener('click', function (e) {
-                    if (e.target && e.target.classList.contains('remove-question-btn')) { e.target.closest('.question-block').remove(); }
-                    if (e.target && e.target.classList.contains('remove-option-btn')) { e.target.closest('.option-block').remove(); }
-                    if (e.target && e.target.classList.contains('add-option-btn')) { addOption(e.target); }
-                });
+        if (editModalPerfil) {
+            editModalPerfil.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var perfilId = button.getAttribute('data-id');
+                var perfilNome = button.closest('li').querySelector('strong').textContent;
+                var perfilScore = button.getAttribute('data-score');
+                var perfilStreak = button.getAttribute('data-streak');
+                var perfilIsAdmin = button.getAttribute('data-is-admin') === 'true';
+                var perfilDepartamento = button.getAttribute('data-departamento');
+                var perfilOptIn = button.getAttribute('data-opt-in') === 'true';
                 
-                function addQuestion() {
-                    const newQuestion = questionTemplate.firstElementChild.cloneNode(true);
-                    newQuestion.innerHTML = newQuestion.innerHTML.replace(/INDEX/g, questionIndex);
-                    newQuestion.dataset.optionIndex = 0; 
-                    questionsContainer.appendChild(newQuestion);
-                    addOption(newQuestion.querySelector('.add-option-btn'));
-                    addOption(newQuestion.querySelector('.add-option-btn'));
-                    questionIndex++;
-                }
+                editModalPerfil.querySelector('#edit-perfil-id').value = perfilId;
+                editModalPerfil.querySelector('#perfil-nome').textContent = perfilNome;
+                editModalPerfil.querySelector('#edit-score-atualizado').value = perfilScore;
+                editModalPerfil.querySelector('#edit-streak').value = perfilStreak;
+                editModalPerfil.querySelector('#edit-departamento').value = perfilDepartamento;
+                editModalPerfil.querySelector('#edit-is-admin').checked = perfilIsAdmin;
+                editModalPerfil.querySelector('#edit-opt-in-ranking').checked = perfilOptIn;
+            });
+        }
 
-                function addOption(button) {
-                    const questionBlock = button.closest('.question-block');
-                    const optionsContainer = questionBlock.querySelector('.options-container');
-                    const currentQIndex = Array.from(questionsContainer.children).indexOf(questionBlock);
-                    let optionIndex = parseInt(questionBlock.dataset.optionIndex);
-                    const newOption = optionTemplate.firstElementChild.cloneNode(true);
-                    let newOptionHTML = newOption.innerHTML.replace(/Q_INDEX/g, currentQIndex);
-                    newOptionHTML = newOptionHTML.replace(/O_INDEX/g, optionIndex);
-                    newOption.innerHTML = newOptionHTML;
-                    optionsContainer.appendChild(newOption);
-                    questionBlock.dataset.optionIndex = optionIndex + 1;
-                }
-                
-                if (questionsContainer && questionsContainer.children.length === 0) {
-                    addQuestion();
-                }
+        // --- LÓGICA DO CONSTRUTOR DE QUIZZES ---
+        const questionsContainer = document.getElementById('questions-container');
+        const addQuestionBtn = document.getElementById('add-question-btn');
+        const questionTemplate = document.getElementById('question-template');
+        const optionTemplate = document.getElementById('option-template');
+        let questionIndex = 0;
+
+        if (addQuestionBtn) {
+            addQuestionBtn.addEventListener('click', addQuestion);
+            questionsContainer.addEventListener('click', function (e) {
+                if (e.target && e.target.classList.contains('remove-question-btn')) { e.target.closest('.question-block').remove(); }
+                if (e.target && e.target.classList.contains('remove-option-btn')) { e.target.closest('.option-block').remove(); }
+                if (e.target && e.target.classList.contains('add-option-btn')) { addOption(e.target); }
+            });
+            
+            function addQuestion() {
+                const newQuestion = questionTemplate.firstElementChild.cloneNode(true);
+                newQuestion.innerHTML = newQuestion.innerHTML.replace(/INDEX/g, questionIndex);
+                newQuestion.dataset.optionIndex = 0; 
+                questionsContainer.appendChild(newQuestion);
+                addOption(newQuestion.querySelector('.add-option-btn'));
+                addOption(newQuestion.querySelector('.add-option-btn'));
+                questionIndex++;
             }
-        });
+
+            function addOption(button) {
+                const questionBlock = button.closest('.question-block');
+                const optionsContainer = questionBlock.querySelector('.options-container');
+                const currentQIndex = Array.from(questionsContainer.children).indexOf(questionBlock);
+                let optionIndex = parseInt(questionBlock.dataset.optionIndex);
+                const newOption = optionTemplate.firstElementChild.cloneNode(true);
+                let newOptionHTML = newOption.innerHTML.replace(/Q_INDEX/g, currentQIndex);
+                newOptionHTML = newOptionHTML.replace(/O_INDEX/g, optionIndex);
+                newOption.innerHTML = newOptionHTML;
+                optionsContainer.appendChild(newOption);
+                questionBlock.dataset.optionIndex = optionIndex + 1;
+            }
+            
+            if (questionsContainer && questionsContainer.children.length === 0) {
+                addQuestion();
+            }
+        }
+    });
     </script>
 {% endmacro %}

@@ -33,22 +33,35 @@
                                     </td>
                                     <td style="width: 60px;"><img src="{{ url_for('static', filename=perfil.nivel.badge_icon_url if perfil.nivel else 'img/badges/default.png') }}" class="ranking-avatar"></td>
                                     <td>
-                                        <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id) }}" class="text-white text-decoration-none">
-                                            
-                                            {# LINHA CORRIGIDA AQUI #}
-                                            <strong {% if perfil.name_color %} style="color: {{ perfil.name_color }}; text-shadow: 0 0 5px {{ perfil.name_color }};" {% endif %}>
-                                                {% if perfil.opt_in_real_name_ranking %}
-                                                    {{ perfil.nome }}
-                                                {% else %}
-                                                    {{ perfil.nickname or 'Guardião Anônimo' }}
-                                                {% endif %}
+                                        {# 1. Define as variáveis de exibição com base nas regras #}
+                                        {% set is_anonymous_for_others = perfil.is_anonymous and perfil.id != current_user_id %}
+
+                                        {% if is_anonymous_for_others %}
+                                            {% set display_name = 'Guardião Anônimo' %}
+                                            {% set is_clickable = False %}
+                                        {% else %}
+                                            {% set is_clickable = True %}
+                                            {% if perfil.opt_in_real_name_ranking or not perfil.nickname %}
+                                                {# Mostra o nome real se o usuário marcou a opção OU se não tem apelido #}
+                                                {% set display_name = perfil.nome %}
+                                            {% else %}
+                                                {# Caso contrário, mostra o apelido #}
+                                                {% set display_name = perfil.nickname %}
+                                            {% endif %}
+                                        {% endif %}
+                                        <a href="{% if is_clickable %}{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id) }}{% else %}#{% endif %}" 
+                                           class="text-white text-decoration-none {% if not is_clickable %}pe-none text-muted{% endif %}">
+
+                                            <strong {% if perfil.name_color and is_clickable %} style="color: {{ perfil.name_color }}; text-shadow: 0 0 5px {{ perfil.name_color }};" {% endif %}>
+                                                {{ display_name }}
                                             </strong>
 
-                                            {% if perfil.featured_insignia %}
+                                            {% if perfil.featured_insignia and is_clickable %}
                                                 <img src="{{ url_for('static', filename=perfil.featured_insignia.caminho_imagem) }}" class="featured-insignia-badge" data-bs-toggle="tooltip" title="Insígnia em Destaque: {{ perfil.featured_insignia.nome }}">
                                             {% endif %}
                                         </a>
-                                        <br><small class="text-muted">{{ perfil.departamento_nome or 'N/D' }}</small>
+                                        <br>
+                                        <small class="text-muted">{{ perfil.departamento_nome or 'N/D' }}</small>
                                     </td>
                                     <td class="text-end text-warning fs-5"><strong>{{ perfil.score_atual }}</strong> pts</td>
                                 </tr>
@@ -72,22 +85,31 @@
                                     </td>
                                     <td style="width: 60px;"><img src="{{ url_for('static', filename=perfil.nivel.badge_icon_url if perfil.nivel else 'img/badges/default.png') }}" class="ranking-avatar"></td>
                                     <td>
-                                        <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id) }}" class="text-white text-decoration-none">
+                                        {% set is_anonymous_for_others = perfil.is_anonymous and perfil.id != current_user_id %}
+                                        {% if is_anonymous_for_others %}
+                                            {% set display_name = 'Guardião Anônimo' %}
+                                            {% set is_clickable = False %}
+                                        {% else %}
+                                            {% set is_clickable = True %}
+                                            {% if perfil.opt_in_real_name_ranking or not perfil.nickname %}
+                                                {% set display_name = perfil.nome %}
+                                            {% else %}
+                                                {% set display_name = perfil.nickname %}
+                                            {% endif %}
+                                        {% endif %}
+                                        <a href="{% if is_clickable %}{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id) }}{% else %}#{% endif %}" 
+                                           class="text-white text-decoration-none {% if not is_clickable %}pe-none text-muted{% endif %}">
 
-                                            {# LINHA CORRIGIDA AQUI TAMBÉM #}
-                                            <strong {% if perfil.name_color %} style="color: {{ perfil.name_color }}; text-shadow: 0 0 5px {{ perfil.name_color }};" {% endif %}>
-                                                {% if perfil.opt_in_real_name_ranking %}
-                                                    {{ perfil.nome }}
-                                                {% else %}
-                                                    {{ perfil.nickname or 'Guardião Anônimo' }}
-                                                {% endif %}
+                                            <strong {% if perfil.name_color and is_clickable %} style="color: {{ perfil.name_color }}; text-shadow: 0 0 5px {{ perfil.name_color }};" {% endif %}>
+                                                {{ display_name }}
                                             </strong>
 
-                                            {% if perfil.featured_insignia %}
+                                            {% if perfil.featured_insignia and is_clickable %}
                                                 <img src="{{ url_for('static', filename=perfil.featured_insignia.caminho_imagem) }}" class="featured-insignia-badge" data-bs-toggle="tooltip" title="Insígnia em Destaque: {{ perfil.featured_insignia.nome }}">
                                             {% endif %}
                                         </a>
-                                        <br><small class="text-muted">{{ perfil.departamento_nome or 'N/D' }}</small>
+                                        <br>
+                                        <small class="text-muted">{{ perfil.departamento_nome or 'N/D' }}</small>
                                     </td>
                                     <td class="text-end text-warning fs-5">
                                         <strong>

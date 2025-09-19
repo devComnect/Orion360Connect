@@ -1,38 +1,19 @@
 # modules/guardians/routes.py
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, jsonify
 from flask_login import  current_user
 from modules.login.decorators import login_required, admin_required
 from modules.login.session_manager import SessionManager
-from sqlalchemy import func, desc, and_, not_
-from application.models import db, Guardians, HistoricoAcao, NivelSeguranca, GuardianInsignia, Insignia, EventoPontuacao, Quiz, Question, AnswerOption, QuizCategory, QuizAttempt
-from datetime import datetime, date, timedelta
+from sqlalchemy import func, desc, and_, not_, asc, cast, Interval, text, case
+from application.models import db, Guardians, HistoricoAcao, NivelSeguranca, GuardianInsignia, Insignia, EventoPontuacao, Quiz, Question, AnswerOption, QuizCategory, QuizAttempt, UserAnswer
+from datetime import datetime, date, timedelta, timezone
 from sqlalchemy.exc import IntegrityError
 import re
 from sqlalchemy.orm import joinedload
+import random
+from .logic import apply_streak_bonus, update_user_streak, atualizar_nivel_usuario, get_achievement_sort_key
 
 
 guardians_bp = Blueprint('guardians_bp', __name__)
-
-def atualizar_nivel_usuario(perfil_guardian):
-    """
-    Verifica se o usuário subiu ou desceu de nível e atualiza o perfil.
-    Agora lida com pontuações negativas, atribuindo o nível mais baixo.
-    """
-    # 1. Tenta encontrar o nível mais alto que a pontuação atual alcança.
-    novo_nivel = NivelSeguranca.query.filter(
-        NivelSeguranca.score_minimo <= perfil_guardian.score_atual
-    ).order_by(desc(NivelSeguranca.score_minimo)).first()
-
-    # 2. Se nenhum nível for encontrado (score < 0), busca o nível mais baixo existente.
-    if not novo_nivel:
-        novo_nivel = NivelSeguranca.query.order_by(NivelSeguranca.score_minimo.asc()).first()
-    
-    # 3. Se o nível mudou (e existe um novo nível para atribuir), atualiza o perfil.
-    if perfil_guardian.nivel != novo_nivel and novo_nivel is not None:
-        perfil_guardian.nivel = novo_nivel
-        return True # Retorna True para indicar que houve uma mudança.
-        
-    return False
 
 
 @guardians_bp.route('/meu-perfil', defaults={'perfil_id': None})
@@ -45,6 +26,7 @@ def meu_perfil(perfil_id):
     
     perfil_guardian = None
     is_own_profile = False
+
 
     if perfil_id is None:
         # Se nenhum ID for passado na URL, estamos vendo nosso próprio perfil.
@@ -68,8 +50,9 @@ def meu_perfil(perfil_id):
         flash('Este guardião optou por manter o perfil privado.', 'info')
         return redirect(url_for('guardians_bp.rankings'))
 
-    # --- O resto da sua lógica para buscar dados pode continuar a partir daqui ---
-    # (Ela já estava correta, apenas simplifiquei a parte de busca do perfil)
+    #add patrulha diaria
+    patrol_completed_today = (perfil_guardian.last_patrol_date == date.today())
+
 
     # Paginação
     page = request.args.get('page', 1, type=int)
@@ -105,11 +88,19 @@ def meu_perfil(perfil_id):
     # Contadores
     numero_conquistas = len(insignias_ganhas)
     quizzes_respondidos_count = QuizAttempt.query.filter_by(guardian_id=perfil_guardian.id).count()
+    patrols_completed_count = perfil_guardian.historico_acoes.filter(
+        HistoricoAcao.descricao.like('Patrulha Diária%')
+    ).count()
+    
+    # Busca todos os níveis para a tabela de progressão
+    todos_os_niveis = NivelSeguranca.query.order_by(NivelSeguranca.score_minimo.asc()).all()
+
 
     return render_template(
         'guardians/meu_perfil.html',
         perfil=perfil_guardian,
         is_own_profile=is_own_profile,
+        todos_os_niveis=todos_os_niveis,
         historico=historico_paginado,
         pagination=pagination,
         insignias_ganhas=insignias_ganhas,
@@ -118,7 +109,9 @@ def meu_perfil(perfil_id):
         progresso_percentual=progresso_percentual,
         ranking_atual=ranking_atual,
         numero_conquistas=numero_conquistas,
-        quizzes_respondidos_count=quizzes_respondidos_count
+        quizzes_respondidos_count=quizzes_respondidos_count,
+        patrol_completed_today=patrol_completed_today,
+        patrols_completed_count=patrols_completed_count
     )
 
 
@@ -127,26 +120,17 @@ def meu_perfil(perfil_id):
 @guardians_bp.route('/rankings')
 @login_required # Usando o decorator correto que usa o SessionManager
 def rankings():
-    # --- LÓGICA CORRIGIDA PARA IDENTIFICAR O USUÁRIO ---
     
-    # 1. Em vez de usar current_user, buscamos o ID do usuário logado na sessão.
     logged_in_user_id = SessionManager.get("user_id")
     
-    # 2. Com o ID do usuário, encontramos o perfil de guardião correspondente.
     guardian_logado = Guardians.query.filter_by(user_id=logged_in_user_id).first()
     
-    # 3. Pegamos o ID do guardião para poder destacá-lo na lista.
     current_guardian_id = guardian_logado.id if guardian_logado else -1
 
-    # --- O RESTO DA FUNÇÃO CONTINUA IGUAL ---
-
-    # Busca o ranking global por PONTOS
     ranking_global = Guardians.query.options(joinedload(Guardians.featured_insignia)).order_by(desc(Guardians.score_atual)).all()
 
-    # Busca o ranking por DIAS DE OFENSIVA (streak)
     ranking_streak = Guardians.query.options(joinedload(Guardians.featured_insignia)).order_by(Guardians.current_streak.is_(None), desc(Guardians.current_streak)).all()
 
-    # Busca o ranking por departamento
     ranking_departamento = db.session.query(
         Guardians.departamento_nome, 
         func.sum(Guardians.score_atual).label('score_total')
@@ -156,30 +140,64 @@ def rankings():
                            ranking_global=ranking_global,
                            ranking_streak=ranking_streak,
                            ranking_departamento=ranking_departamento,
-                           # Passa o ID do guardião, e não mais do usuário
                            current_user_id=current_guardian_id)
+
+# Em modules/guardians/routes.py
 
 @guardians_bp.route('/sobre-o-programa')
 @login_required
-def sobre():
-    """
-    Busca todos os eventos, níveis e insígnias para exibir
-    dinamicamente as regras e a progressão do programa.
-    """
-    # Busca todos os eventos, ordenando por pontuação (maior primeiro)
-    todos_eventos = EventoPontuacao.query.order_by(desc(EventoPontuacao.pontuacao)).all()
+def sobre_o_programa():
+    # Dicionário para guardar as conquistas categorizadas
+    categorized_achievements = {
+        "Conquistas Baseadas em Score": [],
+        "Conquistas Baseadas em Nível": [],
+        "Conquistas por Quantidade de Quizzes": [],
+        "Conquistas por Acerto em Quizzes": [],
+        "Conquistas por Dias de Vigilante (Streak)": [],
+        "Conquistas por Patrulhas Diárias": [],
+        "Conquistas por Campanhas de Phishing": [],
+        "Conquistas de Ranking (Fim de Temporada)": [],
+        "Conquistas Manuais": []
+    }
     
-    # Busca todos os níveis, ordenando pela pontuação mínima necessária
-    todos_niveis = NivelSeguranca.query.order_by(NivelSeguranca.score_minimo).all()
+    # Busca todas as insígnias
+    todas_as_insignias = Insignia.query.all()
 
-    # ADIÇÃO: Busca todas as insígnias (conquistas), ordenando por nome
-    todas_insignias = Insignia.query.order_by(Insignia.nome).all()
+    # Organiza cada insígnia na sua respectiva categoria
+    for insignia in todas_as_insignias:
+        code = insignia.achievement_code
+        if code.startswith('SCORE_'):
+            categorized_achievements["Conquistas Baseadas em Score"].append(insignia)
+        elif code.startswith('LEVEL_'):
+            categorized_achievements["Conquistas Baseadas em Nível"].append(insignia)
+        elif code.startswith('QUIZ_COUNT_'):
+            categorized_achievements["Conquistas por Quantidade de Quizzes"].append(insignia)
+        elif code.startswith('QUIZ_STREAK_') or code.startswith('QUIZ_HARDCORE_'):
+            categorized_achievements["Conquistas por Acerto em Quizzes"].append(insignia)
+        elif code.startswith('STREAK_'):
+            categorized_achievements["Conquistas por Dias de Vigilante (Streak)"].append(insignia)
+        elif code.startswith('PATROL_COUNT_'):
+            categorized_achievements["Conquistas por Patrulhas Diárias"].append(insignia)
+        elif code.startswith('PHISHING_'):
+            categorized_achievements["Conquistas por Campanhas de Phishing"].append(insignia)
+        elif code in ['TOP_1', 'TOP_3', 'DEPARTMENT_WIN']: # Exemplo de códigos
+            categorized_achievements["Conquistas de Ranking (Fim de Temporada)"].append(insignia)
+        else: # Se não se encaixar em nenhuma regra automática, é manual
+            categorized_achievements["Conquistas Manuais"].append(insignia)
+            
+    for key in categorized_achievements:
+        categorized_achievements[key].sort(key=get_achievement_sort_key)
+        
+    eventos = EventoPontuacao.query.order_by(EventoPontuacao.nome).all()
+    niveis = NivelSeguranca.query.order_by(NivelSeguranca.score_minimo.asc()).all()
 
-    return render_template('guardians/sobre_o_programa.html', 
-                           eventos=todos_eventos, 
-                           niveis=todos_niveis,
-                           insignias=todas_insignias)
-
+    return render_template(
+        'guardians/sobre_o_programa.html', 
+        categorized_achievements=categorized_achievements,
+        eventos=eventos,     
+        niveis=niveis        
+    )
+    
 @guardians_bp.route('/central-de-treinamentos')
 @login_required # Usando o decorator correto que usa o SessionManager
 def central():
@@ -188,7 +206,6 @@ def central():
     """
     now = datetime.utcnow()
     
-    # --- LÓGICA CORRIGIDA PARA IDENTIFICAR O USUÁRIO ---
     # 1. Busca o ID do usuário na sessão.
     logged_in_user_id = SessionManager.get("user_id")
     
@@ -202,8 +219,6 @@ def central():
 
     guardian_id = guardian.id
     
-    # --- O RESTO DA LÓGICA CONTINUA IGUAL ---
-
     # Subquery para encontrar quizzes já respondidos
     attempted_quiz_ids = db.session.query(QuizAttempt.quiz_id).filter(QuizAttempt.guardian_id == guardian_id)
 
@@ -237,70 +252,122 @@ def central():
 
 
 @guardians_bp.route('/admin/quiz/<int:quiz_id>/visualizar')
-@admin_required # Usa o decorator de ADMIN para garantir a permissão
+@admin_required
 def view_quiz(quiz_id):
-    """
-    Permite que um admin visualize um quiz como se fosse um usuário,
-    mas em um modo de pré-visualização (sem poder enviar).
-    """
-    # A verificação de admin agora é feita pelo decorator, então o 'if' antigo pode ser removido.
-    
     quiz = Quiz.query.get_or_404(quiz_id)
-    
-    # Reutilizamos o mesmo template do usuário, mas passamos uma flag 'is_preview'
-    return render_template('guardians/take_quiz.html', quiz=quiz, is_preview=True)
+    return render_template('guardians/quiz_preview.html', quiz=quiz)
+
 
 @guardians_bp.route('/quiz/<int:quiz_id>')
 @login_required
 def take_quiz(quiz_id):
-    """
-    Mostra a página para responder a um quiz específico.
-    """
     quiz = Quiz.query.get_or_404(quiz_id)
-
-    # --- LÓGICA CORRIGIDA PARA IDENTIFICAR O USUÁRIO ---
-    # 1. Busca o ID do usuário na sessão.
-    logged_in_user_id = SessionManager.get("user_id")
+    guardian = Guardians.query.filter_by(user_id=SessionManager.get("user_id")).first()
     
-    # 2. Encontra o perfil de guardião correspondente.
-    guardian = Guardians.query.filter_by(user_id=logged_in_user_id).first()
-
     if not guardian:
-        flash("Perfil de Guardião não encontrado para o usuário logado.", "danger")
-        return redirect(url_for('home_bp.render_home'))
+        abort(404)
 
-    # 3. Usa o ID do guardião correto para verificar se ele já respondeu ao quiz.
-    attempt = QuizAttempt.query.filter_by(guardian_id=guardian.id, quiz_id=quiz.id).first()
-    if attempt:
-        flash('Você já completou este quiz.', 'warning')
+    attempt = QuizAttempt.query.filter_by(guardian_id=guardian.id, quiz_id=quiz_id).first_or_404()
+
+    # Se a tentativa já tem uma data de finalização, significa que o quiz foi concluído.
+    if attempt.completed_at:
+        flash("Este quiz já foi finalizado e não pode ser acessado novamente.", "info")
         return redirect(url_for('guardians_bp.central'))
 
-    return render_template('guardians/take_quiz.html', quiz=quiz)
+    # Lógica do timer (continua a mesma)
+    remaining_time = None
+    if quiz.time_limit_seconds:
+        start_time = attempt.started_at.replace(tzinfo=timezone.utc)
+        now_time = datetime.now(timezone.utc)
+        time_limit_seconds = quiz.time_limit_seconds
+        
+        elapsed_seconds = (now_time - start_time).total_seconds()
+        remaining_time = max(0, time_limit_seconds - elapsed_seconds)
+
+    return render_template('guardians/take_quiz.html', quiz=quiz, remaining_time=remaining_time)
+
+
+@guardians_bp.route('/quiz/start/<int:quiz_id>', methods=['POST'])
+@login_required
+def start_quiz(quiz_id):
+    """
+    Cria uma nova tentativa de quiz com um timestamp de início em UTC.
+    """
+    guardian = Guardians.query.filter_by(user_id=SessionManager.get("user_id")).first()
+    if not guardian:
+        abort(404)
+
+    existing_attempt = QuizAttempt.query.filter_by(guardian_id=guardian.id, quiz_id=quiz_id).first()
+    if existing_attempt:
+        flash("Você já respondeu este quiz.", "warning")
+        return redirect(url_for('guardians_bp.central'))
+    
+    new_attempt = QuizAttempt(
+        guardian_id=guardian.id, 
+        quiz_id=quiz_id, 
+        score=0,
+        started_at=datetime.now(timezone.utc) # Horário universal
+    )
+    db.session.add(new_attempt)
+    db.session.commit()
+    
+    return redirect(url_for('guardians_bp.take_quiz', quiz_id=quiz_id))
 
 
 @guardians_bp.route('/quiz/submit', methods=['POST'])
-@login_required # Usa o decorator de LOGIN para garantir que o usuário está logado
+@login_required
 def submit_quiz():
     """
-    Recebe as respostas, calcula a pontuação COM BÔNUS DE OFENSIVA,
+    Recebe as respostas, salva CADA UMA DELAS, calcula a pontuação, 
     salva o resultado e redireciona.
     """
     try:
         quiz_id = request.form.get('quiz_id')
         quiz = Quiz.query.get(quiz_id)
-
-        # --- LÓGICA CORRIGIDA PARA ENCONTRAR O GUARDIÃO ---
         logged_in_user_id = SessionManager.get("user_id")
         guardian = Guardians.query.filter_by(user_id=logged_in_user_id).first()
-
+        
         if not guardian:
             flash("Perfil de Guardião não encontrado.", "danger")
             return redirect(url_for('guardians_bp.central'))
         
-        # O resto da sua lógica de cálculo de score continua aqui...
+        attempt = QuizAttempt.query.filter_by(guardian_id=guardian.id, quiz_id=quiz_id).first()
+        if not attempt:
+            flash("Tentativa de quiz não encontrada. Por favor, comece novamente.", "danger")
+            return redirect(url_for('guardians_bp.central'))
+
+        if quiz.time_limit_seconds:
+            start_time = attempt.started_at.replace(tzinfo=timezone.utc)
+            submit_time = datetime.now(timezone.utc)
+            time_limit_seconds = quiz.time_limit_seconds
+            elapsed_on_submit = (submit_time - start_time).total_seconds()
+            
+
+            if elapsed_on_submit > time_limit_seconds:
+                flash("Tempo esgotado! Sua tentativa foi registrada com 0 pontos.", "warning")
+                return redirect(url_for('guardians_bp.central'))
+
         base_score = 0
         results_details = {}
         submitted_answers = {key: val for key, val in request.form.items() if key.startswith('question_')}
+        correct_answers_count = 0
+        total_possible_points = sum(q.points for q in quiz.questions)
+    
+    
+        timer_expired = request.form.get('timer_expired') == 'true'
+        abandoned = request.form.get('abandoned') == 'true'
+
+        # Se o tempo acabou OU o quiz foi abandonado
+        if timer_expired or abandoned:
+            message = "..."
+            attempt.score = 0
+            attempt.completed_at = datetime.now(timezone.utc) # <-- GARANTE QUE A DATA SEJA SALVA
+            history_entry = HistoricoAcao(...)
+            db.session.add(history_entry)
+            db.session.commit()
+            flash(message, 'warning')
+            return redirect(url_for('guardians_bp.central'))
+    
 
         for question in quiz.questions:
             question_key = f'question_{question.id}'
@@ -311,6 +378,7 @@ def submit_quiz():
             if submitted_option_id and correct_option and int(submitted_option_id) == correct_option.id:
                 base_score += question.points
                 is_user_correct = True
+                correct_answers_count += 1
             
             results_details[question.id] = {
                 'submitted_option_id': int(submitted_option_id) if submitted_option_id else None,
@@ -318,11 +386,32 @@ def submit_quiz():
                 'is_correct': is_user_correct
             }
 
+            
+            # Salva a resposta individual, vinculando-a à tentativa existente
+            if submitted_option_id:
+                user_answer = UserAnswer(
+                    quiz_attempt_id=attempt.id, # <-- Usa o ID da tentativa encontrada
+                    question_id=question.id,
+                    selected_option_id=int(submitted_option_id)
+                )
+                db.session.add(user_answer)
+
+        # 4. ATUALIZA a tentativa existente com a pontuação final
+        attempt.score = base_score
+        attempt.completed_at = datetime.now(timezone.utc) # Marca a hora de finalização
+        
+        
+        # --- LÓGICA DE CONQUISTAS POR ACERTO --- #
+        is_perfect_score = (base_score == total_possible_points)
+        if is_perfect_score:
+            # Incrementa a ofensiva de acertos perfeitos
+            guardian.perfect_quiz_streak = (guardian.perfect_quiz_streak or 0) + 1   
+        else:
+            # Se não foi perfeito, zera a ofensiva de acertos
+            guardian.perfect_quiz_streak = 0
+        
         final_score, bonus_points = apply_streak_bonus(guardian, base_score)
         
-        new_attempt = QuizAttempt(guardian_id=guardian.id, quiz_id=quiz.id, score=base_score)
-        db.session.add(new_attempt)
-
         if final_score > 0:
             descricao = f"Completou o quiz '{quiz.title}' e ganhou {base_score} pontos."
             if bonus_points > 0:
@@ -333,22 +422,30 @@ def submit_quiz():
         guardian.score_atual += final_score
         update_user_streak(guardian)
         
-        if atualizar_nivel_usuario(guardian):
-            if guardian.nivel: # Checagem de segurança
-                 flash(f"Parabéns! Você subiu para o nível {guardian.nivel.nome}!", 'info')
-
-
+        quiz_context = {
+            'quiz': quiz,
+            'is_perfect_score': is_perfect_score
+        }
+        level_up, novas_conquistas = atualizar_nivel_usuario(guardian, quiz_context=quiz_context)
+        
+        if level_up and guardian.nivel:
+            flash(f"Parabéns! Você subiu para o nível {guardian.nivel.nome}!", 'info')
+        for conquista_nome in novas_conquistas:
+            flash(f"Nova Conquista Desbloqueada: {conquista_nome}!", "success")
 
         db.session.commit()
-
-        session['quiz_results'] = { 'quiz_id': quiz.id, 'score': base_score, 'bonus': bonus_points, 'total_score': final_score, 'details': results_details, 'total_questions': len(quiz.questions) }
         
+        duration_seconds = (attempt.completed_at.replace(tzinfo=timezone.utc) - attempt.started_at.replace(tzinfo=timezone.utc)).total_seconds()
+
+
+        session['quiz_results'] = { 'quiz_id': quiz.id, 'score': base_score, 'bonus': bonus_points, 'total_score': final_score, 'details': results_details, 'total_questions': len(quiz.questions),'correct_answers': correct_answers_count, 'duration_seconds': duration_seconds }
+
         return redirect(url_for('guardians_bp.quiz_result', quiz_id=quiz.id))
 
     except Exception as e:
         db.session.rollback()
-        print(f"ERRO AO PROCESSAR O QUIZ: {e}") 
-        flash(f'Ocorreu um erro ao processar seu quiz.', 'danger') # Removendo a variável 'e' do flash para uma msg mais limpa
+        print(f"ERRO AO PROCESSAR O QUIZ: {e}")
+        flash('Ocorreu um erro ao processar seu quiz.', 'danger')
         return redirect(url_for('guardians_bp.central'))
     
 
@@ -370,6 +467,139 @@ def quiz_result(quiz_id):
 
 
 
+@guardians_bp.route('/admin/quiz/<int:quiz_id>/analise')
+@admin_required
+def quiz_analysis(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    
+    analysis_results = db.session.query(
+        UserAnswer.question_id,
+        Question.question_text,
+        UserAnswer.selected_option_id,
+        AnswerOption.option_text,
+        AnswerOption.is_correct,
+        func.count(UserAnswer.id).label('answer_count')
+    ).join(Question, UserAnswer.question_id == Question.id)\
+     .join(AnswerOption, UserAnswer.selected_option_id == AnswerOption.id)\
+     .filter(Question.quiz_id == quiz_id)\
+     .group_by(UserAnswer.question_id, Question.question_text, UserAnswer.selected_option_id, AnswerOption.option_text, AnswerOption.is_correct)\
+     .order_by(UserAnswer.question_id, AnswerOption.id)\
+     .all()
+    
+    # 2. NOVA QUERY para as respostas individuais detalhadas
+    detailed_responses = db.session.query(
+        Question.id.label('question_id'),
+        Guardians.nome.label('guardian_name'),
+        AnswerOption.option_text.label('answer_text'),
+        AnswerOption.is_correct
+    ).join(QuizAttempt, Guardians.id == QuizAttempt.guardian_id)\
+     .join(UserAnswer, QuizAttempt.id == UserAnswer.quiz_attempt_id)\
+     .join(Question, UserAnswer.question_id == Question.id)\
+     .join(AnswerOption, UserAnswer.selected_option_id == AnswerOption.id)\
+     .filter(QuizAttempt.quiz_id == quiz_id)\
+     .order_by(Question.id, Guardians.nome)\
+     .all()
+
+    # Estrutura os dados para o template
+    structured_analysis = {}
+    for row in analysis_results:
+        q_id = row.question_id
+        if q_id not in structured_analysis:
+            structured_analysis[q_id] = {
+                'question_text': row.question_text,
+                'options': [],
+                'total_responses': 0
+            }
+        structured_analysis[q_id]['options'].append({
+            'option_text': row.option_text,
+            'count': row.answer_count,
+            'is_correct': row.is_correct
+        })
+        structured_analysis[q_id]['total_responses'] += row.answer_count
+
+    return render_template('guardians/quiz_analysis.html', 
+                           quiz=quiz, 
+                           analysis=structured_analysis,
+                           detailed_responses=detailed_responses)
+
+
+
+
+@guardians_bp.route('/admin/quizzes/hub')
+@admin_required
+def quiz_hub():
+    """
+    Exibe o Hub de Análise de Quizzes com estatísticas, filtros e ordenação.
+    """
+    # Lógica de Filtros e Ordenação (continua a mesma)
+    search_term = request.args.get('search', '')
+    sort_by = request.args.get('sort', 'recent')
+
+    # --- QUERY PRINCIPAL E UNIFICADA (COM CÁLCULO DE TEMPO SEGURO) ---
+    # Usamos um CASE para garantir que só calculamos durações positivas
+    valid_duration = func.timestampdiff(text('SECOND'), QuizAttempt.started_at, QuizAttempt.completed_at)
+    safe_duration = case((valid_duration > 0, valid_duration), else_=None)
+
+    query = db.session.query(
+        Quiz,
+        func.count(db.distinct(QuizAttempt.id)).label('total_attempts'),
+        func.count(db.distinct(Question.id)).label('question_count'),
+        func.sum(QuizAttempt.score).label('total_score'),
+        func.sum(Question.points).label('total_possible_points_per_attempt'),
+        func.sum(safe_duration).label('total_time'), # Usa a duração segura
+        func.count(safe_duration).label('attempts_with_time') # Conta apenas tentativas com tempo válido
+    ).outerjoin(QuizAttempt, Quiz.id == QuizAttempt.quiz_id)\
+     .outerjoin(Question, Quiz.id == Question.quiz_id)\
+     .group_by(Quiz.id)
+
+    if search_term:
+        query = query.filter(Quiz.title.ilike(f'%{search_term}%'))
+        
+    all_quizzes_stats = query.all()
+
+    # --- Processamento dos dados e cálculo das estatísticas GERAIS ---
+    quizzes_info = []
+    grand_total_attempts = 0
+    grand_total_earned_score = 0
+    grand_total_possible_score_for_attempts = 0
+    grand_total_time = 0
+    grand_total_attempts_with_time = 0
+
+    for quiz, attempts, q_count, total_score, total_possible, total_time, attempts_with_time in all_quizzes_stats:
+        avg_score_percent = (total_score / (total_possible * attempts) * 100) if total_possible and attempts else 0
+        avg_time = (total_time / attempts_with_time) if attempts_with_time and total_time else 0
+        end_date = quiz.activation_date + timedelta(days=quiz.duration_days - 1)
+        
+        quizzes_info.append({
+            'quiz': quiz, 'total_attempts': attempts, 'question_count': q_count,
+            'avg_score_percent': avg_score_percent, 'avg_time': avg_time, 'end_date': end_date
+        })
+        
+        grand_total_attempts += attempts
+        grand_total_earned_score += total_score or 0
+        grand_total_possible_score_for_attempts += (total_possible or 0) * attempts
+        grand_total_time += total_time or 0
+        grand_total_attempts_with_time += attempts_with_time or 0
+
+    # --- Lógica para os Cards de Destaque ---
+    general_avg_score = (grand_total_earned_score / grand_total_possible_score_for_attempts * 100) if grand_total_possible_score_for_attempts else 0
+    general_avg_time = (grand_total_time / grand_total_attempts_with_time) if grand_total_attempts_with_time else 0
+
+    quizzes_com_tentativas = [q for q in quizzes_info if q['total_attempts'] > 0]
+    quizzes_com_tentativas.sort(key=lambda x: (x['avg_score_percent'] or 0))
+    
+    quiz_mais_dificil = quizzes_com_tentativas[0]['quiz'].title if quizzes_com_tentativas else 'N/A'
+    quiz_mais_facil = quizzes_com_tentativas[-1]['quiz'].title if quizzes_com_tentativas else 'N/A'
+    
+    if sort_by == 'attempts':
+        quizzes_info.sort(key=lambda x: x['total_attempts'], reverse=True)
+    else:
+        quizzes_info.sort(key=lambda x: x['quiz'].created_at, reverse=True)
+
+    return render_template('guardians/quiz_hub.html', quizzes_info=quizzes_info, total_attempts=grand_total_attempts,
+                           quiz_mais_dificil=quiz_mais_dificil, quiz_mais_facil=quiz_mais_facil,
+                           search_term=search_term, sort_by=sort_by, general_avg_score=general_avg_score,
+                           general_avg_time=general_avg_time)
 
 @guardians_bp.route('/guardians-admin', methods=['GET', 'POST'])
 @login_required
@@ -408,8 +638,11 @@ def admin():
                             )
                             db.session.add(novo_historico)
 
-                            if atualizar_nivel_usuario(perfil_guardian):
+                            level_up, novas_conquistas = atualizar_nivel_usuario(perfil_guardian)
+                            if level_up and perfil_guardian.nivel:
                                 flash(f"{perfil_guardian.nome} teve seu nível atualizado para {perfil_guardian.nivel.nome}!", 'info')
+                            for conquista_nome in novas_conquistas:
+                                flash(f"{perfil_guardian.nome} desbloqueou a conquista: {conquista_nome}!", "info")
 
                             db.session.commit()
                             flash(f"Pontuação de {final_points} ({base_points} + {bonus_points} de bônus) lançada para {perfil_guardian.nome}.", 'success')
@@ -420,13 +653,15 @@ def admin():
                     else:
                         flash("Colaborador ou evento não encontrado.", 'danger')
 
-                    return redirect(url_for('guardians_bp.admin')) # Redireciona para a aba principal
-
+                    return redirect(url_for('guardians_bp.admin')) # Redireciona para a aba principal     
+        
+        
+        
         elif action == 'criar_evento':
             nome = request.form.get('nome')
             pontuacao = request.form.get('pontuacao')
             descricao = request.form.get('descricao')
-            
+
             if not nome or not pontuacao:
                 flash('Nome e pontuação do evento são obrigatórios.', 'danger')
             else:
@@ -438,7 +673,7 @@ def admin():
                 except IntegrityError:
                     db.session.rollback()
                     flash(f"Erro: Um evento com o nome '{nome}' já existe. Por favor, use um nome diferente.", 'danger')
-            
+
             return redirect(url_for('guardians_bp.admin') + '#panel-events')
 
             
@@ -544,9 +779,13 @@ def admin():
 
         elif action == 'criar_insignia':
             nome = request.form.get('nome')
+            achievement_code = request.form.get('achievement_code')
             descricao = request.form.get('descricao')
             requisito_score_str = request.form.get('requisito_score')
             caminho_imagem = request.form.get('caminho_imagem')
+            
+            if Insignia.query.filter_by(achievement_code=achievement_code).first():
+                flash(f"Erro: O código de referência '{achievement_code}' já está em uso.", 'danger')
 
             # Verifica se o campo de pontuação não está vazio
             if requisito_score_str:
@@ -558,7 +797,7 @@ def admin():
                 flash('Nome e caminho da imagem da insígnia são obrigatórios.', 'danger')
             else:
                 try:
-                    nova_insignia = Insignia(nome=nome, descricao=descricao, requisito_score=requisito_score, caminho_imagem=caminho_imagem)
+                    nova_insignia = Insignia(nome=nome, achievement_code=achievement_code, descricao=descricao, requisito_score=requisito_score, caminho_imagem=caminho_imagem)
                     db.session.add(nova_insignia)
                     db.session.commit()
                     flash(f"Insígnia '{nome}' criada com sucesso!", 'success')
@@ -569,29 +808,46 @@ def admin():
             return redirect(url_for('guardians_bp.admin') + '#panel-insignias')
 
 
-
         elif action == 'editar_insignia':
             insignia_id = request.form.get('insignia_id')
             insignia = Insignia.query.get(insignia_id)
+
             if insignia:
                 try:
-                    insignia.nome = request.form.get('nome')
+                    # Pega os novos dados do formulário
+                    novo_nome = request.form.get('nome')
+                    novo_code = request.form.get('achievement_code')
+
+                    # --- VALIDAÇÃO CORRIGIDA ---
+                    # Verifica se o NOVO NOME já existe em OUTRA conquista
+                    nome_existente = Insignia.query.filter(Insignia.nome == novo_nome, Insignia.id != insignia_id).first()
+                    if nome_existente:
+                        flash(f"Erro: O nome '{novo_nome}' já está em uso por outra conquista.", 'danger')
+                        return redirect(url_for('guardians_bp.admin') + '#panel-insignias')
+
+                    # Verifica se o NOVO CÓDIGO já existe em OUTRA conquista
+                    code_existente = Insignia.query.filter(Insignia.achievement_code == novo_code, Insignia.id != insignia_id).first()
+                    if code_existente:
+                        flash(f"Erro: O código '{novo_code}' já está em uso por outra conquista.", 'danger')
+                        return redirect(url_for('guardians_bp.admin') + '#panel-insignias')
+
+                    # Se as validações passaram, atualiza os dados
+                    insignia.nome = novo_nome
+                    insignia.achievement_code = novo_code
                     insignia.descricao = request.form.get('descricao')
-                    # Trata campo de score opcional
-                    requisito_score_str = request.form.get('requisito_score')
-                    insignia.requisito_score = int(requisito_score_str) if requisito_score_str else 0
+                    score_str = request.form.get('requisito_score')
+                    insignia.requisito_score = int(score_str) if score_str else 0
                     insignia.caminho_imagem = request.form.get('caminho_imagem')
+
                     db.session.commit()
-                    flash(f"Insígnia '{insignia.nome}' atualizada com sucesso!", 'success')
-                except IntegrityError:
-                    db.session.rollback()
-                    flash(f"Erro: Uma insígnia com o nome '{request.form.get('nome')}' já existe.", 'danger')
+                    flash(f"Conquista '{insignia.nome}' atualizada com sucesso.", 'success')
+
                 except Exception as e:
                     db.session.rollback()
-                    flash(f"Ocorreu um erro ao atualizar a insígnia: {e}", 'danger')
+                    flash(f"Ocorreu um erro ao atualizar a conquista: {e}", "danger")
             else:
-                flash("Insígnia não encontrada.", 'danger')
-                
+                flash("Conquista não encontrada para edição.", "danger")
+
             return redirect(url_for('guardians_bp.admin') + '#panel-insignias')
     
                 
@@ -693,28 +949,47 @@ def admin():
 
         elif action == 'editar_perfil':
             perfil_id = request.form.get('perfil_id')
-            score_atualizado = request.form.get('score_atualizado')
-            departamento_atualizado = request.form.get('departamento_atualizado')
-            is_admin_check = request.form.get('is_admin') == 'on'
-            opt_in_ranking_check = request.form.get('opt_in_ranking') == 'on'
-            
             perfil_guardian = Guardians.query.get(perfil_id)
-            if perfil_guardian:
-                perfil_guardian.score_atual = int(score_atualizado)
-                perfil_guardian.departamento_nome = departamento_atualizado
-                perfil_guardian.is_admin = is_admin_check
-                perfil_guardian.opt_in_real_name_ranking = opt_in_ranking_check
-                
-                if atualizar_nivel_usuario(perfil_guardian):
-                    flash(f"{perfil_guardian.nome} subiu para o nível {perfil_guardian.nivel.nome}!", 'info')
 
-                db.session.commit()
-                flash(f"Perfil de {perfil_guardian.nome} atualizado com sucesso!", 'success')
+            if perfil_guardian:
+                try:
+                    score_str = request.form.get('score_atual')
+                    if score_str is not None:
+                        perfil_guardian.score_atual = int(score_str)
+                        
+                    perfil_guardian.departamento_nome = request.form.get('departamento')
+                    perfil_guardian.is_admin = 'is_admin' in request.form
+                    perfil_guardian.opt_in_real_name_ranking = 'opt_in_ranking' in request.form
+
+                    if 'current_streak' in request.form:
+                        nova_ofensiva_str = request.form.get('current_streak')
+                        if nova_ofensiva_str: # Garante que não está vazio
+                            nova_ofensiva_int = int(nova_ofensiva_str)
+
+                            # Apenas cria um log se o valor realmente mudou
+                            if nova_ofensiva_int != (perfil_guardian.current_streak or 0):
+                                descricao = f"Ofensiva ajustada de {perfil_guardian.current_streak or 0} para {nova_ofensiva_int} dias pelo administrador."
+                                novo_historico = HistoricoAcao(guardian_id=perfil_guardian.id, descricao=descricao, pontuacao=0)
+                                db.session.add(novo_historico)
+
+                            # Atualiza o valor e a data
+                            perfil_guardian.current_streak = nova_ofensiva_int
+                            perfil_guardian.last_streak_date = date.today() if nova_ofensiva_int > 0 else None
+
+                    # Checa se o nível do usuário mudou após a alteração de score
+                    if atualizar_nivel_usuario(perfil_guardian):
+                        flash(f"{perfil_guardian.nome} subiu para o nível {perfil_guardian.nivel.nome}!", 'info')
+
+                    db.session.commit()
+                    flash(f"Perfil de {perfil_guardian.nome} atualizado com sucesso!", 'success')
+
+                except Exception as e:
+                    db.session.rollback()
+                    flash(f"Ocorreu um erro ao atualizar o perfil: {e}", "danger")
             else:
                 flash("Perfil de colaborador não encontrado.", 'danger')
-                
-            return redirect(url_for('guardians_bp.admin') + '#panel-profiles')
 
+            return redirect(url_for('guardians_bp.admin') + '#panel-profiles')
     
 
         elif action == 'zerar_historico':
@@ -729,14 +1004,24 @@ def admin():
                     GuardianInsignia.query.filter_by(guardian_id=perfil_id).delete()
  
                     # 3. NOVA LINHA: Apaga todas as tentativas de quizzes do usuário
-                    QuizAttempt.query.filter_by(guardian_id=perfil_id).delete()
+                    attempts_to_delete = QuizAttempt.query.filter_by(guardian_id=perfil_id).all()
+                    for attempt in attempts_to_delete:
+                        db.session.delete(attempt)
  
                     # 4. Zera a pontuação, dias de vigilante e atualiza o nivel
                     perfil_guardian.score_atual = 0
-                    atualizar_nivel_usuario(perfil_guardian) # Atualiza para o nível mais baixo
                     perfil_guardian.current_streak = 0
                     perfil_guardian.last_streak_date = None
- 
+                    perfil_guardian.last_patrol_date = None #zera patrulha diaria
+                    perfil_guardian.featured_insignia_id = None
+                    perfil_guardian.perfect_quiz_streak = 0
+
+                   
+                    
+                    nivel_base = NivelSeguranca.query.order_by(NivelSeguranca.score_minimo.asc()).first()
+                    if nivel_base:
+                        perfil_guardian.nivel_id = nivel_base.id
+    
                     db.session.commit()
                     flash(f"O progresso de {perfil_guardian.nome} (histórico, conquistas e quizzes) foi completamente zerado.", 'success')
  
@@ -765,13 +1050,16 @@ def admin():
                 
         elif action == 'criar_quiz':
             try:
+                time_limit = request.form.get('time_limit_seconds')
+
                 # 1. Criar o objeto Quiz principal
                 novo_quiz = Quiz(
                     title=request.form.get('title'),
                     description=request.form.get('description'),
                     activation_date=datetime.strptime(request.form.get('activation_date'), '%Y-%m-%d').date(),
                     duration_days=int(request.form.get('duration_days')),
-                    category=QuizCategory[request.form.get('category')]
+                    category=QuizCategory[request.form.get('category')],
+                    time_limit_seconds=int(time_limit) if time_limit else None
                 )
 
                 # 2. Estruturar os dados das perguntas e opções
@@ -912,55 +1200,54 @@ def analytics(guardian_id):
     return render_template('guardians/analytics.html', 
                            active_guardians=active_guardians_count,
                            total_quizzes=total_quizzes_answered,
-                           total_reports=total_reports_phishing, # Corrigido para usar a nova variável
+                           total_reports=total_reports_phishing,
                            avg_score=avg_score,
                            all_guardians=all_guardians,
                            selected_user=selected_user,
                            user_history=user_history,
                            user_quiz_attempts=user_quiz_attempts,
-                           # Novas variáveis para o Widget 2
                            total_clicks_phishing=total_clicks_phishing,
                            vulnerable_users=vulnerable_users,
                            vulnerable_depts=vulnerable_depts)
 
     
 ##ROTA PRA EDITAR PERFIL
+
 @guardians_bp.route('/meu-perfil/editar', methods=['GET', 'POST'])
-@login_required # O decorator já protege a página
+@login_required
 def edit_profile():
-    # 1. Busca o ID do usuário na sessão, em vez de usar 'current_user'
     logged_in_user_id = SessionManager.get("user_id")
-    
-    # 2. Encontra o perfil de guardião associado ao usuário logado
     guardian = Guardians.query.filter_by(user_id=logged_in_user_id).first()
 
-    # Se não encontrar um perfil, redireciona com uma mensagem de erro
     if not guardian:
         flash("Perfil de Guardião não pôde ser carregado para edição.", "danger")
         return redirect(url_for('guardians_bp.meu_perfil'))
 
-    # --- O RESTO DA SUA LÓGICA CONTINUA IGUAL ---
-    
     earned_insignias = [gi.insignia for gi in guardian.insignias_conquistadas]
-
     available_colors = {
-        'Padrão (Branco)': None,
-        'Guardião Dourado': '#FFD700',
-        'Vigilante Prata': '#C0C0C0',
-        'Sentinela Bronze': '#CD7F32',
-        'Cyber Azul': '#00BFFF',
-        'Hacker Verde': '#39FF14',
+        'Padrão (Branco)': None, 'Guardião Dourado': '#FFD700', 'Vigilante Prata': '#C0C0C0',
+        'Sentinela Bronze': '#CD7F32', 'Cyber Azul': '#00BFFF', 'Hacker Verde': '#39FF14',
         'Ameaça Magenta': '#FF00FF'
     }
 
     if request.method == 'POST':
+        
+        # 1. Salva o apelido
         guardian.nickname = request.form.get('nickname')
+        
+        # 2. Salva a escolha de anonimato (checkbox "Manter perfil anônimo")
+        # 'is_anonymous' in request.form retorna True se o checkbox foi marcado, False se não.
         guardian.is_anonymous = 'is_anonymous' in request.form
+        
+        # 3. Salva a escolha de exibição do nome (checkbox "Exibir nome real")
+        # Esta é a coluna que você me informou que já existe.
         guardian.opt_in_real_name_ranking = 'opt_in_real_name_ranking' in request.form
         
+        # 4. Salva a insígnia em destaque
         featured_id = request.form.get('featured_insignia_id')
         guardian.featured_insignia_id = int(featured_id) if featured_id else None
         
+        # 5. Salva a cor do nome
         selected_color = request.form.get('name_color')
         if selected_color in available_colors.values():
             guardian.name_color = selected_color if selected_color else None
@@ -974,65 +1261,139 @@ def edit_profile():
                            earned_insignias=earned_insignias,
                            available_colors=available_colors)
     
- 
-    
-##DIAS DE VIGILANTE##
-def update_user_streak(guardian):
-    """
-    Atualiza a ofensiva "Dias de Vigilante" de um usuário.
-    NOVA LÓGICA: A ofensiva só quebra se houver mais de 1 dia útil de inatividade.
-    """
+
+
+##PATRULHA DIARIA
+
+@guardians_bp.route('/daily-patrol', methods=['POST'])
+@login_required
+def daily_patrol():
+    user_id = SessionManager.get("user_id")
+    guardian = Guardians.query.filter_by(user_id=user_id).first()
+
+    if not guardian:
+        return jsonify({"status": "error", "message": "Perfil de Guardião não encontrado."}), 404
+
     today = date.today()
+    if guardian.last_patrol_date == today:
+        return jsonify({"status": "error", "message": "Patrulha diária já realizada hoje!"}), 400
 
-    # Ignora a lógica se a ação de hoje já foi registrada
-    if guardian.last_streak_date == today:
-        return
+    guardian.score_atual = guardian.score_atual or 0
+    guardian.current_streak = guardian.current_streak or 0
 
-    # Se o usuário nunca teve uma ofensiva, começa com 1
-    if guardian.last_streak_date is None:
-        guardian.current_streak = 1
-    else:
-        days_diff = (today - guardian.last_streak_date).days
+    base_points = random.randint(1, 10)
+    final_points, bonus_points = apply_streak_bonus(guardian, base_points)
+    
+    messages = [
+        f"Você escaneou a rede e encontrou {base_points} vulnerabilidades. Bom trabalho!",
+        f"Patrulha concluída! {base_points} ameaças neutralizadas antes de se tornarem um problema.",
+        f"Você revisou os logs de acesso e fortaleceu as defesas. A segurança foi reforçada!",
+        f"Regras do firewall otimizadas! Você bloqueou {base_points} novas assinaturas de malware.",
+        f"Verificação de patches de segurança concluída! {base_points} sistemas críticos foram atualizados.",
+        f"Ronda de segurança física completa. {base_points} pontos de acesso foram verificados e estão seguros."
+    ]
+    selected_message = random.choice(messages)
+    
+    try:
+        guardian.score_atual += final_points
+        guardian.last_patrol_date = today 
+        update_user_streak(guardian)
         
-        # Se a ação foi ontem ou hoje, a ofensiva com certeza continua.
-        if days_diff <= 1:
-            guardian.current_streak += 1
-        else:
-            # Conta quantos dias úteis (seg-sex) se passaram entre a última ação e hoje.
-            weekdays_passed = 0
-            for i in range(1, days_diff):
-                day_to_check = guardian.last_streak_date + timedelta(days=i)
-                if day_to_check.weekday() < 5: # Segunda (0) a Sexta (4)
-                    weekdays_passed += 1
-            
-            # Se passou 1 dia útil ou menos no meio, a ofensiva continua!
-            if weekdays_passed <= 1:
-                guardian.current_streak += 1
-            # Se passaram 2 ou mais dias úteis, a ofensiva quebra.
-            else:
-                guardian.current_streak = 1
-            
-    # Atualiza a data da última ação para hoje
-    guardian.last_streak_date = today
-    
-    
-##BONUS DE VIGILANTE
-def apply_streak_bonus(guardian, base_points):
-    """
-    Calcula e aplica o bônus de ofensiva à pontuação base.
-    Retorna a pontuação final e a pontuação bônus.
-    """
-    if base_points <= 0: # Bônus não se aplica a penalidades
-        return base_points, 0
-
-    streak = guardian.current_streak or 0
-    bonus_percentage = min(streak, 20) # Limita o bônus a 10%
-    
-    if bonus_percentage > 0:
-        bonus_points = round(base_points * (bonus_percentage / 100.0))
-        total_points = base_points + bonus_points
-        return total_points, bonus_points
+        descricao = f"Patrulha Diária: {selected_message}"
         
-    return base_points, 0
+        if bonus_points > 0:
+            descricao += f" (Bônus de ofensiva: +{bonus_points} pts)"
+            
+        history_entry = HistoricoAcao(
+            guardian_id=guardian.id, 
+            descricao=descricao, 
+            pontuacao=final_points
+        )
+        db.session.add(history_entry)
+
+        level_up, novas_conquistas = atualizar_nivel_usuario(guardian)
+        if level_up and guardian.nivel:
+            flash(f"Parabéns! Você subiu para o nível {guardian.nivel.nome}!", 'info')
+        for conquista_nome in novas_conquistas:
+            flash(f"Nova Conquista Desbloqueada: {conquista_nome}!", "success")
+
+        db.session.commit()
+
+        response_data = {
+            "status": "success",
+            "message": selected_message,
+            "base_points": base_points,
+            "bonus_points": bonus_points,
+            "total_points": final_points,
+            "new_achievements": [] # Lista vazia por enquanto
+        }
+        return jsonify(response_data)
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERRO NA PATRULHA DIÁRIA: {e}")
+        return jsonify({"status": "error", "message": "Ocorreu um erro interno."}), 500
+    
+####REPORT HUB - ANALISE INDIVIDUAL#####
+@guardians_bp.route('/admin/relatorios/selecao')
+@admin_required
+def report_hub():
+    """
+    Exibe uma página para selecionar um colaborador para gerar um relatório individual.
+    """
+    # Busca todos os guardiões para a lista, ordenados por nome
+    all_guardians = Guardians.query.order_by(Guardians.nome).all()
+    
+    return render_template('guardians/report_hub.html', all_guardians=all_guardians)
 
 
+@guardians_bp.route('/admin/relatorio/<int:guardian_id>')
+@admin_required
+def guardian_report(guardian_id):
+    """
+    Exibe o relatório de desempenho individual completo de um guardião.
+    """
+    perfil = Guardians.query.get_or_404(guardian_id)
+    
+    # --- Busca de Dados ---
+    user_history = perfil.historico_acoes.order_by(desc(HistoricoAcao.data_evento)).all()
+    user_achievements = perfil.insignias_conquistadas.all()
+    user_quiz_attempts = perfil.quiz_attempts.order_by(desc(QuizAttempt.completed_at)).all()
+    nivel_atual = perfil.nivel
+    total_quizzes = len(user_quiz_attempts)
+
+    # --- LÓGICA DE CÁLCULO CORRIGIDA (EM PYTHON) ---
+    perfect_quizzes_count = 0
+    soma_scores = 0
+    total_pontos_possiveis = 0
+
+    # Percorre as tentativas de quiz para calcular as métricas
+    for attempt in user_quiz_attempts:
+        if attempt.quiz: # Garante que o quiz não foi deletado
+            possible_points = sum(q.points for q in attempt.quiz.questions)
+            if possible_points > 0 and attempt.score == possible_points:
+                perfect_quizzes_count += 1
+            
+            soma_scores += attempt.score
+            total_pontos_possiveis += possible_points
+
+    media_geral_acertos = (soma_scores / total_pontos_possiveis * 100) if total_pontos_possiveis > 0 else 0
+
+    # Tempo médio de resposta do indivíduo
+    user_avg_time_result = db.session.query(
+        func.avg(func.timestampdiff(text('SECOND'), QuizAttempt.started_at, QuizAttempt.completed_at))
+    ).filter(QuizAttempt.guardian_id == guardian_id, QuizAttempt.completed_at.isnot(None)).scalar()
+    user_avg_time = int(user_avg_time_result) if user_avg_time_result else 0
+        
+    return render_template(
+        'guardians/guardian_report.html',
+        perfil=perfil,
+        total_quizzes=total_quizzes,
+        perfect_quizzes_count=perfect_quizzes_count,
+        media_geral_acertos=media_geral_acertos,
+        user_avg_time=user_avg_time,
+        user_history=user_history,
+        user_achievements=user_achievements,
+        user_quiz_attempts=user_quiz_attempts,
+        nivel_atual=nivel_atual
+    )
