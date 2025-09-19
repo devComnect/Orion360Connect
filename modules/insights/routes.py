@@ -961,7 +961,7 @@ def get_ligacoes_atendidas():
             cast(ChamadasDetalhes.data, Date) >= data_inicio,
             cast(ChamadasDetalhes.data, Date) <= hoje,
             # Filtro de duração mínima
-            #func.time_to_sec(ChamadasDetalhes.tempoAtendimento) >= 10
+            func.time_to_sec(ChamadasDetalhes.tempoAtendimento) >= 10
         ).scalar() or 0  # garante que não seja None
 
 
