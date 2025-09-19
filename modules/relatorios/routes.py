@@ -555,10 +555,17 @@ def extrair_comparativo_relatorios():
         sizes = list(turno_counts.values())
         colors_pizza = ['#4CAF50', '#2196F3', '#FF5722']
 
-        plt.figure(figsize=(4.5, 4.5))
-        plt.pie(sizes, labels=labels, autopct=lambda pct: f"{int(round(pct/100.*sum(sizes)))}\n({pct:.1f}%)",
-                startangle=140, colors=colors_pizza)
+        plt.pie(
+            sizes, labels=labels,
+            autopct=lambda pct: f"{int(round(pct/100.*sum(sizes)))}\n({pct:.1f}%)",
+            startangle=140, colors=colors_pizza,
+            wedgeprops={'width': 0.4}  # Donut
+        )
+        centre_circle = plt.Circle((0, 0), 0.70, fc='white')
+        fig = plt.gcf()
+        fig.gca().add_artist(centre_circle)
         plt.axis('equal')
+
         img_buffer = BytesIO()
         plt.savefig(img_buffer, format='PNG', bbox_inches='tight')
         plt.close()
@@ -587,10 +594,17 @@ def extrair_comparativo_relatorios():
         colors_pizza = ['#4CAF50', '#2196F3', '#FF5722']
 
         plt.figure(figsize=(4.5, 4.5))
-        plt.pie(sizes_lig, labels=labels_lig,
-                autopct=lambda pct: f"{int(round(pct/100.*sum(sizes_lig)))}\n({pct:.1f}%)",
-                startangle=140, colors=colors_pizza)
+        plt.pie(
+            sizes_lig, labels=labels_lig,
+            autopct=lambda pct: f"{int(round(pct/100.*sum(sizes_lig)))}\n({pct:.1f}%)",
+            startangle=140, colors=colors_pizza,
+            wedgeprops={'width': 0.4}  # <- Donut aqui
+        )
+        centre_circle = plt.Circle((0, 0), 0.70, fc='white')
+        fig = plt.gcf()
+        fig.gca().add_artist(centre_circle)
         plt.axis('equal')
+
         img_buffer_lig = BytesIO()
         plt.savefig(img_buffer_lig, format='PNG', bbox_inches='tight')
         plt.close()
@@ -606,7 +620,6 @@ def extrair_comparativo_relatorios():
     buffer.seek(0)
     filename = f"relatorio_comparativo_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
-
 
 @relatorios_bp.route("/getOperadores", methods=['GET'])
 def get_operadores():
