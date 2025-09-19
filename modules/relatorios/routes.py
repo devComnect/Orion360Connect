@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, send_file, make_response
 from application.models import Chamado, db, RelatorioColaboradores, PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess, EventosAtendentes
 from datetime import datetime, time
-from modules.relatorios.utils import get_turno, get_turno_ligacao
+from modules.relatorios.utils import get_turno, get_turno_ligacao, is_hora_valida, cores_por_turno
 from collections import Counter
 from io import BytesIO
 from fpdf import FPDF
@@ -87,15 +87,43 @@ def extrair_relatorios():
     ).scalar() or 0
 
     # ---------- PAUSAS ----------
-    pausas = db.session.query(
+    from datetime import timedelta
+
+    # Função auxiliar para converter duração string (HH:MM:SS) em timedelta
+    def _parse_duration_to_timedelta(duracao_raw):
+        try:
+            if isinstance(duracao_raw, str):
+                parts = duracao_raw.split(':')
+                if len(parts) == 3:
+                    h, m, s = map(int, parts)
+                    return timedelta(hours=h, minutes=m, seconds=s)
+                elif len(parts) == 2:
+                    m, s = map(int, parts)
+                    return timedelta(minutes=m, seconds=s)
+            elif isinstance(duracao_raw, timedelta):
+                return duracao_raw
+        except Exception:
+            pass
+        return timedelta(0)
+
+    # Buscar nome da pausa, total e duração
+    pausas_raw = db.session.query(
         EventosAtendentes.nome_pausa,
-        func.count().label('total')
+        EventosAtendentes.duracao
     ).filter(
         EventosAtendentes.nome_atendente.ilike(f'%{operador}%'),
         EventosAtendentes.data >= dt_inicio.date(),
         EventosAtendentes.data <= dt_final.date(),
         EventosAtendentes.evento == 'Pausa'
-    ).group_by(EventosAtendentes.nome_pausa).all()
+    ).all()
+
+    from collections import defaultdict
+    pausas_agrupadas = defaultdict(lambda: {'total': 0, 'duracao': timedelta()})
+
+    for nome_pausa, duracao in pausas_raw:
+        key = nome_pausa or '-'
+        pausas_agrupadas[key]['total'] += 1
+        pausas_agrupadas[key]['duracao'] += _parse_duration_to_timedelta(duracao)
 
     # ---------- TEMPO MIN/MAX ATENDIMENTO ----------
     count_min = db.session.query(func.count(PerformanceColaboradores.id)).filter(
@@ -132,11 +160,11 @@ def extrair_relatorios():
 
     # Obtenha os registros de FCR e filtre diretamente na aplicação
     registros_fcr = RelatorioColaboradores.query.filter(
-    func.lower(RelatorioColaboradores.operador) == operador,
-            RelatorioColaboradores.data_criacao >= dt_inicio,
-            RelatorioColaboradores.data_criacao <= dt_final,
-            RelatorioColaboradores.nome_status == 'Resolvido'
-        ).all()
+        func.lower(RelatorioColaboradores.operador) == operador,
+        RelatorioColaboradores.data_criacao >= dt_inicio,
+        RelatorioColaboradores.data_criacao <= dt_final,
+        RelatorioColaboradores.nome_status == 'Resolvido'
+    ).all()
 
     fcr_registros = [r for r in registros_fcr if r.first_call == 'S']
     total_fcr = len(fcr_registros)
@@ -181,20 +209,18 @@ def extrair_relatorios():
         ['SLA Resolução (Prazo)', f"{percentual_prazo_resolucao}%"],
         ['SLA Resolução (expirado)', f"{percentual_resolucao}%"],
     ])
-
     table_chamados = Table(data_chamados, colWidths=[250, 100])
     table_chamados.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
         ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,0), 'LEFT'),  # Centraliza só cabeçalho
-        ('ALIGN', (0,1), (-1,-1), 'LEFT'),   # Alinha o resto à esquerda
+        ('ALIGN', (0,0), (-1,0), 'LEFT'),
+        ('ALIGN', (0,1), (-1,-1), 'LEFT'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,0), 11),
         ('BOTTOMPADDING', (0,0), (-1,0), 8),
         ('BACKGROUND', (0,1), (-1,-1), colors.beige),
         ('GRID', (0,0), (-1,-1), 0.5, colors.gray)
     ]))
-
     elements.append(Paragraph("Chamados", centered_style_section))
     elements.append(table_chamados)
     elements.append(Spacer(1,12))
@@ -213,8 +239,8 @@ def extrair_relatorios():
     table_ligacoes.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
         ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,0), 'LEFT'),  # Centraliza só cabeçalho
-        ('ALIGN', (0,1), (-1,-1), 'LEFT'),   # Alinha o resto à esquerda
+        ('ALIGN', (0,0), (-1,0), 'LEFT'),
+        ('ALIGN', (0,1), (-1,-1), 'LEFT'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,0), 11),
         ('BOTTOMPADDING', (0,0), (-1,0), 8),
@@ -226,15 +252,16 @@ def extrair_relatorios():
     elements.append(Spacer(1,12))
 
     # ---------- Tabela de Pausas ----------
-    data_pausas = [['Nome da pausa', 'Total']]
-    for p in pausas:
-        data_pausas.append([p.nome_pausa or '-', str(p.total)])
-    table_pausas = Table(data_pausas, colWidths=[250, 100])
+    data_pausas = [['Nome da pausa', 'Total', 'Duração total']]
+    for nome_pausa, dados in pausas_agrupadas.items():
+        duracao_str = str(dados['duracao'])  # formato: H:MM:SS
+        data_pausas.append([nome_pausa, str(dados['total']), duracao_str])
+    table_pausas = Table(data_pausas, colWidths=[200, 80, 100])
     table_pausas.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.darkgray),
         ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('ALIGN', (0,0), (-1,0), 'LEFT'),  # Centraliza só cabeçalho
-        ('ALIGN', (0,1), (-1,-1), 'LEFT'),   # Alinha o resto à esquerda
+        ('ALIGN', (0,0), (-1,0), 'LEFT'),
+        ('ALIGN', (0,1), (-1,-1), 'LEFT'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,0), 11),
         ('BOTTOMPADDING', (0,0), (-1,0), 8),
@@ -261,6 +288,7 @@ def extrair_relatorios():
     response.headers['Content-Disposition'] = f'attachment; filename=relatorio_{operador_safe}_{data_inicio}_a_{data_final}.pdf'
 
     return response
+
 
 @relatorios_bp.route("/extrairControleAcesso", methods=['POST'])
 def extrair_controle_acesso():
@@ -408,15 +436,7 @@ def extrair_comparativo_relatorios():
     percentual_prazo_resolucao = round((chamados_finalizado_prazo / total_chamados) * 100, 2) if total_chamados else 0
 
     # ---------- LIGAÇÕES (ChamadasDetalhes) com filtro de hora válida ----------
-    def is_hora_valida(hora_str):
-        try:
-            if not hora_str or len(hora_str.strip()) < 5:
-                return False
-            hms = hora_str.strip().split(" ")[0]
-            datetime.strptime(hms, '%H:%M:%S')
-            return True
-        except Exception:
-            return False
+    
 
     query_ligacoes_geral = ChamadasDetalhes.query.filter(
         ChamadasDetalhes.data >= dt_inicio.date(),
@@ -553,11 +573,12 @@ def extrair_comparativo_relatorios():
     if turno_counts:
         labels = list(turno_counts.keys())
         sizes = list(turno_counts.values())
-        colors_pizza = ['#4CAF50', '#2196F3', '#FF5722']
+        colors_pizza = [cores_por_turno.get(label, "#808080") for label in labels]
 
+        plt.figure(figsize=(4.5, 4.5))
         plt.pie(
             sizes, labels=labels,
-            autopct=lambda pct: f"{int(round(pct/100.*sum(sizes)))}\n({pct:.1f}%)",
+            autopct='%1.1f%%',
             startangle=140, colors=colors_pizza,
             wedgeprops={'width': 0.4}  # Donut
         )
@@ -591,12 +612,13 @@ def extrair_comparativo_relatorios():
     if turno_counts_ligacoes:
         labels_lig = list(turno_counts_ligacoes.keys())
         sizes_lig = list(turno_counts_ligacoes.values())
-        colors_pizza = ['#4CAF50', '#2196F3', '#FF5722']
+        colors_pizza = [cores_por_turno.get(label, "#808080") for label in labels_lig]
+
 
         plt.figure(figsize=(4.5, 4.5))
         plt.pie(
             sizes_lig, labels=labels_lig,
-            autopct=lambda pct: f"{int(round(pct/100.*sum(sizes_lig)))}\n({pct:.1f}%)",
+            autopct='%1.1f%%',
             startangle=140, colors=colors_pizza,
             wedgeprops={'width': 0.4}  # <- Donut aqui
         )
