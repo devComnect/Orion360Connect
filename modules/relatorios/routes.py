@@ -289,7 +289,6 @@ def extrair_relatorios():
 
     return response
 
-
 @relatorios_bp.route("/extrairControleAcesso", methods=['POST'])
 def extrair_controle_acesso():
     data_inicio = request.form.get('data')

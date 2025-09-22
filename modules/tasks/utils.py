@@ -9,7 +9,8 @@ from settings.endpoints import CREDENTIALS, RELATORIO_CHAMADOS_SUPORTE
 from sqlalchemy.exc import IntegrityError
 from flask import jsonify, current_app as app
 import json
-from datetime import timedelta, datetime
+from sqlalchemy import text
+from datetime import timedelta, datetime, date
 import logging
 
 
@@ -1250,9 +1251,6 @@ def importar_grupos():
         "total_api": len(grupos_api),
     }
 
-from datetime import datetime, timedelta
-from sqlalchemy import text
-
 def repopular_eventos_180d():
     hoje = datetime.now().date()
     data_inicial = hoje - timedelta(days=180)
@@ -1407,10 +1405,6 @@ def repopular_eventos_180d():
 
     return {"status": "success", "message": f"Tabela repopulada com eventos dos últimos 180 dias ({data_inicial} até {data_final})."}
 
-
-from datetime import datetime, timedelta
-from sqlalchemy import text
-
 def repopular_eventos_operador_180d(operador_id: int, nome_operador: str = None):
     from sqlalchemy import text
     hoje = datetime.now().date()
@@ -1519,8 +1513,6 @@ def repopular_eventos_operador_180d(operador_id: int, nome_operador: str = None)
         print(f"[{nome_operador}] Total novos inseridos no período {inicio} até {fim}: {total_registros}")
 
     return {"status": "success", "message": f"Eventos do operador {operador_id} importados com sucesso de {data_inicial} até {data_final}."}
-
-
 
 def processar_e_armazenar_eventos():
     hoje = datetime.now().date()
@@ -1732,7 +1724,6 @@ def processar_e_armazenar_eventos():
             print(f"[{nome_operador}] Total novos: {total_registros}, atualizados: {total_atualizados}")
 
     return {"status": "success", "message": f"Eventos importados e atualizados apenas do dia {hoje}."}
-
 
 def importar_categorias():
     token = token_desk()
@@ -2004,3 +1995,151 @@ def importar_detalhes_chamadas_hoje():
 
     print(f"\n✅ Importação finalizada. Total de registros salvos: {total_registros}")
     return {"status": "success", "total_registros": total_registros}
+
+
+def importar_detalhes_chamadas(
+    operador_id: int = None,
+    nome_operador: str = None,
+    data_inicio: date = None,
+    data_fim: date = None
+):
+    """
+    Importa detalhes de chamadas da API e salva/atualiza no banco.
+    Permite definir manualmente operador e período de datas.
+    """
+
+    hoje = datetime.now().date()
+    data_inicio = data_inicio or hoje
+    data_fim = data_fim or hoje
+
+    if not nome_operador and operador_id:
+        nome_operador = f"Operador {operador_id}"
+
+    print("🚀 Iniciando importação de chamadas")
+    print(f"📅 Período: {data_inicio} até {data_fim}")
+    if operador_id:
+        print(f"👤 Operador filtrado: {operador_id} ({nome_operador})")
+    else:
+        print("👥 Importando para todos os operadores")
+
+    # 🔑 Autenticação
+    auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
+    if "access_token" not in auth_response:
+        print("❌ Falha na autenticação")
+        return {"status": "error", "message": "Falha na autenticação"}
+
+    access_token = auth_response["access_token"]
+    total_inseridos = 0
+    total_atualizados = 0
+    data_importacao_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    offset = 0
+    while True:
+        params = {
+            "initial_date": data_inicio.strftime('%d/%m/%Y'),
+            "final_date": data_fim.strftime('%d/%m/%Y'),
+            "initial_hour": "00:00:00",
+            "final_hour": "23:59:59",
+            "fixed": 1,
+            "week": "1,2,3,4,5",
+            "agents": [operador_id] if operador_id else [2020,2021,2022,2023,2024,2025,2028,2029],
+            "queues": [1],
+            "transfer_display": 1,
+            "conf": json.dumps({
+                "call_answered": 1,
+                "call_abandoned": 0
+            }),
+            "options": json.dumps({
+                "sort": {"data": -1},
+                "offset": offset,
+                "count": 100
+            })
+        }
+
+        try:
+            api_response = detalhesChamadas(access_token, params)
+        except Exception as e:
+            print(f"❌ Erro na requisição: {e}")
+            break
+
+        if not api_response or "result" not in api_response:
+            print(f"❗ Resposta inválida da API: {json.dumps(api_response, indent=2, ensure_ascii=False)}")
+            break
+
+        result = api_response["result"]
+        if "data" not in result or not result["data"]:
+            print(f"⚠️ Nenhum dado retornado")
+            break
+
+        print(f"✅ {len(result['data'])} registros retornados")
+
+        for item in result["data"]:
+            if not item.get("uniqueID"):
+                continue
+
+            existente = db.session.query(ChamadasDetalhes).filter_by(uniqueID=item["uniqueID"]).first()
+
+            if existente:
+                # 🔄 Atualiza campos importantes caso estejam diferentes
+                campos_atualizados = False
+                if existente.tempoAtendimento != str(item.get("tempoAtendimento") or None):
+                    existente.tempoAtendimento = str(item.get("tempoAtendimento") or None)
+                    campos_atualizados = True
+
+                if existente.tempoEspera != str(item.get("tempoEspera") or None):
+                    existente.tempoEspera = str(item.get("tempoEspera") or None)
+                    campos_atualizados = True
+
+                if campos_atualizados:
+                    existente.dataImportacao = data_importacao_str
+                    total_atualizados += 1
+
+            else:
+                # 🆕 Insere novo registro
+                novo = ChamadasDetalhes(
+                    idFila=str(item.get("idFila") or None),
+                    nomeFila=str(item.get("nomeFila") or None),
+                    uniqueID=str(item.get("uniqueID") or None),
+                    data=str(item.get("data") or None),
+                    tipo=str(item.get("tipo") or None),
+                    numero=str(item.get("numero") or None),
+                    origem=str(item.get("origem") or None),
+                    tipoOrigem=str(item.get("tipoOrigem") or None),
+                    filaOrigem=str(item.get("filaOrigem") or None),
+                    horaEntradaPos=str(item.get("horaEntradaPos") or None),
+                    horaAtendimento=str(item.get("horaAtendimento") or None),
+                    horaTerminoPos=str(item.get("horaTerminoPos") or None),
+                    tempoEspera=str(item.get("tempoEspera") or None),
+                    tempoAtendimento=str(item.get("tempoAtendimento") or None),
+                    numeroAtendente=str(item.get("numeroAtendente") or None),
+                    nomeAtendente=str(item.get("nomeAtendente") or None),
+                    desconexaoLocal=str(item.get("desconexaoLocal") or None),
+                    transferencia=str(item.get("transferencia") or None),
+                    motivo=str(item.get("motivo") or None),
+                    rotuloSubMotivo=str(item.get("rotuloSubMotivo") or None),
+                    subMotivo=str(item.get("subMotivo") or None),
+                    isAtendida=str(item.get("isAtendida") or None),
+                    isAbandonada=str(item.get("isAbandonada") or None),
+                    isTransbordoPorTempo=str(item.get("isTransbordoPorTempo") or None),
+                    isTransbordoPorTecla=str(item.get("isTransbordoPorTecla") or None),
+                    isIncompleta=str(item.get("isIncompleta") or None),
+                    numeroSemFormato=str(item.get("numeroSemFormato") or None),
+                    tipoAbandonada=str(item.get("tipoAbandonada") or None),
+                    Nome=str(item.get("Nome") or None),
+                    protocolo=str(item.get("protocolo") or None),
+                    retentativaSucesso=str(item.get("retentativaSucesso") or None),
+                    dataImportacao=data_importacao_str
+                )
+                db.session.add(novo)
+                total_inseridos += 1
+
+        db.session.commit()
+
+        if len(result["data"]) < 100:
+            break
+
+        offset += 100
+
+    print(f"\n✅ Importação finalizada. Inseridos: {total_inseridos} | Atualizados: {total_atualizados}")
+    return {"status": "success", "inseridos": total_inseridos, "atualizados": total_atualizados}
+

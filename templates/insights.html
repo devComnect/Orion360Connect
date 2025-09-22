@@ -372,28 +372,49 @@
                 </div>
 
                 <div class="col-md-4">
-                  <div class="card  h-100">
+                  <div class="card h-100">
                     <div class="card-header text-center py-2">
                       <small>SLA - Suporte</small> <i class="bi bi-alarm-fill"></i><br>
                       <small>Atendimento / Resolução</small>
                     </div>
-                    <div class="card-body p-2 d-flex justify-content-center align-items-center flex-wrap" style="height: 270px;">
-                      <canvas id="slaChart" class="mx-1" style="height: 130px; width: 130px;"></canvas>
+                    <div class="card-body p-2 d-flex justify-content-center align-items-center" style="height: 270px;">
+                      
+                      <!-- Primeiro gráfico -->
+                      <div class="d-flex justify-content-center align-items-center" style="flex: 1; max-width: 50%;">
+                        <canvas id="slaChart" style="width: 100% !important; height: auto !important;"></canvas>
+                      </div>
+
+                      <!-- Segundo gráfico -->
+                      <div class="d-flex justify-content-center align-items-center" style="flex: 1; max-width: 50%;">
+                        <canvas id="slaChart2" style="width: 100% !important; height: auto !important;"></canvas>
+                      </div>
+
                     </div>
                   </div>
                 </div>
 
+
                 <div class="col-md-4">
-                  <div class="card  h-100">
+                  <div class="card h-100">
                     <div class="card-header text-center py-2">
                       <small>SLA - Por Grupo</small> <i class="bi bi-alarm-fill"></i><br>
                       <small>Atendimento / Resolução</small>
                     </div>
-                    <div class="card-body p-2 d-flex justify-content-center align-items-center flex-wrap" style="height: 270px;">
-                      <canvas id="slaGrupoChart" class="mx-1" style="height: 130px; width: 130px;"></canvas>
+                    <div class="card-body p-2 d-flex justify-content-center align-items-center" style="height: 270px;">
+
+                      <!-- Primeiro gráfico -->
+                      <div class="d-flex justify-content-center align-items-center" style="flex: 1; max-width: 50%;">
+                        <canvas id="slaGrupoChart" style="width: 100% !important; height: auto !important;"></canvas>
+                      </div>
+
+                      <!-- Segundo gráfico -->
+                      <div class="d-flex justify-content-center align-items-center" style="flex: 1; max-width: 50%;">
+                        <canvas id="slaGrupoChart2" style="width: 100% !important; height: auto !important;"></canvas>
+                      </div>
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
 

@@ -1,6 +1,6 @@
 from app import app
-from modules.tasks.utils import repopular_eventos_operador_180d,repopular_eventos_180d, importar_detalhes_chamadas_hoje,importar_registro_chamadas_incremental, processar_e_armazenar_eventos,importar_grupos, processar_e_armazenar_performance, processar_e_armazenar_performance_vyrtos, importar_categorias, importar_pSatisfacao, importar_fcr_reabertos, processar_e_armazenar_performance_incremental, processar_e_armazenar_performance_vyrtos_incremental
-
+from modules.tasks.utils import importar_detalhes_chamadas,repopular_eventos_operador_180d,repopular_eventos_180d, importar_detalhes_chamadas_hoje,importar_registro_chamadas_incremental, processar_e_armazenar_eventos,importar_grupos, processar_e_armazenar_performance, processar_e_armazenar_performance_vyrtos, importar_categorias, importar_pSatisfacao, importar_fcr_reabertos, processar_e_armazenar_performance_incremental, processar_e_armazenar_performance_vyrtos_incremental
+from datetime import date
 
 '''with app.app_context():
     print("Tarefa em execução!")
@@ -8,6 +8,18 @@ from modules.tasks.utils import repopular_eventos_operador_180d,repopular_evento
 
 
 
-with app.app_context():
+"""with app.app_context():
     print("Tarefa em execução!")
-    processar_e_armazenar_eventos()
+    importar_detalhes_chamadas_hoje()"""
+
+
+with app.app_context():
+    importar_detalhes_chamadas(
+        operador_id=2021,
+        nome_operador="Matheus",
+        data_inicio=date(2025, 4, 1),
+        data_fim=date(2025, 4, 30)
+    )
+
+
+
