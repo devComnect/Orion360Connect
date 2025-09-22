@@ -57,10 +57,19 @@ def is_hora_valida(hora_str):
         return False
     
 
-def _parse_duration_to_timedelta(duracao_str):
+def parse_duration_to_timedelta(duracao_str):
     """Ex: '00:12:30' -> timedelta(minutes=12, seconds=30)"""
     try:
         h, m, s = map(int, duracao_str.split(':'))
         return timedelta(hours=h, minutes=m, seconds=s)
     except Exception:
         return timedelta(0)
+    
+
+def formatar_tempo(minutos: float) -> str:
+        if minutos < 60:
+            return f"{round(minutos)} min"
+        elif minutos < 1440:
+            return f"{minutos / 60:.1f} h"
+        else:
+            return f"{minutos / 1440:.2f} dias"

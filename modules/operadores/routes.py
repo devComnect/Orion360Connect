@@ -171,7 +171,7 @@ def get_performance_colaboradores():
             ~ChamadasDetalhes.transferencia.ilike('%Ramal%')
         ),
         # <<< Aqui entra a lógica >>>
-        func.time_to_sec(ChamadasDetalhes.tempoAtendimento) >= 10
+        func.time_to_sec(ChamadasDetalhes.tempoAtendimento) >= 20
     ).group_by(
         cast(ChamadasDetalhes.data, Date)
     ).all()
