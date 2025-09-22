@@ -1996,7 +1996,6 @@ def importar_detalhes_chamadas_hoje():
     print(f"\n✅ Importação finalizada. Total de registros salvos: {total_registros}")
     return {"status": "success", "total_registros": total_registros}
 
-
 def importar_detalhes_chamadas(
     operador_id: int = None,
     nome_operador: str = None,

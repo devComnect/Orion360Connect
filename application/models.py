@@ -17,7 +17,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)  # Nova coluna email
     name = db.Column(db.String(100), nullable=True)  # Nova coluna name (opcional)
     is_admin = db.Column(db.Boolean, default=False)
-    is_nivel2 = db.Column(db.Integer)
+    is_nivel2 = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.TIMESTAMP, server_default=db.func.now())
 
