@@ -583,7 +583,7 @@ def quiz_hub():
 
     # --- Lógica para os Cards de Destaque ---
     general_avg_score = (grand_total_earned_score / grand_total_possible_score_for_attempts * 100) if grand_total_possible_score_for_attempts else 0
-    general_avg_time = (grand_total_time / grand_total_attempts_with_time) if grand_total_attempts_with_time else 0
+    general_avg_time = int(grand_total_time / grand_total_attempts_with_time) if grand_total_attempts_with_time else 0
 
     quizzes_com_tentativas = [q for q in quizzes_info if q['total_attempts'] > 0]
     quizzes_com_tentativas.sort(key=lambda x: (x['avg_score_percent'] or 0))
@@ -1281,7 +1281,7 @@ def daily_patrol():
     guardian.score_atual = guardian.score_atual or 0
     guardian.current_streak = guardian.current_streak or 0
 
-    base_points = random.randint(1, 10)
+    base_points = random.randint(1, 3)
     final_points, bonus_points = apply_streak_bonus(guardian, base_points)
     
     messages = [
