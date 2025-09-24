@@ -17,8 +17,8 @@ with app.app_context():
     importar_detalhes_chamadas(
         operador_id=2029,
         nome_operador="Rafael",
-        data_inicio=date(2025, 8, 1),
-        data_fim=date(2025, 8, 30)
+        data_inicio=date(2024, 9, 1),
+        data_fim=date(2024, 9, 30)
     )
 
 

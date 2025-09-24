@@ -52,3 +52,6 @@ Thumbs.db
 # Arquivos de cobertura de testes
 .coverage
 htmlcov/
+
+# Instaladores
+Instaladores/

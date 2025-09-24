@@ -98,11 +98,11 @@ def check_and_award_achievements(guardian, quiz_context=None):
 
             
             # --- TRILHA 1: CONQUISTAS BASEADAS EM SCORE ---
-            if code == 'SCORE_100' and guardian.score_atual >= 100: awarded = True
-            elif code == 'SCORE_750' and guardian.score_atual >= 750: awarded = True
-            elif code == 'SCORE_2500' and guardian.score_atual >= 2500: awarded = True
-            elif code == 'SCORE_5000' and guardian.score_atual >= 5000: awarded = True
-            elif code == 'SCORE_9000' and guardian.score_atual >= 9000: awarded = True
+            if code == 'SCORE_150' and guardian.score_atual >= 150: awarded = True
+            elif code == 'SCORE_400' and guardian.score_atual >= 400: awarded = True
+            elif code == 'SCORE_700' and guardian.score_atual >= 700: awarded = True
+            elif code == 'SCORE_1100' and guardian.score_atual >= 1100: awarded = True
+            elif code == 'SCORE_1900' and guardian.score_atual >= 1900: awarded = True
 
             
             # --- TRILHA 2: CONQUISTAS BASEADAS EM NIVEL ---
@@ -116,33 +116,33 @@ def check_and_award_achievements(guardian, quiz_context=None):
             # --- TRILHA 3: CONQUISTAS BASEADAS QTDE QUIZ---
             elif code.startswith('QUIZ_COUNT_'):
                 if quiz_count is None: # Busca no banco apenas uma vez
-                    quiz_count = guardian.quiz_attempts.count()
+                    quiz_count = guardian.quiz_attempts.filter(QuizAttempt.score > 0).count()
                 
                 if code == 'QUIZ_COUNT_1' and quiz_count >= 1: awarded = True
+                elif code == 'QUIZ_COUNT_15' and quiz_count >= 15: awarded = True
                 elif code == 'QUIZ_COUNT_30' and quiz_count >= 30: awarded = True
-                elif code == 'QUIZ_COUNT_50' and quiz_count >= 50: awarded = True
-                elif code == 'QUIZ_COUNT_100' and quiz_count >= 100: awarded = True
-                elif code == 'QUIZ_COUNT_300' and quiz_count >= 300: awarded = True
+                elif code == 'QUIZ_COUNT_60' and quiz_count >= 60: awarded = True
+                elif code == 'QUIZ_COUNT_90' and quiz_count >= 90: awarded = True
             
             # --- TRILHA 4: CONQUISTAS ACERTOS DE QUIZ---
           
             elif code.startswith('QUIZ_STREAK_'):
                 streak = guardian.perfect_quiz_streak or 0
                 if code == 'QUIZ_STREAK_1' and streak >= 1: awarded = True
-                elif code == 'QUIZ_STREAK_10' and streak >= 10: awarded = True
+                elif code == 'QUIZ_STREAK_15' and streak >= 15: awarded = True
                 elif code == 'QUIZ_STREAK_30' and streak >= 30: awarded = True
                 elif code == 'QUIZ_STREAK_50' and streak >= 50: awarded = True
-                elif code == 'QUIZ_STREAK_100' and streak >= 100: awarded = True
+                elif code == 'QUIZ_STREAK_80' and streak >= 80: awarded = True
 
             
             # --- TRILHA 5: CONQUISTAS BASEADAS EM OFENSIVA---
             elif code.startswith('STREAK_'):
                 streak = guardian.current_streak or 0
                 if code == 'STREAK_7' and streak >= 7: awarded = True
-                elif code == 'STREAK_15' and streak >= 15: awarded = True
+                elif code == 'STREAK_14' and streak >= 14: awarded = True
+                elif code == 'STREAK_21' and streak >= 21: awarded = True
                 elif code == 'STREAK_30' and streak >= 30: awarded = True
                 elif code == 'STREAK_60' and streak >= 60: awarded = True
-                elif code == 'STREAK_120' and streak >= 120: awarded = True
             
             
             # --- TRILHA 6: CONQUISTAS BASEADAS EM PATRULHA---
@@ -150,11 +150,11 @@ def check_and_award_achievements(guardian, quiz_context=None):
                 if patrol_count is None: # Busca no banco apenas uma vez
                     patrol_count = guardian.historico_acoes.filter(HistoricoAcao.descricao.like('Patrulha Diária%')).count()
                 
-                if code == 'PATROL_COUNT_10' and patrol_count >= 10: awarded = True
+                if code == 'PATROL_COUNT_5' and patrol_count >= 5: awarded = True
+                elif code == 'PATROL_COUNT_15' and patrol_count >= 15: awarded = True
                 elif code == 'PATROL_COUNT_25' and patrol_count >= 25: awarded = True
                 elif code == 'PATROL_COUNT_50' and patrol_count >= 50: awarded = True
-                elif code == 'PATROL_COUNT_100' and patrol_count >= 100: awarded = True
-                elif code == 'PATROL_COUNT_300' and patrol_count >= 300: awarded = True
+                elif code == 'PATROL_COUNT_75' and patrol_count >= 75: awarded = True
                 
                 
             # --- TRILHA 7: CONQUISTAS BASEADAS EM REPORTS DE PHISH---
@@ -163,10 +163,10 @@ def check_and_award_achievements(guardian, quiz_context=None):
                     simulated_report_count = guardian.historico_acoes.filter(HistoricoAcao.descricao.like('%Reporte de Phishing Simulado%')).count()
                 
                 if code == 'PHISHING_1' and simulated_report_count >= 1: awarded = True
+                elif code == 'PHISHING_3' and simulated_report_count >= 3: awarded = True
                 elif code == 'PHISHING_5' and simulated_report_count >= 5: awarded = True
                 elif code == 'PHISHING_10' and simulated_report_count >= 10: awarded = True
-                elif code == 'PHISHING_25' and simulated_report_count >= 25: awarded = True
-                elif code == 'PHISHING_50' and simulated_report_count >= 50: awarded = True
+                elif code == 'PHISHING_15' and simulated_report_count >= 15: awarded = True
             
             elif code == 'PHISHING_REAL_1':
                 if real_report_count is None: # Busca no banco apenas uma vez

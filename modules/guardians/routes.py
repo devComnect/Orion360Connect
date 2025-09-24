@@ -87,7 +87,7 @@ def meu_perfil(perfil_id):
             
     # Contadores
     numero_conquistas = len(insignias_ganhas)
-    quizzes_respondidos_count = QuizAttempt.query.filter_by(guardian_id=perfil_guardian.id).count()
+    quizzes_respondidos_count = perfil_guardian.quiz_attempts.filter(QuizAttempt.score > 0).count()
     patrols_completed_count = perfil_guardian.historico_acoes.filter(
         HistoricoAcao.descricao.like('Patrulha Diária%')
     ).count()
