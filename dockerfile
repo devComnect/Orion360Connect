@@ -27,4 +27,7 @@ EXPOSE 9000
 
 # Comando para rodar o servidor em produção (Gunicorn com 4 workers)
 # Substitua "app:app" pelo caminho correto se precisar (ex: "wsgi:app")
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:9000", "app:app"]
+# Por isso:
+CMD ["python", "app.py"]
+
+ENV FLASK_ENV=docker
