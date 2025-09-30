@@ -2142,3 +2142,104 @@ def importar_detalhes_chamadas(
     print(f"\n✅ Importação finalizada. Inseridos: {total_inseridos} | Atualizados: {total_atualizados}")
     return {"status": "success", "inseridos": total_inseridos, "atualizados": total_atualizados}
 
+def importar_performance_operador(operador_id, nome_operador, data_inicio, data_fim):
+    """
+    Importa registros de performance de um operador em um período específico.
+
+    ```
+    :param operador_id: int -> ID do operador na API
+    :param nome_operador: str -> Nome do operador
+    :param data_inicio: date -> Data inicial do período
+    :param data_fim: date -> Data final do período
+    """
+    try:
+        # Autenticação
+        auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
+        if "access_token" not in auth_response:
+            raise Exception("Falha na autenticação da API de performance")
+
+        access_token = auth_response["access_token"]
+        total_registros = 0
+        offset = 0
+
+        while True:
+            params = {
+                "initial_date": data_inicio.strftime('%Y-%m-%d'),
+                "final_date": data_fim.strftime('%Y-%m-%d'),
+                "initial_hour": "00:00:00",
+                "final_hour": "23:59:59",
+                "fixed": 0,
+                "week": [],
+                "agents": [operador_id],
+                "queues": [1],
+                "options": {"sort": {"data": 1}, "offset": offset, "count": 1000},
+                "conf": {}
+            }
+
+            response = utils.atendentePerformanceData(access_token, params)
+            dados = response.get("result", {}).get("data", [])
+
+            if not dados:
+                break
+
+            for item in dados:
+                try:
+                    data_raw = item["data"].split("T")[0] if "T" in item["data"] else item["data"]
+                    data_registro = datetime.strptime(data_raw, "%Y-%m-%d").date()
+
+                    registro_existente = PerformanceColaboradores.query.filter_by(
+                        operador_id=operador_id,
+                        data=data_registro
+                    ).first()
+
+                    if registro_existente:
+                        registro_existente.name = nome_operador
+                        registro_existente.ch_atendidas = item.get("ch_atendidas", 0)
+                        registro_existente.ch_naoatendidas = item.get("ch_naoatendidas", 0)
+                        registro_existente.tempo_online = item.get("tempo_online", 0)
+                        registro_existente.tempo_livre = item.get("tempo_livre", 0)
+                        registro_existente.tempo_servico = item.get("tempo_servico", 0)
+                        registro_existente.pimprod_refeicao = item.get("pimprod_Refeicao_2", 0)
+                        registro_existente.tempo_minatend = item.get("tempo_minatend")
+                        registro_existente.tempo_medatend = item.get("tempo_medatend")
+                        registro_existente.tempo_maxatend = item.get("tempo_maxatend")
+                        registro_existente.pimprod_Toalete_1 = item.get("pimprod_Toalete_1")
+                        registro_existente.pimprod_Lanche_5 = item.get("pimprod_Lanche_5")
+                        registro_existente.pimprod_Pessoal_6 = item.get("pimprod_Pessoal_6")
+                        registro_existente.data_importacao = datetime.now()
+                    else:
+                        novo_registro = PerformanceColaboradores(
+                            operador_id=operador_id,
+                            name=nome_operador,
+                            data=data_registro,
+                            ch_atendidas=item.get("ch_atendidas", 0),
+                            ch_naoatendidas=item.get("ch_naoatendidas", 0),
+                            tempo_online=item.get("tempo_online", 0),
+                            tempo_livre=item.get("tempo_livre", 0),
+                            tempo_servico=item.get("tempo_servico", 0),
+                            pimprod_refeicao=item.get("pimprod_Refeicao_2", 0),
+                            tempo_minatend=item.get("tempo_minatend"),
+                            tempo_medatend=item.get("tempo_medatend"),
+                            tempo_maxatend=item.get("tempo_maxatend"),
+                            pimprod_Toalete_1=item.get("pimprod_Toalete_1"),
+                            pimprod_Lanche_5=item.get("pimprod_Lanche_5"),
+                            pimprod_Pessoal_6=item.get("pimprod_Pessoal_6"),
+                            data_importacao=datetime.now()
+                        )
+                        db.session.add(novo_registro)
+
+                    total_registros += 1
+
+                except Exception as e:
+                    app.logger.error(f"[ERRO] {nome_operador} em {item.get('data')}: {str(e)}")
+
+            offset += 1000
+
+        db.session.commit()
+        app.logger.info(f"[SUCESSO] {total_registros} registros processados para {nome_operador} ({operador_id})")
+        return total_registros
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Erro ao importar performance para {nome_operador} ({operador_id}): {str(e)}")
+        raise

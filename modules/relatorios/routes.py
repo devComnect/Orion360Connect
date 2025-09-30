@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, render_template, url_for, send_file, make_response
-from application.models import Chamado, db, RelatorioColaboradores, PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess, EventosAtendentes
+from application.models import Chamado, db, RelatorioColaboradores, PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess, EventosAtendentes, Turnos
 from datetime import datetime, time
 from modules.relatorios.utils import get_turno, get_turno_ligacao, is_hora_valida, cores_por_turno
 from collections import Counter
@@ -8,14 +8,14 @@ from fpdf import FPDF
 import matplotlib.pyplot as plt
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from sqlalchemy import func
+from sqlalchemy import func, and_, or_, extract
 from zoneinfo import ZoneInfo  # Python 3.9+
 from datetime import datetime, timedelta
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
-from reportlab.platypus import PageBreak
+from reportlab.platypus import PageBreak, Image
 import os
 
 
@@ -642,6 +642,7 @@ def extrair_comparativo_relatorios():
     filename = f"relatorio_comparativo_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
     return send_file(buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
 
+# Alterar para pegar os usuários da tabela de usuários
 @relatorios_bp.route("/getOperadores", methods=['GET'])
 def get_operadores():
     operadores_ignorar = ['Alexandre', 'API', 'Caio', 'Fabio', 'Paulo', 'Luciano']  # operadores a ignorar
@@ -655,6 +656,191 @@ def get_operadores():
     )
     nomes = [op[0] for op in operadores]
     return jsonify(nomes)
+
+@relatorios_bp.route('/getTurnos', methods=['GET'])
+def get_turnos():
+    turnos = Turnos.query.all()
+    turno_list = []
+
+    for turno in turnos:
+        if turno.matutino_inicio and turno.matutino_final:
+            turno_list.append({
+                'id': turno.id,
+                'tipo': 'matutino',
+                'inicio': turno.matutino_inicio,
+                'final': turno.matutino_final
+            })
+
+        if turno.vespertino_inicio and turno.vespertino_final:
+            turno_list.append({
+                'id': turno.id,
+                'tipo': 'vespertino',
+                'inicio': turno.vespertino_inicio,
+                'final': turno.vespertino_final
+            })
+
+        if turno.noturno_inicio and turno.noturno_final:
+            turno_list.append({
+                'id': turno.id,
+                'tipo': 'noturno',
+                'inicio': turno.noturno_inicio,
+                'final': turno.noturno_final
+            })
+
+    return jsonify(turno_list), 200
+
+@relatorios_bp.route('/extrairRelatorioTurnos', methods=['POST'])
+def extrair_relatorios_turnos():
+    data_inicio = request.form.get('data_inicio_turnos')
+    data_fim = request.form.get('data_final_turnos')
+    turno = request.form.get('turno')  # Ex: "matutino_1"
+
+    if not data_inicio or not data_fim or not turno:
+        return {"status": "error", "message": "Parâmetros ausentes"}, 400
+
+    try:
+        turno_tipo, turno_id = turno.split("_")
+        turno_id = int(turno_id)
+    except:
+        return {"status": "error", "message": "Turno inválido"}, 400
+
+    turno_row = Turnos.query.get(turno_id)
+    if not turno_row:
+        return {"status": "error", "message": "Turno não encontrado"}, 404
+
+    hora_inicio_str = getattr(turno_row, f"{turno_tipo}_inicio")
+    hora_final_str = getattr(turno_row, f"{turno_tipo}_final")
+
+    if not hora_inicio_str or not hora_final_str:
+        return {"status": "error", "message": "Horários do turno incompletos"}, 400
+
+    dt_inicio_data = datetime.strptime(data_inicio, "%Y-%m-%d").date()
+    dt_fim_data = datetime.strptime(data_fim, "%Y-%m-%d").date()
+    hora_inicio = datetime.strptime(hora_inicio_str, "%H:%M").time()
+    hora_final = datetime.strptime(hora_final_str, "%H:%M").time()
+
+    num_dias = (dt_fim_data - dt_inicio_data).days + 1
+
+    # Dicionários para agrupar por mês
+    dados_chamados = {}
+    dados_ligacoes = {}
+
+    # --- Loop por dias respeitando turno ---
+    for dia_offset in range(num_dias):
+        dia_atual = dt_inicio_data + timedelta(days=dia_offset)
+
+        # --- CHAMADOS ---
+        if hora_inicio < hora_final:
+            dt_inicio_turno = datetime.combine(dia_atual, hora_inicio)
+            dt_fim_turno = datetime.combine(dia_atual, hora_final)
+            query_chamados = Chamado.query.filter(
+                Chamado.data_criacao >= dt_inicio_turno,
+                Chamado.data_criacao <= dt_fim_turno,
+                Chamado.nome_status != 'Cancelado'
+            )
+        else:
+            dt_inicio_turno_1 = datetime.combine(dia_atual, hora_inicio)
+            dt_fim_turno_1 = datetime.combine(dia_atual, time(23, 59, 59))
+            dia_seguinte = dia_atual + timedelta(days=1)
+            dt_inicio_turno_2 = datetime.combine(dia_seguinte, time(0, 0))
+            dt_fim_turno_2 = datetime.combine(dia_seguinte, hora_final)
+            query_chamados = Chamado.query.filter(
+                or_(
+                    and_(Chamado.data_criacao >= dt_inicio_turno_1, Chamado.data_criacao <= dt_fim_turno_1),
+                    and_(Chamado.data_criacao >= dt_inicio_turno_2, Chamado.data_criacao <= dt_fim_turno_2),
+                )
+            )
+
+        total_chamados = query_chamados.count()
+        if total_chamados:
+            mes_key = dia_atual.strftime("%Y-%m")
+            dados_chamados[mes_key] = dados_chamados.get(mes_key, 0) + total_chamados
+
+        # --- LIGAÇÕES ---
+        if hora_inicio < hora_final:
+            query_ligacoes = ChamadasDetalhes.query.filter(
+                ChamadasDetalhes.data == dia_atual,
+                ChamadasDetalhes.horaEntradaPos >= hora_inicio.strftime("%H:%M"),
+                ChamadasDetalhes.horaEntradaPos <= hora_final.strftime("%H:%M"),
+            )
+        else:
+            dia_seguinte = dia_atual + timedelta(days=1)
+            query_ligacoes = ChamadasDetalhes.query.filter(
+                or_(
+                    and_(ChamadasDetalhes.data == dia_atual,
+                         ChamadasDetalhes.horaEntradaPos >= hora_inicio.strftime("%H:%M")),
+                    and_(ChamadasDetalhes.data == dia_seguinte,
+                         ChamadasDetalhes.horaEntradaPos <= hora_final.strftime("%H:%M")),
+                )
+            )
+
+        total_ligacoes = query_ligacoes.count()
+        if total_ligacoes:
+            mes_key = dia_atual.strftime("%Y-%m")
+            dados_ligacoes[mes_key] = dados_ligacoes.get(mes_key, 0) + total_ligacoes
+
+    # ---------------- PDF ----------------
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    centered_title = ParagraphStyle('centered_title', parent=styles['Title'], alignment=TA_CENTER)
+    centered_subtitle = ParagraphStyle('centered_subtitle', parent=styles['Normal'], alignment=TA_CENTER)
+
+    elements.append(Paragraph("Relatório Turnos: Chamados vs Ligações", centered_title))
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph(f"Período: {dt_inicio_data.strftime('%d/%m/%Y')} a {dt_fim_data.strftime('%d/%m/%Y')}", centered_subtitle))
+    elements.append(Paragraph(f"Turno: {turno_tipo.title()} ({hora_inicio_str} às {hora_final_str})", centered_subtitle))
+    elements.append(Spacer(1, 24))
+
+    # --- GRÁFICO POR MÊS ---
+    meses = sorted(set(dados_chamados.keys()) | set(dados_ligacoes.keys()))
+    valores_chamados = [dados_chamados.get(m, 0) for m in meses]
+    valores_ligacoes = [dados_ligacoes.get(m, 0) for m in meses]
+
+    x = range(len(meses))
+    plt.figure(figsize=(6, 4))
+    plt.bar([i - 0.2 for i in x], valores_chamados, width=0.4, label="Chamados", color="#007bff")
+    plt.bar([i + 0.2 for i in x], valores_ligacoes, width=0.4, label="Ligações", color="#28a745")
+    plt.xticks(x, meses, rotation=45)
+    plt.ylabel("Quantidade")
+    plt.title("Comparativo Chamados vs Ligações por Mês")
+    plt.legend()
+    plt.tight_layout()
+
+    img_buffer = BytesIO()
+    plt.savefig(img_buffer, format='PNG', bbox_inches="tight")
+    plt.close()
+    img_buffer.seek(0)
+    elements.append(Image(img_buffer, width=400, height=250))
+    elements.append(Spacer(1, 24))
+
+    # Resumo tabela (totais gerais)
+    total_chamados_final = sum(valores_chamados)
+    total_ligacoes_final = sum(valores_ligacoes)
+    data_resumo = [
+        ["Descrição", "Total"],
+        ["Chamados no período", str(total_chamados_final)],
+        ["Ligações no período", str(total_ligacoes_final)],
+    ]
+    tabela_resumo = Table(data_resumo, colWidths=[300, 100])
+    tabela_resumo.setStyle(TableStyle([
+        ("BACKGROUND", (0,0), (-1,0), colors.darkgray),
+        ("TEXTCOLOR", (0,0), (-1,0), colors.whitesmoke),
+        ("ALIGN", (0,0), (-1,-1), "LEFT"),
+        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+        ("FONTSIZE", (0,0), (-1,0), 11),
+        ("BOTTOMPADDING", (0,0), (-1,0), 8),
+        ("BACKGROUND", (0,1), (-1,-1), colors.beige),
+        ("GRID", (0,0), (-1,-1), 0.5, colors.gray),
+    ]))
+    elements.append(tabela_resumo)
+
+    doc.build(elements)
+    buffer.seek(0)
+    filename = f"comparativo_chamados_ligacoes_{datetime.now().strftime('%Y%m%d%H%M%S')}.pdf"
+    return send_file(buffer, as_attachment=True, download_name=filename, mimetype="application/pdf")
 
 @relatorios_bp.route("/getColaboradores", methods=['GET'])
 def get_colaboradores():

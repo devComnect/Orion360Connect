@@ -7,7 +7,6 @@ from enum import Enum
 # Inicializa o db, que será importado no app.py
 db = SQLAlchemy()
 
-
 class User(db.Model, UserMixin):
     __tablename__ = 'usuarios'
     
@@ -45,6 +44,17 @@ class DesempenhoAtendenteVyrtos(db.Model):
     tempo_medatend = db.Column(db.Float, nullable=True)
     tempo_maxatend = db.Column(db.Integer, nullable=True)
     data_importacao = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Turnos(db.Model):
+    __tablename__ = 'turnos'
+
+    id = db.Column(db.Integer, primary_key = True, autoincrement=True)
+    matutino_inicio = db.Column(db.String(20))
+    matutino_final = db.Column(db.String(20))
+    vespertino_inicio = db.Column(db.String(20))
+    vespertino_final = db.Column(db.String(20))
+    noturno_inicio = db.Column(db.String(20))
+    noturno_final = db.Column(db.String(20))
 
 class Fila(db.Model):
     __tablename__ = 'fila_suporte'
@@ -291,7 +301,6 @@ class Guardians(db.Model):
     current_streak = db.Column(db.Integer, default=0)
     last_streak_date = db.Column(db.Date, nullable=True)
     quiz_attempts = db.relationship("QuizAttempt", back_populates="guardian", cascade="all, delete-orphan", lazy='dynamic')
-
 
 class Grupos(db.Model):
     __tablename__ = 'grupos'
@@ -552,8 +561,7 @@ class QuizAttempt(db.Model):
     quiz = db.relationship('Quiz', back_populates='attempts')
     answers = db.relationship('UserAnswer', back_populates='attempt', cascade="all, delete-orphan")
     started_at = db.Column(db.DateTime, nullable=False)
-
-    
+  
 class UserAnswer(db.Model):
     __tablename__ = 'user_answers'
     id = db.Column(db.Integer, primary_key=True)

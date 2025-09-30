@@ -202,3 +202,90 @@ function gerarPDF() {
         });
     }
     
+
+    // Script que retorna os turnos
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/relatorios/getTurnos')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('turnos');
+
+            data.forEach(turno => {
+                const option = document.createElement('option');
+                option.value = `${turno.tipo}_${turno.id}`;
+                option.text = `${turno.tipo.charAt(0).toUpperCase() + turno.tipo.slice(1)}: ${turno.inicio} - ${turno.final}`;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar turnos:', error));
+});
+
+
+// Script que gera o relatório de turnos
+
+  async function gerarPDFTurnos() {
+  const dataInicio = document.getElementById("data_inicio_turnos").value;
+  const dataFim = document.getElementById("data_final_turnos").value;
+  const turno = document.getElementById("turnos").value;
+
+  if (!dataInicio || !dataFim || !turno) {
+    alert("Por favor, preencha todos os campos obrigatórios.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("data_inicio_turnos", dataInicio);
+  formData.append("data_final_turnos", dataFim);
+  formData.append("turno", turno);
+
+  try {
+    const response = await fetch("/relatorios/extrairRelatorioTurnos", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      // tenta JSON, senão texto (HTML)
+      let errMsg = "Erro ao gerar o PDF.";
+      try {
+        const erroJson = await response.json();
+        errMsg = erroJson.message || JSON.stringify(erroJson);
+      } catch (e) {
+        // não é JSON -> pega texto (pode ser HTML)
+        const text = await response.text();
+        if (text && text.trim().startsWith("<")) {
+          console.error("Resposta HTML do servidor:", text);
+          errMsg = "Erro interno no servidor (verifique logs).";
+        } else {
+          errMsg = text || errMsg;
+        }
+      }
+      alert(errMsg);
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+
+    // tenta pegar filename do header Content-Disposition (opcional)
+    const cd = response.headers.get("content-disposition");
+    let filename = "relatorio_turno.pdf";
+    if (cd) {
+      const match = cd.match(/filename\*=UTF-8''(.+)|filename="(.+)"/);
+      if (match) filename = decodeURIComponent(match[1] || match[2]);
+    }
+
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Erro ao gerar o relatório:", error);
+    alert("Ocorreu um erro ao gerar o relatório. Veja o console para mais detalhes.");
+  }
+}
+
