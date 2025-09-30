@@ -76,8 +76,6 @@ def relacao_admin_abertos_vs_resolvido_periodo():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-
-
 # Rota que traz total de chamados abertos no período de uma semana
 @admin_bp.route('/ChamadosSuporteSemanal', methods=['POST'])
 def listar_chamados_aberto_semanal():
