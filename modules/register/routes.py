@@ -39,7 +39,7 @@ def edit_turnos():
     inicio_turno = data.get('inicio_turno_editar')
     final_turno = data.get('final_turno_editar')
     id_turno = data.get('id_turno_editar')
-    turno = data.get('list_turnos')
+    turno = data.get('list_turnos_editar')
 
     turno_query = Turnos.query.filter_by(id=id_turno).first()
     if not turno_query:
@@ -71,6 +71,23 @@ def delete_turnos():
 
 
     return jsonify(status='success', message='Turno excluido com sucesso.')
+
+@register_bp.route('/getListID', methods=['GET'])
+def get_list_id():
+    turnos = Turnos.query.all()
+
+    lista_turnos = []
+
+    for turno in turnos:
+        if turno.matutino_inicio:
+            lista_turnos.append({'id': turno.id, 'periodo': turno.matutino_inicio +'/'+ turno.matutino_final})
+        if turno.vespertino_inicio:
+            lista_turnos.append({'id': turno.id, 'periodo': turno.vespertino_inicio +'/'+ turno.vespertino_final})
+        if turno.noturno_inicio:
+            lista_turnos.append({'id': turno.id, 'periodo': turno.noturno_inicio +'/'+ turno.noturno_final})
+
+    return jsonify(lista_turnos)
+
 
 @register_bp.route('/setColaboradores', methods=['POST'])
 def insert_colaboradores():

@@ -228,3 +228,112 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+
+
+// Script para cadastro de turnos
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('formCadastrarTurno');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault(); // impede envio padrão
+
+    // Coletar os valores do formulário
+    const turnoSelecionado = document.getElementById('list_turnos').value;
+    const inicioTurno = document.getElementById('inicio_turno_cadastrar').value;
+    const finalTurno = document.getElementById('final_turno_cadastrar').value;
+
+    // Montar objeto JSON
+    const dados = {
+      list_turnos: turnoSelecionado,
+      inicio_turno_cadastrar: inicioTurno,
+      final_turno_cadastrar: finalTurno
+    };
+
+    // Enviar requisição POST para a API
+    fetch('/register/registerTurnos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dados)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        alert(data.message);
+        form.reset(); // limpa o formulário
+      } else {
+        alert(' Erro ao cadastrar turno.');
+      }
+    })
+    .catch(error => {
+      console.error('Erro ao enviar dados:', error);
+      alert(' Erro na comunicação com o servidor.');
+    });
+  });
+});
+
+
+// Script get list turnos
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/register/getListID') // chama a rota correta
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('idTurnos');
+
+            data.forEach(turno => {
+                const option = document.createElement('option');
+                option.value = turno.id; // o valor enviado será só o ID
+                option.textContent = `${turno.periodo}/ ID ${turno.id}`;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar turnos:', error));
+});
+
+
+
+// Script para editar turnos
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('formCadastrarTurno');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault(); // impede envio padrão
+
+    // Coletar os valores do formulário
+    const idTurnoEditar = document.getElementById('id_turno_editar').value;
+    const turnoSelecionadoEditar = document.getElementById('list_turnos_editar').value;
+    const inicioTurnoEditar = document.getElementById('inicio_turno_editar').value;
+    const finalTurnoEditar = document.getElementById('final_turno_editar').value;
+
+    // Montar objeto JSON
+    const dados = {
+      id_turno_editar: idTurnoEditar,
+      list_turnos_editar: turnoSelecionadoEditar,
+      inicio_turno_editar: inicioTurnoEditar,
+      final_turno_editar: finalTurnoEditar
+    };
+
+    // Enviar requisição POST para a API
+    fetch('/register/editTurnos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dados)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        alert(data.message);
+        form.reset(); // limpa o formulário
+      } else {
+        alert(' Erro ao atualizar turno.');
+      }
+    })
+    .catch(error => {
+      console.error('Erro ao enviar dados:', error);
+      alert(' Erro na comunicação com o servidor.');
+    });
+  });
+});

@@ -142,7 +142,7 @@
                 <h5>Adicionar Turno</h5>
               </div>
               <div class="card-body">
-                <form action="" method="POST">
+                <form id="formCadastrarTurno">
                   <div class="row mb-3">
                     <!-- Campo Turnos -->
                     <div class="col-md-12 mb-3">
@@ -177,20 +177,20 @@
                 <h5>Editar Turno</h5>
               </div>
               <div class="card-body">
-                <form action="" method="POST">
-                  <!-- Campo Id Turno -->
-                  <div class="row mb-3">
-                    <div class="col-12">
-                      <label for="id_turno_editar" class="form-label">Id Turno</label>
-                      <input type="number" class="form-control" id="id_turno_editar" name="id_turno_editar" required>
-                    </div>
+                <form id="formEditTurno">
+                  <!-- Select Turnos -->
+                  <div class="mb-3">
+                    <label for="idTurnos" class="form-label">ID Turno:</label>
+                    <select class="form-select" id="idTurnos" name="idTurnos" required>
+                      <option value="">Selecione</option>
+                    </select>
                   </div>
 
                   <!-- Campo Turnos -->
                   <div class="row mb-2">
                     <div class="col-12">
-                      <label for="list_turnos" class="form-label">Turnos</label>
-                      <select class="form-select" id="list_turnos" name="list_turnos" required>
+                      <label for="list_turnos" class="form-label">Período:</label>
+                      <select class="form-select" id="list_turnos" name="list_turnos_editar" required>
                         <option value="matutino">Matutino</option>
                         <option value="vespertino">Vespertino</option>
                         <option value="noturno">Noturno</option>
@@ -226,8 +226,10 @@
               <div class="card-body">
                 <form action="" method="POST">
                   <div class="mb-3">
-                    <label for="id_turno_exclusao" class="form-label">Id Turno</label>
-                    <input type="text" class="form-control" id="id_turno_exclusao" name="id_turno_exclusao" required>
+                    <label for="idTurnos" class="form-label">ID Turno:</label>
+                    <select class="form-select" id="idTurnos" name="idTurnos" required>
+                      <option value="">Selecione</option>
+                    </select>
                   </div>
 
                   <button type="submit" class="btn btn-danger w-100">Excluir</button>
