@@ -12,9 +12,9 @@ class User(db.Model, UserMixin):
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)  # Nova coluna email
-    name = db.Column(db.String(100), nullable=True)  # Nova coluna name (opcional)
+    password = db.Column(db.String(200), nullable=False) # Varchar de 100, posteriormente senha será alterada para HASH
+    email = db.Column(db.String(50), unique=True, nullable=False)  # Nova coluna email
+    name = db.Column(db.String(30), nullable=True)  # Nova coluna name (opcional)
     is_admin = db.Column(db.Boolean, default=False)
     is_nivel2 = db.Column(db.Boolean, default=False)
     is_active = db.Column(db.Boolean, default=True)
@@ -49,12 +49,12 @@ class Turnos(db.Model):
     __tablename__ = 'turnos'
 
     id = db.Column(db.Integer, primary_key = True, autoincrement=True)
-    matutino_inicio = db.Column(db.String(20))
-    matutino_final = db.Column(db.String(20))
-    vespertino_inicio = db.Column(db.String(20))
-    vespertino_final = db.Column(db.String(20))
-    noturno_inicio = db.Column(db.String(20))
-    noturno_final = db.Column(db.String(20))
+    matutino_inicio = db.Column(db.String(5))
+    matutino_final = db.Column(db.String(5))
+    vespertino_inicio = db.Column(db.String(5))
+    vespertino_final = db.Column(db.String(5))
+    noturno_inicio = db.Column(db.String(5))
+    noturno_final = db.Column(db.String(5))
 
 class Fila(db.Model):
     __tablename__ = 'fila_suporte'
@@ -120,7 +120,7 @@ class Chamado(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     chave = db.Column(db.Integer, nullable=False)
     cod_chamado = db.Column(db.String(20), nullable=False)
-    nome_prioridade = db.Column(db.String(100))
+    nome_prioridade = db.Column(db.String(20))
     data_criacao = db.Column(db.DateTime, nullable=False)
     hora_criacao = db.Column(db.String(10))
     data_finalizacao = db.Column(db.DateTime)
@@ -131,18 +131,18 @@ class Chamado(db.Model):
     assunto = db.Column(db.Text)
     descricao = db.Column(db.Text)
     chave_usuario = db.Column(db.String(50))
-    nome_usuario = db.Column(db.String(100))
-    sobrenome_usuario = db.Column(db.String(100))
-    nome_completo_solicitante = db.Column(db.String(200))
-    solicitante_email = db.Column(db.String(200))
-    operador = db.Column(db.String(100))
-    sobrenome_operador = db.Column(db.String(100))
+    nome_usuario = db.Column(db.String(50))
+    sobrenome_usuario = db.Column(db.String(50))
+    nome_completo_solicitante = db.Column(db.String(50))
+    solicitante_email = db.Column(db.String(50))
+    operador = db.Column(db.String(50))
+    sobrenome_operador = db.Column(db.String(50))
     total_acoes = db.Column(db.Integer)
     total_anexos = db.Column(db.Integer)
-    sla_atendimento = db.Column(db.String(100))
-    sla_resolucao = db.Column(db.String(100))
+    sla_atendimento = db.Column(db.String(2))
+    sla_resolucao = db.Column(db.String(2))
     cod_grupo = db.Column(db.String(10))
-    nome_grupo = db.Column(db.String(100))
+    nome_grupo = db.Column(db.String(50))
     cod_solicitacao = db.Column(db.String(10))
     cod_sub_categoria = db.Column(db.String(10))
     cod_tipo_ocorrencia = db.Column(db.String(10))
@@ -199,13 +199,13 @@ class PesquisaSatisfacao(db.Model):
     assunto = db.Column(db.String(255))
     data_resposta = db.Column(db.Date)
     data_finalizacao = db.Column(db.Date)
-    empresa = db.Column(db.String(255))
-    solicitante = db.Column(db.String(255))
-    operador = db.Column(db.String(255))
-    grupo = db.Column(db.String(255))
+    empresa = db.Column(db.String(100))
+    solicitante = db.Column(db.String(100))
+    operador = db.Column(db.String(50))
+    grupo = db.Column(db.String(100))
     questionario = db.Column(db.String(255))
     questao = db.Column(db.Text)
-    alternativa = db.Column(db.String(255))
+    alternativa = db.Column(db.String(100))
     resposta_dissertativa = db.Column(db.Text)
 
 class RelatorioColaboradores(db.Model):
@@ -308,8 +308,8 @@ class Grupos(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
     chave = db.Column(db.String(10), unique=True, nullable=False)  # Ex: "000005"
-    nome = db.Column(db.String(100), nullable=False)               # Ex: "CSM"
-    email = db.Column(db.String(255), nullable=False)              # Ex: "csm@dominio.com.br"
+    nome = db.Column(db.String(50), nullable=False)               # Ex: "CSM"
+    email = db.Column(db.String(100), nullable=False)              # Ex: "csm@dominio.com.br"
     opcoes = db.Column(db.Text)                                    # HTML com os ícones e tooltips
     bloqueado = db.Column(db.String(20))               # Campo pode vir vazio, tratado como False
     qtd_operadores = db.Column(db.Integer, default=0)              # Ex: 1
@@ -324,7 +324,7 @@ class EventosAtendentes(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     data = db.Column(db.Date, nullable=False, index=True)  # "2025/08/08"
     atendente = db.Column(db.Integer, nullable=True, index=True)  # ID do atendente (NULL se inválido)
-    nome_atendente = db.Column(db.String(100), nullable=True)  # Nome pode ser NULL
+    nome_atendente = db.Column(db.String(50), nullable=True)  # Nome pode ser NULL
     evento = db.Column(db.String(50), nullable=True)  # Tipo de evento
     parametro = db.Column(db.String(10), nullable=True)  # "1" ou "-"
     nome_pausa = db.Column(db.String(50), nullable=True)  # "Toalete" ou NULL
@@ -332,7 +332,7 @@ class EventosAtendentes(db.Model):
     data_fim = db.Column(db.DateTime, nullable=True)  # Pode ser NULL se horário inválido
     sinaliza_duracao = db.Column(db.Boolean, nullable=False, default=False)
     duracao = db.Column(db.Interval, nullable=True)  # "00:03:29"
-    complemento = db.Column(db.String(255), nullable=True)
+    complemento = db.Column(db.String(50), nullable=True)
     data_importacao = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     def __repr__(self):
@@ -383,35 +383,35 @@ class ChamadasDetalhes(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     idFila = db.Column(db.String(50))
-    nomeFila = db.Column(db.String(255))
-    uniqueID = db.Column(db.String(100))
-    data = db.Column(db.String(50))
-    tipo = db.Column(db.String(50))
-    numero = db.Column(db.String(50))
-    origem = db.Column(db.String(50))
-    tipoOrigem = db.Column(db.String(100))
-    filaOrigem = db.Column(db.String(255))
-    horaEntradaPos = db.Column(db.String(50))
-    horaAtendimento = db.Column(db.String(50))
-    horaTerminoPos = db.Column(db.String(50))
-    tempoEspera = db.Column(db.String(50))
-    tempoAtendimento = db.Column(db.String(50))
-    numeroAtendente = db.Column(db.String(50))
-    nomeAtendente = db.Column(db.String(255))
-    desconexaoLocal = db.Column(db.String(50))
-    transferencia = db.Column(db.String(255))
-    motivo = db.Column(db.String(255))
-    rotuloSubMotivo = db.Column(db.String(255))
-    subMotivo = db.Column(db.String(255))
-    isAtendida = db.Column(db.String(10))
-    isAbandonada = db.Column(db.String(10))
-    isTransbordoPorTempo = db.Column(db.String(10))
-    isTransbordoPorTecla = db.Column(db.String(10))
+    nomeFila = db.Column(db.String(50))
+    uniqueID = db.Column(db.String(50))
+    data = db.Column(db.String(10))
+    tipo = db.Column(db.String(20))
+    numero = db.Column(db.String(15))
+    origem = db.Column(db.String(15))
+    tipoOrigem = db.Column(db.String(20))
+    filaOrigem = db.Column(db.String(30))
+    horaEntradaPos = db.Column(db.String(20))
+    horaAtendimento = db.Column(db.String(20))
+    horaTerminoPos = db.Column(db.String(20))
+    tempoEspera = db.Column(db.String(20))
+    tempoAtendimento = db.Column(db.String(20))
+    numeroAtendente = db.Column(db.String(20))
+    nomeAtendente = db.Column(db.String(30))
+    desconexaoLocal = db.Column(db.String(5))
+    transferencia = db.Column(db.String(50))
+    motivo = db.Column(db.String(20))
+    rotuloSubMotivo = db.Column(db.String(20))
+    subMotivo = db.Column(db.String(20))
+    isAtendida = db.Column(db.String(5))
+    isAbandonada = db.Column(db.String(5))
+    isTransbordoPorTempo = db.Column(db.String(5))
+    isTransbordoPorTecla = db.Column(db.String(5))
     isIncompleta = db.Column(db.String(10))
     numeroSemFormato = db.Column(db.String(50))
     tipoAbandonada = db.Column(db.String(50))
-    Nome = db.Column(db.String(255))
-    protocolo = db.Column(db.String(100))
+    Nome = db.Column(db.String(30))
+    protocolo = db.Column(db.String(50))
     retentativaSucesso = db.Column(db.String(50))
     dataImportacao = db.Column(db.String(50))  # NOVA COLUNA
     
