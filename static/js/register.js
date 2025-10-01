@@ -274,12 +274,29 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-// Script get list turnos
+// Script get list turnos editar
 document.addEventListener('DOMContentLoaded', () => {
     fetch('/register/getListID') // chama a rota correta
         .then(response => response.json())
         .then(data => {
             const select = document.getElementById('idTurnos');
+
+            data.forEach(turno => {
+                const option = document.createElement('option');
+                option.value = turno.id; // o valor enviado será só o ID
+                option.textContent = `${turno.periodo}/ ID ${turno.id}`;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar turnos:', error));
+});
+
+// Script get list turnos excluir
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/register/getListID') // chama a rota correta
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('idTurnosExcluir');
 
             data.forEach(turno => {
                 const option = document.createElement('option');

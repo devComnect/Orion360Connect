@@ -21910,3 +21910,89 @@
 2025-10-01 14:23:32,882 - INFO - 192.168.10.157 - - [01/Oct/2025 14:23:32] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
 2025-10-01 14:23:32,898 - INFO - 192.168.10.157 - - [01/Oct/2025 14:23:32] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
 2025-10-01 14:23:32,923 - INFO - 192.168.10.157 - - [01/Oct/2025 14:23:32] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-10-01 14:24:28,254 - DEBUG - Looking up time zone info from registry
+2025-10-01 14:24:30,547 - INFO - Jobs agendados antes da inicialização: []
+2025-10-01 14:24:30,548 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-01 14:24:30,548 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-01 14:24:30,548 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-01 14:24:30,548 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-01 14:24:30,548 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-01 14:24:30,548 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-01 14:24:30,549 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-01 14:24:30,549 - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-10-01 14:24:30,551 - INFO - Added job "job_processa_performance_horaria" to job store "default"
+2025-10-01 14:24:30,551 - INFO - Added job "job_processa_detalhes_chamadas" to job store "default"
+2025-10-01 14:24:30,551 - INFO - Added job "job_import_eventos" to job store "default"
+2025-10-01 14:24:30,552 - INFO - Added job "job_processa_registro_chamadas_saida" to job store "default"
+2025-10-01 14:24:30,552 - INFO - Added job "job_processa_performance_horaria_vyrtos" to job store "default"
+2025-10-01 14:24:30,552 - INFO - Added job "job_importar_chamados" to job store "default"
+2025-10-01 14:24:30,552 - INFO - Added job "job_importar_psatisfacao" to job store "default"
+2025-10-01 14:24:30,552 - INFO - Added job "job_importar_fcr_reabertos" to job store "default"
+2025-10-01 14:24:30,552 - INFO - Scheduler started
+2025-10-01 14:24:30,553 - DEBUG - Looking for jobs to run
+2025-10-01 14:24:30,553 - INFO - Tarefas agendadas iniciadas.
+2025-10-01 14:24:30,554 - DEBUG - Next wakeup is due at 2025-10-01 14:29:30.548924-03:00 (in 299.994953 seconds)
+2025-10-01 14:24:30,569 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:9000
+ * Running on http://192.168.10.180:9000
+2025-10-01 14:24:30,569 - INFO - [33mPress CTRL+C to quit[0m
+2025-10-01 14:24:30,786 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "GET /register HTTP/1.1" 200 -
+2025-10-01 14:24:30,910 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_dashboard.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:30,919 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_header.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:30,921 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_insights.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:30,923 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_guardians.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:30,926 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_colaboradores.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:30,935 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_colaboradores_individual.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:30,937 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_escala.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:30,942 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_login.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:30,945 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_okrs.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:30,958 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_register.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:30,966 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:30] "[36mGET /static/css/style_relatorios.css HTTP/1.1[0m" 304 -
+2025-10-01 14:24:31,005 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:31] "[36mGET /static/js/register.js HTTP/1.1[0m" 304 -
+2025-10-01 14:24:31,006 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:31] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2025-10-01 14:24:31,280 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:31] "GET /register/getListID HTTP/1.1" 200 -
+2025-10-01 14:24:31,398 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:31] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-10-01 14:24:31,422 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:31] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-10-01 14:24:31,443 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:31] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-10-01 14:24:31,464 - INFO - 192.168.10.157 - - [01/Oct/2025 14:24:31] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,310 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "GET /dashboard HTTP/1.1" 200 -
+2025-10-01 14:25:20,386 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_header.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,423 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_dashboard.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,425 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_colaboradores.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,448 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_escala.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,474 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_colaboradores_individual.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,532 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_insights.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,534 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_guardians.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,546 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_okrs.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,562 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_register.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,563 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_relatorios.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,591 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,624 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "[36mGET /static/css/style_login.css HTTP/1.1[0m" 304 -
+2025-10-01 14:25:20,761 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "POST /dashboard/ChamadosSuporte/abertos_vs_resolvidos HTTP/1.1" 200 -
+2025-10-01 14:25:20,819 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "POST /dashboard/v2/report/attendants_performance_vyrtos HTTP/1.1" 200 -
+2025-10-01 14:25:20,841 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "GET /dashboard/ChamadosSuporte/por_grupo_mes_atual HTTP/1.1" 200 -
+2025-10-01 14:25:20,873 - DEBUG - Starting new HTTP connection (1): 192.168.10.35:9444
+2025-10-01 14:25:20,903 - DEBUG - Starting new HTTP connection (1): 192.168.10.35:9444
+2025-10-01 14:25:20,989 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:20] "POST /dashboard/ChamadosSuporte/sla_andamento HTTP/1.1" 200 -
+2025-10-01 14:25:21,083 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:21] "GET /dashboard/ChamadosSuporte/estatisticas_mensais HTTP/1.1" 200 -
+2025-10-01 14:25:21,194 - DEBUG - Starting new HTTP connection (1): 192.168.10.35:9444
+2025-10-01 14:25:21,432 - DEBUG - http://192.168.10.35:9444 "POST /v2/auth HTTP/11" 200 655
+2025-10-01 14:25:21,436 - DEBUG - Starting new HTTP connection (1): 192.168.10.35:9444
+2025-10-01 14:25:21,494 - DEBUG - http://192.168.10.35:9444 "POST /v2/auth HTTP/11" 200 655
+2025-10-01 14:25:21,512 - DEBUG - Starting new HTTP connection (1): 192.168.10.35:9444
+2025-10-01 14:25:21,675 - DEBUG - http://192.168.10.35:9444 "POST /v2/auth HTTP/11" 200 655
+2025-10-01 14:25:21,677 - DEBUG - Starting new HTTP connection (1): 192.168.10.35:9444
+2025-10-01 14:25:22,821 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:22] "POST /dashboard/v2/report/attendants_performance HTTP/1.1" 200 -
+2025-10-01 14:25:22,938 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:22] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-10-01 14:25:22,962 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:22] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-10-01 14:25:22,974 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:22] "POST /dashboard/ChamadosSuporte/por_tipo_solicitacao_mes_atual HTTP/1.1" 200 -
+2025-10-01 14:25:22,982 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:22] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-10-01 14:25:23,014 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:23] "POST /dashboard/ChamadosSuporte/sla_andamento_grupos HTTP/1.1" 200 -
+2025-10-01 14:25:23,130 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:23] "[36mGET /static/img/icone.png HTTP/1.1[0m" 304 -
+2025-10-01 14:25:23,228 - DEBUG - http://192.168.10.35:9444 "GET /v2/queues/10/status HTTP/11" 200 1213
+2025-10-01 14:25:23,237 - DEBUG - http://192.168.10.35:9444 "GET /v2/queues/1/status HTTP/11" 200 1207
+2025-10-01 14:25:23,238 - DEBUG - http://192.168.10.35:9444 "GET /v2/queues/1/status HTTP/11" 200 1207
+2025-10-01 14:25:23,242 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:23] "POST /dashboard/call/v2/report/agents_status HTTP/1.1" 200 -
+2025-10-01 14:25:23,302 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:23] "POST /dashboard/call/v2/report/queue_status_vyrtus HTTP/1.1" 200 -
+2025-10-01 14:25:23,331 - INFO - 192.168.16.6 - - [01/Oct/2025 14:25:23] "POST /dashboard/call/v2/report/queue_status HTTP/1.1" 200 -
