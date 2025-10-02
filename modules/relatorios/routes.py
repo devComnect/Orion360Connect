@@ -876,6 +876,31 @@ def extrair_relatorios_turnos():
             ("GRID", (0,0), (-1,-1), 0.5, colors.gray),
         ]))
         elements.append(tabela_resumo)
+        elements.append(Spacer(1, 24))
+
+        data_mensal = [["Mês", "Chamados", "Ligações Recebidas", "Ligações Efetuadas"]]
+        for i, mes in enumerate(meses):
+            # converte "2025-01" para "Janeiro/2025"
+            mes_formatado = datetime.strptime(mes, "%Y-%m").strftime("%B/%Y").capitalize()
+            data_mensal.append([
+                mes_formatado,
+                str(valores_chamados[i]),
+                str(valores_ligacoes[i]),
+                str(valores_efetuadas[i]),
+            ])
+
+        tabela_mensal = Table(data_mensal, colWidths=[150, 100, 130, 130])
+        tabela_mensal.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.darkgray),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.whitesmoke),
+            ("ALIGN", (0,0), (-1,-1), "CENTER"),
+            ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+            ("FONTSIZE", (0,0), (-1,0), 11),
+            ("BOTTOMPADDING", (0,0), (-1,0), 8),
+            ("BACKGROUND", (0,1), (-1,-1), colors.beige),
+            ("GRID", (0,0), (-1,-1), 0.5, colors.gray),
+        ]))
+        elements.append(tabela_mensal)
 
         # Build PDF e retorno
         doc.build(elements)
