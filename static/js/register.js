@@ -145,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 //Bloco que realiza a alteração de senha do colaborador-->
 
-  document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('form');
 
     form.addEventListener('submit', async (e) => {
@@ -311,46 +311,88 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // Script para editar turnos
-document.addEventListener('DOMContentLoaded', function () {
-  const form = document.getElementById('formCadastrarTurno');
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("formEditTurno");
 
-  form.addEventListener('submit', function (e) {
-    e.preventDefault(); // impede envio padrão
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
 
-    // Coletar os valores do formulário
-    const idTurnoEditar = document.getElementById('id_turno_editar').value;
-    const turnoSelecionadoEditar = document.getElementById('list_turnos_editar').value;
-    const inicioTurnoEditar = document.getElementById('inicio_turno_editar').value;
-    const finalTurnoEditar = document.getElementById('final_turno_editar').value;
-
-    // Montar objeto JSON
-    const dados = {
-      id_turno_editar: idTurnoEditar,
-      list_turnos_editar: turnoSelecionadoEditar,
-      inicio_turno_editar: inicioTurnoEditar,
-      final_turno_editar: finalTurnoEditar
+    // Pega os valores do form
+    const data = {
+      id_turno_editar: document.getElementById("idTurnos").value,
+      list_turnos_editar: document.getElementById("list_turnos").value,
+      inicio_turno_editar: document.getElementById("inicio_turno_editar").value,
+      final_turno_editar: document.getElementById("final_turno_editar").value
     };
 
-    // Enviar requisição POST para a API
-    fetch('/register/editTurnos', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(dados)
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'success') {
-        alert(data.message);
-        form.reset(); // limpa o formulário
+    try {
+      const response = await fetch("/register/editTurnos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        alert(result.message);
       } else {
-        alert(' Erro ao atualizar turno.');
+        alert(result.message);
       }
-    })
-    .catch(error => {
-      console.error('Erro ao enviar dados:', error);
-      alert(' Erro na comunicação com o servidor.');
-    });
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+      alert(" Erro ao atualizar turno. Verifique o console.");
+    }
   });
 });
+
+
+// Script que deleta os turnos
+document.addEventListener("DOMContentLoaded", function () {
+  const formDelete = document.querySelector("form[action='']"); // ou usa id se preferir
+
+  formDelete.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const data = {
+      id_turno_exclusao: document.getElementById("idTurnosExcluir").value
+    };
+
+    if (!data.id_turno_exclusao) {
+      alert("Selecione um turno para excluir.");
+      return;
+    }
+
+    if (!confirm("Tem certeza que deseja excluir este turno?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/register/deleteTurnos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        alert(result.message);
+        // Exemplo: remover o turno excluído da lista
+        const option = document.querySelector(`#idTurnosExcluir option[value='${data.id_turno_exclusao}']`);
+        if (option) option.remove();
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+      alert("Erro ao excluir turno. Verifique o console.");
+    }
+  });
+});
+
+
