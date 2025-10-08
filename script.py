@@ -24,10 +24,10 @@ from datetime import date
 
 with app.app_context():
     registros = importar_performance_operador(
-        operador_id=2028,
-        nome_operador="Henrique",
-        data_inicio=date(2025, 9, 1),
-        data_fim=date(2025, 9, 30)
+        operador_id=2029,
+        nome_operador="Rafael",
+        data_inicio=date(2025, 10, 7),
+        data_fim=date(2025, 10, 7)
     )
     print(f"Total registros importados: {registros}")
 
