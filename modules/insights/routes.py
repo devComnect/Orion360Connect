@@ -435,8 +435,11 @@ def listar_p_satisfacao():
         'Ótimo': 10
     }
 
-    # Buscar todas as alternativas preenchidas no período
-    alternativas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
+    # Buscar todas as alternativas preenchidas no período, incluindo referência do chamado
+    alternativas_brutas = db.session.query(
+        PesquisaSatisfacao.alternativa,
+        PesquisaSatisfacao.referencia_chamado
+    ).filter(
         and_(
             PesquisaSatisfacao.data_resposta >= data_limite,
             PesquisaSatisfacao.alternativa.isnot(None),
@@ -444,33 +447,40 @@ def listar_p_satisfacao():
         )
     ).all()
 
-    respostas_convertidas = []
+    # Dict para evitar duplicatas por chamado
+    respostas_unicas = {}
 
-    for alt in alternativas_brutas:
-        valor = alt[0].strip()
-        # Se for número direto (ex: '8', '10')
+    for alternativa, referencia in alternativas_brutas:
+        if referencia in respostas_unicas:
+            continue  # ignora duplicados
+        valor = alternativa.strip()
+        numero = None
         if valor.isdigit():
-            numero = int(valor)
-            if 0 <= numero <= 10:
-                respostas_convertidas.append(numero)
-        # Se for texto mapeado (ex: 'Concordo')
+            n = int(valor)
+            if 0 <= n <= 10:
+                numero = n
         elif valor in CSAT_MAP:
-            respostas_convertidas.append(CSAT_MAP[valor])
+            numero = CSAT_MAP[valor]
 
-    total_respondidas = len(respostas_convertidas)
+        if numero is not None:
+            respostas_unicas[referencia] = numero
 
-    # Considerar como satisfatórias as notas 8 a 10
-    respostas_satisfatorias = sum(1 for nota in respostas_convertidas if nota >= 7)
-
-    # Cálculo do CSAT
+    total_respondidas = len(respostas_unicas)
+    respostas_satisfatorias = sum(1 for nota in respostas_unicas.values() if nota >= 7)
     csat = round((respostas_satisfatorias / total_respondidas) * 100, 2) if total_respondidas else 0
+
+    # Apenas referências satisfatórias
+    referencias_satisfatorias = [ref for ref, nota in respostas_unicas.items() if nota >= 7]
 
     return jsonify({
         "status": "success",
         "total_respondidas": total_respondidas,
         "respostas_satisfatorias": respostas_satisfatorias,
-        "csat": csat
+        "csat": csat,
+        "referencia_chamados": list(respostas_unicas.keys()),
+        "referencias_satisfatorias": referencias_satisfatorias
     })
+
 
 @insights_bp.route('/nps', methods=['POST'])
 def nps():

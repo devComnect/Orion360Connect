@@ -1415,6 +1415,38 @@ function carregarTopCategorias(dias = 1) {
     });
   });
 
+  // Tornar o CSAT clicável para abrir o modal
+    const csatPercentualEl = document.getElementById("csat-percentual");
+    csatPercentualEl.style.cursor = "pointer";
+    csatPercentualEl.addEventListener("click", function () {
+      if (comentariosPesquisa.length === 0) {
+        alert("Nenhum chamado disponível.");
+        return;
+      }
+      const lista = document.getElementById("listaComentarios");
+      lista.innerHTML = "";
+
+      comentariosPesquisa.forEach(codigoChamado => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "8px";
+
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigoChamado}`;
+        link.target = "_blank";
+        link.textContent = codigoChamado;
+        link.style.color = "#ff6384"; // cor para contraste
+
+        li.appendChild(link);
+        lista.appendChild(li);
+      });
+
+      // Abrir modal via Bootstrap 5 JS API
+      const modalElement = document.getElementById("modalComentariosPesquisa");
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    });
+  
+
   function atualizarCardPesquisaSatisfacao(dias) {
   fetch('/insights/pSatisfacao', {
     method: 'POST',
@@ -1436,12 +1468,16 @@ function carregarTopCategorias(dias = 1) {
     }
 
     if (data.status === 'success') {
-      csatPercentualEl.textContent = `${data.csat}%`;
-      totalAvaliadoEl.textContent = data.total_respondidas;
+    csatPercentualEl.textContent = `${data.csat}%`;
+    totalAvaliadoEl.textContent = data.total_respondidas;
+
+    // Guardar os códigos dos chamados para o modal
+    comentariosPesquisa = data.referencia_chamados || [];
     } else {
-      csatPercentualEl.textContent = '-';
-      totalAvaliadoEl.textContent = '-';
-      console.error("Erro ao buscar dados da pesquisa:", data);
+        csatPercentualEl.textContent = '-';
+        totalAvaliadoEl.textContent = '-';
+        comentariosPesquisa = [];
+        console.error("Erro ao buscar dados da pesquisa:", data);
     }
   })
   .catch(error => {

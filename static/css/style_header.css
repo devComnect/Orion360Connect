@@ -11,7 +11,7 @@ header .nav-link {
 
 /* === HEADER === */
   .app-header {
-    background: #1e1e26; /* igual aos cards */
+    background: #9b9ba1; /* igual aos cards */
     border-bottom: 1px solid rgba(255,255,255,0.08);
     padding: 0.8rem 0;
   }
