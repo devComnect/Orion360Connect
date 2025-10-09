@@ -8,6 +8,8 @@ from collections import Counter
 from sqlalchemy import func, and_, or_,cast, Date
 import numpy as np
 import re
+import logging
+
 
 insights_bp = Blueprint('insights_bp', __name__, url_prefix='/insights')
 
@@ -512,7 +514,7 @@ def nps():
 
     # Cálculo do NPS
     nps_valor = ((promotores - detratores) / total) * 100
-    nps_valor = round(nps_valor, 2)
+    nps_valor = max(0,round(nps_valor, 2)) # Evita que o valor retorne negativo
 
     # Classificação
     if nps_valor >= 75:
