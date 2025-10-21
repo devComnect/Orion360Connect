@@ -139,8 +139,7 @@
   });
 
 
-// Script que traz o TMA e TMS-->
-
+// Script que traz o TMA e TMS -->
 document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
 
@@ -182,6 +181,17 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   };
 
+  // Busca as metas no backend
+  async function fetchMetas() {
+    try {
+      const res = await fetch('/okrs/getMetas');
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
+    }
+  }
+
+  // Busca dados do gráfico TMA/TMS
   async function fetchTmaTmsMensal(dias) {
     try {
       const res = await fetch('/okrs/tmaTmsMensal', {
@@ -196,6 +206,36 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
+    // Atualiza setas e valores das metas nos cards
+    function atualizarIndicadoresMetas(tmaMedio, tmsMedio, metas) {
+    const metaTmaEl = document.getElementById("meta-tma");
+    const metaTmsEl = document.getElementById("meta-tms");
+
+    if (!metaTmaEl || !metaTmsEl) return;
+
+    const setaTma = metaTmaEl.previousElementSibling;
+    const setaTms = metaTmsEl.previousElementSibling;
+
+    // Lógica: menor valor = melhor desempenho
+    if (metas.tma != null) {
+      if (tmaMedio <= metas.tma) {
+        setaTma.className = "bi bi-arrow-up-circle text-success";
+      } else {
+        setaTma.className = "bi bi-arrow-down-circle text-danger";
+      }
+    }
+
+    if (metas.tms != null) {
+      if (tmsMedio <= metas.tms) {
+        setaTms.className = "bi bi-arrow-up-circle text-success";
+      } else {
+        setaTms.className = "bi bi-arrow-down-circle text-danger";
+      }
+    }
+  }
+
+
+  // Atualiza gráfico e indicadores
   async function atualizarGraficoTmaTms(dias) {
     const tmaTmsDados = await fetchTmaTmsMensal(dias);
 
@@ -209,6 +249,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const tmsMin = tmaTmsDados.media_tms_min || [];
     const tms = tmsMin.map(v => v !== null ? +(v / 60).toFixed(2) : null);
 
+    // Cria gráfico se ainda não existir
     if (!chartTmaTms) {
       const ctx = document.getElementById('graficoTmaTms').getContext('2d');
       chartTmaTms = new Chart(ctx, {
@@ -269,21 +310,18 @@ document.addEventListener("DOMContentLoaded", async function () {
       chartTmaTms.data.datasets[1].data = tms;
       chartTmaTms.update();
     }
-  }
 
-  async function fetchMetas() {
-    try {
-      const res = await fetch('/okrs/getMetas');
-      return res.ok ? await res.json() : {};
-    } catch {
-      return {};
-    }
+    // Calcula médias e atualiza setas
+    const tmaMedio = tma.length ? tma.reduce((a, b) => a + b, 0) / tma.length : 0;
+    const tmsMedio = tms.length ? tms.reduce((a, b) => a + b, 0) / tms.length : 0;
+
+    atualizarIndicadoresMetas(tmaMedio, tmsMedio, metas);
   }
 
   // Inicializa com 30 dias
   atualizarGraficoTmaTms(30);
 
-  // Eventos dos botões
+  // Eventos dos botões de filtro
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const dias = parseInt(this.getAttribute('data-dias'), 10);
@@ -291,6 +329,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   });
 });
+
 
 
 //Script que traz a evolução do SLA com o passar dos periodos-->
@@ -336,6 +375,15 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   };
 
+  async function fetchMetas() {
+    try {
+      const res = await fetch('/okrs/getMetas');
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
+    }
+  }
+
   async function fetchSlaMensal(dias) {
     try {
       const res = await fetch('/okrs/slaOkrsMes', {
@@ -347,6 +395,30 @@ document.addEventListener("DOMContentLoaded", async function () {
       return res.ok ? data : {};
     } catch {
       return {};
+    }
+  }
+
+  // 🔹 Atualiza ícones dos cards de SLA
+  function atualizarIndicadoresSLA(mediaAtendimento, mediaResolucao) {
+    const metaAtendimentoEl = document.getElementById("meta-sla-atendimento");
+    const metaResolucaoEl = document.getElementById("meta-sla-solucao");
+
+    if (metaAtendimentoEl) {
+      const setaAt = metaAtendimentoEl.previousElementSibling;
+      if (mediaAtendimento >= metas.sla_atendimento_prazo) {
+        setaAt.className = "bi bi-arrow-up-circle text-success";
+      } else {
+        setaAt.className = "bi bi-arrow-down-circle text-danger";
+      }
+    }
+
+    if (metaResolucaoEl) {
+      const setaRes = metaResolucaoEl.previousElementSibling;
+      if (mediaResolucao >= metas.sla_resolucao_prazo) {
+        setaRes.className = "bi bi-arrow-up-circle text-success";
+      } else {
+        setaRes.className = "bi bi-arrow-down-circle text-danger";
+      }
     }
   }
 
@@ -409,15 +481,16 @@ document.addEventListener("DOMContentLoaded", async function () {
       chartSLA.data.datasets[1].data = slaResolucaoData;
       chartSLA.update();
     }
-  }
 
-  async function fetchMetas() {
-    try {
-      const res = await fetch('/okrs/getMetas');
-      return res.ok ? await res.json() : {};
-    } catch {
-      return {};
-    }
+    // 🔹 Calcula médias e atualiza setas
+    const mediaAtendimento = slaAtendimentoData.length
+      ? slaAtendimentoData.reduce((a, b) => a + b, 0) / slaAtendimentoData.length
+      : 0;
+    const mediaResolucao = slaResolucaoData.length
+      ? slaResolucaoData.reduce((a, b) => a + b, 0) / slaResolucaoData.length
+      : 0;
+
+    atualizarIndicadoresSLA(mediaAtendimento, mediaResolucao);
   }
 
   // Inicializa com 30 dias
@@ -433,120 +506,147 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 
 
+
 //Script do gráfico de FCR-->
 
-  document.addEventListener("DOMContentLoaded", async function () {
-    Chart.register(window['chartjs-plugin-annotation']);
+ document.addEventListener("DOMContentLoaded", async function () {
+  Chart.register(window['chartjs-plugin-annotation']);
 
-    const metas = await fetchMetas();
-    let chartFCR; // guardamos o gráfico aqui
+  const metas = await fetchMetas();
+  let chartFCR;
 
-    // Plugin para desenhar linha pontilhada da meta (sem rótulo)
-    const linhaMetaFcrPlugin = {
-      id: 'linhaMetaFCR',
-      afterDraw(chart) {
-        const { ctx, chartArea, scales } = chart;
-        const yScale = scales.y;
-        const yMeta = metas.fcr;
+  // Exibe no card apenas o valor da meta cadastrada no banco
+  if (metas.fcr != null) {
+    const metaEl = document.getElementById('meta-fcr');
+    metaEl.textContent = `${metas.fcr}%`;
+  }
 
-        if (yMeta != null) {
-          const y = yScale.getPixelForValue(yMeta);
-          ctx.save();
-          ctx.beginPath();
-          ctx.moveTo(chartArea.left, y);
-          ctx.lineTo(chartArea.right, y);
-          ctx.setLineDash([6, 6]); // linha pontilhada
-          ctx.strokeStyle = 'rgba(255, 152, 0, 0.4)'; // cor leve
-          ctx.lineWidth = 2;
-          ctx.stroke();
-          ctx.restore();
-        }
-      }
-    };
+  // Plugin: linha pontilhada no gráfico representando a meta FCR
+  const linhaMetaFcrPlugin = {
+    id: 'linhaMetaFCR',
+    afterDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      const yScale = scales.y;
+      const yMeta = metas.fcr;
 
-    async function fetchMetas() {
-      try {
-        const res = await fetch('/okrs/getMetas');
-        return res.ok ? await res.json() : {};
-      } catch {
-        return {};
+      if (yMeta != null) {
+        const y = yScale.getPixelForValue(yMeta);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(255, 152, 0, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
       }
     }
+  };
 
-    async function fetchFcrMensal(dias) {
-      try {
-        const res = await fetch('/okrs/fcrMensal', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dias })
-        });
-        return res.ok ? await res.json() : {};
-      } catch {
-        return {};
+  async function fetchMetas() {
+    try {
+      const res = await fetch('/okrs/getMetas');
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function fetchFcrMensal(dias) {
+    try {
+      const res = await fetch('/okrs/fcrMensal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias })
+      });
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function atualizarGraficoFCR(dias) {
+    const fcrDados = await fetchFcrMensal(dias);
+    const labels = fcrDados.labels || [];
+    const fcrData = fcrDados.fcr || [];
+
+    // Atualiza apenas a seta do card conforme a meta
+    if (fcrData.length > 0 && metas.fcr != null) {
+      const valorAtual = fcrData[fcrData.length - 1];
+      const metaValor = metas.fcr;
+
+      const metaEl = document.getElementById('meta-fcr');
+      const icone = metaEl.previousElementSibling; // o <i> da seta
+
+      if (valorAtual >= metaValor) {
+        // Quando está acima ou igual à meta → seta para baixo (ruim)
+        icone.className = 'bi bi-arrow-up-circle text-success'
+
+        
+      } else {
+        // Quando está abaixo da meta → seta para cima (bom)
+        icone.className = 'bi bi-arrow-down-circle text-danger';;
       }
+
     }
 
-    async function atualizarGraficoFCR(dias) {
-      const fcrDados = await fetchFcrMensal(dias);
-
-      const labels = fcrDados.labels || [];
-      const fcrData = fcrDados.fcr || [];
-
-      if (!chartFCR) {
-        const ctx = document.getElementById('graficoFCR').getContext('2d');
-        chartFCR = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [
-              {
-                label: 'FCR (%)',
-                data: fcrData,
-                borderColor: '#ff9800',
-                backgroundColor: 'rgba(255, 152, 0, 0.4)',
-                tension: 0.3
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              legend: {
-                position: 'top',
-                labels: { color: '#fff' }
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                max: 100,
-                ticks: { color: '#fff' }
-              },
-              x: {
-                ticks: { color: '#fff' }
-              }
+    if (!chartFCR) {
+      const ctx = document.getElementById('graficoFCR').getContext('2d');
+      chartFCR = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'FCR (%)',
+              data: fcrData,
+              borderColor: '#ff9800',
+              backgroundColor: 'rgba(255, 152, 0, 0.4)',
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { color: '#fff' }
             }
           },
-          plugins: [linhaMetaFcrPlugin]
-        });
-      } else {
-        chartFCR.data.labels = labels;
-        chartFCR.data.datasets[0].data = fcrData;
-        chartFCR.update();
-      }
-    }
-
-    // Inicializa com 30 dias
-    atualizarGraficoFCR(30);
-
-    // Eventos dos botões
-    document.querySelectorAll('.filtro-btn').forEach(btn => {
-      btn.addEventListener('click', function () {
-        const dias = parseInt(this.getAttribute('data-dias'), 10);
-        atualizarGraficoFCR(dias);
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { color: '#fff' }
+            },
+            x: {
+              ticks: { color: '#fff' }
+            }
+          }
+        },
+        plugins: [linhaMetaFcrPlugin]
       });
+    } else {
+      chartFCR.data.labels = labels;
+      chartFCR.data.datasets[0].data = fcrData;
+      chartFCR.update();
+    }
+  }
+
+  // Inicializa com 30 dias
+  atualizarGraficoFCR(30);
+
+  // Eventos dos botões
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const dias = parseInt(this.getAttribute('data-dias'), 10);
+      atualizarGraficoFCR(dias);
     });
   });
+});
+
 
 
 //Script do gráfico de CSAT-->
@@ -555,15 +655,15 @@ document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
 
   const metas = await fetchMetas();
-  let chartCSAT; // gráfico global
+  let chartCSAT;
 
-  // Plugin para desenhar linha pontilhada da meta CSAT
+  // 🔹 Linha da meta dinâmica vinda do banco
   const linhaMetaCsatPlugin = {
     id: 'linhaMetaCSAT',
     afterDraw(chart) {
       const { ctx, chartArea, scales } = chart;
       const yScale = scales.y;
-      const yMeta = metas.csat;
+      const yMeta = metas.csat; // ← valor dinâmico do banco
 
       if (yMeta != null) {
         const y = yScale.getPixelForValue(yMeta);
@@ -571,8 +671,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         ctx.beginPath();
         ctx.moveTo(chartArea.left, y);
         ctx.lineTo(chartArea.right, y);
-        ctx.setLineDash([6, 6]); // linha pontilhada
-        ctx.strokeStyle = 'rgba(103, 58, 183, 0.4)'; // cor suave roxa
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(103, 58, 183, 0.4)';
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.restore();
@@ -602,9 +702,27 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
+  // 🔹 Atualiza apenas o ícone conforme a meta dinâmica
+  function atualizarIndicadorCsat(mediaCsat) {
+    const metaCsatEl = document.getElementById("meta-csat");
+    if (!metaCsatEl || metas.csat == null) return;
+
+    const setaCsat = metaCsatEl.previousElementSibling;
+    const metaValor = metas.csat;
+
+    // Regra: se atingir ou ultrapassar a meta → verde, caso contrário → vermelho
+    if (mediaCsat >= metaValor) {
+      setaCsat.className = "bi bi-arrow-up-circle text-success";
+    } else {
+      setaCsat.className = "bi bi-arrow-down-circle text-danger";
+    }
+
+    // Exibe a meta no card, sem alterar o conteúdo fixo
+    metaCsatEl.textContent = `${metaValor.toFixed(1)}%`;
+  }
+
   async function atualizarGraficoCSAT(dias) {
     const csatDados = await fetchCsatMensal(dias);
-
     const labels = csatDados.labels || [];
     const csatData = csatDados.csat || [];
 
@@ -641,6 +759,12 @@ document.addEventListener("DOMContentLoaded", async function () {
       chartCSAT.data.datasets[0].data = csatData;
       chartCSAT.update();
     }
+
+    // 🔹 Calcula média e atualiza seta e valor
+    const mediaCsat = csatData.length
+      ? csatData.reduce((a, b) => a + b, 0) / csatData.length
+      : 0;
+    atualizarIndicadorCsat(mediaCsat);
   }
 
   // Inicializa com 30 dias
@@ -654,6 +778,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   });
 });
+
+
 
 
 //Script que traz os chamados de first call resolution-->
@@ -1025,165 +1151,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 
 
-//Script que retorna a relação de CES-->
-
-document.addEventListener("DOMContentLoaded", function () {
-    const botoesFiltro = document.querySelectorAll(".filtro-btn");
-    const campoNota = document.getElementById("ces-nota");
-    const campoDescricao = document.getElementById("ces-descricao");
-
-    async function carregarCES(dias = 1) {
-        try {
-            const response = await fetch('/okrs/cesOkrs', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ dias: dias })
-            });
-
-            const data = await response.json();
-
-            if (data.status === "success") {
-                campoNota.textContent = data.nota;
-                campoDescricao.textContent = data.descricao;
-
-                // Limpa classes de cor anteriores
-                campoDescricao.classList.remove("text-primary", "text-warning", "text-danger");
-
-                // Adiciona a classe conforme a descrição
-                switch (data.descricao) {
-                    case 'Baixo esforço':
-                        campoDescricao.classList.add('text-primary'); // azul
-                        break;
-                    case 'Esforço moderado':
-                        campoDescricao.classList.add('text-warning'); // amarelo
-                        break;
-                    case 'Alto esforço':
-                        campoDescricao.classList.add('text-danger'); // vermelho
-                        break;
-                    default:
-                        // sem estilo extra
-                        break;
-                }
-
-            } else {
-                campoNota.textContent = "Erro";
-                campoDescricao.textContent = "Erro";
-                campoDescricao.classList.remove("text-primary", "text-warning", "text-danger");
-                console.error(data.message);
-            }
-        } catch (error) {
-            campoNota.textContent = "Erro";
-            campoDescricao.textContent = "Erro";
-            campoDescricao.classList.remove("text-primary", "text-warning", "text-danger");
-            console.error(error);
-        }
-    }
-
-    botoesFiltro.forEach(button => {
-        button.addEventListener("click", function () {
-            botoesFiltro.forEach(btn => btn.classList.remove("active"));
-            this.classList.add("active");
-
-            const dias = parseInt(this.getAttribute("data-dias"), 10);
-            carregarCES(dias);
-        });
-    });
-
-    carregarCES(30);
-});
-
-
-
-//Script que retorna a relação de NPS-->
-
-  document.addEventListener("DOMContentLoaded", function () {
-  // Carrega o card NPS com valor padrão 1 dia
-  atualizarNps(30);
-
-  // Seleciona todos os botões de filtro
-  document.querySelectorAll('.filtro-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-      // Remove classe active de todos os botões
-      document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-      // Adiciona classe active no botão clicado
-      this.classList.add('active');
-
-      // Pega número de dias do atributo data-dias
-      const dias = parseInt(this.getAttribute('data-dias'), 10);
-      atualizarNps(dias);
-    });
-  });
-});
-
-function atualizarNps(dias) {
-  fetch('/okrs/npsOkrs', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dias })
-  })
-  .then(res => res.json())
-  .then(data => {
-    const npsNullEl = document.getElementById("nps-null");
-    const npsRetornoEl = document.getElementById("nps-retorno");
-
-    if (!npsNullEl || !npsRetornoEl) {
-      console.warn("Elementos NPS não encontrados no DOM.");
-      return;
-    }
-
-    if (data.status && data.status !== "Sem dados suficientes") {
-      // Atualiza texto
-      npsNullEl.textContent = data.status;
-      npsRetornoEl.textContent = data.nps + "%";
-
-      // Remove classes antigas e adiciona nova classe conforme status
-      npsNullEl.className = 'value';       // reseta classes
-      npsRetornoEl.className = 'value';
-
-      switch (data.status) {
-        case 'Excelente':
-          npsNullEl.classList.add('text-success');
-          
-          break;
-        case 'Muito bom':
-          npsNullEl.classList.add('text-primary');
-          
-          break;
-        case 'Razoável':
-          npsNullEl.classList.add('text-warning');
-          
-          break;
-        case 'Ruim':
-          npsNullEl.classList.add('text-danger');
-          
-          break;
-        default:
-          // Sem estilo extra
-          break;
-      }
-
-    } else {
-      npsNullEl.textContent = "-";
-      npsRetornoEl.textContent = "0%";
-      npsNullEl.className = 'value';
-      npsRetornoEl.className = 'value';
-    }
-  })
-  .catch(err => {
-    console.error("Erro ao buscar dados do NPS:", err);
-    const npsNullEl = document.getElementById("nps-null");
-    const npsRetornoEl = document.getElementById("nps-retorno");
-    npsNullEl.textContent = "-";
-    npsRetornoEl.textContent = "0%";
-    npsNullEl.className = 'value';
-    npsRetornoEl.className = 'value';
-  });
-}
-
-
-
 //Script que traz a pesquisa de satisfação-->
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -1297,16 +1264,16 @@ document.getElementById('formMetas').addEventListener('submit', async function (
     const result = await response.json();
 
     if (result.status === 'success') {
-      alert('✅ Metas salvas com sucesso!');
+      alert('Metas salvas com sucesso!');
       const modal = bootstrap.Modal.getInstance(document.getElementById('modalDefinirMetas'));
       modal.hide();
     } else {
-      alert('❌ Erro ao salvar metas: ' + result.message);
+      alert('Erro ao salvar metas: ' + result.message);
     }
 
   } catch (error) {
     console.error('Erro na requisição:', error);
-    alert('❌ Ocorreu um erro ao enviar os dados.');
+    alert('Ocorreu um erro ao enviar os dados.');
   }
 });
 
@@ -1336,3 +1303,73 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+ // Script de Reabertos Metas
+document.addEventListener("DOMContentLoaded", function () {
+
+  async function fetchMetas() {
+    try {
+      const res = await fetch('/okrs/getMetas');
+      return res.ok ? await res.json() : {};
+    } catch (err) {
+      console.error("Erro ao buscar metas:", err);
+      return {};
+    }
+  }
+
+  async function fetchReabertos(dias) {
+    try {
+      const res = await fetch('/insights/reabertos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias })
+      });
+      return res.ok ? await res.json() : {};
+    } catch (err) {
+      console.error("Erro ao buscar reabertos:", err);
+      return {};
+    }
+  }
+
+  async function atualizarReabertos(dias) {
+    const metas = await fetchMetas();
+    const dados = await fetchReabertos(dias);
+
+    const spanValor = document.getElementById("meta-reabertura");
+    const icone = spanValor.previousElementSibling; // <i> da seta
+
+    if (!dados || dados.status !== "success") {
+      icone.className = "bi bi-arrow-bar-down"; // seta padrão
+      return;
+    }
+
+    const total = dados.total_chamados || 0;
+    const reabertos = dados.total_reabertos || 0;
+
+    let percentual = 0;
+    if (total > 0) {
+      percentual = (reabertos / total) * 100;
+    }
+
+    // 🔹 Atualiza apenas a seta, sem mudar o valor do card
+    if (metas.reabertos != null) {
+      if (percentual <= metas.reabertos) {
+        icone.className = "bi bi-arrow-up-circle text-success"; // dentro da meta
+      } else {
+        icone.className = "bi bi-arrow-down-circle text-danger"; // acima da meta
+      }
+    } else {
+      icone.className = "bi bi-arrow-bar-down"; // meta não definida
+    }
+  }
+
+  // Inicializa com 30 dias
+  atualizarReabertos(30);
+
+  // Eventos dos botões
+  document.querySelectorAll('.filtro-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const dias = parseInt(this.getAttribute('data-dias'), 10);
+      atualizarReabertos(dias);
+    });
+  });
+});

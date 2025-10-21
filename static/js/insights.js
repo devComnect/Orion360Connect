@@ -1629,7 +1629,6 @@ async function atualizarFCR(dias, nomeOperador) {
 
     const fcrSpan = document.getElementById("chamado_fcr");
     const percentualSpan = document.getElementById("percentual_fcr");
-    const icone = document.getElementById("icone_fcr");
 
     if (data.status === "success") {
       const totalFcr = data.total_fcr || 0;
@@ -1641,25 +1640,6 @@ async function atualizarFCR(dias, nomeOperador) {
       percentualSpan.textContent = percentual;
       chamadosFcrCodigos = data.cod_chamados || [];
 
-      // Buscar a meta e comparar
-      const metaRes = await fetch('/okrs/getMetas');
-      if (metaRes.ok) {
-        const metas = await metaRes.json();
-        const metaFcr = metas.fcr;
-
-        if (metaFcr != null && percentualValor != null) {
-          if (percentualValor >= metaFcr) {
-            icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
-            icone.title = "Dentro da meta";
-          } else {
-            icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
-            icone.title = "Abaixo da meta";
-          }
-        } else {
-          icone.className = "";
-          icone.title = "";
-        }
-      }
 
     } else {
       fcrSpan.textContent = "Erro";
@@ -1672,7 +1652,6 @@ async function atualizarFCR(dias, nomeOperador) {
     console.error("Erro ao buscar FCR:", error);
     document.getElementById("chamado_fcr").textContent = "Erro";
     document.getElementById("percentual_fcr").textContent = "-";
-    document.getElementById("icone_fcr").className = "";
     chamadosFcrCodigos = [];
   }
 }
@@ -2190,3 +2169,7 @@ async function carregarChamadasEfetuadas(filtro) {
       document.getElementById("percentual-tms-ligacoes").textContent = "Erro";
     });
   }
+
+
+ 
+
