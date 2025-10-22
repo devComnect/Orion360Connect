@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", async function () {
               tension: 0.3
             },
             {
-              label: 'TMS (h)',
+              label: 'TMS (min)',
               data: tms,
               borderColor: '#2196f3',
               backgroundColor: 'rgba(33, 150, 243, 0.4)',
@@ -1295,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('meta-sla-solucao').textContent = data.sla_resolucao_prazo + ' %';
       document.getElementById('meta-reabertura').textContent = data.reabertos + ' %';
       document.getElementById('meta-tma').textContent = data.tma + ' min';
-      document.getElementById('meta-tms').textContent = data.tms + ' h';
+      document.getElementById('meta-tms').textContent = data.tms + ' min';
       document.getElementById('meta-fcr').textContent = data.fcr + ' %';
     })
     .catch(error => {
@@ -1371,5 +1371,38 @@ document.addEventListener("DOMContentLoaded", function () {
       const dias = parseInt(this.getAttribute('data-dias'), 10);
       atualizarReabertos(dias);
     });
+  });
+});
+
+
+// Export OKRs Anual
+document.addEventListener("DOMContentLoaded", function() {
+  const btnExportar = document.querySelector('#btnExportarAnual');
+
+  if (!btnExportar) return;
+
+  btnExportar.addEventListener("click", async () => {
+    try {
+      const res = await fetch("/okrs/exportarOkrs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}) 
+      });
+
+      if (!res.ok) throw new Error("Erro ao gerar relatório.");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Relatorio_OKRs_CSAT_${new Date().getFullYear()}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Erro ao exportar OKRs:", err);
+      alert("Não foi possível gerar o relatório. Tente novamente.");
+    }
   });
 });

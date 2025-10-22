@@ -1,0 +1,28 @@
+
+import pandas as pd
+
+# Dados de exemplo: Janeiro, Fevereiro, Março
+meses = ["Janeiro", "Fevereiro", "Março"]
+chamados_totais = [1000, 950, 970]
+chamados_sla = [920, 850, 920]
+
+# Meta (OKR): SLA acumulado desejado
+meta_sla = 92.0  # em %
+
+# Criação do DataFrame
+df = pd.DataFrame({
+    "Mês": meses,
+    "Chamados Totais": chamados_totais,
+    "Dentro do SLA": chamados_sla
+})
+
+# Cálculo do SLA mensal
+df["SLA Mensal (%)"] = (df["Dentro do SLA"] / df["Chamados Totais"]) * 100
+
+# Cálculo acumulado
+df["Acumulado - Totais"] = df["Chamados Totais"].cumsum()
+df["Acumulado - Dentro do SLA"] = df["Dentro do SLA"].cumsum()
+df["SLA Acumulado (%)"] = (df["Acumulado - Dentro do SLA"] / df["Acumulado - Totais"]) * 100
+
+# Resultado final
+df[["Mês", "Chamados Totais", "Dentro do SLA", "SLA Mensal (%)", "SLA Acumulado (%)"]]

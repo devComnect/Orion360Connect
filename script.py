@@ -14,22 +14,22 @@ from datetime import date
     processar_e_armazenar_performance_incremental()'''
 
 
-'''with app.app_context():
+with app.app_context():
     importar_detalhes_chamadas(
         operador_id=2020,
         nome_operador="Renato",
-        data_inicio=date(2024, 9, 1),
-        data_fim=date(2024, 9, 30)
-    )'''
+        data_inicio=date(2025, 10, 1),
+        data_fim=date(2025, 10, 30)
+    )
 
-with app.app_context():
+'''with app.app_context():
     registros = importar_performance_operador(
         operador_id=2029,
         nome_operador="Rafael",
         data_inicio=date(2025, 10, 7),
         data_fim=date(2025, 10, 7)
     )
-    print(f"Total registros importados: {registros}")
+    print(f"Total registros importados: {registros}")'''
 
 
 
