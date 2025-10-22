@@ -100,7 +100,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 
 // Script TMA & TMS Quarter
-// Script TMA & TMS Quarter
 document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
   const quarterChartsTMATMS = {};
@@ -231,4 +230,228 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 
 
+// Script de Quarters de SLA
+document.addEventListener("DOMContentLoaded", async function () {
+  Chart.register(window['chartjs-plugin-annotation']);
+
+  const metas = await fetchMetas();
+  const quarterChartsSLA = {};
+
+  // Plugin da linha pontilhada
+  const horizontalLinePlugin = {
+    id: 'horizontalLine',
+    afterDraw: (chart) => {
+      const { ctx, chartArea, scales } = chart;
+      const yScale = scales.y;
+
+      ctx.save();
+
+      // Linha SLA Atendimento
+      if (metas.sla_atendimento_prazo != null) {
+        const y = yScale.getPixelForValue(metas.sla_atendimento_prazo);
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(76, 175, 80, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Linha SLA Resolução
+      if (metas.sla_resolucao_prazo != null) {
+        const y = yScale.getPixelForValue(metas.sla_resolucao_prazo);
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(33, 150, 243, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+  };
+
+  async function fetchMetas() {
+    try {
+      const res = await fetch('/okrs/getMetas');
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function fetchSLAQuarter() {
+    try {
+      const res = await fetch('/okrs/slaOkrsQuarter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function atualizarGraficosQuarterSLA() {
+    const dados = await fetchSLAQuarter();
+    if (dados.status !== "success") return;
+
+    const quarters = dados.quarters;
+
+    Object.entries(quarters).forEach(([q, info]) => {
+      const ctx = document.getElementById(`grafico${q}SLA`)?.getContext('2d');
+      if (!ctx) return;
+
+      if (quarterChartsSLA[q]) {
+        quarterChartsSLA[q].data.labels = info.labels;
+        quarterChartsSLA[q].data.datasets[0].data = info.sla_atendimento;
+        quarterChartsSLA[q].data.datasets[1].data = info.sla_resolucao;
+        quarterChartsSLA[q].update();
+      } else {
+        quarterChartsSLA[q] = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: info.labels,
+            datasets: [
+              {
+                label: 'SLA Atendimento (%)',
+                data: info.sla_atendimento,
+                borderColor: '#4caf50',
+                backgroundColor: 'rgba(76, 175, 80, 0.3)',
+                tension: 0.3
+              },
+              {
+                label: 'SLA Resolução (%)',
+                data: info.sla_resolucao,
+                borderColor: '#f44336',
+                backgroundColor: 'rgba(244, 67, 54, 0.3)',
+                tension: 0.3
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'top', labels: { color: '#fff' } },
+              title: { display: false }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                  color: '#fff',
+                  callback: function(value) { return value + '%'; }
+                }
+              },
+              x: { ticks: { color: '#fff' } }
+            }
+          },
+          plugins: [horizontalLinePlugin] // <-- aqui estava faltando
+        });
+      }
+    });
+  }
+
+  atualizarGraficosQuarterSLA();
+});
+
+
+// Script de Quarters FCR
+document.addEventListener("DOMContentLoaded", async function () {
+  Chart.register(window['chartjs-plugin-annotation']);
+
+  const metas = await fetchMetas();
+  const quarterChartsFCR = {};
+
+  const linhaMetaFcrPlugin = {
+    id: 'linhaMetaFCR',
+    afterDraw: (chart) => {
+      const { ctx, chartArea, scales } = chart;
+      const yScale = scales.y;
+      const yMeta = metas.fcr;
+
+      if (yMeta != null) {
+        const y = yScale.getPixelForValue(yMeta);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(255, 152, 0, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  };
+
+  async function fetchFCRQuarter() {
+    try {
+      const res = await fetch('/okrs/fcrQuarter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function atualizarGraficosQuarterFCR() {
+    const dados = await fetchFCRQuarter();
+    if (dados.status !== "success") return;
+
+    const quarters = dados.quarters;
+
+    Object.entries(quarters).forEach(([q, info]) => {
+      const ctx = document.getElementById(`grafico${q}FCR`)?.getContext('2d');
+      if (!ctx) return;
+
+      if (quarterChartsFCR[q]) {
+        quarterChartsFCR[q].data.labels = info.labels;
+        quarterChartsFCR[q].data.datasets[0].data = info.fcr;
+        quarterChartsFCR[q].update();
+      } else {
+        quarterChartsFCR[q] = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: info.labels,
+            datasets: [
+              {
+                label: 'FCR (%)',
+                data: info.fcr,
+                borderColor: '#ff9800',
+                backgroundColor: 'rgba(255, 152, 0, 0.3)',
+                tension: 0.3
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'top', labels: { color: '#fff' } }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { color: '#fff', callback: v => v + '%' }
+              },
+              x: { ticks: { color: '#fff' } }
+            }
+          },
+          plugins: [linhaMetaFcrPlugin]
+        });
+      }
+    });
+  }
+
+  atualizarGraficosQuarterFCR();
+});
 

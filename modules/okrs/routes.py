@@ -375,9 +375,6 @@ def sla_insights_okrs():
 @okrs_bp.route('/slaOkrsMes', methods=['POST'])
 def sla_okrs_mes():
     try:
-        from collections import defaultdict
-        from datetime import datetime, timedelta
-
         data = request.get_json()
         dias = int(data.get('dias', 180))
         hoje = datetime.now()
@@ -820,7 +817,6 @@ def exportar_okrs_anual():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
 @okrs_bp.route('/csatQuarter', methods=['POST'])
 def csat_quarter():
     try:
@@ -888,6 +884,120 @@ def csat_quarter():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@okrs_bp.route('/slaOkrsQuarter', methods=['POST'])
+def sla_okrs_quarter():
+    try:
+        hoje = datetime.now()
+        ano_atual = hoje.year
+
+        # Busca todos os chamados do ano atual
+        chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.data_criacao.between(datetime(ano_atual, 1, 1), hoje)
+        ).all()
+
+        # Agrupa chamados por mês
+        sla_por_mes = defaultdict(lambda: {"sla_atendimento": 0, "sla_resolucao": 0})
+        for c in chamados:
+            mes = c.data_criacao.month
+            if "total" not in sla_por_mes[mes]:
+                sla_por_mes[mes]["total"] = 0
+                sla_por_mes[mes]["atendimento_ok"] = 0
+                sla_por_mes[mes]["resolucao_ok"] = 0
+
+            sla_por_mes[mes]["total"] += 1
+            sla_por_mes[mes]["atendimento_ok"] += 1 if c.sla_atendimento == 'N' else 0
+            sla_por_mes[mes]["resolucao_ok"] += 1 if c.sla_resolucao == 'N' else 0
+
+        # Calcula percentual por mês
+        for m in range(1, 13):
+            total = sla_por_mes[m].get("total", 0)
+            if total > 0:
+                sla_por_mes[m]["sla_atendimento"] = round((sla_por_mes[m]["atendimento_ok"]/total)*100,2)
+                sla_por_mes[m]["sla_resolucao"] = round((sla_por_mes[m]["resolucao_ok"]/total)*100,2)
+            else:
+                sla_por_mes[m]["sla_atendimento"] = 0
+                sla_por_mes[m]["sla_resolucao"] = 0
+
+        # Distribuição de meses por quarter
+        quarters = {
+            'Q1': [1, 2, 3],
+            'Q2': [4, 5, 6],
+            'Q3': [7, 8, 9],
+            'Q4': [10, 11, 12]
+        }
+
+        resultado = {}
+        for q, meses in quarters.items():
+            labels = [datetime(1900, m, 1).strftime('%b').capitalize() for m in meses]
+            atendimento = [sla_por_mes[m]["sla_atendimento"] for m in meses]
+            resolucao = [sla_por_mes[m]["sla_resolucao"] for m in meses]
+            resultado[q] = {"labels": labels, "sla_atendimento": atendimento, "sla_resolucao": resolucao}
+
+        return jsonify({"status": "success", "quarters": resultado})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@okrs_bp.route('/fcrQuarter', methods=['POST'])
+def fcr_quarter():
+    try:
+        hoje = datetime.utcnow()
+        ano_atual = hoje.year
+
+        # Busca registros e chamados resolvidos no ano atual
+        registros = RelatorioColaboradores.query.filter(
+            RelatorioColaboradores.data_criacao.between(datetime(ano_atual, 1, 1), hoje),
+            RelatorioColaboradores.nome_status == 'Resolvido'
+        ).all()
+
+        chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.nome_status == 'Resolvido',
+            Chamado.data_finalizacao != None,
+            Chamado.data_finalizacao.between(datetime(ano_atual, 1, 1), hoje)
+        ).all()
+
+        # Agrupar por mês
+        chamados_por_mes = defaultdict(list)
+        fcr_por_mes = defaultdict(list)
+
+        for chamado in chamados:
+            key = chamado.data_finalizacao.month
+            chamados_por_mes[key].append(chamado.cod_chamado)
+
+        for reg in registros:
+            if reg.first_call == 'S' and reg.cod_chamado:
+                key = reg.data_criacao.month
+                fcr_por_mes[key].append(reg.cod_chamado)
+
+        # Distribuição de meses por quarter
+        quarters = {
+            'Q1': [1, 2, 3],
+            'Q2': [4, 5, 6],
+            'Q3': [7, 8, 9],
+            'Q4': [10, 11, 12]
+        }
+
+        resultado = {}
+        for q, meses in quarters.items():
+            labels = [datetime(1900, m, 1).strftime('%b').capitalize() for m in meses]
+            fcr_data = []
+
+            for m in meses:
+                total_chamados = len(chamados_por_mes.get(m, []))
+                fcr_chamados = len(set(fcr_por_mes.get(m, [])))
+                percentual = round((fcr_chamados / total_chamados) * 100, 2) if total_chamados else 0
+                fcr_data.append(percentual)
+
+            resultado[q] = {"labels": labels, "fcr": fcr_data}
+
+        return jsonify({"status": "success", "quarters": resultado})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @okrs_bp.route('/tmaTmsQuarter', methods=['POST'])
 def tma_tms_quarter():
