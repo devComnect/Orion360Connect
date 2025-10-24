@@ -16,8 +16,8 @@ from datetime import date
 
 with app.app_context():
     importar_detalhes_chamadas(
-        operador_id=2020,
-        nome_operador="Renato",
+        operador_id=2021,
+        nome_operador="Matheus",
         data_inicio=date(2025, 10, 1),
         data_fim=date(2025, 10, 30)
     )
