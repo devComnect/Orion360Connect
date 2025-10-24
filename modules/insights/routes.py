@@ -1,12 +1,8 @@
-from flask import Blueprint, jsonify, render_template, request, url_for
-import requests
-from modules.deskmanager.authenticate.routes import token_desk
-from modules.insights.utils import formatar_tempo
+from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta
 from application.models import Chamado, db, EventosAtendentes, RegistroChamadas, ChamadasDetalhes, Categoria, PesquisaSatisfacao, RelatorioColaboradores, PerformanceColaboradores, DesempenhoAtendenteVyrtos
 from collections import Counter
 from sqlalchemy import func, and_, or_,cast, Date
-import numpy as np
 import re
 import logging
 
@@ -1013,30 +1009,6 @@ def get_ligacoes_nao_atendidas():
             "message": str(e)
         }), 500
 
-'''@insights_bp.route('/ligacoesPerdidas', methods=['POST'])
-def get_ligacoes_nao_atendidas():
-    try:
-        dias = int(request.json.get("dias", 1))  # padrão: 1 dia
-        hoje = datetime.now().date()
-        data_inicio = hoje - timedelta(days=dias)
-
-        # Total de chamadas não atendidas na tabela ChamadasDetalhes
-        total_ligacoes = db.session.query(func.count(ChamadasDetalhes.id)).filter(
-            ChamadasDetalhes.tipo != 'Atendida',
-            cast(ChamadasDetalhes.data, Date) >= data_inicio,
-            cast(ChamadasDetalhes.data, Date) <= hoje
-        ).scalar() or 0  # garante que não seja None
-
-        return jsonify({
-            "status": "success",
-            "total_ligacoes": total_ligacoes
-        })
-
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500'''
 
 @insights_bp.route('/chamadasEfetuadas', methods=['POST'])
 def get_ligacoes_efetuadas():

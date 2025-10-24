@@ -1,11 +1,7 @@
-from flask import Blueprint, jsonify, render_template, request, url_for, send_file
-import requests
-from modules.deskmanager.authenticate.routes import token_desk
-from modules.insights.utils import formatar_tempo
+from flask import Blueprint, jsonify, request, send_file
 from modules.okrs.utils import gerar_relatorio_csat, gerar_relatorio_sla, gerar_relatorio_tma_tms, gerar_relatorio_fcr, gerar_relatorio_reabertura
 from datetime import datetime, timedelta
 from application.models import Chamado, db, PesquisaSatisfacao, RelatorioColaboradores, PerformanceColaboradores, Metas
-from collections import Counter
 from sqlalchemy import func, and_, or_, extract, text
 import numpy as np
 from collections import defaultdict
@@ -480,6 +476,7 @@ def csat_okrs():
         "csat": csat
     })
 
+# Rota aparentemente não está em uso, talvez excluí-la mais tarde
 @okrs_bp.route('/csatOkrsMensal', methods=['POST'])
 def csat_okrs_mensal():
     data = request.get_json()
@@ -998,7 +995,6 @@ def fcr_quarter():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
 @okrs_bp.route('/tmaTmsQuarter', methods=['POST'])
 def tma_tms_quarter():
     try:
@@ -1072,3 +1068,312 @@ def tma_tms_quarter():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+    
+@okrs_bp.route('/csatAcumulado', methods=['POST'])
+def csat_acumulado():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 365))
+        hoje = datetime.now()
+        data_inicio = hoje - timedelta(days=dias)
+
+        CSAT_MAP = {
+            'Péssimo': 1,
+            'Discordo Totalmente': 2,
+            'Discordo Parcialmente': 3,
+            'Neutro': 4,
+            'Concordo Parcialmente': 5,
+            'Regular': 6,
+            'Bom': 7,
+            'Concordo': 8,
+            'Concordo Plenamente': 9,
+            'Ótimo': 10
+        }
+
+        respostas = db.session.query(
+            PesquisaSatisfacao.alternativa,
+            PesquisaSatisfacao.data_resposta
+        ).filter(
+            PesquisaSatisfacao.data_resposta >= data_inicio,
+            PesquisaSatisfacao.alternativa.isnot(None),
+            func.length(PesquisaSatisfacao.alternativa) > 0
+        ).all()
+
+        respostas_por_mes = defaultdict(list)
+        for alt, data_resposta in respostas:
+            valor = alt.strip()
+            nota = None
+
+            if valor.isdigit():
+                numero = int(valor)
+                if 0 <= numero <= 10:
+                    nota = numero
+            elif valor in CSAT_MAP:
+                nota = CSAT_MAP[valor]
+
+            if nota is not None:
+                chave_mes = data_resposta.strftime('%Y-%m')
+                respostas_por_mes[chave_mes].append(nota)
+
+        # Cálculo acumulativo mês a mês
+        meses_ordenados = sorted(respostas_por_mes.keys())
+        labels, csat_mensal, csat_acumulado = [], [], []
+
+        total_notas_acum = 0
+        total_satisfatorias_acum = 0
+
+        for key in meses_ordenados:
+            notas = respostas_por_mes[key]
+            total = len(notas)
+            satisfatorias = sum(1 for n in notas if n >= 7)
+
+            csat_mes = round((satisfatorias / total) * 100, 2) if total else 0
+            csat_mensal.append(csat_mes)
+
+            # Lógica acumulativa
+            total_notas_acum += total
+            total_satisfatorias_acum += satisfatorias
+
+            csat_acum = round((total_satisfatorias_acum / total_notas_acum) * 100, 2) if total_notas_acum else 0
+            csat_acumulado.append(csat_acum)
+
+            mes_formatado = datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize()
+            labels.append(mes_formatado)
+
+        return jsonify({
+            "status": "success",
+            "labels": labels,
+            "csat_mensal": csat_mensal,
+            "csat_acumulado": csat_acumulado
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@okrs_bp.route('/tmaTmsAcumulado', methods=['POST'])
+def tma_tms_acumulado():
+    try:
+        data = request.get_json() or {}
+        dias = int(data.get("dias", 365))
+        data_limite = datetime.utcnow() - timedelta(days=dias)
+
+        chamados_validos = db.session.query(Chamado).filter(
+            Chamado.data_criacao >= data_limite,
+            Chamado.data_criacao.isnot(None),
+            Chamado.restante_p_atendimento.isnot(None),
+            Chamado.restante_s_atendimento.isnot(None),
+            Chamado.nome_status.ilike('%Resolvido%')
+        ).all()
+
+        tma_por_mes = defaultdict(list)
+        tms_por_mes = defaultdict(list)
+
+        for chamado in chamados_validos:
+            try:
+                ano, mes = chamado.data_criacao.year, chamado.data_criacao.month
+                tempo_p = (chamado.restante_p_atendimento or "").strip()
+                tempo_s = (chamado.restante_s_atendimento or "").strip()
+                if not tempo_p or not tempo_s:
+                    continue
+
+                def parse_tempo(t):
+                    sinal = -1 if t.startswith("-") else 1
+                    partes = t.replace("-", "").split(":")
+                    h, m, s = (list(map(int, partes)) + [0, 0, 0])[:3]
+                    return timedelta(hours=h, minutes=m, seconds=s) * sinal
+
+                restante_p = parse_tempo(tempo_p)
+                restante_s = parse_tempo(tempo_s)
+
+                # Ignora negativos
+                if restante_p.total_seconds() < 0 or restante_s.total_seconds() < 0:
+                    continue
+
+                tms_individual = restante_s - restante_p
+                if tms_individual.total_seconds() < 0 or tms_individual > timedelta(days=30):
+                    continue
+
+                # Guarda em segundos
+                tma_por_mes[(ano, mes)].append(restante_p.total_seconds())
+                tms_por_mes[(ano, mes)].append(tms_individual.total_seconds())
+
+            except Exception:
+                continue
+
+        # Ordena os meses
+        meses_ordenados = sorted(set(tma_por_mes.keys()) | set(tms_por_mes.keys()))
+
+        labels = []
+        tma_acumulado = []
+        tms_acumulado = []
+
+        # Acumuladores
+        soma_tma = soma_tms = qtd_total = 0
+
+        for ano, mes in meses_ordenados:
+            tma_mes = tma_por_mes.get((ano, mes), [])
+            tms_mes = tms_por_mes.get((ano, mes), [])
+
+            qtd_mes = len(tma_mes)
+            if qtd_mes == 0:
+                continue
+
+            media_tma_mes = np.mean(tma_mes)
+            media_tms_mes = np.mean(tms_mes)
+
+            soma_tma += sum(tma_mes)
+            soma_tms += sum(tms_mes)
+            qtd_total += qtd_mes
+
+            # Média acumulada até o mês atual (em minutos)
+            media_tma_acum = (soma_tma / qtd_total) / 60
+            media_tms_acum = (soma_tms / qtd_total) / 60
+
+            labels.append(datetime(ano, mes, 1).strftime('%b/%y'))
+            tma_acumulado.append(round(media_tma_acum, 2))
+            tms_acumulado.append(round(media_tms_acum, 2))
+
+        return jsonify({
+            "status": "success",
+            "labels": labels,
+            "tma_acumulado_min": tma_acumulado,
+            "tms_acumulado_min": tms_acumulado
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@okrs_bp.route('/fcrAcumulado', methods=['POST'])
+def fcr_acumulado():
+    try:
+        data = request.get_json() or {}
+        dias = int(data.get('dias', 180))  # padrão: 6 meses
+        hoje = datetime.utcnow()
+        data_inicio = hoje - timedelta(days=dias)
+
+        # --- Coleta dados ---
+        registros = RelatorioColaboradores.query.filter(
+            RelatorioColaboradores.data_criacao >= data_inicio,
+            RelatorioColaboradores.nome_status == 'Resolvido'
+        ).all()
+
+        chamados = Chamado.query.filter(
+            Chamado.nome_status == 'Resolvido',
+            Chamado.data_finalizacao != None,
+            Chamado.data_finalizacao >= data_inicio,
+            Chamado.data_finalizacao <= hoje
+        ).all()
+
+        # --- Agrupa por mês ---
+        chamados_por_mes = defaultdict(list)
+        fcr_por_mes = defaultdict(list)
+
+        for chamado in chamados:
+            key = chamado.data_finalizacao.strftime('%Y-%m')
+            chamados_por_mes[key].append(chamado.cod_chamado)
+
+        for reg in registros:
+            if reg.first_call == 'S' and reg.cod_chamado:
+                key = reg.data_criacao.strftime('%Y-%m')
+                fcr_por_mes[key].append(reg.cod_chamado)
+
+        # --- Ordena cronologicamente ---
+        meses_ordenados = sorted(chamados_por_mes.keys())
+
+        labels = []
+        fcr_acumulado = []
+
+        acumulado_total = 0
+        acumulado_fcr = 0
+
+        # --- Cálculo acumulativo ---
+        for key in meses_ordenados:
+            total = len(chamados_por_mes[key])
+            fcr_mes = len(set(fcr_por_mes.get(key, [])))
+
+            acumulado_total += total
+            acumulado_fcr += fcr_mes
+
+            pct_acumulado = round((acumulado_fcr / acumulado_total) * 100, 2) if acumulado_total else 0
+
+            mes_formatado = datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize()
+            labels.append(mes_formatado)
+            fcr_acumulado.append(pct_acumulado)
+
+        return jsonify({
+            "status": "success",
+            "labels": labels,
+            "fcr_acumulado": fcr_acumulado
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@okrs_bp.route('/slaOkrsAcumulado', methods=['POST'])
+def sla_okrs_acumulado():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 180))
+        hoje = datetime.now()
+        data_inicio = hoje - timedelta(days=dias)
+
+        # Filtra os chamados válidos
+        chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.data_criacao >= data_inicio,
+            Chamado.data_criacao <= hoje
+        ).all()
+
+        # Agrupar por mês
+        chamados_por_mes = defaultdict(list)
+        for chamado in chamados:
+            key = chamado.data_criacao.strftime('%Y-%m') 
+            chamados_por_mes[key].append(chamado)
+
+        # Ordena cronologicamente
+        meses_ordenados = sorted(chamados_por_mes.keys())
+
+        # Listas de resposta
+        labels = []
+        sla_atendimento_acumulado = []
+        sla_resolucao_acumulado = []
+
+        # Variáveis acumulativas
+        acumulado_total = 0
+        acumulado_no_prazo_atendimento = 0
+        acumulado_no_prazo_resolucao = 0
+
+        for key in meses_ordenados:
+            lista = chamados_por_mes[key]
+            total = len(lista)
+            no_prazo_atendimento = sum(1 for c in lista if c.sla_atendimento == 'N')
+            no_prazo_resolucao = sum(1 for c in lista if c.sla_resolucao == 'N')
+
+            # Soma acumulada
+            acumulado_total += total
+            acumulado_no_prazo_atendimento += no_prazo_atendimento
+            acumulado_no_prazo_resolucao += no_prazo_resolucao
+
+            # Calcula o SLA acumulado até o mês corrente
+            pct_atendimento_acum = round((acumulado_no_prazo_atendimento / acumulado_total) * 100, 2) if acumulado_total else 0
+            pct_resolucao_acum = round((acumulado_no_prazo_resolucao / acumulado_total) * 100, 2) if acumulado_total else 0
+
+            # Formata rótulo do mês (Ex: "Jan/25")
+            mes_formatado = datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize()
+            labels.append(mes_formatado)
+            sla_atendimento_acumulado.append(pct_atendimento_acum)
+            sla_resolucao_acumulado.append(pct_resolucao_acum)
+
+        return jsonify({
+            "status": "success",
+            "labels": labels,
+            "sla_atendimento_acumulado": sla_atendimento_acumulado,
+            "sla_resolucao_acumulado": sla_resolucao_acumulado
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500

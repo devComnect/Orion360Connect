@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // Script que traz os chamados finalizados pelo suporte-->
 
 document.addEventListener("DOMContentLoaded", function () {
-    function carregarChamadosFinalizados(dias = 7) {
+    function carregarChamadosFinalizados(dias = 1) {
         fetch('/insights/ChamadosSuporte/finalizado', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -720,7 +720,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .catch(error => console.error("Erro de conexão:", error));
   }
 
-  // Carregamento inicial com 7 dias
+  // Carregamento inicial com 1 dia
   carregarAbertosResolvidos(1);
 });
 
@@ -992,7 +992,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 // Script que traz os dados de Tickets Operador-->
-function carregarTicketsPorOperador(dias = 30) {
+function carregarTicketsPorOperador(dias = 1) {
     fetch('/admin/ChamadosSuporte/ticketsOperador', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1490,7 +1490,7 @@ function carregarTopCategorias(dias = 1) {
 
 // Script que traz o TMA eo TMS -->
   document.addEventListener("DOMContentLoaded", function () {
-  let diasSelecionados = 30;
+  let diasSelecionados = 1;
   carregarTmaTms(diasSelecionados);
 
   document.querySelectorAll('.filtro-btn').forEach(btn => {

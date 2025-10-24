@@ -13,9 +13,7 @@
   }
 
   // Carrega as metas assim que o DOM estiver pronto
-  document.addEventListener("DOMContentLoaded", fetchMetas);
-
-
+document.addEventListener("DOMContentLoaded", fetchMetas);
 //Script que traz os Reabertos-->
 
   let chamadosReabertosCodigos = [];
@@ -253,7 +251,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (!chartTmaTms) {
       const ctx = document.getElementById('graficoTmaTms').getContext('2d');
       chartTmaTms = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels,
           datasets: [
@@ -262,14 +260,22 @@ document.addEventListener("DOMContentLoaded", async function () {
               data: tma,
               borderColor: '#4caf50',
               backgroundColor: 'rgba(76, 175, 80, 0.4)',
-              tension: 0.3
+              borderWidth: 3,
+              tension: 0.4,
+              fill: true,
+              pointRadius: 5,
+              pointHoverRadius: 8
             },
             {
               label: 'TMS (min)',
               data: tms,
               borderColor: '#2196f3',
               backgroundColor: 'rgba(33, 150, 243, 0.4)',
-              tension: 0.3
+              borderWidth: 3,
+              tension: 0.4,
+              fill: true,
+              pointRadius: 5,
+              pointHoverRadius: 8
             }
           ]
         },
@@ -330,10 +336,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 });
 
-
-
 //Script que traz a evolução do SLA com o passar dos periodos-->
-
 document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
 
@@ -433,23 +436,31 @@ document.addEventListener("DOMContentLoaded", async function () {
       // cria gráfico na primeira vez
       const ctx = document.getElementById('graficoSLA').getContext('2d');
       chartSLA = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels,
           datasets: [
             {
               label: 'SLA Atendimento (%)',
               data: slaAtendimentoData,
-              borderColor: '#4caf50',
-              backgroundColor: 'rgba(76, 175, 80, 0.4)',
-              tension: 0.3
+              borderColor: '#dedb41',
+              backgroundColor: 'rgba(231, 251, 6, 0.3)',
+              borderWidth: 3,
+              tension: 0.4,
+              fill: true,
+              pointRadius: 5,
+              pointHoverRadius: 8
             },
             {
               label: 'SLA Solução (%)',
               data: slaResolucaoData,
-              borderColor: '#2196f3',
-              backgroundColor: 'rgba(33, 150, 243, 0.4)',
-              tension: 0.3
+              borderColor: '#f44336',
+              backgroundColor: 'rgba(244, 67, 54, 0.3)',
+              borderWidth: 3,
+              tension: 0.4,
+              fill: true,
+              pointRadius: 5,
+              pointHoverRadius: 8
             }
           ]
         },
@@ -505,11 +516,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 });
 
-
-
 //Script do gráfico de FCR-->
-
- document.addEventListener("DOMContentLoaded", async function () {
+document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
 
   const metas = await fetchMetas();
@@ -594,7 +602,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (!chartFCR) {
       const ctx = document.getElementById('graficoFCR').getContext('2d');
       chartFCR = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels,
           datasets: [
@@ -603,7 +611,11 @@ document.addEventListener("DOMContentLoaded", async function () {
               data: fcrData,
               borderColor: '#ff9800',
               backgroundColor: 'rgba(255, 152, 0, 0.4)',
-              tension: 0.3
+              borderWidth: 3,
+              tension: 0.4,
+              fill: true,
+              pointRadius: 5,
+              pointHoverRadius: 8
             }
           ]
         },
@@ -647,10 +659,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 });
 
-
-
 //Script do gráfico de CSAT-->
-
 document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
 
@@ -729,7 +738,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (!chartCSAT) {
       const ctx = document.getElementById('graficoCSAT').getContext('2d');
       chartCSAT = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels,
           datasets: [
@@ -738,7 +747,11 @@ document.addEventListener("DOMContentLoaded", async function () {
               data: csatData,
               borderColor: '#673ab7',
               backgroundColor: 'rgba(103, 58, 183, 0.4)',
-              tension: 0.3
+              borderWidth: 3,
+              tension: 0.4,
+              fill: true,
+              pointRadius: 5,
+              pointHoverRadius: 8
             }
           ]
         },
@@ -779,11 +792,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 });
 
-
-
-
 //Script que traz os chamados de first call resolution-->
-
   let chamadosFcrCodigos = [];
 
   document.addEventListener("DOMContentLoaded", function () {

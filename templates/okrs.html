@@ -77,12 +77,69 @@
       <div id="carouselGraficos" class="carousel slide" data-bs-interval="false" data-bs-ride="false">
         <div class="carousel-inner">
 
-          <!-- Botões de filtro de período -->
-  
-
           <!-- SLIDE 1 – Metas + Evoluções -->
           <div class="carousel-item active">
-            <div class="row justify-content-center mb-4">
+            <h3 class="text-center mb-3">Metas</h3>
+
+            <!-- Bloco superior (objetivos principais) -->
+            <!--<div class="fluxograma-topo text-white p-2">
+              <div class="fluxo" id="objetivo1">
+                <h6 class="mb-2">Excelência no atendimento ao cliente - 100%</h6>
+              </div>
+
+              <div class="fluxo" id="objetivo2">
+                <h6 class="mb-2">Eficiência operacional do suporte - 100%</h6>
+              </div>
+            </div>-->
+
+            <!-- Bloco inferior (metas detalhadas) -->
+            <div class="fluxograma text-white p-2 position-relative">
+
+              <!-- Linhas de ligação (fluxograma visual) -->
+              <div class="linha-conector linha-esquerda"></div>
+              <div class="linha-conector linha-direita"></div>
+
+              <!-- Metas relacionadas à Excelência no atendimento -->
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">CSAT (%)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-csat">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Atendimento (%)</h6>
+                <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Solução (%)</h6>
+                <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">Reabertura (%)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
+              </div>
+
+              <!-- Metas relacionadas à Eficiência operacional -->
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMA (min)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMS (h)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">FCR (%)</h6>
+                <div class="info-item2" id="fcr-card"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
+              </div>
+
+            </div>
+
+            <!-- Botões de Filtro -->
+            <div class="row justify-content-center my-4">
               <div class="col-auto">
                 <div class="btn-group">
                   <button class="btn btn-outline-secondary filtro-btn" data-dias="30">Mês</button>
@@ -93,76 +150,38 @@
               </div>
             </div>
 
-            <h3 class="text-center">Metas</h3>
-            <div class="fluxograma text-white p-2">
-
-              <div class="fluxo">
-                <h6 class="mb-2">CSAT (%)</h6>
-                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-csat">--</span></div>
-              </div>
-
-              <div class="fluxo">
-                <h6 class="mb-2">SLA Atendimento (%)</h6>
-                <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
-              </div>
-
-              <div class="fluxo">
-                <h6 class="mb-2">SLA Solução (%)</h6>
-                <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
-              </div>
-
-              <div class="fluxo">
-                <h6 class="mb-2">Reabertura (%)</h6>
-                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
-              </div>
-
-              <div class="fluxo">
-                <h6 class="mb-2">TMA (min)</h6>
-                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
-              </div>
-
-              <div class="fluxo">
-                <h6 class="mb-2">TMS (h)</h6>
-                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
-              </div>
-
-              <div class="fluxo">
-                <h6 class="mb-2">FCR (%)</h6>
-                <div class="info-item2" id="fcr-card"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
-              </div>
-
-              <br>
-              <div class="row g-3">
-                <div class="col-md-6 mb-4">
-                  <div class="fluxo-card p-4">
-                    <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
-                    <canvas id="graficoTmaTms" height="80"></canvas>
-                  </div>
+            <!-- Gráficos -->
+            <div class="row g-3">
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
+                  <canvas id="graficoTmaTms" height="80"></canvas>
                 </div>
+              </div>
 
-                <div class="col-md-6 mb-4">
-                  <div class="fluxo-card p-4">
-                    <h5 class="text-center mb-4">Evolução do SLA</h5>
-                    <canvas id="graficoSLA" height="80"></canvas>
-                  </div>
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução do SLA</h5>
+                  <canvas id="graficoSLA" height="80"></canvas>
                 </div>
+              </div>
 
-                <div class="col-md-6 mb-4">
-                  <div class="fluxo-card p-4">
-                    <h5 class="text-center mb-4">Evolução do FCR</h5>
-                    <canvas id="graficoFCR" height="80"></canvas>
-                  </div>
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução do FCR</h5>
+                  <canvas id="graficoFCR" height="80"></canvas>
                 </div>
+              </div>
 
-                <div class="col-md-6 mb-4">
-                  <div class="fluxo-card p-4">
-                    <h5 class="text-center mb-4">Evolução do CSAT</h5>
-                    <canvas id="graficoCSAT" height="80"></canvas>
-                  </div>
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução do CSAT</h5>
+                  <canvas id="graficoCSAT" height="80"></canvas>
                 </div>
               </div>
             </div>
           </div>
+
 
           <!-- SLIDE 2 – Quarter Comparativo -->
           <div class="carousel-item">
@@ -300,6 +319,42 @@
               </div>
             
           </div>
+
+          <!-- SLIDE 5 – Acumulado -->
+          <div class="carousel-item">
+            <h3 class="text-center mb-4">Acumulado</h3>
+              <div class="row g-3 mt-4">
+                <!-- Gráficos -->
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução Acumulada TMA & TMS</h5>
+                  <canvas id="graficoAcumuladoTmaTms" height="80"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução Acumulada SLA</h5>
+                  <canvas id="graficoAcumuladoSLA" height="120"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução Acumulada FCR</h5>
+                  <canvas id="graficoAcumuladoFCR" height="80"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução Acumulada CSAT</h5>
+                  <canvas id="graficoAcumuladoCSAT" height="80"></canvas>
+                </div>
+              </div>
+            </div>
+            
+          </div>
         </div>
 
         <!-- Controles -->
@@ -317,23 +372,6 @@
   </div>
 </div>
 
-<!-- Modal Chamados -->
-<div class="modal fade" id="modalCodigos" tabindex="-1" aria-labelledby="modalCodigosLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalCodigosLabel">Chamados</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaCodigos" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- Modal Definir Metas -->
 <div class="modal fade" id="modalDefinirMetas" tabindex="-1" aria-labelledby="modalDefinirMetasLabel" aria-hidden="true">
@@ -397,4 +435,5 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/okrs.js') }}"></script>
 <script src="{{ url_for('static', filename='js/okrs_quarters.js') }}"></script>
+<script src="{{ url_for('static', filename='js/okrs_acumulados.js') }}"></script>
 {% endblock %}

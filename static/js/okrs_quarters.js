@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         ctx.moveTo(chartArea.left, y);
         ctx.lineTo(chartArea.right, y);
         ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = 'rgba(85, 251, 8, 0.4)';
+        ctx.strokeStyle = 'rgba(69, 8, 251, 0.4)';
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.restore();
@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async function () {
               backgroundColor: 'rgba(92, 0, 252, 0.6)',
               borderColor: '#673ab7',
               borderWidth: 1,
-              tension: 0.3
+              tension: 0.4
             }]
           },
           options: {
@@ -186,8 +186,8 @@ document.addEventListener("DOMContentLoaded", async function () {
               {
                 label: 'TMA',
                 data: info.tma,
-                borderColor: '#673ab7',
-                backgroundColor: 'rgba(103, 58, 183, 0.4)',
+                borderColor: '#4caf50',
+                backgroundColor: 'rgba(85, 251, 8, 0.4)',
                 tension: 0.3
               },
               {
@@ -253,7 +253,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         ctx.moveTo(chartArea.left, y);
         ctx.lineTo(chartArea.right, y);
         ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = 'rgba(76, 175, 80, 0.7)';
+        ctx.strokeStyle = 'rgba(231, 251, 6, 0.3)';
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         ctx.moveTo(chartArea.left, y);
         ctx.lineTo(chartArea.right, y);
         ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = 'rgba(33, 150, 243, 0.7)';
+        ctx.strokeStyle = 'rgba(244, 67, 54, 0.3)';
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -320,8 +320,8 @@ document.addEventListener("DOMContentLoaded", async function () {
               {
                 label: 'SLA Atendimento (%)',
                 data: info.sla_atendimento,
-                borderColor: '#4caf50',
-                backgroundColor: 'rgba(76, 175, 80, 0.3)',
+                borderColor: '#dedb41',
+                backgroundColor: 'rgba(231, 251, 6, 0.3)',
                 tension: 0.3
               },
               {

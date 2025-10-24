@@ -1,9 +1,5 @@
-from flask import Blueprint, jsonify, render_template, request, url_for, send_file
-import requests
-from modules.insights.utils import formatar_tempo
 from datetime import datetime, timedelta
 from application.models import Chamado, db, PesquisaSatisfacao, RelatorioColaboradores, PerformanceColaboradores, Metas
-from collections import Counter
 from sqlalchemy import func, and_, or_, extract, text
 import numpy as np
 from collections import defaultdict
@@ -12,10 +8,6 @@ import re, os, io
 
 
 def gerar_relatorio_sla(inicio_ano, fim_ano):
-    """
-    Gera o relatório anual de SLA (Atendimento e Resolução)
-    baseado nos chamados entre as datas fornecidas.
-    """
     # Busca todos os chamados do período
     chamados = Chamado.query.filter(
         Chamado.nome_status != 'Cancelado',
@@ -283,8 +275,6 @@ def gerar_relatorio_reabertura(inicio_ano, fim_ano):
     df.loc[len(df)] = ["Média Anual", "", "", media_final]
 
     return df, "Reabertos"
-
-
 
 def gerar_relatorio_csat(inicio_ano, fim_ano):
     CSAT_MAP = {
