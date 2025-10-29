@@ -1247,7 +1247,7 @@ def tma_tms_acumulado():
 def fcr_acumulado():
     try:
         data = request.get_json() or {}
-        dias = int(data.get('dias', 180))  # padrão: 6 meses
+        dias = int(data.get('dias', 180)) 
         hoje = datetime.utcnow()
         data_inicio = hoje - timedelta(days=dias)
 
@@ -1308,7 +1308,6 @@ def fcr_acumulado():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 @okrs_bp.route('/slaOkrsAcumulado', methods=['POST'])
 def sla_okrs_acumulado():

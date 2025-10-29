@@ -141,45 +141,37 @@ document.addEventListener("DOMContentLoaded", fetchMetas);
 document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
 
-  const metas = await fetchMetas();
-  let chartTmaTms; // gráfico global
+  // 🔹 Converte minutos em formato HH:MM
+  function formatarMinutos(minutos) {
+    if (minutos == null || isNaN(minutos)) return '-';
+    const h = Math.floor(minutos / 60);
+    const m = Math.floor(minutos % 60);
+    return `${h}h ${m.toString().padStart(2, '0')}m`;
+  }
 
-  // Plugin da linha pontilhada (metas TMA e TMS)
-  const horizontalLinePluginTmaTms = {
-    id: 'horizontalLineTmaTms',
-    afterDraw: (chart) => {
-      const { ctx, chartArea, scales } = chart;
-      const yScale = scales.y;
+  // 🔹 Converte minutos em formato HH:MM (para TMS)
+  function formatarHoras(minutos) {
+    const horas = minutos / 60;
+    const h = Math.floor(horas);
+    const m = Math.floor((horas - h) * 60);
+    return `${h}h ${m.toString().padStart(2, '0')}m`;
+  }
 
-      ctx.save();
-
-      if (metas.tma != null) {
-        const y = yScale.getPixelForValue(metas.tma);
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, y);
-        ctx.lineTo(chartArea.right, y);
-        ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = 'rgba(76, 175, 80, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-
-      if (metas.tms != null) {
-        const y = yScale.getPixelForValue(metas.tms);
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, y);
-        ctx.lineTo(chartArea.right, y);
-        ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = 'rgba(33, 150, 243, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-
-      ctx.restore();
+  // Busca acumulado
+  async function fetchAcumuladoTmaTms() {
+    try {
+      const res = await fetch('/okrs/tmaTmsAcumulado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias: 365 })
+      });
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
     }
-  };
+  }
 
-  // Busca as metas no backend
+  // Busca metas
   async function fetchMetas() {
     try {
       const res = await fetch('/okrs/getMetas');
@@ -204,8 +196,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-    // Atualiza setas e valores das metas nos cards
-    function atualizarIndicadoresMetas(tmaMedio, tmsMedio, metas) {
+  // Atualiza setas e valores das metas nos cards
+  function atualizarIndicadoresMetas(tmaMedio, tmsMedio, metas) {
     const metaTmaEl = document.getElementById("meta-tma");
     const metaTmsEl = document.getElementById("meta-tms");
 
@@ -214,28 +206,63 @@ document.addEventListener("DOMContentLoaded", async function () {
     const setaTma = metaTmaEl.previousElementSibling;
     const setaTms = metaTmsEl.previousElementSibling;
 
-    // Lógica: menor valor = melhor desempenho
     if (metas.tma != null) {
-      if (tmaMedio <= metas.tma) {
-        setaTma.className = "bi bi-arrow-up-circle text-success";
-      } else {
-        setaTma.className = "bi bi-arrow-down-circle text-danger";
-      }
+      setaTma.className = tmaMedio <= metas.tma
+        ? "bi bi-arrow-up-circle text-success"
+        : "bi bi-arrow-down-circle text-danger";
     }
 
     if (metas.tms != null) {
-      if (tmsMedio <= metas.tms) {
-        setaTms.className = "bi bi-arrow-up-circle text-success";
-      } else {
-        setaTms.className = "bi bi-arrow-down-circle text-danger";
-      }
+      setaTms.className = tmsMedio <= metas.tms
+        ? "bi bi-arrow-up-circle text-success"
+        : "bi bi-arrow-down-circle text-danger";
     }
   }
 
+  // Plugin da linha pontilhada (metas TMA e TMS)
+  const horizontalLinePluginTmaTms = {
+    id: 'horizontalLineTmaTms',
+    afterDraw: (chart) => {
+      const metas = chart.options._metas; // 👈 agora acessamos corretamente aqui
+      if (!metas) return;
+
+      const { ctx, chartArea, scales } = chart;
+      const yScale = scales.y;
+      ctx.save();
+
+      if (metas.tma != null) {
+        const y = yScale.getPixelForValue(metas.tma);
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(76, 175, 80, 0.5)';
+        ctx.lineWidth = 2; 
+        ctx.stroke();
+      }
+
+      if (metas.tms != null) {
+        const y = yScale.getPixelForValue(metas.tms);
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(33, 150, 243, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+  };
 
   // Atualiza gráfico e indicadores
   async function atualizarGraficoTmaTms(dias) {
-    const tmaTmsDados = await fetchTmaTmsMensal(dias);
+    const [tmaTmsDados, metas, acumuladoDados] = await Promise.all([
+      fetchTmaTmsMensal(dias),
+      fetchMetas(),
+      fetchAcumuladoTmaTms()
+    ]);
 
     if (!tmaTmsDados.status || tmaTmsDados.status !== "success") {
       console.error("Erro ao carregar dados TMA/TMS");
@@ -245,89 +272,97 @@ document.addEventListener("DOMContentLoaded", async function () {
     const labels = tmaTmsDados.labels || [];
     const tma = tmaTmsDados.media_tma_min || [];
     const tmsMin = tmaTmsDados.media_tms_min || [];
-    const tms = tmsMin.map(v => v !== null ? +(v / 60).toFixed(2) : null);
+    const tms = tmsMin.map(v => v !== null ? v / 60 : null);
 
-    // Cria gráfico se ainda não existir
-    if (!chartTmaTms) {
-      const ctx = document.getElementById('graficoTmaTms').getContext('2d');
-      chartTmaTms = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'TMA (min)',
-              data: tma,
-              borderColor: '#4caf50',
-              backgroundColor: 'rgba(76, 175, 80, 0.4)',
-              borderWidth: 3,
-              tension: 0.4,
-              fill: true,
-              pointRadius: 5,
-              pointHoverRadius: 8
-            },
-            {
-              label: 'TMS (min)',
-              data: tms,
-              borderColor: '#2196f3',
-              backgroundColor: 'rgba(33, 150, 243, 0.4)',
-              borderWidth: 3,
-              tension: 0.4,
-              fill: true,
-              pointRadius: 5,
-              pointHoverRadius: 8
+    const tmaAcum = acumuladoDados.tma_acumulado_min || [];
+    const tmsAcum = acumuladoDados.tms_acumulado_min || [];
+
+    const ctx = document.getElementById('graficoTmaTms').getContext('2d');
+    if (window.chartTmaTms) window.chartTmaTms.destroy();
+
+    window.chartTmaTms = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'TMA (min)',
+            data: tma,
+            borderColor: '#4caf50',
+            backgroundColor: 'rgba(76, 175, 80, 0.4)',
+            borderWidth: 3,
+          },
+          {
+            label: 'TMS (h)',
+            data: tms,
+            borderColor: '#2196f3',
+            backgroundColor: 'rgba(33, 150, 243, 0.4)',
+            borderWidth: 3,
+          },
+          {
+            label: 'TMA Acumulado',
+            data: tmaAcum,
+            borderColor: '#4caf50',
+            borderDash: [6, 6],
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          },
+          {
+            label: 'TMS Acumulado',
+            data: tmsAcum,
+            borderColor: '#2196f3',
+            borderDash: [6, 6],
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top', labels: { color: '#fff' } },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                const label = context.dataset.label || '';
+                const value = context.parsed.y;
+                if (label.includes('TMA')) return `${label}: ${formatarMinutos(value)}`;
+                if (label.includes('TMS')) return `${label}: ${formatarHoras(value)}`;
+                return `${label}: ${value}`;
+              }
             }
-          ]
+          }
         },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: 'top', labels: { color: '#fff' } },
-            tooltip: {
-              callbacks: {
-                label: function (context) {
-                  const label = context.dataset.label || '';
-                  const value = context.parsed.y;
-
-                  if (label.includes('TMA')) {
-                    if (value < 60) {
-                      return `${label}: ${Math.round(value)} min`;
-                    } else {
-                      return `${label}: ${(value / 60).toFixed(2)} h`;
-                    }
-                  } else if (label.includes('TMS')) {
-                    return `${label}: ${value} h`;
-                  }
-                  return `${label}: ${value}`;
-                }
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: '#fff',
+              callback: function (value) {
+                return formatarMinutos(value);
               }
             }
           },
-          scales: {
-            y: { beginAtZero: true, ticks: { color: '#fff' } },
-            x: { ticks: { color: '#fff' } }
-          }
+          x: { ticks: { color: '#fff' } }
         },
-        plugins: [horizontalLinePluginTmaTms]
-      });
-    } else {
-      chartTmaTms.data.labels = labels;
-      chartTmaTms.data.datasets[0].data = tma;
-      chartTmaTms.data.datasets[1].data = tms;
-      chartTmaTms.update();
-    }
+        _metas: metas // 👈 armazenado dentro de options agora
+      },
+      plugins: [horizontalLinePluginTmaTms]
+    });
 
-    // Calcula médias e atualiza setas
     const tmaMedio = tma.length ? tma.reduce((a, b) => a + b, 0) / tma.length : 0;
     const tmsMedio = tms.length ? tms.reduce((a, b) => a + b, 0) / tms.length : 0;
-
     atualizarIndicadoresMetas(tmaMedio, tmsMedio, metas);
   }
 
-  // Inicializa com 30 dias
   atualizarGraficoTmaTms(30);
 
-  // Eventos dos botões de filtro
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const dias = parseInt(this.getAttribute('data-dias'), 10);
@@ -343,7 +378,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   const metas = await fetchMetas();
   let chartSLA; // guardamos o gráfico aqui
 
-  // Plugin da linha pontilhada
   const horizontalLinePlugin = {
     id: 'horizontalLine',
     afterDraw: (chart) => {
@@ -358,7 +392,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         ctx.moveTo(chartArea.left, y);
         ctx.lineTo(chartArea.right, y);
         ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = 'rgba(76, 175, 80, 0.4)';
+        ctx.strokeStyle = 'rgba(231, 251, 6, 0.3)';
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -369,7 +403,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         ctx.moveTo(chartArea.left, y);
         ctx.lineTo(chartArea.right, y);
         ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = 'rgba(33, 150, 243, 0.4)';
+        ctx.strokeStyle = 'rgba(244, 67, 54, 0.3)';
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -401,7 +435,20 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // 🔹 Atualiza ícones dos cards de SLA
+  async function fetchSlaAcumulado(dias) {
+    try {
+      const res = await fetch('/okrs/slaOkrsAcumulado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias })
+      });
+      const data = await res.json();
+      return res.ok ? data : {};
+    } catch {
+      return {};
+    }
+  }
+
   function atualizarIndicadoresSLA(mediaAtendimento, mediaResolucao) {
     const metaAtendimentoEl = document.getElementById("meta-sla-atendimento");
     const metaResolucaoEl = document.getElementById("meta-sla-solucao");
@@ -426,14 +473,19 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   async function atualizarGraficoSLA(dias) {
-    const slaDados = await fetchSlaMensal(dias);
+    const [slaDados, slaAcumDados] = await Promise.all([
+      fetchSlaMensal(dias),
+      fetchSlaAcumulado(dias)
+    ]);
 
     const labels = slaDados.labels || [];
     const slaAtendimentoData = slaDados.sla_atendimento || [];
     const slaResolucaoData = slaDados.sla_resolucao || [];
 
+    const slaAtendimentoAcum = slaAcumDados.sla_atendimento_acumulado || [];
+    const slaResolucaoAcum = slaAcumDados.sla_resolucao_acumulado || [];
+
     if (!chartSLA) {
-      // cria gráfico na primeira vez
       const ctx = document.getElementById('graficoSLA').getContext('2d');
       chartSLA = new Chart(ctx, {
         type: 'bar',
@@ -446,10 +498,7 @@ document.addEventListener("DOMContentLoaded", async function () {
               borderColor: '#dedb41',
               backgroundColor: 'rgba(231, 251, 6, 0.3)',
               borderWidth: 3,
-              tension: 0.4,
-              fill: true,
-              pointRadius: 5,
-              pointHoverRadius: 8
+              fill: true
             },
             {
               label: 'SLA Solução (%)',
@@ -457,43 +506,51 @@ document.addEventListener("DOMContentLoaded", async function () {
               borderColor: '#f44336',
               backgroundColor: 'rgba(244, 67, 54, 0.3)',
               borderWidth: 3,
-              tension: 0.4,
-              fill: true,
-              pointRadius: 5,
-              pointHoverRadius: 8
+              fill: true
+            },
+            {
+              label: 'SLA Atendimento Acumulado (%)',
+              data: slaAtendimentoAcum,
+              borderColor: '#cddc39',
+              borderWidth: 2,
+              fill: false,
+              tension: 0.3,
+              pointRadius: 3
+            },
+            {
+              label: 'SLA Solução Acumulado (%)',
+              data: slaResolucaoAcum,
+              borderColor: '#ff9800',
+              borderWidth: 2,
+              fill: false,
+              tension: 0.3,
+              pointRadius: 3
             }
           ]
         },
         options: {
           responsive: true,
           plugins: {
-            legend: {
-              position: 'top',
-              labels: { color: '#fff' }
-            }
+            legend: { position: 'top', labels: { color: '#fff' } },
+            tooltip: { mode: 'index', intersect: false }
           },
+          interaction: { mode: 'index', intersect: false },
           scales: {
-            y: {
-              beginAtZero: true,
-              max: 100,
-              ticks: { color: '#fff' }
-            },
-            x: {
-              ticks: { color: '#fff' }
-            }
+            y: { beginAtZero: true, max: 100, ticks: { color: '#fff', callback: v => `${v}%` } },
+            x: { ticks: { color: '#fff' } }
           }
         },
         plugins: [horizontalLinePlugin]
       });
     } else {
-      // só atualiza dados se já existir
       chartSLA.data.labels = labels;
       chartSLA.data.datasets[0].data = slaAtendimentoData;
       chartSLA.data.datasets[1].data = slaResolucaoData;
+      chartSLA.data.datasets[2].data = slaAtendimentoAcum;
+      chartSLA.data.datasets[3].data = slaResolucaoAcum;
       chartSLA.update();
     }
 
-    // 🔹 Calcula médias e atualiza setas
     const mediaAtendimento = slaAtendimentoData.length
       ? slaAtendimentoData.reduce((a, b) => a + b, 0) / slaAtendimentoData.length
       : 0;
@@ -504,10 +561,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     atualizarIndicadoresSLA(mediaAtendimento, mediaResolucao);
   }
 
-  // Inicializa com 30 dias
   atualizarGraficoSLA(30);
 
-  // Eventos dos botões
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const dias = parseInt(this.getAttribute('data-dias'), 10);
@@ -516,42 +571,12 @@ document.addEventListener("DOMContentLoaded", async function () {
   });
 });
 
-//Script do gráfico de FCR-->
+
+// Script do gráfico de FCR (com FCR Acumulado)
 document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
 
-  const metas = await fetchMetas();
-  let chartFCR;
-
-  // Exibe no card apenas o valor da meta cadastrada no banco
-  if (metas.fcr != null) {
-    const metaEl = document.getElementById('meta-fcr');
-    metaEl.textContent = `${metas.fcr}%`;
-  }
-
-  // Plugin: linha pontilhada no gráfico representando a meta FCR
-  const linhaMetaFcrPlugin = {
-    id: 'linhaMetaFCR',
-    afterDraw(chart) {
-      const { ctx, chartArea, scales } = chart;
-      const yScale = scales.y;
-      const yMeta = metas.fcr;
-
-      if (yMeta != null) {
-        const y = yScale.getPixelForValue(yMeta);
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, y);
-        ctx.lineTo(chartArea.right, y);
-        ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = 'rgba(255, 152, 0, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.restore();
-      }
-    }
-  };
-
+  //  Busca metas do backend
   async function fetchMetas() {
     try {
       const res = await fetch('/okrs/getMetas');
@@ -561,6 +586,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
+  // Busca dados do FCR Mensal
   async function fetchFcrMensal(dias) {
     try {
       const res = await fetch('/okrs/fcrMensal', {
@@ -574,77 +600,150 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
+  // 🔹 Busca dados do FCR acumulado
+  async function fetchFcrAcumulado(dias) {
+    try {
+      const res = await fetch('/okrs/fcrAcumulado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias })
+      });
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
+    }
+  }
+
+  // Plugin da linha de meta
+  const linhaMetaFcrPlugin = {
+    id: 'linhaMetaFCR',
+    afterDraw(chart, args, options) {
+      const metaFcr = options.metaFcr;
+      if (metaFcr == null) return;
+
+      const { ctx, chartArea, scales } = chart;
+      const yScale = scales.y;
+      const y = yScale.getPixelForValue(metaFcr);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, y);
+      ctx.lineTo(chartArea.right, y);
+      ctx.setLineDash([6, 6]);
+      ctx.strokeStyle = 'rgba(255, 152, 0, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      // Desenha o rótulo "Meta"
+      ctx.save();
+      ctx.fillStyle = 'rgba(241, 145, 20, 0.8)';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(`Meta FCR (${metaFcr}%)`, chartArea.right - 90, y - 5);
+      ctx.restore();
+    }
+  };
+
+  // Atualiza o gráfico (mensal + acumulado)
   async function atualizarGraficoFCR(dias) {
-    const fcrDados = await fetchFcrMensal(dias);
+    const [metas, fcrDados, fcrAcumDados] = await Promise.all([
+      fetchMetas(),
+      fetchFcrMensal(dias),
+      fetchFcrAcumulado(dias)
+    ]);
+
     const labels = fcrDados.labels || [];
     const fcrData = fcrDados.fcr || [];
 
-    // Atualiza apenas a seta do card conforme a meta
-    if (fcrData.length > 0 && metas.fcr != null) {
-      const valorAtual = fcrData[fcrData.length - 1];
-      const metaValor = metas.fcr;
+    // Alinha valores acumulados com as labels do mensal
+    const acumLabels = fcrAcumDados.labels || [];
+    const acumValues = fcrAcumDados.fcr_acumulado || [];
+    const mapAcum = Object.fromEntries(acumLabels.map((l, i) => [l, acumValues[i]]));
+    const fcrAcumAligned = labels.map(l => mapAcum[l] ?? null);
 
+    // Atualiza valor e seta do card
+    if (metas.fcr != null) {
       const metaEl = document.getElementById('meta-fcr');
-      const icone = metaEl.previousElementSibling; // o <i> da seta
-
-      if (valorAtual >= metaValor) {
-        // Quando está acima ou igual à meta → seta para baixo (ruim)
-        icone.className = 'bi bi-arrow-up-circle text-success'
-
-        
-      } else {
-        // Quando está abaixo da meta → seta para cima (bom)
-        icone.className = 'bi bi-arrow-down-circle text-danger';;
+      if (metaEl) metaEl.textContent = `${metas.fcr}%`;
+      const icone = metaEl ? metaEl.previousElementSibling : null;
+      if (icone && fcrData.length > 0) {
+        const valorAtual = fcrData[fcrData.length - 1];
+        icone.className = valorAtual >= metas.fcr
+          ? 'bi bi-arrow-up-circle text-success'
+          : 'bi bi-arrow-down-circle text-danger';
       }
-
     }
 
-    if (!chartFCR) {
-      const ctx = document.getElementById('graficoFCR').getContext('2d');
-      chartFCR = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'FCR (%)',
-              data: fcrData,
-              borderColor: '#ff9800',
-              backgroundColor: 'rgba(255, 152, 0, 0.4)',
-              borderWidth: 3,
-              tension: 0.4,
-              fill: true,
-              pointRadius: 5,
-              pointHoverRadius: 8
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: { color: '#fff' }
+    const ctx = document.getElementById('graficoFCR').getContext('2d');
+    if (window.chartFCR) window.chartFCR.destroy();
+
+    // Criação do gráfico com plugin da linha de meta
+    window.chartFCR = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'FCR (%)',
+            data: fcrData,
+            borderColor: '#ff9800',
+            backgroundColor: 'rgba(255, 152, 0, 0.4)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 5,
+            pointHoverRadius: 8
+          },
+          {
+            label: 'FCR Acumulado (%)',
+            data: fcrAcumAligned,
+            borderColor: '#ffb74d',
+            borderDash: [6, 6],
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            yAxisID: 'y'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: '#fff' }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label(context) {
+                const label = context.dataset.label || '';
+                const value = context.parsed.y;
+                return value == null ? `${label}: -` : `${label}: ${value}%`;
+              }
             }
           },
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 100,
-              ticks: { color: '#fff' }
-            },
-            x: {
-              ticks: { color: '#fff' }
-            }
-          }
+          //  Aqui passamos a meta para o plugin
+          linhaMetaFCR: { metaFcr: metas.fcr }
         },
-        plugins: [linhaMetaFcrPlugin]
-      });
-    } else {
-      chartFCR.data.labels = labels;
-      chartFCR.data.datasets[0].data = fcrData;
-      chartFCR.update();
-    }
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              color: '#fff',
+              callback: (v) => `${v}%`
+            }
+          },
+          x: { ticks: { color: '#fff' } }
+        }
+      },
+      plugins: [linhaMetaFcrPlugin]
+    });
   }
 
   // Inicializa com 30 dias
@@ -663,41 +762,22 @@ document.addEventListener("DOMContentLoaded", async function () {
 document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
 
-  const metas = await fetchMetas();
-  let chartCSAT;
+  let csatMeta = 0;
 
-  // 🔹 Linha da meta dinâmica vinda do banco
-  const linhaMetaCsatPlugin = {
-    id: 'linhaMetaCSAT',
-    afterDraw(chart) {
-      const { ctx, chartArea, scales } = chart;
-      const yScale = scales.y;
-      const yMeta = metas.csat; // ← valor dinâmico do banco
-
-      if (yMeta != null) {
-        const y = yScale.getPixelForValue(yMeta);
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left, y);
-        ctx.lineTo(chartArea.right, y);
-        ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = 'rgba(103, 58, 183, 0.4)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.restore();
-      }
-    }
-  };
-
+  // 🔹 Busca metas do backend
   async function fetchMetas() {
     try {
       const res = await fetch('/okrs/getMetas');
-      return res.ok ? await res.json() : {};
+      const data = res.ok ? await res.json() : {};
+      csatMeta = data.csat || 0; // salva meta para o plugin
+      return data;
     } catch {
+      csatMeta = 0;
       return {};
     }
   }
 
+  // 🔹 Busca CSAT mensal
   async function fetchCsatMensal(dias) {
     try {
       const res = await fetch('/okrs/csatMensal', {
@@ -711,79 +791,121 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // 🔹 Atualiza apenas o ícone conforme a meta dinâmica
-  function atualizarIndicadorCsat(mediaCsat) {
-    const metaCsatEl = document.getElementById("meta-csat");
-    if (!metaCsatEl || metas.csat == null) return;
-
-    const setaCsat = metaCsatEl.previousElementSibling;
-    const metaValor = metas.csat;
-
-    // Regra: se atingir ou ultrapassar a meta → verde, caso contrário → vermelho
-    if (mediaCsat >= metaValor) {
-      setaCsat.className = "bi bi-arrow-up-circle text-success";
-    } else {
-      setaCsat.className = "bi bi-arrow-down-circle text-danger";
+  // 🔹 Busca CSAT acumulado
+  async function fetchCsatAcumulado(dias) {
+    try {
+      const res = await fetch('/okrs/csatAcumulado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias })
+      });
+      return res.ok ? await res.json() : {};
+    } catch {
+      return {};
     }
-
-    // Exibe a meta no card, sem alterar o conteúdo fixo
-    metaCsatEl.textContent = `${metaValor.toFixed(1)}%`;
   }
 
-  async function atualizarGraficoCSAT(dias) {
-    const csatDados = await fetchCsatMensal(dias);
-    const labels = csatDados.labels || [];
-    const csatData = csatDados.csat || [];
+  // 🔹 Plugin: desenha a linha pontilhada da meta
+  const linhaMetaCsatPlugin = {
+    id: 'linhaMetaCSAT',
+    afterDatasetsDraw(chart) {
+      if (!csatMeta) return;
 
-    if (!chartCSAT) {
-      const ctx = document.getElementById('graficoCSAT').getContext('2d');
-      chartCSAT = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: 'CSAT (%)',
-              data: csatData,
-              borderColor: '#673ab7',
-              backgroundColor: 'rgba(103, 58, 183, 0.4)',
-              borderWidth: 3,
-              tension: 0.4,
-              fill: true,
-              pointRadius: 5,
-              pointHoverRadius: 8
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: 'top', labels: { color: '#fff' } }
-          },
-          scales: {
-            y: { beginAtZero: true, max: 100, ticks: { color: '#fff' } },
-            x: { ticks: { color: '#fff' } }
-          }
-        },
-        plugins: [linhaMetaCsatPlugin]
-      });
-    } else {
-      chartCSAT.data.labels = labels;
-      chartCSAT.data.datasets[0].data = csatData;
-      chartCSAT.update();
+      const { ctx, chartArea, scales } = chart;
+      const yScale = scales.y;
+      const y = yScale.getPixelForValue(csatMeta);
+
+      // Linha pontilhada
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, y);
+      ctx.lineTo(chartArea.right, y);
+      ctx.setLineDash([6, 6]);
+      ctx.strokeStyle = '#673ab7';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      // Texto "Meta"
+      ctx.save();
+      ctx.font = "bold 12px sans-serif";
+      ctx.fillStyle = '#673ab7';
+      ctx.fillText(`Meta: ${csatMeta}%`, chartArea.right - 80, y - 8);
+      ctx.restore();
+    }
+  };
+
+  // 🔹 Atualiza o gráfico CSAT (mensal + acumulado)
+  async function atualizarGraficoCSAT(dias) {
+    const [metas, csatMensal, csatAcumDados] = await Promise.all([
+      fetchMetas(),
+      fetchCsatMensal(dias),
+      fetchCsatAcumulado(dias)
+    ]);
+
+    const labels = csatMensal.labels || [];
+    const csatData = csatMensal.csat || [];
+
+    // Alinhamento dos dados acumulados
+    const acumLabels = csatAcumDados.labels || [];
+    const acumValues = csatAcumDados.csat_acumulado || [];
+    const csatAcumAligned = labels.map(l => acumLabels.includes(l) ? acumValues[acumLabels.indexOf(l)] : null);
+
+    // Atualiza valor no card
+    if (csatMeta) {
+      const metaEl = document.getElementById('meta-csat');
+      if (metaEl) metaEl.textContent = `${csatMeta}%`;
+      const icone = metaEl ? metaEl.previousElementSibling : null;
+      if (icone && csatData.length > 0) {
+        const valorAtual = csatData[csatData.length - 1];
+        icone.className = valorAtual >= csatMeta
+          ? 'bi bi-arrow-up-circle text-success'
+          : 'bi bi-arrow-down-circle text-danger';
+      }
     }
 
-    // 🔹 Calcula média e atualiza seta e valor
-    const mediaCsat = csatData.length
-      ? csatData.reduce((a, b) => a + b, 0) / csatData.length
-      : 0;
-    atualizarIndicadorCsat(mediaCsat);
+    // Criação / atualização do gráfico
+    const ctx = document.getElementById('graficoCSAT').getContext('2d');
+    if (window.chartCSAT) window.chartCSAT.destroy();
+
+    window.chartCSAT = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'CSAT (%)', data: csatData, borderColor: '#673ab7', backgroundColor: 'rgba(103, 58, 183, 0.4)', borderWidth: 3 },
+          { label: 'CSAT Acumulado (%)', data: csatAcumAligned, borderColor: '#b388ff', borderWidth: 2, fill: false, tension: 0.3 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top', labels: { color: '#fff' } },
+          tooltip: {
+            mode: 'index', intersect: false,
+            callbacks: {
+              label: (context) => {
+                const label = context.dataset.label || '';
+                const value = context.parsed.y;
+                return value == null ? `${label}: -` : `${label}: ${value}%`;
+              }
+            }
+          }
+        },
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          y: { beginAtZero: true, max: 100, ticks: { color: '#fff', callback: v => `${v}%` } },
+          x: { ticks: { color: '#fff' } }
+        }
+      },
+      plugins: [linhaMetaCsatPlugin]
+    });
   }
 
   // Inicializa com 30 dias
   atualizarGraficoCSAT(30);
 
-  // Eventos dos botões
+  // Eventos dos botões de filtro
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const dias = parseInt(this.getAttribute('data-dias'), 10);
@@ -791,6 +913,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   });
 });
+
+
 
 //Script que traz os chamados de first call resolution-->
   let chamadosFcrCodigos = [];
