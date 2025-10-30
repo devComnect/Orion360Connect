@@ -793,13 +793,13 @@ def exportar_okrs_anual():
                 workbook = writer.book
                 worksheet = writer.sheets[aba]
 
-                formato_header = workbook.add_format({'bold': True, 'bg_color': '#D9E1F2', 'border': 1})
-                formato_num = workbook.add_format({'num_format': '0.00', 'border': 1})
-                formato_texto = workbook.add_format({'border': 1})
+                formato_header = workbook.add_format({'bold': True, 'bg_color': '#D9E1F2'})
+                formato_num = workbook.add_format({'num_format': '0.00'})
+                #formato_texto = workbook.add_format({'border': 1})
 
-                worksheet.set_column('A:A', 15, formato_texto)
+                worksheet.set_column('A:A', 15)
                 worksheet.set_column('B:B', 12, formato_num)
-                worksheet.set_column('C:C', 15, formato_texto)
+                worksheet.set_column('C:C', 15)
                 worksheet.write_row('A1', list(df.columns), formato_header)
 
         output.seek(0)

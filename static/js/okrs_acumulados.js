@@ -272,11 +272,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     id: "horizontalLine",
     afterDraw: (chart) => {
       const { ctx, chartArea, scales } = chart;
-      const y = scales.y;
       ctx.save();
 
       if (metas.tma != null) {
-        const posY = y.getPixelForValue(metas.tma);
+        const posY = scales.y.getPixelForValue(metas.tma);
         ctx.beginPath();
         ctx.moveTo(chartArea.left, posY);
         ctx.lineTo(chartArea.right, posY);
@@ -287,7 +286,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
 
       if (metas.tms != null) {
-        const posY = y.getPixelForValue(metas.tms);
+        const posY = scales.y.getPixelForValue(metas.tms);
         ctx.beginPath();
         ctx.moveTo(chartArea.left, posY);
         ctx.lineTo(chartArea.right, posY);
@@ -340,7 +339,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         labels: dados.labels,
         datasets: [
           {
-            label: "TMA Acumulado (min)",
+            label: "TMA Acumulado",
             data: dados.tma_acumulado_min,
             borderColor: "#0d6efd",
             backgroundColor: "rgba(13,110,253,0.15)",
@@ -351,7 +350,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             pointHoverRadius: 8,
           },
           {
-            label: "TMS Acumulado (min)",
+            label: "TMS Acumulado",
             data: dados.tms_acumulado_min,
             borderColor: "#198754",
             backgroundColor: "rgba(25,135,84,0.15)",
@@ -372,7 +371,11 @@ document.addEventListener("DOMContentLoaded", async function () {
             intersect: false,
             callbacks: {
               label: function (context) {
-                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} min`;
+                // Converte minutos para horas:minutos
+                const minutos = context.parsed.y;
+                const horas = Math.floor(minutos / 60);
+                const mins = Math.round(minutos % 60);
+                return `${context.dataset.label}: ${horas}h${mins.toString().padStart(2, "0")}min`;
               },
             },
           },
@@ -380,7 +383,14 @@ document.addEventListener("DOMContentLoaded", async function () {
         scales: {
           y: {
             beginAtZero: true,
-            title: { display: true, text: "Tempo (minutos)" },
+            title: { display: true, text: "Tempo" },
+            ticks: {
+              callback: function (value) {
+                const horas = Math.floor(value / 60);
+                const mins = Math.round(value % 60);
+                return `${horas}h${mins.toString().padStart(2, "0")}min`;
+              },
+            },
           },
           x: {
             title: { display: true, text: "Mês" },
@@ -401,6 +411,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   });
 });
+
 
 // Script que traz o FCR acumulado
 
