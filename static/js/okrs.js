@@ -138,6 +138,7 @@ document.addEventListener("DOMContentLoaded", fetchMetas);
 
 
 // Script que traz o TMA e TMS -->
+// Script que traz o TMA e TMS -->
 document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
 
@@ -151,9 +152,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // 🔹 Converte minutos em formato HH:MM (para TMS)
   function formatarHoras(minutos) {
-    const horas = minutos / 60;
-    const h = Math.floor(horas);
-    const m = Math.floor((horas - h) * 60);
+    if (minutos == null || isNaN(minutos)) return '-';
+    const h = Math.floor(minutos / 60);
+    const m = Math.floor(minutos % 60);
     return `${h}h ${m.toString().padStart(2, '0')}m`;
   }
 
@@ -223,7 +224,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   const horizontalLinePluginTmaTms = {
     id: 'horizontalLineTmaTms',
     afterDraw: (chart) => {
-      const metas = chart.options._metas; // 👈 agora acessamos corretamente aqui
+      const metas = chart.options._metas;
       if (!metas) return;
 
       const { ctx, chartArea, scales } = chart;
@@ -271,8 +272,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     const labels = tmaTmsDados.labels || [];
     const tma = tmaTmsDados.media_tma_min || [];
-    const tmsMin = tmaTmsDados.media_tms_min || [];
-    const tms = tmsMin.map(v => v !== null ? v / 60 : null);
+    const tms = tmaTmsDados.media_tms_min || []; // 🔹 mantido em minutos
 
     const tmaAcum = acumuladoDados.tma_acumulado_min || [];
     const tmsAcum = acumuladoDados.tms_acumulado_min || [];
@@ -293,7 +293,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             borderWidth: 3,
           },
           {
-            label: 'TMS (h)',
+            label: 'TMS (min)',
             data: tms,
             borderColor: '#2196f3',
             backgroundColor: 'rgba(33, 150, 243, 0.4)',
@@ -351,7 +351,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           },
           x: { ticks: { color: '#fff' } }
         },
-        _metas: metas // 👈 armazenado dentro de options agora
+        _metas: metas
       },
       plugins: [horizontalLinePluginTmaTms]
     });
@@ -370,6 +370,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   });
 });
+
 
 //Script que traz a evolução do SLA com o passar dos periodos-->
 document.addEventListener("DOMContentLoaded", async function () {

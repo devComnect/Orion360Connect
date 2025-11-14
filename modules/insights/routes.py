@@ -1009,7 +1009,6 @@ def get_ligacoes_nao_atendidas():
             "message": str(e)
         }), 500
 
-
 @insights_bp.route('/chamadasEfetuadas', methods=['POST'])
 def get_ligacoes_efetuadas():
     try:

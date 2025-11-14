@@ -151,6 +151,14 @@
   }
 
 
+.filtro-grafico-dropdown {
+  position: absolute;
+  color: #2f2f37;
+  top: 10px;
+  right: 10px;
+}
+
+
   /* espaço entre grupo-esquerda e grupo-direita 
 .grupo-esquerda {
   margin-right: 3rem; /* aumenta ou diminui conforme desejar *

@@ -64,9 +64,6 @@
     <button class="btn btn-sm btn-outline-light" id="btnExportarAnual">
       Exportar Anual
     </button>
-    <!--<button class="btn btn-sm btn-outline-light" id="btnExportarAcumulado">
-      Exportar Acumulado
-    </button>-->
   </div>
 
   
@@ -99,9 +96,6 @@
             <!-- Bloco inferior (metas detalhadas) -->
             <div class="fluxograma text-white p-2 position-relative">
 
-              <!-- Linhas de ligação (fluxograma visual) -->
-              <div class="linha-conector linha-esquerda"></div>
-              <div class="linha-conector linha-direita"></div>
 
               <!-- Metas relacionadas à Excelência no atendimento -->
               <div class="fluxo grupo-esquerda">
@@ -142,6 +136,48 @@
 
             </div>
 
+
+           <!-- Bloco inferior (metas detalhadas) -->
+            <div class="fluxograma text-white p-2 position-relative">
+              <!-- Metas relacionadas à Excelência no atendimento -->
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">CSAT - Acumulado (%)</h6>
+                <div class="info-item2"><span id="meta-acumulada-csat">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Atendimento - Acumulado (%)</h6>
+                <div class="info-item2 text-center"><span id="meta-acumulada-sla-atendimento">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Solução - Acumulado (%)</h6>
+                <div class="info-item2 text-center"><span id="meta-acumulada-sla-solucao">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">Reabertura - Acumulado (%)</h6>
+                <div class="info-item2"><span id="meta-acumulada-reabertura">--</span></div>
+              </div>
+
+              <!-- Metas relacionadas à Eficiência operacional -->
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMA - Acumulado (min)</h6>
+                <div class="info-item2"><span id="meta-acumulada-tma">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMS - Acumulado (h)</h6>
+                <div class="info-item2"><span id="meta-acumulada-tms">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">FCR - Acumulado (%)</h6>
+                <div class="info-item2" id="fcr-card"><span id="meta-acumulada-fcr">--</span></div>
+              </div>
+
+            </div>
+
             <!-- Botões de Filtro -->
             <div class="row justify-content-center my-4">
               <div class="col-auto">
@@ -157,11 +193,45 @@
             <!-- Gráficos -->
             <div class="row g-3">
               <div class="col-md-6 mb-4">
-                <div class="fluxo-card p-4">
-                  <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
-                  <canvas id="graficoTmaTms" height="90"></canvas>
-                </div>
-              </div>
+  <div class="fluxo-card p-4 position-relative">
+
+    <!-- Título -->
+    <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
+
+    <!-- Botão no canto superior direito -->
+    <div class="dropdown filtro-grafico-dropdown">
+              <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+                      data-bs-toggle="dropdown" aria-expanded="false">
+                Filtros
+              </button>
+
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li class="dropdown-header">Semestre</li>
+                <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2025-1">1º Sem 2025</a></li>
+                <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2025-2">2º Sem 2025</a></li>
+                <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2024-1">1º Sem 2024</a></li>
+                <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2024-2">2º Sem 2024</a></li>
+
+                <li><hr class="dropdown-divider"></li>
+
+                <li class="dropdown-header">Ano Completo</li>
+                <li><a class="dropdown-item filtro-opcao" data-filtro="ano" data-valor="2025">2025</a></li>
+                <li><a class="dropdown-item filtro-opcao" data-filtro="ano" data-valor="2024">2024</a></li>
+
+                <li><hr class="dropdown-divider"></li>
+
+                <li class="dropdown-header">Mês Específico</li>
+                <li><a class="dropdown-item filtro-opcao" data-filtro="mes" data-valor="2025-01">Jan/2025</a></li>
+                <li><a class="dropdown-item filtro-opcao" data-filtro="mes" data-valor="2025-02">Fev/2025</a></li>
+                <!-- Você pode gerar esses meses dinamicamente no futuro -->
+              </ul>
+            </div>
+
+            <!-- Gráfico -->
+            <canvas id="graficoTmaTms" height="90"></canvas>
+          </div>
+        </div>
+
 
               <div class="col-md-6 mb-4">
                 <div class="fluxo-card p-4">
@@ -412,15 +482,15 @@
               <label class="form-label">TMAX</label>
               <input type="number" class="form-control bg-dark text-white" name="tmax">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label">SLA Atendimento Prazo</label>
               <input type="number" class="form-control bg-dark text-white" name="sla_atendimento_prazo">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label">SLA Resolução Prazo</label>
               <input type="number" class="form-control bg-dark text-white" name="sla_resolucao_prazo">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label">CSAT</label>
               <input type="number" class="form-control bg-dark text-white" name="csat">
             </div>

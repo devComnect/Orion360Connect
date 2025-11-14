@@ -3,6 +3,7 @@ from application.models import Chamado, db, PesquisaSatisfacao, RelatorioColabor
 from sqlalchemy import func, and_, or_, extract, text
 import numpy as np
 from collections import defaultdict
+from dateutil.relativedelta import relativedelta
 import pandas as pd
 import re, os, io
 
@@ -323,7 +324,6 @@ def gerar_relatorio_reabertura(inicio_ano, fim_ano):
 
     return df, "Reabertos Anual"
 
-
 def gerar_relatorio_csat(inicio_ano, fim_ano):
     CSAT_MAP = {
         'Péssimo': 1,
@@ -418,3 +418,45 @@ def gerar_relatorio_csat(inicio_ano, fim_ano):
     df.loc[len(df)] = ["Média Anual", media_anual, media_acumulada, status_media]
 
     return df, "CSAT Anual"
+
+# gera meses válidos ANTES do mês atual
+def gerar_periodos(tipo):
+    hoje = datetime.utcnow()
+    periodos = []
+
+    if tipo == "mes":
+        dt = hoje - relativedelta(months=1)
+        periodos.append((dt.year, dt.month))
+
+    elif tipo == "trimestre":
+        for i in range(1, 4):
+            dt = hoje - relativedelta(months=i)
+            periodos.append((dt.year, dt.month))
+
+    elif tipo == "semestre":
+        for i in range(1, 7):
+            dt = hoje - relativedelta(months=i)
+            periodos.append((dt.year, dt.month))
+
+    return periodos
+
+# converte dias → quantidade de meses anteriores
+def meses_por_dias(dias):
+    if dias <= 30:
+        return 1
+    elif dias <= 90:
+        return 3
+    elif dias <= 180:
+        return 6
+    elif dias <= 365:
+        return 12
+    return 12
+
+# gera lista de meses válidos (SEM o mês atual)
+def gerar_periodos_por_dias(dias, hoje):
+    qtd = meses_por_dias(dias)
+    periodos = []
+    for i in range(1, qtd + 1):  # começa em 1 para pular mês atual
+        dt = hoje - relativedelta(months=i)
+        periodos.append(dt.strftime('%Y-%m'))
+    return periodos

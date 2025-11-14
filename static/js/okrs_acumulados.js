@@ -527,3 +527,210 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   });
 });
+
+
+// Exibir CSAT acumulado card de metas acumuladas
+function carregarCsatMesAnterior() {
+    fetch('/okrs/csatAcumulado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias: 365 })  // janela de 120 dias para garantir mês anterior
+    })
+    .then(response => response.json())
+    .then(data => {
+
+        const elemento = document.getElementById("meta-acumulada-csat");
+
+        // Debug opcional para ver o retorno
+        console.log("CSAT Acumulado - retorno do backend:", data);
+
+        // Verifica se retornou sucesso
+        if (!data || data.status !== "success") {
+            elemento.textContent = "--";
+            return;
+        }
+
+        const labels = data.labels;           
+        const csatMensal = data.csat_mensal; 
+
+        // Se não houver meses processados
+        if (!labels || labels.length === 0 || !csatMensal || csatMensal.length === 0) {
+            elemento.textContent = "--";
+            return;
+        }
+
+        // Pega o último mês retornado pelo backend (considerado o mês anterior)
+        const indice = labels.length - 1;
+        const valor = csatMensal[indice];
+
+        // Exibe no card
+        if (typeof valor === "number") {
+            elemento.textContent = valor.toFixed(0) + "%";
+        } else {
+            elemento.textContent = "--";
+        }
+    })
+    .catch(err => {
+        console.error("Erro ao carregar CSAT:", err);
+        document.getElementById("meta-acumulada-csat").textContent = "--";
+    });
+}
+
+// Chama a função ao carregar a página
+window.addEventListener("DOMContentLoaded", carregarCsatMesAnterior);
+
+
+// Exibir SLA acumulado card metas acumuladas
+
+function carregarSlaAcumulado() {
+    fetch('/okrs/slaOkrsAcumulado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias: 365 }) // período completo
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status !== "success") {
+            document.getElementById("meta-acumulada-sla-atendimento").textContent = "--";
+            document.getElementById("meta-acumulada-sla-solucao").textContent = "--";
+            return;
+        }
+
+        const slaAtendimento = data.sla_atendimento_acumulado;
+        const slaSolucao = data.sla_resolucao_acumulado;
+
+        // Pega o último valor acumulado = acumulado completo
+        const atendimentoAcumulado = slaAtendimento[slaAtendimento.length - 1];
+        const solucaoAcumulado = slaSolucao[slaSolucao.length - 1];
+
+        document.getElementById("meta-acumulada-sla-atendimento").textContent =
+            typeof atendimentoAcumulado === "number"
+                ? atendimentoAcumulado + "%"  // sem arredondar
+                : "--";
+
+        document.getElementById("meta-acumulada-sla-solucao").textContent =
+            typeof solucaoAcumulado === "number"
+                ? solucaoAcumulado + "%"  // sem arredondar
+                : "--";
+    })
+    .catch(err => {
+        console.error("Erro ao carregar SLA:", err);
+        document.getElementById("meta-acumulada-sla-atendimento").textContent = "--";
+        document.getElementById("meta-acumulada-sla-solucao").textContent = "--";
+    });
+}
+
+carregarSlaAcumulado();
+
+
+
+// Exibir FCR card metas acumuladas
+function carregarFcrAcumulado() {
+    fetch('/okrs/fcrAcumulado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias: 365 }) // período completo
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status !== "success") {
+            document.getElementById("meta-acumulada-fcr").textContent = "--";
+            return;
+        }
+
+        const fcrAcumulado = data.fcr_acumulado;
+
+        // Pega o último valor acumulado = acumulado completo
+        const ultimoFcr = fcrAcumulado[fcrAcumulado.length - 1];
+
+        document.getElementById("meta-acumulada-fcr").textContent =
+            typeof ultimoFcr === "number"
+                ? ultimoFcr + "%"  // sem arredondar
+                : "--";
+    })
+    .catch(err => {
+        console.error("Erro ao carregar FCR:", err);
+        document.getElementById("meta-acumulada-fcr").textContent = "--";
+    });
+}
+
+// Chama a função ao carregar a página
+carregarFcrAcumulado();
+
+
+// Exibir TMA TMS card metas acumuladas
+function carregarTmaTmsAcumulado() {
+    fetch('/okrs/tmaTmsAcumulado', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dias: 365 }) // período completo
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status !== "success") {
+            document.getElementById("meta-acumulada-tma").textContent = "--";
+            document.getElementById("meta-acumulada-tms").textContent = "--";
+            return;
+        }
+
+        const tma = data.tma_acumulado_min;
+        const tms = data.tms_acumulado_min;
+
+        // Últimos valores acumulados
+        const tmaAcumulado = tma[tma.length - 1];
+        const tmsAcumulado = tms[tms.length - 1];
+
+        function formatarTempo(minutos) {
+          const h = Math.floor(minutos / 60);
+          const m = Math.round(minutos % 60);
+          return `${h}h ${m}m`;
+      }
+
+
+        document.getElementById("meta-acumulada-tma").textContent =
+            typeof tmaAcumulado === "number"
+                ? formatarTempo(tmaAcumulado)
+                : "--";
+
+        document.getElementById("meta-acumulada-tms").textContent =
+            typeof tmsAcumulado === "number"
+                ? formatarTempo(tmsAcumulado)
+                : "--";
+    })
+    .catch(err => {
+        console.error("Erro ao carregar TMA/TMS:", err);
+        document.getElementById("meta-acumulada-tma").textContent = "--";
+        document.getElementById("meta-acumulada-tms").textContent = "--";
+    });
+}
+
+// Chama ao carregar a página
+carregarTmaTmsAcumulado();
+
+
+// Exibir os reabertos card metas acumuladas
+
+function carregarReaberturaAcumulada() {
+    fetch('/okrs/reabertosOkrs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        const el = document.getElementById("meta-acumulada-reabertura");
+        if (!el || data.status !== "success") {
+            el.textContent = "--";
+            return;
+        }
+
+        el.textContent = `${data.pct_reabertura}%`;
+    })
+    .catch(err => {
+        console.error("Erro ao carregar acumulado reabertura:", err);
+        document.getElementById("meta-acumulada-reabertura").textContent = "--";
+    });
+}
+
+// carregar ao iniciar
+carregarReaberturaAcumulada();
