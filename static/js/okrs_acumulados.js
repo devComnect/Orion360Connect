@@ -581,12 +581,11 @@ window.addEventListener("DOMContentLoaded", carregarCsatMesAnterior);
 
 
 // Exibir SLA acumulado card metas acumuladas
-
-function carregarSlaAcumulado() {
+function carregarSlaAcumulado(dias = 365) {  
     fetch('/okrs/slaOkrsAcumulado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dias: 365 }) // período completo
+        body: JSON.stringify({ dias })  
     })
     .then(res => res.json())
     .then(data => {
@@ -599,18 +598,17 @@ function carregarSlaAcumulado() {
         const slaAtendimento = data.sla_atendimento_acumulado;
         const slaSolucao = data.sla_resolucao_acumulado;
 
-        // Pega o último valor acumulado = acumulado completo
         const atendimentoAcumulado = slaAtendimento[slaAtendimento.length - 1];
         const solucaoAcumulado = slaSolucao[slaSolucao.length - 1];
 
         document.getElementById("meta-acumulada-sla-atendimento").textContent =
             typeof atendimentoAcumulado === "number"
-                ? atendimentoAcumulado + "%"  // sem arredondar
+                ? atendimentoAcumulado + "%"
                 : "--";
 
         document.getElementById("meta-acumulada-sla-solucao").textContent =
             typeof solucaoAcumulado === "number"
-                ? solucaoAcumulado + "%"  // sem arredondar
+                ? solucaoAcumulado + "%"
                 : "--";
     })
     .catch(err => {
@@ -620,7 +618,14 @@ function carregarSlaAcumulado() {
     });
 }
 
-carregarSlaAcumulado();
+// Atualiza ao clicar nos botões de filtro
+document.querySelectorAll(".filtro-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      const dias = parseInt(button.getAttribute("data-dias"), 10);
+      carregarSlaAcumulado(dias);  
+    });
+});
+
 
 
 
