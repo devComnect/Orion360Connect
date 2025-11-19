@@ -1,0 +1,206 @@
+{% extends "base_template.html" %}
+
+{% block title %}OKRs{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style_okrs.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+
+<style>
+  /* Ajuste das setas do carrossel */
+  #carouselGraficos .carousel-control-prev,
+  #carouselGraficos .carousel-control-next {
+    width: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+  }
+
+  #carouselGraficos .carousel-control-prev {
+    left: -20px;
+  }
+
+  #carouselGraficos .carousel-control-next {
+    right: -20px;
+  }
+
+  #carouselGraficos .carousel-control-prev-icon,
+  #carouselGraficos .carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    padding: 10px;
+    width: 35px;
+    height: 35px;
+    background-size: 50% 50%;
+  }
+
+  #carouselGraficos .carousel-inner .row {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4 px-5">
+  <!-- Botão Voltar -->
+  <div class="row mb-2">
+    <div class="col-auto">
+      <div class="btn-group" role="group" aria-label="bottomVoltar">
+        <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">Voltar</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row justify-content-center text-white">
+    <h1 class="text-center">OKRs</h1>
+  </div>
+
+  <div class="text-end mb-3">
+    <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#modalDefinirMetas">
+      Definir Metas
+    </button>
+    <button class="btn btn-sm btn-outline-light" id="btnExportarAnual">
+      Exportar Anual
+    </button>
+  </div>
+
+  
+
+  <!-- Carrossel de Gráficos -->
+  <div class="row mt-3 gx-4">
+    <div class="col-12">
+      <div id="carouselGraficos" class="carousel slide" data-bs-interval="false" data-bs-ride="false">
+        <div class="carousel-inner">
+
+          <!-- SLIDE 1 – Metas + Evoluções -->
+          <div class="carousel-item active">
+            <!--<h3 class="text-center mb-3">Metas</h3>-->
+
+            <!-- Bloco superior (objetivos principais) -->
+            <div class="fluxograma-topo text-white p-1">
+              <div class="fluxo" id="objetivo1">
+                <h6 class="mb-2">Excelência no atendimento ao cliente - 100%</h6>
+              </div>
+
+              <div class="fluxo" id="objetivo1">
+                <h6 class="mb-2">Metas</h6>
+              </div>
+
+              <div class="fluxo" id="objetivo2">
+                <h6 class="mb-2">Eficiência operacional do suporte - 100%</h6>
+              </div>
+            </div>
+
+            <!-- Bloco inferior (metas detalhadas) -->
+            <div class="fluxograma text-white p-2 position-relative">
+
+
+              <!-- Metas relacionadas à Excelência no atendimento -->
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">CSAT (%)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-csat">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Atendimento (%)</h6>
+                <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Solução (%)</h6>
+                <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">Reabertura (%)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
+              </div>
+
+              <!-- Metas relacionadas à Eficiência operacional -->
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMA (min)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMS (h)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">FCR (%)</h6>
+                <div class="info-item2" id="fcr-card"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
+              </div>
+
+            </div>
+
+
+           <!-- Bloco inferior (metas detalhadas) -->
+            <div class="fluxograma text-white p-2 position-relative">
+              <!-- Metas relacionadas à Excelência no atendimento -->
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">CSAT - Acumulado (%)</h6>
+                <div class="info-item2"><span id="meta-acumulada-csat">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Atendimento - Acumulado (%)</h6>
+                <div class="info-item2 text-center"><span id="meta-acumulada-sla-atendimento">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Solução - Acumulado (%)</h6>
+                <div class="info-item2 text-center"><span id="meta-acumulada-sla-solucao">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">Reabertura - Acumulado (%)</h6>
+                <div class="info-item2"><span id="meta-acumulada-reabertura">--</span></div>
+              </div>
+
+              <!-- Metas relacionadas à Eficiência operacional -->
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMA - Acumulado (min)</h6>
+                <div class="info-item2"><span id="meta-acumulada-tma">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMS - Acumulado (h)</h6>
+                <div class="info-item2"><span id="meta-acumulada-tms">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">FCR - Acumulado (%)</h6>
+                <div class="info-item2" id="fcr-card"><span id="meta-acumulada-fcr">--</span></div>
+              </div>
+
+            </div>
+
+
+            
+
+        <!-- Controles -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselGraficos" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon bg-dark rounded-circle" aria-hidden="true"></span>
+          <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselGraficos" data-bs-slide="next">
+          <span class="carousel-control-next-icon bg-dark rounded-circle" aria-hidden="true"></span>
+          <span class="visually-hidden">Próximo</span>
+        </button>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/okrs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/okrs_quarters.js') }}"></script>
+<script src="{{ url_for('static', filename='js/okrs_acumulados.js') }}"></script>
+{% endblock %}

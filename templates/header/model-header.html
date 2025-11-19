@@ -32,6 +32,11 @@
                     <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
                     <li><a href="/relatoriosIndividual" class="nav-link">Relatórios</a></li>
 
+                {% elif is_nivel2 == 2 %}
+                    {# Menu para usuário Suporte #}
+                    <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
+                    <li><a href="#" class="nav-link">OKRs</a></li>
+
                 {% else %}
                     {# Menu para usuário comum #}
                     <li><a href="{{ url_for('home_bp.render_performance') }}" class="nav-link">Performance</a></li>
