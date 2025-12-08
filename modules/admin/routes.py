@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 import requests
-import modules.tasks.utils as utils
+import modules.tasks.tasks as tasks
 from modules.deskmanager.authenticate.routes import token_desk
 from datetime import datetime, timedelta
 from dateutil.parser import parse as parse_date

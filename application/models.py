@@ -414,7 +414,17 @@ class ChamadasDetalhes(db.Model):
     protocolo = db.Column(db.String(50))
     retentativaSucesso = db.Column(db.String(50))
     dataImportacao = db.Column(db.String(50))  # NOVA COLUNA
-    
+
+class ServiceOrder(db.Model):
+    __bind_key__ = 'delgrande'
+    __tablename__ = 'SERVICE_ORDER'
+
+    SERVICEID = db.Column(db.BigInteger, primary_key=True) # ID do chamado (Desk)
+    DGUSERID = db.Column(db.Integer)    # Ramal do atendente
+    SVC_ORDER_TRIAGEM = db.Column(db.DateTime) # SLA calculado
+    SERVICE_ORDER_STS = db.Column(db.Integer) # 1 = aberto, 0 = fechado
+
+# Models parcial para consumir os dados dos controles de acesso 
 class DoorAccessLogs(db.Model):
     __bind_key__ = 'door_access'
     __tablename__ = 'door_access_logs'
@@ -433,7 +443,6 @@ class DoorAccessLogs(db.Model):
     log_type_id = db.Column(db.Integer)
     updated_at = db.Column(db.DateTime)
 
-# Modelo parcial da tabela 'users' do banco 'door_access'
 class UserAccess(db.Model):
     __bind_key__ = 'door_access'
     __tablename__ = 'users'
@@ -441,7 +450,6 @@ class UserAccess(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
 
-# Modelo parcial da tabela 'devices' do banco 'door_access'
 class DeviceAccess(db.Model):
     __bind_key__ = 'door_access'
     __tablename__ = 'devices'
@@ -449,7 +457,7 @@ class DeviceAccess(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
 
-## COMNECT GUARDIANS ##    
+## Comnect Guardians ##    
     
 class NivelSeguranca(db.Model):
     __tablename__ = 'niveis_seguranca'
@@ -496,7 +504,6 @@ class GuardianInsignia(db.Model):
     insignia = db.relationship("Insignia", back_populates="conquistas")
 
 # Eventos e Pontuacoes
-
 class EventoPontuacao(db.Model):
     __tablename__ = 'eventos_pontuacao'
     id = db.Column(db.Integer, primary_key=True)
@@ -507,8 +514,7 @@ class EventoPontuacao(db.Model):
     def __repr__(self):
         return f'<Evento {self.nome} | Pontos: {self.pontuacao}>' 
       
-## QUIZ DE SEGURANCA ##
-
+## Quiz de Segurança ##
 class QuizCategory(Enum):
     COMUM = 'Comum'         
     ESPECIAL = 'Especial'  
