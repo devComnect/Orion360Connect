@@ -424,6 +424,16 @@ class ServiceOrder(db.Model):
     SVC_ORDER_TRIAGEM = db.Column(db.DateTime) # SLA calculado
     SERVICE_ORDER_STS = db.Column(db.Integer) # 1 = aberto, 0 = fechado
 
+class EventFault(db.Model):
+    __bind_key__ = 'delgrande'
+    __tablename__= 'EVENT_FAULT'
+
+    ID = db.Column(db.Integer, primary_key=True)
+    SMS_RETURN = db.Column(db.String(110))
+    SERVICEID = db.Column(db.Integer)
+    TIME_SLA = db.Column(db.DateTime)
+    PRODUCTID = db.Column(db.String(45))    
+
 # Models parcial para consumir os dados dos controles de acesso 
 class DoorAccessLogs(db.Model):
     __bind_key__ = 'door_access'

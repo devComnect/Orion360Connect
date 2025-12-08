@@ -4,7 +4,7 @@ from urllib.parse import urlencode
 from application.models import db, RegistroChamadas, ChamadasDetalhes, ServiceOrder, DesempenhoAtendenteVyrtos, PerformanceColaboradores, Grupos, Chamado, Categoria, PesquisaSatisfacao, EventosAtendentes, RelatorioColaboradores
 from modules.auth.utils import authenticate, authenticate_relatorio
 from modules.deskmanager.authenticate.routes import token_desk
-from modules.tasks.utils import atualizar_service_order
+from modules.tasks.utils import atualizar_service_order, data_valida, parse_data, gerar_intervalos, parse_hora
 import modules.tasks.tasks as tasks
 from settings.endpoints import CREDENTIALS, RELATORIO_CHAMADOS_SUPORTE
 from sqlalchemy.exc import IntegrityError
@@ -167,16 +167,6 @@ def atendentePerformance(token, params):
             "status_code": getattr(e.response, "status_code", 500),
             "url": base_url
         }
-
-def gerar_intervalos(data_inicial, data_final, tamanho=15):
-    """
-    Gera tuplas (data_inicio, data_fim) em blocos de no máximo 'tamanho' dias.
-    """
-    atual = data_inicial
-    while atual <= data_final:
-        proximo = min(atual + timedelta(days=tamanho - 1), data_final)
-        yield (atual, proximo)
-        atual = proximo + timedelta(days=1)
 
 def processar_e_armazenar_performance(dias=180, incremental=False):
     hoje = datetime.now().date()
@@ -622,7 +612,7 @@ def processar_e_armazenar_performance_vyrtos(incremental=True):
 
     for operador_id, nome_operador in OPERADORES_MAP.items():
         total_registros_operador = 0
-        print(f"🔄 Processando operador: {nome_operador} ({operador_id})")
+        print(f" Processando operador: {nome_operador} ({operador_id})")
 
         for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):
             offset = 0
@@ -684,10 +674,10 @@ def processar_e_armazenar_performance_vyrtos(incremental=True):
 
         try:
             db.session.commit()
-            print(f"✅ [{nome_operador}] Total de registros inseridos: {total_registros_operador}")
+            print(f" [{nome_operador}] Total de registros inseridos: {total_registros_operador}")
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Erro ao inserir dados para {nome_operador}: {str(e)}")
+            print(f" Erro ao inserir dados para {nome_operador}: {str(e)}")
 
     return {
         "status": "success",
@@ -882,9 +872,6 @@ def importar_chamados():
     response.raise_for_status()
     chamados_api = response.json().get("root", [])
 
-    def data_valida(data_str):
-        return data_str and data_str != "0000-00-00"
-
     total_inseridos = 0
     total_atualizados = 0
 
@@ -1005,18 +992,6 @@ def importar_chamados():
         "inseridos": total_inseridos,
         "atualizados": total_atualizados
     }
-
-
-
-
-
-
-def parse_data(data_str):
-    """Converte string no formato 'YYYY-MM-DD' para datetime.date"""
-    try:
-        return datetime.strptime(data_str, "%Y-%m-%d").date()
-    except:
-        return None
 
 def importar_pSatisfacao():
     token = token_desk()
@@ -1212,18 +1187,6 @@ def parse_data(data_str):
                 return datetime.strptime(data_str, "%Y-%m-%d").date()
             except ValueError:
                 return None
-    return None
-
-def parse_hora(hora_str):
-    """
-    Converte uma string de hora 'HH:MM:SS' em datetime.time.
-    Retorna None se o valor for vazio ou inválido.
-    """
-    if hora_str and hora_str not in ["-", ""]:
-        try:
-            return datetime.strptime(hora_str, "%H:%M:%S").time()
-        except ValueError:
-            return None
     return None
 
 def importar_grupos():

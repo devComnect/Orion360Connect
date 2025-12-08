@@ -68,3 +68,37 @@ def atualizar_service_order(cod_chamado, data_criacao, restante1, restante2, sta
             SVC_ORDER_TRIAGEM=SVC_TRIAGEM,
             SERVICE_ORDER_STS=service_status
         ))
+
+
+def gerar_intervalos(data_inicial, data_final, tamanho=15):
+    """
+    Gera tuplas (data_inicio, data_fim) em blocos de no máximo 'tamanho' dias.
+    """
+    atual = data_inicial
+    while atual <= data_final:
+        proximo = min(atual + timedelta(days=tamanho - 1), data_final)
+        yield (atual, proximo)
+        atual = proximo + timedelta(days=1)
+
+def data_valida(data_str):
+    return data_str and data_str != "0000-00-00"
+
+
+def parse_data(data_str):
+    """Converte string no formato 'YYYY-MM-DD' para datetime.date"""
+    try:
+        return datetime.strptime(data_str, "%Y-%m-%d").date()
+    except:
+        return None
+    
+def parse_hora(hora_str):
+    """
+    Converte uma string de hora 'HH:MM:SS' em datetime.time.
+    Retorna None se o valor for vazio ou inválido.
+    """
+    if hora_str and hora_str not in ["-", ""]:
+        try:
+            return datetime.strptime(hora_str, "%H:%M:%S").time()
+        except ValueError:
+            return None
+    return None
