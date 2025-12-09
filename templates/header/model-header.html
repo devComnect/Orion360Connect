@@ -21,17 +21,24 @@
     <ul class="sidebar-nav">
 
         {% if is_portal_admin %}
-            <li><a href="/insights"><i class="bi bi-bar-chart"></i> Insights</a></li>
+            <li class="submenu">
+                <a class="submenu-toggle"><i class="bi bi-lightbulb"></i> Insights ▼</a>
+                <ul class="submenu-items">
+                    <li><a href="/insights"><i class="bi bi-bar-chart"></i> Insights</a></li>
+                    <li><a href="/operacao">Operações</a></li>
+                </ul>
+            </li>
+            
             <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
             <li><a href="/okrs"><i class="bi bi-flag"></i> OKRs</a></li>
 
             <li class="submenu">
                 <a class="submenu-toggle"><i class="bi bi-gear"></i> Gestão ▼</a>
                 <ul class="submenu-items">
-                    <li><a href="/relatorios">Relatórios</a></li>
-                    <li><a href="/escala">Escala</a></li>
-                    <li><a href="/eventos">Eventos</a></li>
-                    <li><a href="/register">Gerenciamento</a></li>
+                    <li><a href="/relatorios"><i class="bi bi-clipboard2-minus-fill"></i> Relatórios</a></li>
+                    <li><a href="/escala"><i class="bi bi-file-ruled"></i> Escala</a></li>
+                    <li><a href="/eventos"><i class="bi bi-patch-exclamation"></i> Eventos</a></li>
+                    <li><a href="/register"><i class="bi bi-person-gear"></i> Gerenciamento</a></li>
                 </ul>
             </li>
 
@@ -40,7 +47,7 @@
                 <i class="bi bi-graph-up"></i> Performance</a>
             </li>
             <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-            <li><a href="/relatoriosIndividual"><i class="bi bi-journal"></i> Relatórios</a></li>
+            <li><a href="/relatoriosIndividual"><i class="bi bi-clipboard2-minus-fill"></i> Relatórios</a></li>
 
         {% elif is_nivel2 == 2 %}
             <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
@@ -51,15 +58,15 @@
                 <i class="bi bi-graph-up"></i> Performance</a>
             </li>
             <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-            <li><a href="/escala"><i class="bi bi-calendar-week"></i> Escala</a></li>
+            <li><a href="/escala"><i class="bi bi-file-ruled"></i> Escala</a></li>
         {% endif %}
 
         <li class="submenu">
-            <a class="submenu-toggle"><i class="bi bi-shield"></i> Guardiões ▼</a>
+            <a class="submenu-toggle"><i class="bi bi-shield"></i> Guardians ▼</a>
             <ul class="submenu-items">
-                <li><a href="{{ url_for('guardians_bp.rankings') }}">Rankings</a></li>
-                <li><a href="{{ url_for('guardians_bp.sobre_o_programa') }}">Sobre o Programa</a></li>
-                <li><a href="{{ url_for('guardians_bp.central') }}">Central de Treinamentos</a></li>
+                <li><a href="{{ url_for('guardians_bp.rankings') }}"><i class="bi bi-trophy"></i> Rankings</a></li>
+                <li><a href="{{ url_for('guardians_bp.sobre_o_programa') }}"><i class="bi bi-question-circle"></i> Sobre o Programa</a></li>
+                <li><a href="{{ url_for('guardians_bp.central') }}"><i class="bi bi-backpack2"></i> Central de Treinamentos</a></li>
             </ul>
         </li>
 
