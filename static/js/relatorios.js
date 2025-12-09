@@ -1,4 +1,4 @@
-  //Preencher operadores dinamicamente -->
+//Preencher operadores dinamicamente -->
     
     document.addEventListener('DOMContentLoaded', () => {
         fetch('/relatorios/getOperadores')

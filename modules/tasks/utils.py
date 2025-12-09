@@ -1,66 +1,36 @@
 from application.models import ServiceOrder, db
 from datetime import datetime, timedelta
 
-# Função que persiste os dados na tabela de service_order Projeto DelGrande
 def atualizar_service_order(cod_chamado, data_criacao, restante1, restante2, status_nome, operador):
-    """
-    Atualiza ou cria um registro ServiceOrder com base no chamado recebido.
-    O cod_chamado aqui JÁ CHEGA sem traço (limpo).
-    """
-
-    # 0 = resolvido/cancelado | 1 = aberto/em andamento
     service_status = 0 if status_nome in ["resolvido", "cancelado"] else 1
 
-    # Dicionário de operadores -> ramal
     dg_user = {
-        'Renato': 1020,
-        'Matheus': 1021, 
-        'Gustavo': 1022,
-        'Raysa': 1023,
-        'Lucas': 1024,
-        'Danilo': 1025,
-        'Henrique': 1028,
-        'Rafael': 1029, 
-        'Chrysthyanne': 1016,
-        'Eduardo': 1018,
-        'Fernando': 1019,
-        'Alexandre': 1030,
-        'Reinaldo': 1015,
-        'Fábio': 1014,
-        'Luciano': 1017,
+        'Renato': 1020, 'Matheus': 1021, 'Gustavo': 1022, 'Raysa': 1023,
+        'Lucas': 1024, 'Danilo': 1025, 'Henrique': 1028, 'Rafael': 1029,
+        'Chrysthyanne': 1016, 'Eduardo': 1018, 'Fernando': 1019,
+        'Alexandre': 1030, 'Reinaldo': 1015, 'Fábio': 1014, 'Luciano': 1017,
     }
 
     operador_normalizado = (operador or "").strip().title()
-    dg_user_id = dg_user.get(operador_normalizado)
-
-    if dg_user_id is None:
-        print(f"[AVISO] Operador não encontrado no dicionário: {operador_normalizado}")
-        dg_user_id = 9999  # fallback seguro
-
-    triagem_segundos = 0
+    dg_user_id = dg_user.get(operador_normalizado, 9999)
 
     try:
         if restante1 and ":" in restante1:
             h, m, s = map(int, restante1.split(":"))
-            triagem_segundos += h*3600 + m*60 + s
-
-        if restante2 and ":" in restante2:
-            h, m, s = map(int, restante2.split(":"))
-            triagem_segundos += h*3600 + m*60 + s
+            triagem_segundos = h*3600 + m*60 + s
+        else:
+            triagem_segundos = 0
 
         SVC_TRIAGEM = data_criacao + timedelta(seconds=triagem_segundos)
-
-    except Exception:
+    except:
         SVC_TRIAGEM = datetime.now()
 
-    # Buscar service order existente
     service_order = ServiceOrder.query.filter_by(SERVICEID=cod_chamado).first()
 
     if service_order:
         service_order.DGUSERID = dg_user_id
         service_order.SVC_ORDER_TRIAGEM = SVC_TRIAGEM
         service_order.SERVICE_ORDER_STS = service_status
-
     else:
         db.session.add(ServiceOrder(
             SERVICEID=cod_chamado,
@@ -68,6 +38,7 @@ def atualizar_service_order(cod_chamado, data_criacao, restante1, restante2, sta
             SVC_ORDER_TRIAGEM=SVC_TRIAGEM,
             SERVICE_ORDER_STS=service_status
         ))
+
 
 
 def gerar_intervalos(data_inicial, data_final, tamanho=15):

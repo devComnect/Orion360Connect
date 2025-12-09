@@ -85,6 +85,10 @@ def render_register():
 def render_register_colaboradores():
     return render_template('register_colaboradores.html')
 
+@home_bp.route('/eventos', methods=['GET'])
+def render_eventos():
+    return render_template('eventos.html')
+
 @home_bp.route('/escala', methods=['GET'])
 @login_required
 def render_escala():

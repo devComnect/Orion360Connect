@@ -1763,15 +1763,15 @@ def importar_registro_chamadas_incremental():
     # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
-        print("❌ Falha na autenticação:", auth_response)
+        print("Falha na autenticação:", auth_response)
         return {"status": "error", "message": "Falha na autenticação"}
 
     access_token = auth_response["access_token"]
-    print(f"✅ Token obtido: {access_token[:10]}...")
+    print(f"Token obtido: {access_token[:10]}...")
 
     total_inseridos = 0
     offset = 0
-    print(f"\n📅 Buscando registros do dia {hoje.strftime('%d/%m/%Y')}")
+    print(f"\nBuscando registros do dia {hoje.strftime('%d/%m/%Y')}")
 
     while True:
         params = {
@@ -1786,22 +1786,22 @@ def importar_registro_chamadas_incremental():
             })
         }
 
-        print(f"➡️ Requisição com offset={offset}, params={params}")
+        print(f"Requisição com offset={offset}, params={params}")
         response = tasks.registroChamadas(access_token, params)
 
         # Validação de resposta
         if not response:
-            print("❌ Resposta da API veio vazia")
+            print("Resposta da API veio vazia")
             break
 
         mensagens = response.get("result", {}).get("messages", [])
-        print("ℹ️ Mensagens API:", mensagens)
+        print("Mensagens API:", mensagens)
 
         dados = response.get("result", {}).get("data", [])
-        print(f"📦 Registros recebidos: {len(dados)}")
+        print(f"Registros recebidos: {len(dados)}")
 
         if not dados:
-            print("⚠️ Nenhum dado retornado, encerrando loop.")
+            print("Nenhum dado retornado, encerrando loop.")
             break
 
         novos_registros = 0
@@ -1810,16 +1810,16 @@ def importar_registro_chamadas_incremental():
             try:
                 unique_id = item.get("uniqueID")
                 if not unique_id:
-                    print("⚠️ Registro sem uniqueID:", item)
+                    print("Registro sem uniqueID:", item)
                     continue
 
                 # Verifica se já existe no banco
                 existe = RegistroChamadas.query.filter_by(unique_id=unique_id).first()
                 if existe:
-                    print(f"⏭️ Registro já existe: {unique_id}")
+                    print(f"Registro já existe: {unique_id}")
                     continue
 
-                print(f"➕ Novo registro {unique_id} - DataHora={item.get('dataHora')}")
+                print(f"Novo registro {unique_id} - DataHora={item.get('dataHora')}")
 
                 registro = RegistroChamadas(
                     data_hora=datetime.strptime(item["dataHora"], "%Y-%m-%d %H:%M:%S"),
@@ -1839,20 +1839,20 @@ def importar_registro_chamadas_incremental():
                 total_inseridos += 1
 
             except Exception as e:
-                print(f"❌ Erro ao processar registro {item}: {e}")
+                print(f"Erro ao processar registro {item}: {e}")
                 continue
 
         try:
             db.session.commit()
-            print(f"💾 {novos_registros} registros salvos neste batch.")
+            print(f"{novos_registros} registros salvos neste batch.")
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Erro ao dar commit: {e}")
+            print(f"Erro ao dar commit: {e}")
 
         offset += 100
 
         if len(dados) < 100:
-            print("🚪 Menos de 100 registros recebidos, encerrando paginação.")
+            print("Menos de 100 registros recebidos, encerrando paginação.")
             break
 
     return {"status": "success", "message": f"Importação concluída. Total inseridos: {total_inseridos}"}
@@ -1864,7 +1864,7 @@ def importar_detalhes_chamadas_hoje():
 
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
-        print("❌ Falha na autenticação")
+        print("Falha na autenticação")
         return {"status": "error", "message": "Falha na autenticação"}
 
     access_token = auth_response["access_token"]
@@ -1894,27 +1894,27 @@ def importar_detalhes_chamadas_hoje():
                 })
             }
 
-        print(f"\n🔍 Enviando requisição para todos os operadores...")
-        print(f"📅 Período: {data_inicio} até {data_fim}")
+        print(f"\nEnviando requisição para todos os operadores...")
+        print(f"Período: {data_inicio} até {data_fim}")
         print(f"-> Corpo da requisição (JSON): {json.dumps(params, indent=2, ensure_ascii=False)}")
 
         try:
             api_response = detalhesChamadas(access_token, params)
         except Exception as e:
-            print(f"❌ Erro na requisição: {e}")
+            print(f"Erro na requisição: {e}")
             break
 
         if not api_response or "result" not in api_response:
-            print(f"❗ Resposta inválida da API: {json.dumps(api_response, indent=2, ensure_ascii=False)}")
+            print(f"Resposta inválida da API: {json.dumps(api_response, indent=2, ensure_ascii=False)}")
             break
 
         result = api_response["result"]
         if "data" not in result or not result["data"]:
-            print(f"⚠️ Nenhum dado retornado")
+            print(f"Nenhum dado retornado")
             break
 
-        print(f"✅ {len(result['data'])} registros retornados")
-        print("📦 Exemplo de dado:")
+        print(f"{len(result['data'])} registros retornados")
+        print("Exemplo de dado:")
         print(json.dumps(result["data"][0], indent=2, ensure_ascii=False, default=str))
 
         registros = []
@@ -1929,7 +1929,7 @@ def importar_detalhes_chamadas_hoje():
                 item.get("nomeAtendente")
             ]
             if any(v in [None, '', '0'] for v in campos_obrigatorios):
-                print(f"⛔ Registro ignorado (faltando campos): {json.dumps(item, indent=2, ensure_ascii=False)}")
+                print(f"Registro ignorado (faltando campos): {json.dumps(item, indent=2, ensure_ascii=False)}")
                 continue
 
             registros.append(ChamadasDetalhes(
@@ -1968,12 +1968,12 @@ def importar_detalhes_chamadas_hoje():
             ))
 
         if registros:
-            print(f"💾 Salvando {len(registros)} registros no banco")
+            print(f"Salvando {len(registros)} registros no banco")
             db.session.bulk_save_objects(registros)
             db.session.commit()
             total_registros += len(registros)
         else:
-            print("🟡 Nenhum registro válido para salvar")
+            print("Nenhum registro válido para salvar")
 
         if len(result["data"]) < 100:
             break
@@ -2001,17 +2001,17 @@ def importar_detalhes_chamadas(
     if not nome_operador and operador_id:
         nome_operador = f"Operador {operador_id}"
 
-    print("🚀 Iniciando importação de chamadas")
-    print(f"📅 Período: {data_inicio} até {data_fim}")
+    print("Iniciando importação de chamadas")
+    print(f"Período: {data_inicio} até {data_fim}")
     if operador_id:
-        print(f"👤 Operador filtrado: {operador_id} ({nome_operador})")
+        print(f"Operador filtrado: {operador_id} ({nome_operador})")
     else:
-        print("👥 Importando para todos os operadores")
+        print("Importando para todos os operadores")
 
-    # 🔑 Autenticação
+    # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
-        print("❌ Falha na autenticação")
+        print("Falha na autenticação")
         return {"status": "error", "message": "Falha na autenticação"}
 
     access_token = auth_response["access_token"]
@@ -2045,19 +2045,19 @@ def importar_detalhes_chamadas(
         try:
             api_response = detalhesChamadas(access_token, params)
         except Exception as e:
-            print(f"❌ Erro na requisição: {e}")
+            print(f"Erro na requisição: {e}")
             break
 
         if not api_response or "result" not in api_response:
-            print(f"❗ Resposta inválida da API: {json.dumps(api_response, indent=2, ensure_ascii=False)}")
+            print(f"Resposta inválida da API: {json.dumps(api_response, indent=2, ensure_ascii=False)}")
             break
 
         result = api_response["result"]
         if "data" not in result or not result["data"]:
-            print(f"⚠️ Nenhum dado retornado")
+            print(f"Nenhum dado retornado")
             break
 
-        print(f"✅ {len(result['data'])} registros retornados")
+        print(f"{len(result['data'])} registros retornados")
 
         for item in result["data"]:
             if not item.get("uniqueID"):
@@ -2066,7 +2066,7 @@ def importar_detalhes_chamadas(
             existente = db.session.query(ChamadasDetalhes).filter_by(uniqueID=item["uniqueID"]).first()
 
             if existente:
-                # 🔄 Atualiza campos importantes caso estejam diferentes
+                # Atualiza campos importantes caso estejam diferentes
                 campos_atualizados = False
                 if existente.tempoAtendimento != str(item.get("tempoAtendimento") or None):
                     existente.tempoAtendimento = str(item.get("tempoAtendimento") or None)
@@ -2081,7 +2081,7 @@ def importar_detalhes_chamadas(
                     total_atualizados += 1
 
             else:
-                # 🆕 Insere novo registro
+                # Insere novo registro
                 novo = ChamadasDetalhes(
                     idFila=str(item.get("idFila") or None),
                     nomeFila=str(item.get("nomeFila") or None),

@@ -1,123 +1,91 @@
-{# templates/header/model-header.html - VERSÃO FINAL COM PERMISSÕES #}
 <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Desempenho do Colaborador</title>
-<header class="app-header shadow-sm">
-    <div class="container d-flex justify-content-between align-items-center flex-wrap">
-        <div class="logo">
-                <img src="{{ url_for('static', filename='img/logo-orion.png') }}" 
-     alt="Logo do Projeto" 
-     class="logo-img" 
-     style="width: 120px; height: 55px;">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Painel</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style_header.css') }}">
 
-            </a>
-        </div>
 
-        {% if is_authenticated %}
-            <ul class="nav justify-content-center mb-0">
-                
-                {# Se for Admin do Portal, mostra TODOS os links principais #}
-                {% if is_portal_admin %}
-                    {# Menu para admin do portal #}
-                    <li class="nav-item"><a href="/insights" class="nav-link">Insights</a></li>
-                    <li class="nav-item"><a href="/dashboard" class="nav-link">Dashboard</a></li>
-                    <li class="nav-item"><a href="/okrs" class="nav-link">OKRs</a></li>
-                    <li class="nav-item"><a href="/relatorios" class="nav-link">Relatórios</a></li>
-                    <li class="nav-item"><a href="/escala" class="nav-link">Escala</a></li>
-                    <li class="nav-item"><a href="/register" class="nav-link">Gerenciamento</a></li>
+<!-- Botão Hamburguer -->
+<button id="menuToggle" class="btn btn-dark toggle-btn">
+    <i class="bi bi-list"></i>
+</button>
 
-                {% elif is_nivel2 == 1 %}
-                    {# Menu para usuário Nível 2 #}
-                    <li><a href="{{ url_for('home_bp.render_performance_n2') }}" class="nav-link">Performance</a></li>
-                    <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
-                    <li><a href="/relatoriosIndividual" class="nav-link">Relatórios</a></li>
 
-                {% elif is_nivel2 == 2 %}
-                    {# Menu para usuário Suporte #}
-                    <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
-                    <li><a href="#" class="nav-link">OKRs</a></li>
+<!-- Sidebar (começa FECHADA) -->
+<aside id="sidebar" class="sidebar collapsed">
+    <div class="sidebar-header text-center">
+        <img src="{{ url_for('static', filename='img/logo-orion.png') }}"
+             class="sidebar-logo" alt="Logo">
+    </div>
 
-                {% else %}
-                    {# Menu para usuário comum #}
-                    <li><a href="{{ url_for('home_bp.render_performance') }}" class="nav-link">Performance</a></li>
-                    <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
-                    <li class="nav-item"><a href="/escala" class="nav-link">Escala</a></li>
-                {% endif %}
+    {% if is_authenticated %}
+    <ul class="sidebar-nav">
 
-                
-                <li class="nav-item dropdown">
-                    <a class="nav-link px-3 dropdown-toggle" href="#" id="guardiansDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Guardiões
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="guardiansDropdown">
-                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.rankings') }}">Rankings</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.sobre_o_programa') }}">Sobre o Programa</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.central') }}">Central de Treinamentos</a></li>
-                    </ul>
-                </li>
-            </ul>
+        {% if is_portal_admin %}
+            <li><a href="/insights"><i class="bi bi-bar-chart"></i> Insights</a></li>
+            <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="/okrs"><i class="bi bi-flag"></i> OKRs</a></li>
+
+            <li class="submenu">
+                <a class="submenu-toggle"><i class="bi bi-gear"></i> Gestão ▼</a>
+                <ul class="submenu-items">
+                    <li><a href="/relatorios">Relatórios</a></li>
+                    <li><a href="/escala">Escala</a></li>
+                    <li><a href="/eventos">Eventos</a></li>
+                    <li><a href="/register">Gerenciamento</a></li>
+                </ul>
+            </li>
+
+        {% elif is_nivel2 == 1 %}
+            <li><a href="{{ url_for('home_bp.render_performance_n2') }}">
+                <i class="bi bi-graph-up"></i> Performance</a>
+            </li>
+            <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="/relatoriosIndividual"><i class="bi bi-journal"></i> Relatórios</a></li>
+
+        {% elif is_nivel2 == 2 %}
+            <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="#"><i class="bi bi-flag"></i> OKRs</a></li>
+
+        {% else %}
+            <li><a href="{{ url_for('home_bp.render_performance') }}">
+                <i class="bi bi-graph-up"></i> Performance</a>
+            </li>
+            <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+            <li><a href="/escala"><i class="bi bi-calendar-week"></i> Escala</a></li>
         {% endif %}
 
-        <div class="logout-container d-flex align-items-center">
-            {% if is_authenticated %}
-                {# O botão "Painel Admin" SÓ APARECE se for Admin Guardians #}
-                {% if is_guardian_admin %}
-                    <a href="{{ url_for('guardians_bp.admin') }}" class="btn btn-warning btn-sm me-2">
-                        <i class="bi bi-shield-lock-fill me-1"></i> Painel Admin
-                    </a>
-                {% endif %}
-                <a href="{{ url_for('guardians_bp.meu_perfil') }}" class="btn btn-outline-light btn-sm me-2">
-                    <i class="bi bi-person-circle me-1"></i> Meu Perfil
-                </a>
-                <form action="{{ url_for('login.logout') }}" method="POST" class="d-inline">
-                    <button type="submit" class="btn btn-danger btn-sm">
-                        <i class="bi bi-box-arrow-right me-1"></i> Sair
-                    </button>
-                </form>
-            {% else %}
-                <a href="{{ url_for('login.login') }}" class="btn btn-success btn-sm">
-                    <i class="bi bi-box-arrow-in-right me-1"></i> Entrar
-                </a>
-            {% endif %}
-        </div>
-    </div>
-</header>
+        <li class="submenu">
+            <a class="submenu-toggle"><i class="bi bi-shield"></i> Guardiões ▼</a>
+            <ul class="submenu-items">
+                <li><a href="{{ url_for('guardians_bp.rankings') }}">Rankings</a></li>
+                <li><a href="{{ url_for('guardians_bp.sobre_o_programa') }}">Sobre o Programa</a></li>
+                <li><a href="{{ url_for('guardians_bp.central') }}">Central de Treinamentos</a></li>
+            </ul>
+        </li>
+
+        <hr>
+
+        <li><a href="{{ url_for('guardians_bp.meu_perfil') }}">
+            <i class="bi bi-person-circle"></i> Meu Perfil
+        </a></li>
+
+        {% if is_guardian_admin %}
+            <li><a href="{{ url_for('guardians_bp.admin') }}">
+                <i class="bi bi-shield-lock"></i> Painel Admin
+            </a></li>
+        {% endif %}
+
+        <li>
+            <form action="{{ url_for('login.logout') }}" method="POST">
+                <button class="btn btn-danger btn-sm w-100">
+                    <i class="bi bi-box-arrow-right"></i> Sair
+                </button>
+            </form>
+        </li>
+    </ul>
+    {% endif %}
+</aside>
 
 
-<style>
-  /* === HEADER === */
-  .app-header {
-    background: #2f2f37; /* igual aos cards */
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    padding: 0.8rem 0;
-  }
+<script src="{{ url_for('static', filename='js/header.js') }}"></script>
 
-  .app-header .nav-link {
-    color: #ccc;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-  }
-
-  .app-header .nav-link:hover,
-  .app-header .nav-link.active {
-    background: #3f51b5;
-    color: #fff !important;
-    text-shadow: 0 0 6px rgba(224,224,255,0.6);
-  }
-
-  .app-header .logo-img {
-    filter: brightness(1.2); /* realça a logo no fundo escuro */
-  }
-
-  .logout-container .btn-outline-danger {
-    border-color: #c62828;
-    color: #ff6b6b;
-  }
-
-  .logout-container .btn-outline-danger:hover {
-    background: #c62828;
-    color: #fff;
-  }
-</style>

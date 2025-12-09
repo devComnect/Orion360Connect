@@ -8,32 +8,32 @@ eventos_bp = Blueprint('eventos_bp', __name__, url_prefix='/eventos')
 def registrar_evento_falha():
     try:
         service_id = request.form.get("chamado_id")
-        id = request.form.get("falha_id")
         data_evento = request.form.get("data_evento")
         hora_evento = request.form.get("hora_evento")
+        id = request.form.get("falha_id")
 
-        # Monta TIME_SLA
         time_sla = datetime.strptime(f"{data_evento} {hora_evento}", "%Y-%m-%d %H:%M")
 
-        #  Busca o registro existente
-        evento = EventFault.query.get(id)
+        # Apaga tudo que existir na tabela (garante apenas 1 registro)
+        EventFault.query.delete()
 
-        if not evento:
-            return jsonify({"error": "ID não encontrado na tabela EventFault"}), 404
+        # Cria o único registro permitido
+        evento = EventFault(
+            ID=id,
+            SERVICEID=service_id,
+            TIME_SLA=time_sla,
+            PRODUCTID=None,
+            SMS_RETURN=""
+        )
 
-        # Atualiza campos
-        evento.SERVICEID = service_id
-        evento.TIME_SLA = time_sla
-        evento.PRODUCTID = None
-
+        db.session.add(evento)
         db.session.commit()
 
-        return jsonify({"success": True, "message": "Evento atualizado com sucesso!"})
+        return jsonify({"success": True, "message": "Registro salvo com sucesso!"})
 
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-
 
 @eventos_bp.route("/eventos-falha/listar", methods=["GET"])
 def listar_eventos_falha():
@@ -61,24 +61,7 @@ def listar_eventos_falha():
 
 @eventos_bp.route("/eventos-falha/limpar", methods=["POST"])
 def limpar_eventos_falha():
-    try:
-        ids = request.json.get("ids", [])
+    EventFault.query.delete()
+    db.session.commit()
+    return jsonify({"success": True, "message": "Evento(s) limpo(s) com sucesso!"})
 
-        if not ids:
-            return jsonify({"error": "Nenhum ID enviado"}), 400
-
-        # Para cada ID, limpa o registro
-        for event_id in ids:
-            ev = EventFault.query.filter_by(ID=event_id).first()
-            if ev:
-                ev.SERVICEID = None
-                ev.TIME_SLA = None
-                # OPCIONAL: limpar também o texto
-                # ev.SMS_RETURN = None
-
-        db.session.commit()
-        return jsonify({"success": True, "message": "Evento(s) limpo(s) com sucesso!"})
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
