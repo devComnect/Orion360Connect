@@ -413,7 +413,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   };
 
-  async function fetchMetas() {
+async function fetchMetas() {
     try {
       const res = await fetch('/okrs/getMetas');
       return res.ok ? await res.json() : {};
@@ -1030,7 +1030,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 //Script que traz o TMA e TMS-->
 
-  document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     let diasSelecionados = 30;
     carregarTmaTms(diasSelecionados);
 
@@ -1045,7 +1045,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   });
 
-  function carregarTmaTms(dias) {
+function carregarTmaTms(dias) {
     fetch(`/okrs/tmaTmsOkrs?dias=${dias}`)
       .then(response => response.json())
       .then(data => {
@@ -1069,7 +1069,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       });
   }
 
-  function atualizarIconeTmaTms(idIcone, valorTexto, metaTexto) {
+function atualizarIconeTmaTms(idIcone, valorTexto, metaTexto) {
   const icone = document.getElementById(idIcone);
   if (!icone) return;
 
@@ -1107,12 +1107,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 }
 
-
-  
-
-
 //Bloco que traz a relação de tempo maximo e minimo-->
-
   document.addEventListener("DOMContentLoaded", function () {
 
     // Chamada inicial para 1 dia
@@ -1159,7 +1154,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 
 //Script que traz o SLA expirados global-->
-
   let codigosAtendimento = [];
   let codigosResolucao = [];
 
@@ -1347,7 +1341,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const icone = document.getElementById(idIcone);
     if (!icone) return;
 
-    icone.className = ""; // limpa classes
+    icone.className = ""; 
 
     let valNum = parseFloat(String(valorAtual).replace("%", "").trim());
     let metaNum = parseFloat(meta);
@@ -1413,7 +1407,6 @@ document.getElementById('formMetas').addEventListener('submit', async function (
 
 
 //Script que traz as metas nos cards-->
-
 document.addEventListener('DOMContentLoaded', () => {
   fetch('/okrs/getMetas')
     .then(response => {
@@ -1472,7 +1465,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const icone = spanValor.previousElementSibling; // <i> da seta
 
     if (!dados || dados.status !== "success") {
-      icone.className = "bi bi-arrow-bar-down"; // seta padrão
+      icone.className = "bi bi-arrow-bar-down-circle"; // seta padrão
       return;
     }
 
@@ -1492,7 +1485,7 @@ document.addEventListener("DOMContentLoaded", function () {
         icone.className = "bi bi-arrow-down-circle text-danger"; // acima da meta
       }
     } else {
-      icone.className = "bi bi-arrow-bar-down"; // meta não definida
+      icone.className = "bi bi-arrow-bar-down-circle"; // meta não definida
     }
   }
 
