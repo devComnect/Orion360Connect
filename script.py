@@ -1,6 +1,6 @@
 from app import app
 from modules.tasks.tasks import repopular_eventos_operador_180d,repopular_eventos_180d, importar_detalhes_chamadas_hoje,importar_registro_chamadas_incremental, processar_e_armazenar_eventos,importar_grupos, processar_e_armazenar_performance, processar_e_armazenar_performance_vyrtos, importar_categorias, importar_pSatisfacao, importar_fcr_reabertos, processar_e_armazenar_performance_incremental, processar_e_armazenar_performance_vyrtos_incremental
-from modules.tasks.tasks import importar_performance_operador, importar_detalhes_chamadas, importar_chamados # Repovoando individualmente
+from modules.tasks.tasks import importar_performance_operador, importar_detalhes_chamadas, importar_chamados, importar_chamados_debug # Repovoando individualmente
 from datetime import date
 
 '''with app.app_context():
@@ -11,7 +11,7 @@ from datetime import date
 
 with app.app_context():
     print("Tarefa em execução!")
-    importar_chamados()
+    importar_chamados_debug()
 
 
 '''with app.app_context():

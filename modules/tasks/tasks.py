@@ -829,7 +829,7 @@ def importar_chamados():
         "Pesquisa": "",
         "Tatual": "",
         "Ativo": "Todos",
-        "StatusSLA": "S",
+        "StatusSLA": "N",
         "Colunas": {
             "Chave": "on",
             "CodChamado": "on",
@@ -2230,3 +2230,215 @@ def importar_performance_operador(operador_id, nome_operador, data_inicio, data_
         db.session.rollback()
         app.logger.error(f"Erro ao importar performance para {nome_operador} ({operador_id}): {str(e)}")
         raise
+
+def importar_chamados_debug():
+    print("[DEBUG] Iniciando importação de chamados")
+
+    token = token_desk()
+    if not token:
+        raise Exception("Falha na autenticação")
+
+    print("[DEBUG] Token obtido com sucesso")
+
+    payload = {
+        "Pesquisa": "",
+        "Tatual": "",
+        "Ativo": "Todos",
+        "StatusSLA": "N",
+        "Colunas": {
+            "Chave": "on",
+            "CodChamado": "on",
+            "NomePrioridade": "on",
+            "DataCriacao": "on",
+            "HoraCriacao": "on",
+            "DataFinalizacao": "on",
+            "HoraFinalizacao": "on",
+            "NomeStatus": "on",
+            "Assunto": "on",
+            "Descricao": "on",
+            "ChaveUsuario": "on",
+            "NomeUsuario": "on",
+            "SolicitanteEmail": "on",
+            "NomeOperador": "on",
+            "TotalAcoes": "on",
+            "TotalAnexos": "on",
+            "Sla": "on",
+            "CodGrupo": "on",
+            "NomeGrupo": "on",
+            "CodSolicitacao": "on",
+            "CodSubCategoria": "on",
+            "CodTipoOcorrencia": "on",
+            "CodCategoriaTipo": "on",
+            "CodPrioridadeAtual": "on",
+            "CodStatusAtual": "on",
+            "Sla1Expirado": "on",
+            "Sla2Expirado": "on",
+            "TempoRestantePrimeiroAtendimento": "on",
+            "TempoRestanteSegundoAtendimento": "on"
+        },
+        "Ordem": [{"Coluna": "Chave", "Direcao": "false"}]
+    }
+
+    response = requests.post(
+        "https://api.desk.ms/ChamadosSuporte/lista",
+        headers={"Authorization": f"{token}", "Content-Type": "application/json"},
+        json=payload,
+    )
+
+    response.raise_for_status()
+    chamados_api = response.json().get("root", [])
+
+    print(f"[DEBUG] Total de chamados recebidos da API: {len(chamados_api)}")
+
+    total_inseridos = 0
+    total_atualizados = 0
+    total_pulados = 0
+
+    with db.session.begin():
+        for chamado in chamados_api:
+            cod_debug = chamado.get("CodChamado")
+            print(f"\n[DEBUG] Processando chamado: {cod_debug}")
+
+            try:
+                # -------------------- PARSE DATA CRIAÇÃO --------------------
+                data_str = chamado.get("DataCriacao")
+                hora_str = chamado.get("HoraCriacao")
+
+                if not data_valida(data_str):
+                    print(f"[WARN] DataCriacao inválida ({data_str}) | Chamado {cod_debug}")
+                    total_pulados += 1
+                    continue
+
+                try:
+                    if hora_str:
+                        try:
+                            data_criacao = datetime.strptime(
+                                f"{data_str} {hora_str}", "%Y-%m-%d %H:%M:%S"
+                            )
+                        except ValueError:
+                            data_criacao = datetime.strptime(
+                                f"{data_str} {hora_str}", "%Y-%m-%d %H:%M"
+                            )
+                    else:
+                        data_criacao = datetime.strptime(data_str, "%Y-%m-%d")
+                except Exception as e:
+                    print(f"[ERRO] Parse data_criacao ({data_str} {hora_str}) | {e}")
+                    total_pulados += 1
+                    continue
+
+                # -------------------- PARSE FINALIZAÇÃO --------------------
+                data_finalizacao = None
+                data_fin = chamado.get("DataFinalizacao")
+                hora_fin = chamado.get("HoraFinalizacao")
+
+                if data_valida(data_fin):
+                    try:
+                        if hora_fin:
+                            try:
+                                data_finalizacao = datetime.strptime(
+                                    f"{data_fin} {hora_fin}", "%Y-%m-%d %H:%M:%S"
+                                )
+                            except ValueError:
+                                data_finalizacao = datetime.strptime(
+                                    f"{data_fin} {hora_fin}", "%Y-%m-%d %H:%M"
+                                )
+                        else:
+                            data_finalizacao = datetime.strptime(data_fin, "%Y-%m-%d")
+                    except Exception as e:
+                        print(f"[WARN] Erro data_finalizacao | Chamado {cod_debug} | {e}")
+
+                # -------------------- CHAVE --------------------
+                chave = chamado.get("Chave")
+                if not chave:
+                    print(f"[WARN] Chamado sem chave | CodChamado {cod_debug}")
+                    total_pulados += 1
+                    continue
+
+                existente = Chamado.query.filter_by(chave=chave).first()
+
+                print(f"[DEBUG] Chamado {'EXISTENTE' if existente else 'NOVO'} | Chave {chave}")
+
+                # -------------------- SERVICE ORDER --------------------
+                cod_chamado_original = chamado.get("CodChamado")
+                cod_chamado_limpo = (
+                    cod_chamado_original.replace("-", "")
+                    if cod_chamado_original else None
+                )
+
+                try:
+                    atualizar_service_order(
+                        cod_chamado_limpo,
+                        data_criacao,
+                        chamado.get("TempoRestantePrimeiroAtendimento"),
+                        chamado.get("TempoRestanteSegundoAtendimento"),
+                        chamado.get("NomeStatus", "").strip().lower(),
+                        chamado.get("NomeOperador")
+                    )
+                except Exception as e:
+                    print(f"[ERRO] atualizar_service_order | Chamado {cod_debug} | {e}")
+
+                # -------------------- UPDATE / INSERT --------------------
+                if existente:
+                    print(f"[DEBUG] Atualizando chamado {cod_debug}")
+
+                    existente.cod_chamado = cod_chamado_original
+                    existente.data_criacao = data_criacao
+                    existente.nome_status = chamado.get('NomeStatus')
+                    existente.nome_grupo = chamado.get('NomeGrupo')
+                    existente.cod_solicitacao = chamado.get('CodSolicitacao')
+                    existente.operador = chamado.get('NomeOperador')
+                    existente.sla_atendimento = chamado.get('Sla1Expirado')
+                    existente.sla_resolucao = chamado.get('Sla2Expirado')
+                    existente.cod_categoria_tipo = chamado.get('CodCategoriaTipo')
+                    existente.cod_tipo_ocorrencia = chamado.get('CodTipoOcorrencia')
+                    existente.solicitante_email = chamado.get('SolicitanteEmail')
+                    existente.nome_prioridade = chamado.get('NomePrioridade')
+                    existente.restante_p_atendimento = chamado.get("TempoRestantePrimeiroAtendimento")
+                    existente.restante_s_atendimento = chamado.get("TempoRestanteSegundoAtendimento")
+                    existente.data_finalizacao = data_finalizacao
+                    existente.mes_referencia = f"{data_criacao.year}-{data_criacao.month:02d}"
+                    existente.data_importacao = datetime.now()
+
+                    total_atualizados += 1
+
+                else:
+                    print(f"[DEBUG] Inserindo novo chamado {cod_debug}")
+
+                    db.session.add(Chamado(
+                        chave=chave,
+                        cod_chamado=cod_chamado_original,
+                        data_criacao=data_criacao,
+                        nome_status=chamado.get("NomeStatus"),
+                        nome_grupo=chamado.get("NomeGrupo"),
+                        cod_solicitacao=chamado.get("CodSolicitacao"),
+                        operador=chamado.get("NomeOperador"),
+                        sla_atendimento=chamado.get("Sla1Expirado"),
+                        sla_resolucao=chamado.get("Sla2Expirado"),
+                        cod_categoria_tipo=chamado.get("CodCategoriaTipo"),
+                        cod_tipo_ocorrencia=chamado.get("CodTipoOcorrencia"),
+                        solicitante_email=chamado.get("SolicitanteEmail"),
+                        nome_prioridade=chamado.get("NomePrioridade"),
+                        restante_p_atendimento=chamado.get("TempoRestantePrimeiroAtendimento"),
+                        restante_s_atendimento=chamado.get("TempoRestanteSegundoAtendimento"),
+                        data_finalizacao=data_finalizacao,
+                        mes_referencia=f"{data_criacao.year}-{data_criacao.month:02d}",
+                        data_importacao=datetime.now()
+                    ))
+
+                    total_inseridos += 1
+
+            except Exception as e:
+                print(f"[FATAL] Erro inesperado | Chamado {cod_debug} | {e}")
+                continue
+
+    print("\n[DEBUG] Importação finalizada")
+    print(f"[DEBUG] Inseridos: {total_inseridos}")
+    print(f"[DEBUG] Atualizados: {total_atualizados}")
+    print(f"[DEBUG] Pulados: {total_pulados}")
+
+    return {
+        "total_api": len(chamados_api),
+        "inseridos": total_inseridos,
+        "atualizados": total_atualizados,
+        "pulados": total_pulados
+    }

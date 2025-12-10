@@ -477,7 +477,6 @@ def listar_p_satisfacao():
         "referencias_satisfatorias": referencias_satisfatorias
     })
 
-
 @insights_bp.route('/nps', methods=['POST'])
 def nps():
     data = request.get_json()
@@ -1141,7 +1140,7 @@ def estatisticas_chamados_periodos():
             Chamado.data_criacao
         ).filter(
             Chamado.data_criacao >= data_limite,
-            ~Chamado.nome_status.in_(["Cancelado"])
+            ~Chamado.nome_status.in_(["Cancelado", "Resolvido"])
         ).all()
 
         status_counts = {}

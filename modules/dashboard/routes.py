@@ -186,7 +186,8 @@ def estatisticas_chamados():
             Chamado.nome_status,
             Chamado.nome_grupo
         ).filter(
-            Chamado.nome_status.notin_(['cancelado', 'resolvido'])
+            Chamado.nome_status.notin_(['cancelado', 'resolvido']),
+            Chamado.nome_grupo != 'SUPORTE TI'
         ).all()
 
         # Processar os resultados
