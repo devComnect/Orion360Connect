@@ -69,14 +69,13 @@
                 <li><a href="{{ url_for('guardians_bp.rankings') }}"><i class="bi bi-trophy"></i> Rankings</a></li>
                 <li><a href="{{ url_for('guardians_bp.sobre_o_programa') }}"><i class="bi bi-question-circle"></i> Sobre o Programa</a></li>
                 <li><a href="{{ url_for('guardians_bp.central') }}"><i class="bi bi-backpack2"></i> Central de Treinamentos</a></li>
+                <li><a href="{{ url_for('guardians_bp.meu_perfil') }}"><i class="bi bi-person-circle"></i> Meu Perfil</a></li>
             </ul>
         </li>
 
         <hr>
 
-        <li><a href="{{ url_for('guardians_bp.meu_perfil') }}">
-            <i class="bi bi-person-circle"></i> Meu Perfil
-        </a></li>
+        
 
         {% if is_guardian_admin %}
             <li><a href="{{ url_for('guardians_bp.admin') }}">
