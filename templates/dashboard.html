@@ -10,22 +10,8 @@
 <div class="container-fluid my-4 px-5">
   <!-- Botão voltar -->
   <br><br><br><br>
-   
   <!-- Primeira linha -->
   <div class="row mt-2">
-    <!-- Abertos vs Status -->
-    <div class="col-md-4">
-      <div class="card h-100">
-        <div class="card-header text-center">
-          Abertos vs Status <i class="bi bi-pie-chart-fill"></i>
-          <span class="badge bg-primary ms-2" id="mes-referencia"></span>
-        </div>
-        <div class="card-body d-flex flex-column align-items-center card-body-grafico">
-          <canvas id="statusChart"></canvas>
-        </div>
-      </div>
-    </div>
-
     <!-- Abertos vs Resolvidos -->
     <div class="col-md-4">
       <div class="card h-100">
@@ -39,6 +25,19 @@
             <p class="mb-0"><strong>Ativos:</strong> <span id="diferencaAbertosResolvidos">-</span></p>
           </div>
           <canvas id="LinhaAbertosResolvidosChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+     <!-- Abertos vs Status -->
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header text-center">
+          Abertos vs Status <i class="bi bi-pie-chart-fill"></i>
+          <span class="badge bg-primary ms-2" id="mes-referencia"></span>
+        </div>
+        <div class="card-body d-flex flex-column align-items-center card-body-grafico">
+          <canvas id="statusChart"></canvas>
         </div>
       </div>
     </div>

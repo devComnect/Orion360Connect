@@ -81,7 +81,6 @@
                   <input type="date" class="form-control" id="data_final_turnos" name="data_final_turnos" required>
                 </div>
               </div>
-
               <!-- Select Turnos -->
               <div class="mb-3">
                 <label for="turnos" class="form-label">Turnos</label>
@@ -89,7 +88,6 @@
                   <option value="">Selecione</option>
                 </select>
               </div>
-
               <!-- Botão -->
               <button type="button" class="btn btn-primary w-100 mt-2" onclick="gerarPDFTurnos()">
                 <i class="bi bi-file-earmark-pdf"></i> Gerar PDF
@@ -132,6 +130,46 @@
               <button type="button" class="btn btn-primary w-100 mt-2" onclick="gerarComparativoPDF()">
                 <i class="bi bi-file-earmark-pdf"></i> Gerar PDF
               </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Satisfação -->
+      <div class="col-md-3 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h5 class="mb-0">Satisfação</h5>
+          </div>
+          <div class="card-body">
+            <form id="formRelatorio3">
+              <div class="row mb-3">
+                <div class="col-6">
+                  <label for="data_inicio_satisfacao" class="form-label">Data Início</label>
+                  <input type="date" class="form-control" id="data_inicio_satisfacao" name="data_inicio_satisfacao" required>
+                </div>
+                <div class="col-6">
+                  <label for="data_final_satisfacao" class="form-label">Data Fim</label>
+                  <input type="date" class="form-control" id="data_final_satisfacao" name="data_final_satisfacao" required>
+                </div>
+              </div>
+
+              <!-- Select Turnos -->
+              <div class="mb-3">
+                <label for="pesquisa_satisfacao" class="form-label">Pesquisa Satisfação</label>
+                <select class="form-select" id="pesquisa_satisfacao" name="pesquisa_satisfacao" required>
+                  <option value="">Selecione</option>
+                  <option value="ces">CES</option>
+                  <option value="nps">NPS</option>
+                  <option value="csat">CSAT</option>
+                </select>
+              </div>
+
+              <!-- Botão -->
+              <button type="button" class="btn btn-primary w-100 mt-2" onclick="gerarSatisfacaoPDF()">
+                <i class="bi bi-file-earmark-pdf"></i> Gerar PDF
+              </button>
+
             </form>
           </div>
         </div>

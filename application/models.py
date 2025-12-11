@@ -149,6 +149,8 @@ class Chamado(db.Model):
     cod_categoria_tipo = db.Column(db.String(10))
     cod_prioridade_atual = db.Column(db.String(10))
     cod_status_atual = db.Column(db.String(10))
+    status_sla_atendimento = db.Column(db.String(100))
+    status_sla_resolucao = db.Column(db.String(100))
     mes_referencia = db.Column(db.String(7), nullable=False)
     data_importacao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     restante_p_atendimento = db.Column(db.String(10))

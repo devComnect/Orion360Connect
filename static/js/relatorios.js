@@ -289,4 +289,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 }
 
+//Script que gera o relatório de satisfação 
+function gerarSatisfacaoPDF() {
+
+    const form = document.getElementById("formRelatorio3");
+    const formData = new FormData(form);
+
+    fetch("/relatorios/extrairSatisfacao", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Erro ao gerar o relatório.");
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        // Cria o download do PDF
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "relatorio_satisfacao.pdf";
+        a.click();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        console.error("Erro:", error);
+        alert("Erro ao gerar o PDF.");
+    });
+}
 

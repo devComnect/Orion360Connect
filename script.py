@@ -11,7 +11,7 @@ from datetime import date
 
 with app.app_context():
     print("Tarefa em execução!")
-    importar_chamados_debug()
+    importar_chamados()
 
 
 '''with app.app_context():

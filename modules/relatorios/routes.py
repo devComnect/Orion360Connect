@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify, request, send_file, make_response, current_app
 from application.models import Chamado, db, RelatorioColaboradores, PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess, EventosAtendentes, Turnos
+from application.models import PesquisaSatisfacao
 from datetime import datetime, time as dt_time
-from modules.relatorios.utils import get_turno, get_turno_ligacao, is_hora_valida, cores_por_turno
+from modules.relatorios.utils import get_turno, get_turno_ligacao, is_hora_valida, cores_por_turno, extrair_ces, extrair_csat, extrair_nps 
 from collections import Counter
 from io import BytesIO
 from fpdf import FPDF
@@ -926,6 +927,27 @@ def get_colaboradores():
     colaboradores = [nome[0] for nome in nomes]
 
     return jsonify(colaboradores)
+
+@relatorios_bp.route("/extrairSatisfacao", methods=['POST'])
+def extrair_satisfacao():
+    data_inicio = request.form.get('data_inicio_satisfacao')
+    data_fim = request.form.get('data_final_satisfacao')
+    psatisfacao = request.form.get('pesquisa_satisfacao')
+
+    data_inicio = datetime.strptime(data_inicio, "%Y-%m-%d").date()
+    data_fim = datetime.strptime(data_fim, "%Y-%m-%d").date()
+
+    if psatisfacao == 'ces':
+        return extrair_ces(data_inicio, data_fim)
+
+    if psatisfacao == 'nps':
+        return extrair_nps(data_inicio, data_fim)
+
+    if psatisfacao == 'csat':
+        return extrair_csat(data_inicio, data_fim)
+
+    return jsonify({"error": "Tipo de pesquisa inválida"}), 400
+
 
 @relatorios_bp.route("/getLeitoras", methods=['GET'])
 def get_leitoras():

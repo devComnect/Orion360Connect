@@ -2,7 +2,19 @@ from application.models import ServiceOrder, db
 from datetime import datetime, timedelta
 
 def atualizar_service_order(cod_chamado, data_criacao, restante1, restante2, status_nome, operador):
-    service_status = 0 if status_nome in ["resolvido", "cancelado"] else 1
+
+    # Normaliza status
+    status_normalizado = (status_nome or "").strip().lower()
+
+    # Se chamado está resolvido/cancelado → remover da tabela
+    if status_normalizado in ["resolvido", "cancelado"]:
+        service_order = ServiceOrder.query.filter_by(SERVICEID=cod_chamado).first()
+        if service_order:
+            db.session.delete(service_order)
+        return  # não continua a função
+
+    # Se chegou aqui → chamado está ABERTO
+    service_status = 1  # sempre aberto
 
     dg_user = {
         'Renato': 1020, 'Matheus': 1021, 'Gustavo': 1022, 'Raysa': 1023,
@@ -14,10 +26,11 @@ def atualizar_service_order(cod_chamado, data_criacao, restante1, restante2, sta
     operador_normalizado = (operador or "").strip().title()
     dg_user_id = dg_user.get(operador_normalizado, 9999)
 
+    # Calcula tempo de triagem
     try:
         if restante1 and ":" in restante1:
             h, m, s = map(int, restante1.split(":"))
-            triagem_segundos = h*3600 + m*60 + s
+            triagem_segundos = h * 3600 + m * 60 + s
         else:
             triagem_segundos = 0
 
@@ -25,6 +38,7 @@ def atualizar_service_order(cod_chamado, data_criacao, restante1, restante2, sta
     except:
         SVC_TRIAGEM = datetime.now()
 
+    # Atualiza ou cria o registro
     service_order = ServiceOrder.query.filter_by(SERVICEID=cod_chamado).first()
 
     if service_order:
@@ -38,6 +52,7 @@ def atualizar_service_order(cod_chamado, data_criacao, restante1, restante2, sta
             SVC_ORDER_TRIAGEM=SVC_TRIAGEM,
             SERVICE_ORDER_STS=service_status
         ))
+
 
 
 

@@ -859,7 +859,9 @@ def importar_chamados():
             "Sla1Expirado": "on",
             "Sla2Expirado": "on",
             "TempoRestantePrimeiroAtendimento": "on",
-            "TempoRestanteSegundoAtendimento": "on"
+            "TempoRestanteSegundoAtendimento": "on",
+            "NomeSla1Status": "on",
+            "NomeSla2Status": "on"
         },
         "Ordem": [{"Coluna": "Chave", "Direcao": "false"}]
     }
@@ -875,123 +877,129 @@ def importar_chamados():
     total_inseridos = 0
     total_atualizados = 0
 
-    with db.session.begin():
-        for chamado in chamados_api:
-            try:
-                # -------------------- PARSE DATA CRIAÇÃO --------------------
-                data_str = chamado.get("DataCriacao")
-                hora_str = chamado.get("HoraCriacao")
+    # 🚨 IMPORTANTE: sem context manager!
+    for chamado in chamados_api:
+        try:
+            # -------------------- DATA CRIAÇÃO --------------------
+            data_str = chamado.get("DataCriacao")
+            hora_str = chamado.get("HoraCriacao")
 
-                if not data_valida(data_str):
-                    continue
-
-                try:
-                    if hora_str:
-                        try:
-                            data_criacao = datetime.strptime(f"{data_str} {hora_str}", "%Y-%m-%d %H:%M:%S")
-                        except ValueError:
-                            data_criacao = datetime.strptime(f"{data_str} {hora_str}", "%Y-%m-%d %H:%M")
-                    else:
-                        data_criacao = datetime.strptime(data_str, "%Y-%m-%d")
-                except Exception as e:
-                    print(f"Erro ao processar data_criacao: {e}")
-                    continue
-
-                # -------------------- PARSE FINALIZAÇÃO --------------------
-                data_finalizacao = None
-                data_fin = chamado.get("DataFinalizacao")
-                hora_fin = chamado.get("HoraFinalizacao")
-
-                if data_valida(data_fin):
-                    try:
-                        if hora_fin:
-                            try:
-                                data_finalizacao = datetime.strptime(f"{data_fin} {hora_fin}", "%Y-%m-%d %H:%M:%S")
-                            except ValueError:
-                                data_finalizacao = datetime.strptime(f"{data_fin} {hora_fin}", "%Y-%m-%d %H:%M")
-                        else:
-                            data_finalizacao = datetime.strptime(data_fin, "%Y-%m-%d")
-                    except:
-                        print(f"Erro na finalização do chamado {chamado.get('CodChamado')}")
-
-                # -------------------- CAMPOS BÁSICOS --------------------
-                chave = chamado.get("Chave")
-                existente = Chamado.query.filter_by(chave=chave).first()
-
-                # CodChamado original (com traço)
-                cod_chamado_original = chamado.get("CodChamado")
-
-                # CodChamado para ServiceOrder (sem traço)
-                cod_chamado_limpo = cod_chamado_original.replace("-", "") if cod_chamado_original else None
-
-                restante1 = chamado.get("TempoRestantePrimeiroAtendimento")
-                restante2 = chamado.get("TempoRestanteSegundoAtendimento")
-                status_nome = chamado.get("NomeStatus", "").strip().lower()
-                operador = chamado.get("NomeOperador")
-
-                # -------------------- SERVICE ORDER (FUNÇÃO SEPARADA) --------------------
-                atualizar_service_order(
-                    cod_chamado_limpo,
-                    data_criacao,
-                    restante1,
-                    restante2,
-                    status_nome,
-                    operador
-                )
-
-                # -------------------- INSERT/UPDATE CHAMADO --------------------
-                if existente:
-                    existente.cod_chamado = cod_chamado_original
-                    existente.data_criacao = data_criacao
-                    existente.nome_status = chamado.get('NomeStatus')
-                    existente.nome_grupo = chamado.get('NomeGrupo')
-                    existente.cod_solicitacao = chamado.get('CodSolicitacao')
-                    existente.operador = chamado.get('NomeOperador')
-                    existente.sla_atendimento = chamado.get('Sla1Expirado')
-                    existente.sla_resolucao = chamado.get('Sla2Expirado')
-                    existente.cod_categoria_tipo = chamado.get('CodCategoriaTipo')
-                    existente.cod_tipo_ocorrencia = chamado.get('CodTipoOcorrencia')
-                    existente.solicitante_email = chamado.get('SolicitanteEmail')
-                    existente.nome_prioridade = chamado.get('NomePrioridade')
-                    existente.restante_p_atendimento = restante1
-                    existente.restante_s_atendimento = restante2
-                    existente.data_finalizacao = data_finalizacao
-                    existente.mes_referencia = f"{data_criacao.year}-{data_criacao.month:02d}"
-                    existente.data_importacao = datetime.now()
-                    total_atualizados += 1
-
-                else:
-                    db.session.add(Chamado(
-                        chave=chave,
-                        cod_chamado=cod_chamado_original,
-                        data_criacao=data_criacao,
-                        nome_status=chamado.get("NomeStatus"),
-                        nome_grupo=chamado.get("NomeGrupo"),
-                        cod_solicitacao=chamado.get("CodSolicitacao"),
-                        operador=chamado.get("NomeOperador"),
-                        sla_atendimento=chamado.get("Sla1Expirado"),
-                        sla_resolucao=chamado.get("Sla2Expirado"),
-                        cod_categoria_tipo=chamado.get("CodCategoriaTipo"),
-                        cod_tipo_ocorrencia=chamado.get("CodTipoOcorrencia"),
-                        solicitante_email=chamado.get("SolicitanteEmail"),
-                        nome_prioridade=chamado.get("NomePrioridade"),
-                        restante_p_atendimento=restante1,
-                        restante_s_atendimento=restante2,
-                        data_finalizacao=data_finalizacao,
-                        mes_referencia=f"{data_criacao.year}-{data_criacao.month:02d}",
-                        data_importacao=datetime.now()
-                    ))
-                    total_inseridos += 1
-
-            except Exception as e:
-                print(f"Erro ao processar chamado: {e}")
+            if not data_valida(data_str):
                 continue
+
+            try:
+                if hora_str:
+                    try:
+                        data_criacao = datetime.strptime(f"{data_str} {hora_str}", "%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        data_criacao = datetime.strptime(f"{data_str} {hora_str}", "%Y-%m-%d %H:%M")
+                else:
+                    data_criacao = datetime.strptime(data_str, "%Y-%m-%d")
+            except:
+                continue
+
+            # -------------------- FINALIZAÇÃO --------------------
+            data_finalizacao = None
+            data_fin = chamado.get("DataFinalizacao")
+            hora_fin = chamado.get("HoraFinalizacao")
+
+            if data_valida(data_fin):
+                try:
+                    if hora_fin:
+                        try:
+                            data_finalizacao = datetime.strptime(f"{data_fin} {hora_fin}", "%Y-%m-%d %H:%M:%S")
+                        except ValueError:
+                            data_finalizacao = datetime.strptime(f"{data_fin} {hora_fin}", "%Y-%m-%d %H:%M")
+                    else:
+                        data_finalizacao = datetime.strptime(data_fin, "%Y-%m-%d")
+                except:
+                    print(f"Erro na finalização do chamado {chamado.get('CodChamado')}")
+
+            # -------------------- CAMPOS --------------------
+            chave = chamado.get("Chave")
+            existente = Chamado.query.filter_by(chave=chave).first()
+
+            cod_chamado_original = chamado.get("CodChamado")
+            cod_chamado_limpo = cod_chamado_original.replace("-", "") if cod_chamado_original else None
+
+            restante1 = chamado.get("TempoRestantePrimeiroAtendimento")
+            restante2 = chamado.get("TempoRestanteSegundoAtendimento")
+            status_nome = chamado.get("NomeStatus", "").strip().lower()
+            operador = chamado.get("NomeOperador")
+
+            # Atualiza ServiceOrder separado
+            atualizar_service_order(
+                cod_chamado_limpo,
+                data_criacao,
+                restante1,
+                restante2,
+                status_nome,
+                operador
+            )
+
+            # -------------------- INSERT / UPDATE --------------------
+            if existente:
+                existente.cod_chamado = cod_chamado_original
+                existente.data_criacao = data_criacao
+                existente.nome_status = chamado.get("NomeStatus")
+                existente.nome_grupo = chamado.get("NomeGrupo")
+                existente.cod_solicitacao = chamado.get("CodSolicitacao")
+                existente.operador = chamado.get("NomeOperador")
+                existente.sla_atendimento = chamado.get("Sla1Expirado")
+                existente.sla_resolucao = chamado.get("Sla2Expirado")
+                existente.cod_categoria_tipo = chamado.get("CodCategoriaTipo")
+                existente.cod_tipo_ocorrencia = chamado.get("CodTipoOcorrencia")
+                existente.solicitante_email = chamado.get("SolicitanteEmail")
+                existente.nome_prioridade = chamado.get("NomePrioridade")
+                existente.status_sla_atendimento = chamado.get("NomeSla1Status")
+                existente.status_sla_resolucao = chamado.get("NomeSla2Status")
+                existente.restante_p_atendimento = restante1
+                existente.restante_s_atendimento = restante2
+                existente.data_finalizacao = data_finalizacao
+                existente.mes_referencia = f"{data_criacao.year}-{data_criacao.month:02d}"
+                existente.data_importacao = datetime.now()
+                total_atualizados += 1
+
+            else:
+                novo = Chamado(
+                    chave=chave,
+                    cod_chamado=cod_chamado_original,
+                    data_criacao=data_criacao,
+                    nome_status=chamado.get("NomeStatus"),
+                    nome_grupo=chamado.get("NomeGrupo"),
+                    cod_solicitacao=chamado.get("CodSolicitacao"),
+                    operador=chamado.get("NomeOperador"),
+                    sla_atendimento=chamado.get("Sla1Expirado"),
+                    sla_resolucao=chamado.get("Sla2Expirado"),
+                    cod_categoria_tipo=chamado.get("CodCategoriaTipo"),
+                    cod_tipo_ocorrencia=chamado.get("CodTipoOcorrencia"),
+                    solicitante_email=chamado.get("SolicitanteEmail"),
+                    nome_prioridade=chamado.get("NomePrioridade"),
+                    status_sla_atendimento=chamado.get("NomeSla1Status"),
+                    status_sla_resolucao=chamado.get("NomeSla2Status"),
+                    restante_p_atendimento=restante1,
+                    restante_s_atendimento=restante2,
+                    data_finalizacao=data_finalizacao,
+                    mes_referencia=f"{data_criacao.year}-{data_criacao.month:02d}",
+                    data_importacao=datetime.now(),
+                )
+                db.session.add(novo)
+                total_inseridos += 1
+
+        except Exception as e:
+            print(f"Erro ao processar chamado: {e}")
+            db.session.rollback()   # <- rollback seguro
+            continue
+
+    # 🔥 commit único no final
+    db.session.commit()
 
     return {
         "total_api": len(chamados_api),
         "inseridos": total_inseridos,
         "atualizados": total_atualizados
     }
+
 
 def importar_pSatisfacao():
     token = token_desk()
@@ -1249,16 +1257,16 @@ def repopular_eventos_180d():
     try:
         db.session.execute(text("DELETE FROM eventos_atendente"))
         db.session.commit()
-        print("🗑️ Tabela eventos_atendente zerada com sucesso.")
+        print("Tabela eventos_atendente zerada com sucesso.")
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Erro ao apagar registros: {e}")
+        print(f"Erro ao apagar registros: {e}")
         return {"status": "error", "message": "Falha ao limpar tabela"}
 
     # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
-        print("❌ Falha na autenticação")
+        print("Falha na autenticação")
         return {"status": "error", "message": "Falha na autenticação"}
     access_token = auth_response["access_token"]
 
@@ -1285,7 +1293,7 @@ def repopular_eventos_180d():
                 return datetime.strptime(data_str, fmt).date()
             except ValueError:
                 continue
-        print(f"⚠️ Data inválida recebida: {data_str}")
+        print(f"Data inválida recebida: {data_str}")
         return None
 
     def parse_datetime(dt_str):
@@ -1296,7 +1304,7 @@ def repopular_eventos_180d():
                 return datetime.strptime(dt_str, fmt)
             except ValueError:
                 continue
-        print(f"⚠️ Datetime inválido recebido: {dt_str}")
+        print(f"Datetime inválido recebido: {dt_str}")
         return None
 
     def parse_timedelta(valor):
@@ -1306,7 +1314,7 @@ def repopular_eventos_180d():
             h, m, s = map(int, valor.split(":"))
             return timedelta(hours=h, minutes=m, seconds=s)
         except Exception as e:
-            print(f"⚠️ Erro ao parsear timedelta '{valor}': {e}")
+            print(f"Erro ao parsear timedelta '{valor}': {e}")
             return None
 
     def parse_bool(valor):
@@ -1315,7 +1323,7 @@ def repopular_eventos_180d():
     # Coleta de eventos
     for operador_id in operadores_ids:
         nome_operador = OPERADORES_MAP.get(operador_id, "Desconhecido")
-        print(f"\n👤 Processando operador {nome_operador} (ID {operador_id})")
+        print(f"\n Processando operador {nome_operador} (ID {operador_id})")
 
         for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=15):
             offset = 0
@@ -1335,15 +1343,15 @@ def repopular_eventos_180d():
                     "conf": {}
                 }
 
-                print(f"➡️ [{nome_operador}] Buscando eventos de {inicio} até {fim}, offset {offset}")
+                print(f"[{nome_operador}] Buscando eventos de {inicio} até {fim}, offset {offset}")
                 response = tasks.atendenteEventosData(access_token, params)
 
                 if not response:
-                    print(f"❌ [{nome_operador}] Resposta vazia da API")
+                    print(f"[{nome_operador}] Resposta vazia da API")
                     break
 
                 dados = response.get("result", {}).get("data", [])
-                print(f"📦 [{nome_operador}] Registros recebidos: {len(dados)}")
+                print(f"[{nome_operador}] Registros recebidos: {len(dados)}")
 
                 if not dados:
                     break
@@ -1384,7 +1392,7 @@ def repopular_eventos_180d():
                     db.session.commit()
                 except Exception as e:
                     db.session.rollback()
-                    print(f"❌ Erro ao salvar registros no banco: {e}")
+                    print(f"Erro ao salvar registros no banco: {e}")
 
                 offset += 1000
 
@@ -1401,22 +1409,22 @@ def repopular_eventos_operador_180d(operador_id: int, nome_operador: str = None)
     if not nome_operador:
         nome_operador = f"Operador {operador_id}"
 
-    print(f"♻️ Iniciando importação de eventos do operador {operador_id} de {data_inicial} até {data_final}")
+    print(f"Iniciando importação de eventos do operador {operador_id} de {data_inicial} até {data_final}")
 
     # Limpar eventos do operador
     try:
         db.session.execute(text(f"DELETE FROM eventos_atendente WHERE atendente = {operador_id}"))
         db.session.commit()
-        print(f"🗑️ Eventos do operador {operador_id} apagados com sucesso.")
+        print(f"Eventos do operador {operador_id} apagados com sucesso.")
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Erro ao apagar registros: {e}")
+        print(f"Erro ao apagar registros: {e}")
         return {"status": "error", "message": "Falha ao limpar tabela"}
 
     # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
-        print("❌ Falha na autenticação")
+        print("Falha na autenticação")
         return {"status": "error", "message": "Falha na autenticação"}
     access_token = auth_response["access_token"]
 
@@ -1460,7 +1468,7 @@ def repopular_eventos_operador_180d(operador_id: int, nome_operador: str = None)
                 "conf": {}
             }
 
-            print(f"➡️ [{nome_operador}] Buscando eventos de {inicio} até {fim}, offset {offset}")
+            print(f"[{nome_operador}] Buscando eventos de {inicio} até {fim}, offset {offset}")
             response = tasks.atendenteEventosData(access_token, params)
             dados = response.get("result", {}).get("data", []) if response else []
 
@@ -1493,7 +1501,7 @@ def repopular_eventos_operador_180d(operador_id: int, nome_operador: str = None)
                 db.session.commit()
             except Exception as e:
                 db.session.rollback()
-                print(f"❌ Erro ao salvar registros: {e}")
+                print(f"Erro ao salvar registros: {e}")
 
             offset += 1000
 
@@ -1506,12 +1514,12 @@ def processar_e_armazenar_eventos():
     data_inicial = hoje
     data_final = hoje
 
-    print(f"🔄 Importando eventos SOMENTE do dia {hoje}")
+    print(f"Importando eventos SOMENTE do dia {hoje}")
 
     # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
-        print("❌ Falha na autenticação")
+        print("Falha na autenticação")
         return {"status": "error", "message": "Falha na autenticação"}
     access_token = auth_response["access_token"]
 
@@ -2274,7 +2282,9 @@ def importar_chamados_debug():
             "Sla1Expirado": "on",
             "Sla2Expirado": "on",
             "TempoRestantePrimeiroAtendimento": "on",
-            "TempoRestanteSegundoAtendimento": "on"
+            "TempoRestanteSegundoAtendimento": "on",
+            "NomeSla1Status": "on",
+            "NomeSla2Status": "on"
         },
         "Ordem": [{"Coluna": "Chave", "Direcao": "false"}]
     }
@@ -2394,7 +2404,9 @@ def importar_chamados_debug():
                     existente.solicitante_email = chamado.get('SolicitanteEmail')
                     existente.nome_prioridade = chamado.get('NomePrioridade')
                     existente.restante_p_atendimento = chamado.get("TempoRestantePrimeiroAtendimento")
-                    existente.restante_s_atendimento = chamado.get("TempoRestanteSegundoAtendimento")
+                    existente.restante_s_atendimento = chamado.get("TempoRestanteSegundoAtendimento"),
+                    existente.status_sla_atendimento=chamado.get("NomeSla1Status"),
+                    existente.status_sla_resolucao=chamado.get("NomeSla2Status"),
                     existente.data_finalizacao = data_finalizacao
                     existente.mes_referencia = f"{data_criacao.year}-{data_criacao.month:02d}"
                     existente.data_importacao = datetime.now()
@@ -2420,6 +2432,8 @@ def importar_chamados_debug():
                         nome_prioridade=chamado.get("NomePrioridade"),
                         restante_p_atendimento=chamado.get("TempoRestantePrimeiroAtendimento"),
                         restante_s_atendimento=chamado.get("TempoRestanteSegundoAtendimento"),
+                        status_sla_atendimento=chamado.get("NomeSla1Status"),
+                        status_sla_resolucao=chamado.get("NomeSla2Status"),
                         data_finalizacao=data_finalizacao,
                         mes_referencia=f"{data_criacao.year}-{data_criacao.month:02d}",
                         data_importacao=datetime.now()
