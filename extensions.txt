@@ -1,0 +1,5 @@
+# Postman
+# Python
+# Docker
+# Glasslt-VSC # Opcional - torna o VsCode transparente
+# PartialDiff # Opcional para comparações
