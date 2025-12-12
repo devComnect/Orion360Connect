@@ -149,7 +149,6 @@ let codigosEmAberto = [];
     modal.show();
   }
 
-
 let codigosAtendimento = [];
 let codigosResolucao = [];
 
@@ -1358,8 +1357,6 @@ async function atualizarReabertos(dias, nomeOperador) {
       }
 
       percentualSpan.textContent = percentual;
-
-      // Avalia com a meta
       if (metas.reabertos != null && total > 0) {
         const meta = metas.reabertos;
         if (percentualValor <= meta) {

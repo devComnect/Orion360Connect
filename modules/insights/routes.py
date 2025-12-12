@@ -9,7 +9,6 @@ import logging
 
 insights_bp = Blueprint('insights_bp', __name__, url_prefix='/insights')
 
-# Rota que traz os chamados criados no grupo do Suporte  
 @insights_bp.route('/ChamadosSuporte', methods=['POST'])
 def listar_chamados_criados():
     try:
@@ -38,7 +37,6 @@ def listar_chamados_criados():
             "message": str(e)
         }), 500
 
-# Rota que traz os chamados finalizados no grupo do Suporte
 @insights_bp.route('/ChamadosSuporte/finalizado', methods=['POST'])
 def listar_chamados_finalizado():
     try:
@@ -68,7 +66,6 @@ def listar_chamados_finalizado():
             "message": str(e)
         }), 500
 
-# Rota que traz os SLAs globais
 @insights_bp.route('/sla', methods=['POST'])
 def sla_insights():
     try:
@@ -157,7 +154,6 @@ def listar_chamados_aberto():
         "cod_chamados": codigos
     })
 
-# Rota que   
 @insights_bp.route('/get/operadores', methods=['GET'])
 def get_operadores():
     try:
@@ -420,7 +416,6 @@ def relacao_admin_abertos_vs_resolvido_periodo():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# Rota que traz os tickets por canal pelos períodos de 7, 15, 30 e 90 dias  
 @insights_bp.route('/ticketsCanal', methods=['POST'])
 def chamados_tickets_canal():
     try:
@@ -923,11 +918,10 @@ def chamados_por_operador_periodo():
 @insights_bp.route('/tmin_tmax', methods=['POST'])
 def get_tmin_tmax():
     try:
-        dias = int(request.json.get("dias", 1))  # padrão: 1 dia
+        dias = int(request.json.get("dias", 1))  
         hoje = datetime.now().date()
         data_inicio = hoje - timedelta(days=dias)
 
-        # Contagem de registros válidos
         count_min = db.session.query(func.count(PerformanceColaboradores.id)).filter(
             PerformanceColaboradores.tempo_minatend != 0,
             PerformanceColaboradores.data >= data_inicio,
