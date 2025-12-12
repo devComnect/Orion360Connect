@@ -1,55 +1,56 @@
-from flask import Blueprint, jsonify, render_template, request, url_for
-import requests
-from modules.deskmanager.authenticate.routes import token_desk
-from modules.insights.utils import formatar_tempo
+from flask import Blueprint, jsonify, request, send_file
+from modules.okrs.utils import gerar_relatorio_csat, gerar_relatorio_sla, gerar_relatorio_tma_tms, gerar_relatorio_fcr, gerar_relatorio_reabertura, meses_por_dias, gerar_periodos_por_dias
 from datetime import datetime, timedelta
 from application.models import Chamado, db, PesquisaSatisfacao, RelatorioColaboradores, PerformanceColaboradores, Metas
-from collections import Counter
 from sqlalchemy import func, and_, or_, extract, text
 import numpy as np
 from collections import defaultdict
-import re
+from dateutil.relativedelta import relativedelta
+import pandas as pd
+import re, os, io
 
 okrs_bp = Blueprint('okrs_bp', __name__, url_prefix='/okrs')
 
 @okrs_bp.route('/reabertosOkrs', methods=['POST'])
 def reabertos_okrs():
     try:
-        data = request.get_json()
-        dias = int(data.get('dias', 1))
-
         hoje = datetime.utcnow()
-        data_limite = hoje - timedelta(days=dias)
 
-        # Todos os chamados do operador no período
-        total_registros = RelatorioColaboradores.query.filter(
-            func.date(RelatorioColaboradores.data_criacao) >= data_limite
-        ).all()
+        mes_anterior = hoje - relativedelta(months=1)
+        ano = mes_anterior.year
+        mes = mes_anterior.month
 
-        #total_chamados = len(total_registros)
-
-        data_inicio = hoje - timedelta(days=dias)
-
-        inicio = datetime.combine(data_inicio, datetime.min.time())
-        fim = datetime.combine(hoje, datetime.max.time())
+        inicio = datetime(ano, mes, 1)
+        fim = (inicio + relativedelta(months=1)) - timedelta(seconds=1)
 
         total_chamados = Chamado.query.filter(
-            Chamado.nome_status != 'Cancelado',
             Chamado.nome_status == 'Resolvido',
             Chamado.data_finalizacao != None,
             Chamado.data_finalizacao >= inicio,
             Chamado.data_finalizacao <= fim
         ).count()
 
-        # Apenas os reabertos
-        reabertos = [r for r in total_registros if r.reaberto == 'Reaberto']
+        registros = RelatorioColaboradores.query.filter(
+            func.date(RelatorioColaboradores.data_criacao) >= inicio,
+            func.date(RelatorioColaboradores.data_criacao) <= fim
+        ).all()
+
+        reabertos = [r for r in registros if r.reaberto == 'Reaberto']
         codigos = [r.cod_chamado for r in reabertos if r.cod_chamado]
+
+        total_reabertos = len(codigos)
+
+        pct_reabertura = 0
+        if total_chamados > 0:
+            pct_reabertura = round((total_reabertos / total_chamados) * 100, 2)
 
         return jsonify({
             "status": "success",
-            "total_reabertos": len(codigos),
-            "cod_chamados": codigos,
-            "total_chamados": total_chamados
+            "mes_referencia": inicio.strftime("%b/%y"),
+            "total_reabertos": total_reabertos,
+            "total_chamados": total_chamados,
+            "pct_reabertura": pct_reabertura,
+            "cod_chamados": codigos
         })
 
     except Exception as e:
@@ -57,6 +58,7 @@ def reabertos_okrs():
             "status": "error",
             "message": str(e)
         }), 500
+
     
 @okrs_bp.route('/tmaTmsOkrs', methods=['GET'])
 def tma_e_tms_okrs():
@@ -155,7 +157,30 @@ def tma_e_tms_okrs():
 def tma_tms_mensal():
     try:
         data = request.get_json() or {}
-        dias = data.get("dias", 365)
+        dias = int(data.get("dias", 365))
+
+        # converte dias em quantidade de meses anteriores a considerar
+        def meses_por_dias(dias):
+            if dias <= 30:
+                return 1
+            elif dias <= 90:
+                return 3
+            elif dias <= 180:
+                return 6
+            elif dias <= 365:
+                return 12
+            return 12  # fallback
+
+        def gerar_periodos_por_dias(dias):
+            hoje = datetime.utcnow()
+            qtd_meses = meses_por_dias(dias)
+            periodos = []
+            for i in range(1, qtd_meses + 1):  # nunca inclui mês atual
+                dt = hoje - relativedelta(months=i)
+                periodos.append((dt.year, dt.month))
+            return periodos
+
+        periodos_validos = gerar_periodos_por_dias(dias)
         data_limite = datetime.utcnow() - timedelta(days=dias)
 
         chamados_validos = db.session.query(Chamado).filter(
@@ -175,40 +200,42 @@ def tma_tms_mensal():
                 ano = chamado.data_criacao.year
                 mes = chamado.data_criacao.month
 
+                if (ano, mes) not in periodos_validos:
+                    continue
+
                 tempo_p = (chamado.restante_p_atendimento or "").strip()
                 tempo_s = (chamado.restante_s_atendimento or "").strip()
-
-                # pula se for vazio ou inválido
                 if not tempo_p or not tempo_s:
                     continue
 
-                # ---- Processa P ----
+                # Processa P
                 sinal_p = -1 if tempo_p.startswith("-") else 1
                 partes_p = tempo_p.replace("-", "").split(":")
-                if not all(p.isdigit() for p in partes_p):  
+                if not all(p.isdigit() for p in partes_p):
                     continue
                 h, m, s = (list(map(int, partes_p)) + [0, 0, 0])[:3]
                 restante_p = timedelta(hours=h, minutes=m, seconds=s) * sinal_p
 
-                # ---- Processa S ----
+                # Processa S
                 sinal_s = -1 if tempo_s.startswith("-") else 1
                 partes_s = tempo_s.replace("-", "").split(":")
-                if not all(p.isdigit() for p in partes_s):  
+                if not all(p.isdigit() for p in partes_s):
                     continue
                 hs, ms, ss = (list(map(int, partes_s)) + [0, 0, 0])[:3]
                 restante_s = timedelta(hours=hs, minutes=ms, seconds=ss) * sinal_s
 
-                # Ignora tempos negativos
+                # ignora valores inválidos
                 if restante_p.total_seconds() < 0 or restante_s.total_seconds() < 0:
                     continue
 
                 tms_individual = restante_s - restante_p
+
                 if tms_individual.total_seconds() < 0 or tms_individual > timedelta(days=30):
                     continue
 
-                # guarda em segundos
-                tma_por_mes[(ano, mes)].append(restante_p.total_seconds())
-                tms_por_mes[(ano, mes)].append(tms_individual.total_seconds())
+                # salva em minutos para front-end
+                tma_por_mes[(ano, mes)].append(restante_p.total_seconds() / 60)
+                tms_por_mes[(ano, mes)].append(tms_individual.total_seconds() / 60)
 
             except Exception as e:
                 erros.append({
@@ -219,22 +246,22 @@ def tma_tms_mensal():
                 })
                 continue
 
-        meses_ordenados = sorted(tma_por_mes.keys())
+        # ordena pela ordem natural dos meses anteriores
+        meses_ordenados = sorted(periodos_validos)
         labels, medias_tma, medias_tms = [], [], []
 
         for ano, mes in meses_ordenados:
             tma_lista = tma_por_mes.get((ano, mes), [])
             tms_lista = tms_por_mes.get((ano, mes), [])
-
             if not tma_lista or not tms_lista:
                 continue
 
-            media_tma = np.mean(tma_lista) / 60
-            media_tms = np.mean(tms_lista) / 60
+            media_tma = np.mean(tma_lista)
+            media_tms = np.mean(tms_lista)
 
             labels.append(datetime(ano, mes, 1).strftime('%b/%y'))
-            medias_tma.append(round(media_tma, 2))
-            medias_tms.append(round(media_tms, 2))
+            medias_tma.append(round(media_tma, 2))  # minutos
+            medias_tms.append(round(media_tms, 2))  # minutos (front-end converte para horas)
 
         return jsonify({
             "status": "success",
@@ -250,7 +277,6 @@ def tma_tms_mensal():
             "status": "error",
             "message": str(e)
         }), 500
-
 
 @okrs_bp.route('/tminTmaxOkrs', methods=['POST'])
 def get_tmin_tmax_okrs():
@@ -320,7 +346,6 @@ def get_tmin_tmax_okrs():
             "message": str(e)
         }), 500
 
-# Rota que traz os SLAs globais
 @okrs_bp.route('/slaOkrs', methods=['POST'])
 def sla_insights_okrs():
     try:
@@ -372,45 +397,60 @@ def sla_insights_okrs():
             "message": str(e)
         }), 500
 
-
 @okrs_bp.route('/slaOkrsMes', methods=['POST'])
 def sla_okrs_mes():
     try:
-        from collections import defaultdict
-        from datetime import datetime, timedelta
+        data = request.get_json() or {}
 
-        data = request.get_json()
         dias = int(data.get('dias', 180))
-        hoje = datetime.now()
+        hoje = datetime.utcnow()
         data_inicio = hoje - timedelta(days=dias)
 
+        periodos_validos = gerar_periodos_por_dias(dias, hoje)
+
+        # consulta base
         chamados = Chamado.query.filter(
             Chamado.nome_status != 'Cancelado',
             Chamado.data_criacao >= data_inicio,
             Chamado.data_criacao <= hoje
         ).all()
 
-        # Agrupar chamados por mês
         chamados_por_mes = defaultdict(list)
+
         for chamado in chamados:
-            key = chamado.data_criacao.strftime('%Y-%m')  # Exemplo: '2025-09'
+            key = chamado.data_criacao.strftime('%Y-%m')
+
+            # só conta meses válidos conforme filtro do front-end
+            if key not in periodos_validos:
+                continue
+
             chamados_por_mes[key].append(chamado)
 
         labels = []
         atendimento_prazo = []
         resolucao_prazo = []
 
-        for key in sorted(chamados_por_mes.keys()):
-            lista = chamados_por_mes[key]
+        # ordenação rigorosa com os meses desejados
+        for key in sorted(periodos_validos):
+
+            lista = chamados_por_mes.get(key, [])
             total = len(lista)
+
+            if total == 0:
+                # mês válido mas sem dados
+                labels.append(datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize())
+                atendimento_prazo.append(0)
+                resolucao_prazo.append(0)
+                continue
 
             no_prazo_atendimento = sum(1 for c in lista if c.sla_atendimento == 'N')
             no_prazo_resolucao = sum(1 for c in lista if c.sla_resolucao == 'N')
 
-            pct_atendimento = round((no_prazo_atendimento / total) * 100, 2) if total else 0
-            pct_resolucao = round((no_prazo_resolucao / total) * 100, 2) if total else 0
+            pct_atendimento = round((no_prazo_atendimento / total) * 100, 2)
+            pct_resolucao = round((no_prazo_resolucao / total) * 100, 2)
 
             mes_formatado = datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize()
+
             labels.append(mes_formatado)
             atendimento_prazo.append(pct_atendimento)
             resolucao_prazo.append(pct_resolucao)
@@ -484,6 +524,7 @@ def csat_okrs():
         "csat": csat
     })
 
+# Rota aparentemente não está em uso, talvez excluí-la mais tarde
 @okrs_bp.route('/csatOkrsMensal', methods=['POST'])
 def csat_okrs_mensal():
     data = request.get_json()
@@ -551,10 +592,13 @@ def csat_okrs_mensal():
 @okrs_bp.route('/csatMensal', methods=['POST'])
 def csat_mensal():
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         dias = int(data.get('dias', 180))
-        hoje = datetime.now()
+
+        hoje = datetime.utcnow()
         data_inicio = hoje - timedelta(days=dias)
+
+        periodos_validos = gerar_periodos_por_dias(dias, hoje)
 
         CSAT_MAP = {
             'Péssimo': 1,
@@ -569,7 +613,7 @@ def csat_mensal():
             'Ótimo': 10
         }
 
-        # Buscar respostas no período
+        # Buscar respostas no período bruto
         respostas = db.session.query(
             PesquisaSatisfacao.alternativa,
             PesquisaSatisfacao.data_resposta
@@ -581,32 +625,48 @@ def csat_mensal():
 
         respostas_por_mes = defaultdict(list)
 
+        # Processar respostas e filtrar os meses válidos
         for alt, data_resposta in respostas:
             valor = alt.strip()
             nota = None
 
-            if valor.isdigit():
+            if valor.isdigit():  
                 numero = int(valor)
                 if 0 <= numero <= 10:
                     nota = numero
             elif valor in CSAT_MAP:
                 nota = CSAT_MAP[valor]
 
-            if nota is not None:
-                chave_mes = data_resposta.strftime('%Y-%m')
-                respostas_por_mes[chave_mes].append(nota)
+            if nota is None:
+                continue
+
+            chave_mes = data_resposta.strftime('%Y-%m')
+
+            # só aceita meses que pertencem ao filtro do front
+            if chave_mes not in periodos_validos:
+                continue
+
+            respostas_por_mes[chave_mes].append(nota)
 
         labels = []
         csat_mensal = []
 
-        for key in sorted(respostas_por_mes.keys()):
-            notas = respostas_por_mes[key]
+        # Ordena EXCLUSIVAMENTE pelos meses desejados
+        for key in sorted(periodos_validos):
+
+            notas = respostas_por_mes.get(key, [])
             total = len(notas)
-            satisfatorias = sum(1 for n in notas if n >= 7)  # ou >= 8, dependendo da sua política
 
-            csat = round((satisfatorias / total) * 100, 2) if total else 0
+            if total == 0:
+                labels.append(datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize())
+                csat_mensal.append(0)
+                continue
 
+            satisfatorias = sum(1 for n in notas if n >= 7)  # política padrão
+
+            csat = round((satisfatorias / total) * 100, 2)
             mes_formatado = datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize()
+
             labels.append(mes_formatado)
             csat_mensal.append(csat)
 
@@ -621,164 +681,6 @@ def csat_mensal():
             "status": "error",
             "message": str(e)
         }), 500
-
-@okrs_bp.route('/cesOkrs', methods=['POST'])
-def ces_okrs():
-    try:
-        data = request.get_json()
-
-        # Garantir que 'dias' seja um inteiro válido
-        try:
-            dias = int(data.get('dias', 1))
-        except (ValueError, TypeError):
-            dias = 1
-
-        data_limite = (datetime.now() - timedelta(days=dias)).date()
-
-        CES_MAP = {
-            'Péssimo': 1,
-            'Discordo Totalmente': 2,
-            'Discordo Parcialmente': 3,
-            'Neutro': 4,
-            'Concordo Parcialmente': 5,
-            'Regular': 6,
-            'Bom': 7,
-            'Concordo': 8,
-            'Concordo Plenamente': 9,
-            'Ótimo': 10
-        }
-
-        respostas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
-            and_(
-                PesquisaSatisfacao.data_resposta >= data_limite,
-                PesquisaSatisfacao.alternativa.isnot(None),
-                func.length(PesquisaSatisfacao.alternativa) > 0
-            )
-        ).all()
-
-        valores_convertidos = []
-
-        for resp in respostas_brutas:
-            valor = resp[0].strip()
-            if valor.isdigit():
-                numero = int(valor)
-                if 0 <= numero <= 10:
-                    valores_convertidos.append(numero)
-            elif valor in CES_MAP:
-                valores_convertidos.append(CES_MAP[valor])
-
-        total_respostas_ces = len(valores_convertidos)
-
-        if total_respostas_ces > 0:
-            soma_ponderada = sum(valores_convertidos)
-            ces_final = round(soma_ponderada / total_respostas_ces, 2)
-            ces_percentual = round((ces_final / 10) * 100, 2)
-
-            # Definir nota e descrição com base no percentual
-            if ces_percentual == 0:
-                nota = 1
-                descricao = 'Alto esforço'
-            elif ces_percentual < 16.3:
-                nota = 1
-                descricao = 'Alto esforço'
-            elif ces_percentual < 33.3:
-                nota = 2
-                descricao = 'Alto esforço'
-            elif ces_percentual < 50:
-                nota = 3
-                descricao = 'Alto esforço'
-            elif ces_percentual < 66.7:
-                nota = 4
-                descricao = 'Esforço moderado'
-            elif ces_percentual < 83:
-                nota = 5
-                descricao = 'Esforço moderado'
-            elif ces_percentual < 92:
-                nota = 6
-                descricao = 'Baixo esforço'
-            else:
-                nota = 7
-                descricao = 'Baixo esforço'
-        else:
-            nota = 0
-            descricao = 'Sem dados'
-            ces_percentual = 0.0
-
-        return jsonify({
-            "status": "success",
-            "nota": nota,
-            "descricao": descricao,
-            "total_respostas_ces": total_respostas_ces,
-            "ces_percentual": ces_percentual
-        })
-
-    except Exception as e:
-        # Log no servidor (opcional: enviar para monitoramento)
-        print(f"[ERRO /ces] {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-@okrs_bp.route('/npsOkrs', methods=['POST'])
-def nps_okrs():
-    data = request.get_json()
-    dias = int(data.get('dias', 1))
-    data_limite = (datetime.now() - timedelta(days=dias)).date()
-
-    NPS_MAP = {
-        'Péssimo': 1,
-        'Discordo Totalmente': 2,
-        'Discordo Parcialmente': 3,
-        'Neutro': 4,
-        'Concordo Parcialmente': 5,
-        'Regular': 6,
-        'Bom': 7,
-        'Concordo': 8,
-        'Concordo Plenamente': 9,
-        'Ótimo': 10
-    }
-
-    # Buscar todas as alternativas preenchidas no período
-    alternativas_brutas = db.session.query(PesquisaSatisfacao.alternativa).filter(
-        and_(
-            PesquisaSatisfacao.data_resposta >= data_limite,
-            PesquisaSatisfacao.alternativa.isnot(None),
-            func.length(PesquisaSatisfacao.alternativa) > 0
-        )
-    ).all()
-
-    # Converter para escala numérica
-    notas = [NPS_MAP.get(alt[0], 0) for alt in alternativas_brutas if NPS_MAP.get(alt[0])]
-
-    total = len(notas)
-    if total == 0:
-        return jsonify({"nps": 0, "status": "Sem dados suficientes"}), 200
-
-    # Classificar em promotores, neutros e detratores
-    promotores = sum(1 for n in notas if n >= 9)
-    neutros = sum(1 for n in notas if 7 <= n <= 8)
-    detratores = sum(1 for n in notas if n <= 6)
-
-    # Cálculo do NPS
-    nps_valor = ((promotores - detratores) / total) * 100
-    nps_valor = round(nps_valor, 2)
-
-    # Classificação
-    if nps_valor >= 75:
-        status = "Excelente"
-    elif nps_valor >= 50:
-        status = "Muito bom"
-    elif nps_valor >= 40:
-        status = "Razoável"
-    else:
-        status = "Ruim"
-
-    return jsonify({
-        "nps": nps_valor,
-        "status": status,
-        "total_respostas": total,
-        "promotores": promotores,
-        "neutros": neutros,
-        "detratores": detratores
-    }), 200
 
 @okrs_bp.route('/setMetas', methods=['POST'])
 def set_metas():
@@ -827,13 +729,14 @@ def get_metas():
 @okrs_bp.route('/fcrMensal', methods=['POST'])
 def fcr_mensal():
     try:
-        data = request.get_json()
-        dias = int(data.get('dias', 180))  # padrão: últimos 6 meses
-
+        data = request.get_json() or {}
+        dias = int(data.get('dias', 180))  # vem dos botões
         hoje = datetime.utcnow()
         data_inicio = hoje - timedelta(days=dias)
 
-        # Filtra registros no período
+        periodos_validos = gerar_periodos_por_dias(dias, hoje)
+
+        # Filtra registros
         registros = RelatorioColaboradores.query.filter(
             RelatorioColaboradores.data_criacao >= data_inicio,
             RelatorioColaboradores.nome_status == 'Resolvido'
@@ -847,28 +750,37 @@ def fcr_mensal():
             Chamado.data_finalizacao <= hoje
         ).all()
 
-        # Agrupar por mês
         chamados_por_mes = defaultdict(list)
         fcr_por_mes = defaultdict(list)
 
         for chamado in chamados:
             key = chamado.data_finalizacao.strftime('%Y-%m')
+
+            if key not in periodos_validos:
+                continue
+
             chamados_por_mes[key].append(chamado.cod_chamado)
 
         for reg in registros:
+            key = reg.data_criacao.strftime('%Y-%m')
+
+            if key not in periodos_validos:
+                continue
+
             if reg.first_call == 'S' and reg.cod_chamado:
-                key = reg.data_criacao.strftime('%Y-%m')
                 fcr_por_mes[key].append(reg.cod_chamado)
 
         labels = []
         fcr_percentuais = []
 
-        for key in sorted(chamados_por_mes.keys()):
-            total = len(chamados_por_mes[key])
+        # ordenar exatamente como os períodos válidos
+        for key in sorted(periodos_validos):
+            total = len(chamados_por_mes.get(key, []))
             fcr = len(set(fcr_por_mes.get(key, [])))
             percentual = round((fcr / total) * 100, 2) if total else 0
 
             mes_formatado = datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize()
+
             labels.append(mes_formatado)
             fcr_percentuais.append(percentual)
 
@@ -922,6 +834,626 @@ def fcr_okrs():
             "percentual_fcr": round((len(codigos_fcr) / total_chamados) * 100, 2) if total_chamados else 0,
             "cod_chamados": codigos_fcr,
             "total_chamados": total_chamados
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+    
+# Rota principal de exportação
+@okrs_bp.route('/exportarOkrs', methods=['POST'])
+def exportar_okrs_anual():
+    try:
+        hoje = datetime.now()
+        inicio_ano = datetime(hoje.year, 1, 1)
+        fim_ano = datetime(hoje.year, 12, 31)
+
+        # Aqui chamaremos as funções de cada métrica
+        relatorios = [
+            gerar_relatorio_csat(inicio_ano, fim_ano),
+            gerar_relatorio_sla(inicio_ano, fim_ano),
+            gerar_relatorio_tma_tms(inicio_ano, fim_ano),
+            gerar_relatorio_fcr(inicio_ano, fim_ano),
+            gerar_relatorio_reabertura(inicio_ano, fim_ano),
+        ]
+
+        # Monta o arquivo Excel
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            for df, aba in relatorios:
+                df.to_excel(writer, index=False, sheet_name=aba)
+
+                workbook = writer.book
+                worksheet = writer.sheets[aba]
+
+                formato_header = workbook.add_format({'bold': True, 'bg_color': '#D9E1F2'})
+                formato_num = workbook.add_format({'num_format': '0.00'})
+                #formato_texto = workbook.add_format({'border': 1})
+
+                worksheet.set_column('A:A', 15)
+                worksheet.set_column('B:B', 12, formato_num)
+                worksheet.set_column('C:C', 15)
+                worksheet.write_row('A1', list(df.columns), formato_header)
+
+        output.seek(0)
+
+        return send_file(
+            output,
+            download_name=f"Relatorio_OKRs.xlsx",
+            as_attachment=True,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@okrs_bp.route('/csatQuarter', methods=['POST'])
+def csat_quarter():
+    try:
+        hoje = datetime.now()
+        ano_atual = hoje.year
+
+        CSAT_MAP = {
+            'Péssimo': 1, 'Discordo Totalmente': 2, 'Discordo Parcialmente': 3,
+            'Neutro': 4, 'Concordo Parcialmente': 5, 'Regular': 6,
+            'Bom': 7, 'Concordo': 8, 'Concordo Plenamente': 9, 'Ótimo': 10
+        }
+
+        # Buscar respostas apenas do ano atual
+        respostas = db.session.query(
+            PesquisaSatisfacao.alternativa,
+            PesquisaSatisfacao.data_resposta
+        ).filter(
+            func.extract('year', PesquisaSatisfacao.data_resposta) == ano_atual,
+            PesquisaSatisfacao.alternativa.isnot(None),
+            func.length(PesquisaSatisfacao.alternativa) > 0
+        ).all()
+
+        respostas_por_mes = defaultdict(list)
+        for alt, data_resposta in respostas:
+            valor = alt.strip()
+            nota = None
+
+            if valor.isdigit():
+                numero = int(valor)
+                if 0 <= numero <= 10:
+                    nota = numero
+            elif valor in CSAT_MAP:
+                nota = CSAT_MAP[valor]
+
+            if nota is not None:
+                chave_mes = data_resposta.month  # só o número do mês
+                respostas_por_mes[chave_mes].append(nota)
+
+        # Calcula CSAT por mês
+        csat_por_mes = {}
+        for mes, notas in respostas_por_mes.items():
+            total = len(notas)
+            satisfatorias = sum(1 for n in notas if n >= 7)
+            csat_por_mes[mes] = round((satisfatorias / total) * 100, 2) if total else 0
+
+        # Distribuição de meses por quarter
+        quarters = {
+            'Q1': [1, 2, 3],
+            'Q2': [4, 5, 6],
+            'Q3': [7, 8, 9],
+            'Q4': [10, 11, 12]
+        }
+
+        resultado = {}
+        for q, meses in quarters.items():
+            labels = []
+            valores = []
+            for m in meses:
+                nome_mes = datetime(ano_atual, m, 1).strftime('%b').capitalize()
+                labels.append(nome_mes)
+                valores.append(csat_por_mes.get(m, 0))
+            resultado[q] = {"labels": labels, "valores": valores}
+
+        return jsonify({"status": "success", "quarters": resultado})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@okrs_bp.route('/slaOkrsQuarter', methods=['POST'])
+def sla_okrs_quarter():
+    try:
+        hoje = datetime.now()
+        ano_atual = hoje.year
+
+        # Busca todos os chamados do ano atual
+        chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.data_criacao.between(datetime(ano_atual, 1, 1), hoje)
+        ).all()
+
+        # Agrupa chamados por mês
+        sla_por_mes = defaultdict(lambda: {"sla_atendimento": 0, "sla_resolucao": 0})
+        for c in chamados:
+            mes = c.data_criacao.month
+            if "total" not in sla_por_mes[mes]:
+                sla_por_mes[mes]["total"] = 0
+                sla_por_mes[mes]["atendimento_ok"] = 0
+                sla_por_mes[mes]["resolucao_ok"] = 0
+
+            sla_por_mes[mes]["total"] += 1
+            sla_por_mes[mes]["atendimento_ok"] += 1 if c.sla_atendimento == 'N' else 0
+            sla_por_mes[mes]["resolucao_ok"] += 1 if c.sla_resolucao == 'N' else 0
+
+        # Calcula percentual por mês
+        for m in range(1, 13):
+            total = sla_por_mes[m].get("total", 0)
+            if total > 0:
+                sla_por_mes[m]["sla_atendimento"] = round((sla_por_mes[m]["atendimento_ok"]/total)*100,2)
+                sla_por_mes[m]["sla_resolucao"] = round((sla_por_mes[m]["resolucao_ok"]/total)*100,2)
+            else:
+                sla_por_mes[m]["sla_atendimento"] = 0
+                sla_por_mes[m]["sla_resolucao"] = 0
+
+        # Distribuição de meses por quarter
+        quarters = {
+            'Q1': [1, 2, 3],
+            'Q2': [4, 5, 6],
+            'Q3': [7, 8, 9],
+            'Q4': [10, 11, 12]
+        }
+
+        resultado = {}
+        for q, meses in quarters.items():
+            labels = [datetime(1900, m, 1).strftime('%b').capitalize() for m in meses]
+            atendimento = [sla_por_mes[m]["sla_atendimento"] for m in meses]
+            resolucao = [sla_por_mes[m]["sla_resolucao"] for m in meses]
+            resultado[q] = {"labels": labels, "sla_atendimento": atendimento, "sla_resolucao": resolucao}
+
+        return jsonify({"status": "success", "quarters": resultado})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@okrs_bp.route('/fcrQuarter', methods=['POST'])
+def fcr_quarter():
+    try:
+        hoje = datetime.utcnow()
+        ano_atual = hoje.year
+
+        # Busca registros e chamados resolvidos no ano atual
+        registros = RelatorioColaboradores.query.filter(
+            RelatorioColaboradores.data_criacao.between(datetime(ano_atual, 1, 1), hoje),
+            RelatorioColaboradores.nome_status == 'Resolvido'
+        ).all()
+
+        chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.nome_status == 'Resolvido',
+            Chamado.data_finalizacao != None,
+            Chamado.data_finalizacao.between(datetime(ano_atual, 1, 1), hoje)
+        ).all()
+
+        # Agrupar por mês
+        chamados_por_mes = defaultdict(list)
+        fcr_por_mes = defaultdict(list)
+
+        for chamado in chamados:
+            key = chamado.data_finalizacao.month
+            chamados_por_mes[key].append(chamado.cod_chamado)
+
+        for reg in registros:
+            if reg.first_call == 'S' and reg.cod_chamado:
+                key = reg.data_criacao.month
+                fcr_por_mes[key].append(reg.cod_chamado)
+
+        # Distribuição de meses por quarter
+        quarters = {
+            'Q1': [1, 2, 3],
+            'Q2': [4, 5, 6],
+            'Q3': [7, 8, 9],
+            'Q4': [10, 11, 12]
+        }
+
+        resultado = {}
+        for q, meses in quarters.items():
+            labels = [datetime(1900, m, 1).strftime('%b').capitalize() for m in meses]
+            fcr_data = []
+
+            for m in meses:
+                total_chamados = len(chamados_por_mes.get(m, []))
+                fcr_chamados = len(set(fcr_por_mes.get(m, [])))
+                percentual = round((fcr_chamados / total_chamados) * 100, 2) if total_chamados else 0
+                fcr_data.append(percentual)
+
+            resultado[q] = {"labels": labels, "fcr": fcr_data}
+
+        return jsonify({"status": "success", "quarters": resultado})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@okrs_bp.route('/tmaTmsQuarter', methods=['POST'])
+def tma_tms_quarter():
+    try:
+        hoje = datetime.utcnow()
+        ano_atual = hoje.year
+
+        # Busca chamados do ano atual
+        chamados_validos = db.session.query(Chamado).filter(
+            Chamado.data_criacao.isnot(None),
+            Chamado.restante_p_atendimento.isnot(None),
+            Chamado.restante_s_atendimento.isnot(None),
+            Chamado.nome_status.ilike('%Resolvido%'),
+            Chamado.data_criacao.between(datetime(ano_atual, 1, 1), hoje)
+        ).all()
+
+        tma_por_mes = defaultdict(list)
+        tms_por_mes = defaultdict(list)
+
+        for chamado in chamados_validos:
+            try:
+                mes = chamado.data_criacao.month
+
+                # ---- Processa P ----
+                tempo_p = chamado.restante_p_atendimento.strip()
+                sinal_p = -1 if tempo_p.startswith("-") else 1
+                h, m, s = (list(map(int, tempo_p.replace("-", "").split(":"))) + [0, 0, 0])[:3]
+                restante_p = timedelta(hours=h, minutes=m, seconds=s) * sinal_p
+
+                # ---- Processa S ----
+                tempo_s = chamado.restante_s_atendimento.strip()
+                sinal_s = -1 if tempo_s.startswith("-") else 1
+                hs, ms, ss = (list(map(int, tempo_s.replace("-", "").split(":"))) + [0, 0, 0])[:3]
+                restante_s = timedelta(hours=hs, minutes=ms, seconds=ss) * sinal_s
+
+                # ---- Regras de descarte ----
+                if restante_p.total_seconds() < 0 or restante_s.total_seconds() < 0:
+                    continue
+
+                tms_individual = restante_s - restante_p
+
+                if tms_individual.total_seconds() < 0:
+                    continue
+
+                if tms_individual > timedelta(days=30):
+                    continue
+
+                # Guarda em segundos
+                tma_por_mes[mes].append(restante_p.total_seconds())
+                tms_por_mes[mes].append(tms_individual.total_seconds())
+
+            except:
+                continue
+
+        # Quarters
+        quarters = {
+            'Q1': [1, 2, 3],
+            'Q2': [4, 5, 6],
+            'Q3': [7, 8, 9],
+            'Q4': [10, 11, 12]
+        }
+
+        resultado = {}
+        for q, meses in quarters.items():
+            labels = [datetime(1900, m, 1).strftime('%b').capitalize() for m in meses]
+            tma = []
+            tms = []
+
+            for m in meses:
+                lista_tma = tma_por_mes.get(m, [])
+                lista_tms = tms_por_mes.get(m, [])
+
+                media_tma = round(np.mean(lista_tma)/60, 2) if lista_tma else 0
+                media_tms = round(np.mean(lista_tms)/60, 2) if lista_tms else 0
+
+                tma.append(media_tma)
+                tms.append(media_tms)
+
+            resultado[q] = {
+                "labels": labels,
+                "tma": tma,
+                "tms": tms
+            }
+
+        return jsonify({"status": "success", "quarters": resultado})
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+    
+@okrs_bp.route('/csatAcumulado', methods=['POST'])
+def csat_acumulado():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 365))
+        hoje = datetime.now()
+        data_inicio = hoje - timedelta(days=dias)
+
+        CSAT_MAP = {
+            'Péssimo': 1,
+            'Discordo Totalmente': 2,
+            'Discordo Parcialmente': 3,
+            'Neutro': 4,
+            'Concordo Parcialmente': 5,
+            'Regular': 6,
+            'Bom': 7,
+            'Concordo': 8,
+            'Concordo Plenamente': 9,
+            'Ótimo': 10
+        }
+
+        respostas = db.session.query(
+            PesquisaSatisfacao.alternativa,
+            PesquisaSatisfacao.data_resposta
+        ).filter(
+            PesquisaSatisfacao.data_resposta >= data_inicio,
+            PesquisaSatisfacao.alternativa.isnot(None),
+            func.length(PesquisaSatisfacao.alternativa) > 0
+        ).all()
+
+        respostas_por_mes = defaultdict(list)
+        for alt, data_resposta in respostas:
+            valor = alt.strip()
+            nota = None
+
+            if valor.isdigit():
+                numero = int(valor)
+                if 0 <= numero <= 10:
+                    nota = numero
+            elif valor in CSAT_MAP:
+                nota = CSAT_MAP[valor]
+
+            if nota is not None:
+                chave_mes = data_resposta.strftime('%Y-%m')
+                respostas_por_mes[chave_mes].append(nota)
+
+        # Cálculo acumulativo mês a mês
+        meses_ordenados = sorted(respostas_por_mes.keys())
+        labels, csat_mensal, csat_acumulado = [], [], []
+
+        total_notas_acum = 0
+        total_satisfatorias_acum = 0
+
+        for key in meses_ordenados:
+            notas = respostas_por_mes[key]
+            total = len(notas)
+            satisfatorias = sum(1 for n in notas if n >= 7)
+
+            csat_mes = round((satisfatorias / total) * 100, 2) if total else 0
+            csat_mensal.append(csat_mes)
+
+            # Lógica acumulativa
+            total_notas_acum += total
+            total_satisfatorias_acum += satisfatorias
+
+            csat_acum = round((total_satisfatorias_acum / total_notas_acum) * 100, 2) if total_notas_acum else 0
+            csat_acumulado.append(csat_acum)
+
+            mes_formatado = datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize()
+            labels.append(mes_formatado)
+
+        return jsonify({
+            "status": "success",
+            "labels": labels,
+            "csat_mensal": csat_mensal,
+            "csat_acumulado": csat_acumulado
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@okrs_bp.route('/tmaTmsAcumulado', methods=['POST'])
+def tma_tms_acumulado():
+    try:
+        data = request.get_json() or {}
+        dias = int(data.get("dias", 365))
+        data_limite = datetime.utcnow() - timedelta(days=dias)
+
+        # Filtra chamados válidos
+        chamados_validos = db.session.query(Chamado).filter(
+            Chamado.data_criacao >= data_limite,
+            Chamado.data_criacao.isnot(None),
+            Chamado.restante_p_atendimento.isnot(None),
+            Chamado.restante_s_atendimento.isnot(None),
+            Chamado.nome_status.ilike('%Resolvido%')
+        ).all()
+
+        tma_por_mes = defaultdict(list)
+        tms_por_mes = defaultdict(list)
+
+        def parse_tempo(t):
+            """Converte string HH:MM:SS ou -HH:MM:SS para timedelta"""
+            sinal = -1 if t.startswith("-") else 1
+            partes = t.replace("-", "").split(":")
+            h, m, s = (list(map(int, partes)) + [0, 0, 0])[:3]
+            return timedelta(hours=h, minutes=m, seconds=s) * sinal
+
+        for chamado in chamados_validos:
+            try:
+                ano, mes = chamado.data_criacao.year, chamado.data_criacao.month
+                restante_p = parse_tempo(chamado.restante_p_atendimento.strip())
+                restante_s = parse_tempo(chamado.restante_s_atendimento.strip())
+
+                # Ignora valores negativos para TMA e TMS absurdos
+                if restante_p.total_seconds() < 0 or restante_s.total_seconds() < 0:
+                    continue
+                if restante_s.total_seconds() > 3600:  # > 1h, ajuste conforme regra de negócio
+                    continue
+
+                # Guarda em segundos
+                tma_por_mes[(ano, mes)].append(restante_p.total_seconds())
+                tms_por_mes[(ano, mes)].append(restante_s.total_seconds())
+
+            except Exception:
+                continue
+
+        # Ordena meses
+        meses_ordenados = sorted(set(tma_por_mes.keys()) | set(tms_por_mes.keys()))
+
+        labels = []
+        tma_acumulado = []
+        tms_acumulado = []
+
+        soma_tma = soma_tms = qtd_total = 0
+
+        for ano, mes in meses_ordenados:
+            tma_mes = tma_por_mes.get((ano, mes), [])
+            tms_mes = tms_por_mes.get((ano, mes), [])
+
+            qtd_mes = len(tma_mes)
+            if qtd_mes == 0:
+                continue
+
+            soma_tma += sum(tma_mes)
+            soma_tms += sum(tms_mes)
+            qtd_total += qtd_mes
+
+            # Média acumulada até o mês atual (TMA em minutos, TMS em minutos também)
+            media_tma_acum = (soma_tma / qtd_total) / 60
+            media_tms_acum = (soma_tms / qtd_total) / 60
+
+            labels.append(datetime(ano, mes, 1).strftime('%b/%y'))
+
+            # Mantém com 2 casas decimais
+            tma_acumulado.append(round(media_tma_acum, 2))
+            tms_acumulado.append(round(media_tms_acum, 2))
+
+        return jsonify({
+            "status": "success",
+            "labels": labels,
+            "tma_acumulado_min": tma_acumulado,
+            "tms_acumulado_min": tms_acumulado
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@okrs_bp.route('/fcrAcumulado', methods=['POST'])
+def fcr_acumulado():
+    try:
+        data = request.get_json() or {}
+        dias = int(data.get('dias', 180)) 
+        hoje = datetime.utcnow()
+        data_inicio = hoje - timedelta(days=dias)
+
+        # --- Coleta dados ---
+        registros = RelatorioColaboradores.query.filter(
+            RelatorioColaboradores.data_criacao >= data_inicio,
+            RelatorioColaboradores.nome_status == 'Resolvido'
+        ).all()
+
+        chamados = Chamado.query.filter(
+            Chamado.nome_status == 'Resolvido',
+            Chamado.data_finalizacao != None,
+            Chamado.data_finalizacao >= data_inicio,
+            Chamado.data_finalizacao <= hoje
+        ).all()
+
+        # --- Agrupa por mês ---
+        chamados_por_mes = defaultdict(list)
+        fcr_por_mes = defaultdict(list)
+
+        for chamado in chamados:
+            key = chamado.data_finalizacao.strftime('%Y-%m')
+            chamados_por_mes[key].append(chamado.cod_chamado)
+
+        for reg in registros:
+            if reg.first_call == 'S' and reg.cod_chamado:
+                key = reg.data_criacao.strftime('%Y-%m')
+                fcr_por_mes[key].append(reg.cod_chamado)
+
+        # --- Ordena cronologicamente ---
+        meses_ordenados = sorted(chamados_por_mes.keys())
+
+        labels = []
+        fcr_acumulado = []
+
+        acumulado_total = 0
+        acumulado_fcr = 0
+
+        # --- Cálculo acumulativo ---
+        for key in meses_ordenados:
+            total = len(chamados_por_mes[key])
+            fcr_mes = len(set(fcr_por_mes.get(key, [])))
+
+            acumulado_total += total
+            acumulado_fcr += fcr_mes
+
+            pct_acumulado = round((acumulado_fcr / acumulado_total) * 100, 2) if acumulado_total else 0
+
+            mes_formatado = datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize()
+            labels.append(mes_formatado)
+            fcr_acumulado.append(pct_acumulado)
+
+        return jsonify({
+            "status": "success",
+            "labels": labels,
+            "fcr_acumulado": fcr_acumulado
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@okrs_bp.route('/slaOkrsAcumulado', methods=['POST'])
+def sla_okrs_acumulado():
+    try:
+        data = request.get_json()
+        dias = int(data.get('dias', 180))
+        hoje = datetime.now()
+        data_inicio = hoje - timedelta(days=dias)
+
+        # Filtra os chamados válidos
+        chamados = Chamado.query.filter(
+            Chamado.nome_status != 'Cancelado',
+            Chamado.data_criacao >= data_inicio,
+            Chamado.data_criacao <= hoje
+        ).all()
+
+        # Agrupar por mês
+        chamados_por_mes = defaultdict(list)
+        for chamado in chamados:
+            key = chamado.data_criacao.strftime('%Y-%m') 
+            chamados_por_mes[key].append(chamado)
+
+        # Ordena cronologicamente
+        meses_ordenados = sorted(chamados_por_mes.keys())
+
+        # Listas de resposta
+        labels = []
+        sla_atendimento_acumulado = []
+        sla_resolucao_acumulado = []
+
+        # Variáveis acumulativas
+        acumulado_total = 0
+        acumulado_no_prazo_atendimento = 0
+        acumulado_no_prazo_resolucao = 0
+
+        for key in meses_ordenados:
+            lista = chamados_por_mes[key]
+            total = len(lista)
+            no_prazo_atendimento = sum(1 for c in lista if c.sla_atendimento == 'N')
+            no_prazo_resolucao = sum(1 for c in lista if c.sla_resolucao == 'N')
+
+            # Soma acumulada
+            acumulado_total += total
+            acumulado_no_prazo_atendimento += no_prazo_atendimento
+            acumulado_no_prazo_resolucao += no_prazo_resolucao
+
+            # Calcula o SLA acumulado até o mês corrente
+            pct_atendimento_acum = round((acumulado_no_prazo_atendimento / acumulado_total) * 100, 2) if acumulado_total else 0
+            pct_resolucao_acum = round((acumulado_no_prazo_resolucao / acumulado_total) * 100, 2) if acumulado_total else 0
+
+            # Formata rótulo do mês (Ex: "Jan/25")
+            mes_formatado = datetime.strptime(key, '%Y-%m').strftime('%b/%y').capitalize()
+            labels.append(mes_formatado)
+            sla_atendimento_acumulado.append(pct_atendimento_acum)
+            sla_resolucao_acumulado.append(pct_resolucao_acum)
+
+        return jsonify({
+            "status": "success",
+            "labels": labels,
+            "sla_atendimento_acumulado": sla_atendimento_acumulado,
+            "sla_resolucao_acumulado": sla_resolucao_acumulado
         })
 
     except Exception as e:

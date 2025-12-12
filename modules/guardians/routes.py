@@ -1,7 +1,7 @@
 # modules/guardians/routes.py
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, jsonify, abort
 from flask_login import  current_user
-from modules.login.decorators import login_required, admin_required
+from modules.login.decorators import login_required, admin_required, guardian_admin_required
 from modules.login.session_manager import SessionManager
 from sqlalchemy import func, desc, and_, not_, asc, cast, Interval, text, case
 from application.models import db, Guardians, HistoricoAcao, NivelSeguranca, GuardianInsignia, Insignia, EventoPontuacao, Quiz, Question, AnswerOption, QuizCategory, QuizAttempt, UserAnswer
@@ -87,7 +87,7 @@ def meu_perfil(perfil_id):
             
     # Contadores
     numero_conquistas = len(insignias_ganhas)
-    quizzes_respondidos_count = QuizAttempt.query.filter_by(guardian_id=perfil_guardian.id).count()
+    quizzes_respondidos_count = perfil_guardian.quiz_attempts.filter(QuizAttempt.score > 0).count()
     patrols_completed_count = perfil_guardian.historico_acoes.filter(
         HistoricoAcao.descricao.like('Patrulha Diária%')
     ).count()
@@ -252,7 +252,7 @@ def central():
 
 
 @guardians_bp.route('/admin/quiz/<int:quiz_id>/visualizar')
-@admin_required
+@guardian_admin_required
 def view_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
     return render_template('guardians/quiz_preview.html', quiz=quiz)
@@ -468,7 +468,7 @@ def quiz_result(quiz_id):
 
 
 @guardians_bp.route('/admin/quiz/<int:quiz_id>/analise')
-@admin_required
+@guardian_admin_required
 def quiz_analysis(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
     
@@ -526,7 +526,7 @@ def quiz_analysis(quiz_id):
 
 
 @guardians_bp.route('/admin/quizzes/hub')
-@admin_required
+@guardian_admin_required
 def quiz_hub():
     """
     Exibe o Hub de Análise de Quizzes com estatísticas, filtros e ordenação.
@@ -583,7 +583,7 @@ def quiz_hub():
 
     # --- Lógica para os Cards de Destaque ---
     general_avg_score = (grand_total_earned_score / grand_total_possible_score_for_attempts * 100) if grand_total_possible_score_for_attempts else 0
-    general_avg_time = (grand_total_time / grand_total_attempts_with_time) if grand_total_attempts_with_time else 0
+    general_avg_time = int(grand_total_time / grand_total_attempts_with_time) if grand_total_attempts_with_time else 0
 
     quizzes_com_tentativas = [q for q in quizzes_info if q['total_attempts'] > 0]
     quizzes_com_tentativas.sort(key=lambda x: (x['avg_score_percent'] or 0))
@@ -1281,7 +1281,7 @@ def daily_patrol():
     guardian.score_atual = guardian.score_atual or 0
     guardian.current_streak = guardian.current_streak or 0
 
-    base_points = random.randint(1, 10)
+    base_points = random.randint(1, 3)
     final_points, bonus_points = apply_streak_bonus(guardian, base_points)
     
     messages = [
@@ -1336,7 +1336,7 @@ def daily_patrol():
     
 ####REPORT HUB - ANALISE INDIVIDUAL#####
 @guardians_bp.route('/admin/relatorios/selecao')
-@admin_required
+@guardian_admin_required
 def report_hub():
     """
     Exibe uma página para selecionar um colaborador para gerar um relatório individual.
@@ -1348,7 +1348,7 @@ def report_hub():
 
 
 @guardians_bp.route('/admin/relatorio/<int:guardian_id>')
-@admin_required
+@guardian_admin_required
 def guardian_report(guardian_id):
     """
     Exibe o relatório de desempenho individual completo de um guardião.
