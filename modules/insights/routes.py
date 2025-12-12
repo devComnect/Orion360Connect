@@ -872,6 +872,54 @@ def get_ligacoes_transferidas():
             "message": str(e)
         }), 500
 
+@insights_bp.route('/ChamadosSuporte/ticketsOperador', methods=['POST'])
+def chamados_por_operador_periodo():
+    try:
+        dias = int(request.json.get("dias", 7))  
+        data_limite = datetime.now() - timedelta(days=dias)
+
+        # Consulta todos os chamados criados no período, finalizados ou não
+        resultados = db.session.query(
+            Chamado.operador,
+            func.count(Chamado.id).label('total')
+        ).filter(
+            Chamado.data_criacao >= data_limite
+        ).group_by(
+            Chamado.operador
+        ).order_by(
+            func.count(Chamado.id).desc()
+        ).all()
+
+        # Organiza os dados para o gráfico
+        labels = [r[0] if r[0] else 'Sem operador' for r in resultados]
+        dados = [r[1] for r in resultados]
+
+        # Gera cores aleatórias distintas
+        def gerar_cores_hex(n):
+            import random
+            random.seed(42)
+            return [f'#{random.randint(0, 0xFFFFFF):06x}' for _ in range(n)]
+
+        backgroundColor = gerar_cores_hex(len(labels))
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'labels': labels,
+                'datasets': [{
+                    'data': dados,
+                    'backgroundColor': backgroundColor
+                }]
+            },
+            'data_referencia': f'Últimos {dias} dias'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
+
 @insights_bp.route('/tmin_tmax', methods=['POST'])
 def get_tmin_tmax():
     try:

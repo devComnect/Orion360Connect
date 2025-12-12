@@ -4,13 +4,13 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style_header.css') }}">
 
 
-<!-- Botão Hamburguer -->
+<!--Botão Hamburguer-->
 <button id="menuToggle" class="btn btn-dark toggle-btn">
     <i class="bi bi-list"></i>
 </button>
 
 
-<!-- Sidebar (começa FECHADA) -->
+<!--Sidebar-->
 <aside id="sidebar" class="sidebar collapsed">
     <div class="sidebar-header text-center">
         <img src="{{ url_for('static', filename='img/logo-orion.png') }}"
@@ -28,6 +28,21 @@
                     <li><a href="/operacao"><i class="bi bi-person-workspace"></i> Operações</a></li>
                 </ul>
             </li>
+
+            <li class="submenu">
+                <a class="submenu-toggle"><i class="bi bi-gear"></i> Operadores ▼</a>
+                <ul class="submenu-items" id="submenu-operadores">
+                    <!-- Operadores serão inseridos aqui pelo JS -->
+                </ul>
+            </li>
+
+            <li class="submenu">
+                <a class="submenu-toggle"><i class="bi bi-gear"></i> Grupos ▼</a>
+                <ul class="submenu-items" id="submenu-grupos">
+                    <!-- Operadores serão inseridos aqui pelo JS -->
+                </ul>
+            </li>
+
             
             <li><a href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
             <li><a href="/okrs"><i class="bi bi-flag"></i> OKRs</a></li>
@@ -74,8 +89,6 @@
         </li>
 
         <hr>
-
-        
 
         {% if is_guardian_admin %}
             <li><a href="{{ url_for('guardians_bp.admin') }}">

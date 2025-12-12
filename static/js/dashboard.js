@@ -1,6 +1,6 @@
 
 
-       fetch('/dashboard/ChamadosSuporte/por_grupo_mes_atual')
+fetch('/dashboard/ChamadosSuporte/por_grupo_mes_atual')
     .then(res => res.json())
     .then(data => {
         if (data.status === "success") {
