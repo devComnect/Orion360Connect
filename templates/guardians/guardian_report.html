@@ -66,7 +66,7 @@
                         <div>
                             {{ attempt.quiz.title if attempt.quiz else 'Quiz Excluído' }}
                             <br>
-                            <small class="text-muted">{{ attempt.completed_at.strftime('%d/%m/%Y') }}</small>
+                            <small class="text-muted">{% if attempt.completed_at %}{{ attempt.completed_at.strftime('%d/%m/%Y') }}{% else %}Tentativa não finalizada{% endif %}</small>
                         </div>
 
                         <span class="badge bg-info rounded-pill">{{ attempt.score }} pts</span>

@@ -1,74 +1,25 @@
 {% extends "base_template.html" %}
-{% block title %}Relatórios{% endblock %}
+{% block title %}Eventos{% endblock %}
 
 {% block content %}
-<br>
+
+
+<div class="container my-4 px-5">
+  <!--<div class="row mb-2">
+    <div class="col-auto">
+      <div class="btn-group" role="group" aria-label="bottomVoltar">
+        <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">Voltar</a>
+      </div>
+    </div>
+  </div>-->
+  <br>
     <br>
         <br>
             <br>
-<div class="container mt-5">
-    <h1 class="mb-4">Relatórios</h1>
-
+                <br>
+    <h1 class="mb-4">Eventos</h1>
     <div class="row">
-
-        <!--====================== CARD 1 - CONTROLE DE ACESSO ======================-->
-        <div class="col-md-6 mb-4">
-            <div class="card border-secondary h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Controle de Acesso</h5>
-                </div>
-
-                <div class="card-body">
-
-                    <form id="formControleAcesso">
-                        <div class="row mb-3">
-                            
-                            <div class="col-6">
-                                <label for="data_acesso" class="form-label">Data Início</label>
-                                <input type="date" class="form-control" id="data_acesso" required>
-                            </div>
-
-                            <div class="col-6">
-                                <label for="hora_acesso" class="form-label">Hora Início</label>
-                                <input type="time" class="form-control" id="hora_acesso" required>
-                            </div>
-
-                            <div class="col-6">
-                                <label for="data_acesso_fim" class="form-label">Data Fim</label>
-                                <input type="date" class="form-control" id="data_acesso_fim" required>
-                            </div>
-
-                            <div class="col-6">
-                                <label for="hora_acesso_fim" class="form-label">Hora Fim</label>
-                                <input type="time" class="form-control" id="hora_acesso_fim" required>
-                            </div>
-
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="operadorControle" class="form-label">Colaborador</label>
-                            <select class="form-select" id="operadorControle" required>
-                                <option value="">Selecione</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="leitorasSelect" class="form-label">Leitora Biométrica</label>
-                            <select class="form-select" id="leitorasSelect" required>
-                                <option value="">Selecione</option>
-                                <option value="Todos">Todos</option>
-                            </select>
-                        </div>
-
-                        <button type="button" class="btn btn-success mt-2" onclick="gerarPDF()">Gerar PDF</button>
-                    </form>
-
-                </div>
-            </div>
-        </div>
-
-        <!--====================== CARD 2 - EVENTOS DE FALHA ======================-->
-        <div class="col-md-6 mb-4">
+        <div class="col-md-12 mb-4">
             <div class="card border-secondary h-100">
                 <div class="card-header">
                     <h5 class="mb-0">Eventos de Falha</h5>
@@ -147,6 +98,5 @@
 
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/relatorios.js') }}"></script>
 <script src="{{ url_for('static', filename='js/eventos.js') }}"></script>
 {% endblock %}

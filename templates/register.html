@@ -10,16 +10,15 @@
 
 {% block content %}
   <div class="container-fluid my-4 px-5">
-    <div class="row mb-2">
+    <!--<div class="row mb-2">
       <div class="col-auto">
         <div class="btn-group" role="group" aria-label="bottomVoltar">
           <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">Voltar</a>
         </div>
       </div>
-    </div>
+    </div>-->
 
-    <!-- Título -->
-    <h1 class="text-center text-white">Gerenciamento Usuários</h1>
+    
 
     <!-- Formulários lado a lado usando o grid do Bootstrap -->
   <div class="row justify-content-center">
@@ -134,6 +133,110 @@
               </div>
             </div>
           </div>
+
+          <!-- Formulário Cadastrar Turnos -->
+          <div class="col-md-4 mb-4">
+            <div class="card rounded-4">
+              <div class="card-header text-center">
+                <h5>Adicionar Turno</h5>
+              </div>
+              <div class="card-body">
+                <form id="formCadastrarTurno">
+                  <div class="row mb-3">
+                    <!-- Campo Turnos -->
+                    <div class="col-md-12 mb-3">
+                      <label for="list_turnos" class="form-label">Turnos</label>
+                      <select class="form-select" id="list_turnos" name="list_turnos" required>
+                        <option value="matutino">Matutino</option>
+                        <option value="vespertino">Vespertino</option>
+                        <option value="noturno">Noturno</option>
+                      </select>
+                    </div>
+                    <!-- Campo Início Turno -->
+                    <div class="col-md-6 mb-3">
+                      <label for="inicio_turno_cadastrar" class="form-label">Início Turno</label>
+                      <input type="time" class="form-control" id="inicio_turno_cadastrar" name="inicio_turno_cadastrar" required>
+                    </div>
+                    <!-- Campo Final Turno -->
+                    <div class="col-md-6 mb-3">
+                      <label for="final_turno_cadastrar" class="form-label">Final Turno</label>
+                      <input type="time" class="form-control" id="final_turno_cadastrar" name="final_turno_cadastrar" required>
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary w-100">Cadastrar</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+
+          <div class="col-md-4 mb-4">
+            <div class="card rounded-4">
+              <div class="card-header text-center">
+                <h5>Editar Turno</h5>
+              </div>
+              <div class="card-body">
+                <form id="formEditTurno">
+                  <!-- Select Turnos -->
+                  <div class="mb-3">
+                    <label for="idTurnos" class="form-label">ID Turno:</label>
+                    <select class="form-select" id="idTurnos" name="idTurnos" required>
+                      <option value="">Selecione</option>
+                    </select>
+                  </div>
+
+                  <!-- Campo Turnos -->
+                  <div class="row mb-2">
+                    <div class="col-12">
+                      <label for="list_turnos" class="form-label">Período:</label>
+                      <select class="form-select" id="list_turnos" name="list_turnos_editar" required>
+                        <option value="matutino">Matutino</option>
+                        <option value="vespertino">Vespertino</option>
+                        <option value="noturno">Noturno</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Campos Início e Final lado a lado -->
+                  <div class="row mb-3">
+                    <div class="col-6">
+                      <label for="inicio_turno_editar" class="form-label">Início Turno</label>
+                      <input type="time" class="form-control" id="inicio_turno_editar" name="inicio_turno_editar" required>
+                    </div>
+                    <div class="col-6">
+                      <label for="final_turno_editar" class="form-label">Final Turno</label>
+                      <input type="time" class="form-control" id="final_turno_editar" name="final_turno_editar" required>
+                    </div>
+                  </div>
+
+                  <!-- Botão -->
+                  <button type="submit" class="btn btn-warning w-100">Editar</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+
+          <div class="col-md-4 mb-4">
+            <div class="card rounded-4">
+              <div class="card-header text-center">
+                <h5>Excluir Turno</h5>
+              </div>
+              <div class="card-body">
+                <form action="" method="POST">
+                  <div class="mb-3">
+                    <label for="idTurnosExcluir" class="form-label">ID Turno:</label>
+                    <select class="form-select" id="idTurnosExcluir" name="idTurnosExcluir" required>
+                      <option value="">Selecione</option>
+                    </select>
+                  </div>
+
+                  <button type="submit" class="btn btn-danger w-100">Excluir</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
   </div>
