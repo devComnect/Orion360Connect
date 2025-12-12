@@ -873,6 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 //Script que me traz os SLAs filtrados por grupo-->
 document.addEventListener("DOMContentLoaded", () => {
+
     const modalElement = document.getElementById('modalChamadosGrupos');
     const listaChamados = document.getElementById('listaChamadosGrupos');
     const modalInstance = new bootstrap.Modal(modalElement);
@@ -884,6 +885,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function criarSlaGrupoChart(ctx, label, naoExpirado, quaseEstourando, expirado, codigosCriticos, codigosExpirados) {
         const total = naoExpirado + quaseEstourando + expirado;
+
         return new Chart(ctx, {
             type: 'bar',
             data: {
@@ -923,15 +925,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     x: { ticks: { color: '#fff' }, grid: { display: false } },
                     y: { beginAtZero: true, ticks: { color: '#fff' }, grid: { display: false } }
                 },
+
                 onClick: (evt, elements) => {
                     if (elements.length > 0) {
                         const idx = elements[0].index;
                         let codigos = [];
 
-                        if (idx === 1 && codigosCriticos.length > 0) { // Quase Estourando
-                            codigos = codigosCriticos;
-                        } else if (idx === 2 && codigosExpirados.length > 0) { // Expirado
-                            codigos = codigosExpirados;
+                        if (idx === 1 && codigosCriticos.length > 0) {
+                            codigos = codigosCriticos; // quase estourando
+                        } 
+                        else if (idx === 2 && codigosExpirados.length > 0) {
+                            codigos = codigosExpirados; // expirado
                         }
 
                         if (codigos.length > 0) {
@@ -949,6 +953,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 li.appendChild(link);
                                 listaChamados.appendChild(li);
                             });
+
                             modalInstance.show();
                         }
                     }
@@ -958,10 +963,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Requisição SLA por grupo
     fetch('/dashboard/ChamadosSuporte/sla_andamento_grupos', { method: 'POST' })
         .then(res => res.json())
         .then(data => {
+
             if (data.status === "success") {
+
+                // Atendimento
                 criarSlaGrupoChart(
                     document.getElementById('slaGrupoChart').getContext('2d'),
                     'SLA - Atendimento',
@@ -969,8 +978,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     data.sla1_quase_estourando || 0,
                     data.sla1_expirado,
                     data.codigos_sla1_critico || [],
-                    data.codigos_sla1 || []
+                    data.codigos_sla1_expirado || []      // CORRIGIDO ✔
                 );
+
+                // Resolução
                 criarSlaGrupoChart(
                     document.getElementById('slaGrupoChart2').getContext('2d'),
                     'SLA - Resolução',
@@ -978,8 +989,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     data.sla2_quase_estourando || 0,
                     data.sla2_expirado,
                     data.codigos_sla2_critico || [],
-                    data.codigos_sla2 || []
+                    data.codigos_sla2_expirado || []      // CORRIGIDO ✔
                 );
+
             } else {
                 console.error('Erro ao carregar dados de SLA por grupo:', data.message);
             }
@@ -987,14 +999,18 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(e => console.error('Erro na requisição SLA por grupo:', e));
 });
 
-//Script que me traz os SLAs filtrados por grupo Suporte-->
+
+// Script que me traz os SLAs filtrados por grupo Suporte
 document.addEventListener("DOMContentLoaded", () => {
+
     const modalElement = document.getElementById('modalChamadosExpirados');
     const listaChamados = document.getElementById('listaChamados');
     const modalInstance = new bootstrap.Modal(modalElement);
 
     function criarSlaChart(ctx, label, naoExpirado, quaseEstourando, expirado, codigosExpirados, codigosCriticos) {
+
         const total = naoExpirado + quaseEstourando + expirado;
+
         return new Chart(ctx, {
             type: 'bar',
             data: {
@@ -1015,7 +1031,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         callbacks: {
                             label: ctx => {
                                 const value = ctx.raw;
-                                const percent = ((value / total) * 100).toFixed(1);
+                                const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                 return `${value} (${percent}%)`;
                             }
                         }
@@ -1031,22 +1047,33 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 },
                 scales: {
-                    x: { ticks: { color: '#fff' }, grid: { display: false } },
-                    y: { beginAtZero: true, ticks: { color: '#fff' }, grid: { display: false } }
+                    x: { 
+                        ticks: { color: '#fff' },
+                        grid: { display: false }
+                    },
+                    y: { 
+                        beginAtZero: true,
+                        ticks: { color: '#fff' },
+                        grid: { display: false }
+                    }
                 },
+
+                // 👇 AQUI CONTROLA O CLIQUE PARA ABRIR O MODAL
                 onClick: (evt, elements) => {
                     if (elements.length > 0) {
                         const idx = elements[0].index;
                         let codigos = [];
 
-                        if (idx === 1 && codigosCriticos.length > 0) { // Quase estourando
-                            codigos = codigosCriticos;
-                        } else if (idx === 2 && codigosExpirados.length > 0) { // Expirado
-                            codigos = codigosExpirados;
+                        if (idx === 1 && codigosCriticos.length > 0) { 
+                            codigos = codigosCriticos;     // quase estourando
+                        } 
+                        else if (idx === 2 && codigosExpirados.length > 0) {  
+                            codigos = codigosExpirados;    // expirado
                         }
 
                         if (codigos.length > 0) {
                             listaChamados.innerHTML = '';
+
                             codigos.forEach(codigo => {
                                 const li = document.createElement('li');
                                 li.style.marginBottom = '8px';
@@ -1060,6 +1087,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 li.appendChild(link);
                                 listaChamados.appendChild(li);
                             });
+
                             modalInstance.show();
                         }
                     }
@@ -1069,34 +1097,40 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    //  REQUISIÇÃO PARA BUSCAR DADOS
     fetch('/dashboard/ChamadosSuporte/sla_andamento', { method: 'POST' })
         .then(res => res.json())
         .then(data => {
+
             if (data.status === "success") {
+
                 criarSlaChart(
                     document.getElementById('slaChart').getContext('2d'),
                     'SLA - Atendimento',
                     data.sla1_nao_expirado,
                     data.sla1_quase_estourando || 0,
                     data.sla1_expirado,
-                    data.codigos_sla1 || [],
-                    data.codigos_sla1_critico || []
+                    data.codigos_sla1_expirado || [],   
+                    data.codigos_sla1_critico || []     
                 );
+
                 criarSlaChart(
                     document.getElementById('slaChart2').getContext('2d'),
                     'SLA - Resolução',
                     data.sla2_nao_expirado,
                     data.sla2_quase_estourando || 0,
                     data.sla2_expirado,
-                    data.codigos_sla2 || [],
-                    data.codigos_sla2_critico || []
+                    data.codigos_sla2_expirado || [],   
+                    data.codigos_sla2_critico || []     
                 );
+
             } else {
                 console.error('Erro no carregamento dos dados SLA:', data.message);
             }
         })
         .catch(e => console.error('Erro na requisição SLA:', e));
 });
+
 
 //Script que traz a pesquisa de satisfação-->
   document.addEventListener("DOMContentLoaded", function () {
@@ -1236,7 +1270,6 @@ function atualizarIconeTmaTms(idIcone, valorTexto, metaTexto, sentido = "baixo")
 
   icone.className = "";
 
-  // Converte valores de texto para minutos (ex: "1.5 h" -> 90, "12 min" -> 12)
   let valorMin = 0;
   if (valorTexto.includes("h")) {
     valorMin = parseFloat(valorTexto) * 60;
@@ -1253,7 +1286,7 @@ function atualizarIconeTmaTms(idIcone, valorTexto, metaTexto, sentido = "baixo")
     return;
   }
 
-  const margem = 5; // margem aceitável
+  const margem = 5; 
 
   if (sentido === "baixo") {
     if (valorMin <= metaMin) {
