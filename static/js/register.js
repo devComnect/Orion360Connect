@@ -145,7 +145,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 //Bloco que realiza a alteração de senha do colaborador-->
 
-  document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('form');
 
     form.addEventListener('submit', async (e) => {
@@ -228,3 +228,171 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+
+
+// Script para cadastro de turnos
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('formCadastrarTurno');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault(); // impede envio padrão
+
+    // Coletar os valores do formulário
+    const turnoSelecionado = document.getElementById('list_turnos').value;
+    const inicioTurno = document.getElementById('inicio_turno_cadastrar').value;
+    const finalTurno = document.getElementById('final_turno_cadastrar').value;
+
+    // Montar objeto JSON
+    const dados = {
+      list_turnos: turnoSelecionado,
+      inicio_turno_cadastrar: inicioTurno,
+      final_turno_cadastrar: finalTurno
+    };
+
+    // Enviar requisição POST para a API
+    fetch('/register/registerTurnos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dados)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        alert(data.message);
+        form.reset(); // limpa o formulário
+      } else {
+        alert(' Erro ao cadastrar turno.');
+      }
+    })
+    .catch(error => {
+      console.error('Erro ao enviar dados:', error);
+      alert(' Erro na comunicação com o servidor.');
+    });
+  });
+});
+
+
+// Script get list turnos editar
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/register/getListID') // chama a rota correta
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('idTurnos');
+
+            data.forEach(turno => {
+                const option = document.createElement('option');
+                option.value = turno.id; // o valor enviado será só o ID
+                option.textContent = `${turno.periodo}/ ID ${turno.id}`;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar turnos:', error));
+});
+
+// Script get list turnos excluir
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/register/getListID') // chama a rota correta
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('idTurnosExcluir');
+
+            data.forEach(turno => {
+                const option = document.createElement('option');
+                option.value = turno.id; // o valor enviado será só o ID
+                option.textContent = `${turno.periodo}/ ID ${turno.id}`;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar turnos:', error));
+});
+
+
+
+// Script para editar turnos
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("formEditTurno");
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    // Pega os valores do form
+    const data = {
+      id_turno_editar: document.getElementById("idTurnos").value,
+      list_turnos_editar: document.getElementById("list_turnos").value,
+      inicio_turno_editar: document.getElementById("inicio_turno_editar").value,
+      final_turno_editar: document.getElementById("final_turno_editar").value
+    };
+
+    try {
+      const response = await fetch("/register/editTurnos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        alert(result.message);
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+      alert(" Erro ao atualizar turno. Verifique o console.");
+    }
+  });
+});
+
+
+// Script que deleta os turnos
+document.addEventListener("DOMContentLoaded", function () {
+  const formDelete = document.querySelector("form[action='']"); // ou usa id se preferir
+
+  formDelete.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const data = {
+      id_turno_exclusao: document.getElementById("idTurnosExcluir").value
+    };
+
+    if (!data.id_turno_exclusao) {
+      alert("Selecione um turno para excluir.");
+      return;
+    }
+
+    if (!confirm("Tem certeza que deseja excluir este turno?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/register/deleteTurnos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        alert(result.message);
+        // Exemplo: remover o turno excluído da lista
+        const option = document.querySelector(`#idTurnosExcluir option[value='${data.id_turno_exclusao}']`);
+        if (option) option.remove();
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+      alert("Erro ao excluir turno. Verifique o console.");
+    }
+  });
+});
+
+

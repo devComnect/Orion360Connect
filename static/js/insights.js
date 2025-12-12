@@ -43,175 +43,10 @@ document.addEventListener("DOMContentLoaded", function () {
     carregarChamados(1);
 });
 
-// Script que traz os botões com os nomes dos operadores-->
-document.addEventListener('DOMContentLoaded', function () {
-
-    async function carregarOperadores() {
-        try {
-            const response = await fetch('/insights/get/operadores');
-            const data = await response.json();
-
-            if (data.status === "success") {
-                const container = document.getElementById('botoes-operadores');
-
-                const operadoresOrdenados = data.operadores.sort((a, b) => a.localeCompare(b));
-
-                operadoresOrdenados.forEach(operador => {
-                    const botao = document.createElement('button');
-                    botao.className = 'btn btn-outline-primary operador-btn d-flex align-items-center';
-
-                    const icone = document.createElement('i');
-                    icone.className = 'bi bi-pie-chart-fill me-2';
-
-                    const texto = document.createElement('span');
-                    texto.textContent = operador;
-
-                    botao.appendChild(icone);
-                    botao.appendChild(texto);
-                    botao.dataset.operador = operador;
-
-                    botao.onclick = function () {
-                        document.querySelectorAll('.operador-btn').forEach(btn => btn.classList.remove('active'));
-                        this.classList.add('active');
-                        filtrarPorOperador(operador);
-                    };
-
-                    container.appendChild(botao);
-                });
-
-                if (container.firstChild) {
-                    container.firstChild.classList.add('active');
-                }
-            }
-
-        } catch (error) {
-            console.error('Erro ao carregar operadores:', error);
-        }
-    }
-
-    function filtrarPorOperador(operador) {
-        const nomesNivel2 = ['Eduardo', 'Chrysthyanne', 'Fernando', 'Luciano', 'Maria Luiza'];
-
-        // Verificação com nomes case-insensitive
-        const operadorNormalizado = operador.trim().toLowerCase();
-        const rota = nomesNivel2.map(n => n.toLowerCase()).includes(operadorNormalizado)
-            ? '/operadores/performanceColaboradoresRender/n2'
-            : '/operadores/performanceColaboradoresRender';
-
-        console.log(`Nome selecionado: ${operador}`);
-        console.log(`Rota selecionada: ${rota}`);
-
-        fetch(rota, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nome: operador })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.redirect_url) {
-                console.log('Redirecionando para:', data.redirect_url);
-                window.location.href = data.redirect_url;
-            } else {
-                console.warn('Nenhuma URL de redirecionamento recebida.');
-            }
-        })
-        .catch(error => {
-            console.error('Erro ao enviar operador para o backend:', error);
-        });
-    }
-
-    carregarOperadores();
-});
-
-// Script que traz os botões de grupos -->
-
-document.addEventListener('DOMContentLoaded', function () {
-
-    async function carregarGrupos() {
-        try {
-            const response = await fetch('/insights/get/grupos');
-            const data = await response.json();
-
-            if (data.status === "success") {
-                const container = document.getElementById('botoes-grupos');
-
-                const gruposOrdenados = data.grupos.sort((a, b) => a.localeCompare(b));
-
-                gruposOrdenados.forEach(grupo => {
-                    const botao = document.createElement('button');
-                    botao.className = 'btn btn-outline-success grupos-btn d-flex align-items-center';
-
-                    const icone = document.createElement('i');
-                    icone.className = 'bi bi-people-fill me-2';
-
-                    const texto = document.createElement('span');
-                    texto.textContent = grupo;
-
-                    botao.appendChild(icone);
-                    botao.appendChild(texto);
-                    botao.dataset.grupo = grupo;
-
-                    botao.onclick = function () {
-                        // Marca o botão como ativo
-                        document.querySelectorAll('.grupos-btn').forEach(btn => btn.classList.remove('active'));
-                        this.classList.add('active');
-
-                        // ✅ Armazena o grupo selecionado no sessionStorage
-                        sessionStorage.setItem('grupoSelecionado', grupo);
-
-                        // Redireciona via backend
-                        filtrarPorGrupo(grupo);
-                    };
-
-                    container.appendChild(botao);
-                });
-
-                // Define o primeiro como ativo
-                if (container.firstChild) {
-                    container.firstChild.classList.add('active');
-                }
-            }
-
-        } catch (error) {
-            console.error('Erro ao carregar grupos:', error);
-        }
-    }
-
-    function filtrarPorGrupo(grupo) {
-        console.log(`Grupo selecionado: ${grupo}`);
-
-        fetch('/grupos/render/grupos', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ grupo: grupo })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.redirect_url) {
-                console.log('Redirecionando para:', data.redirect_url);
-                window.location.href = data.redirect_url;
-            } else {
-                console.warn('Nenhuma URL de redirecionamento recebida.');
-            }
-        })
-        .catch(error => {
-            console.error('Erro ao enviar grupo para o backend:', error);
-        });
-    }
-
-    carregarGrupos();
-
-    // (Opcional) Limpa o sessionStorage ao sair da página
-    window.addEventListener("beforeunload", function () {
-        sessionStorage.removeItem('grupoSelecionado');
-    });
-});
-
 
 // Script que traz os chamados finalizados pelo suporte-->
-
 document.addEventListener("DOMContentLoaded", function () {
-    function carregarChamadosFinalizados(dias = 7) {
+    function carregarChamadosFinalizados(dias = 1) {
         fetch('/insights/ChamadosSuporte/finalizado', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -243,9 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
     carregarChamadosFinalizados(1);
 });
 
-
 // Atualização dinâmica dos chamados em aberto -->
-
   let codigosEmAberto = [];
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -450,196 +283,7 @@ document.querySelectorAll(".filtro-btn").forEach(button => {
 });
 
 
-// Script que traz o top 5 de chamados filtrado por grupos-->
 
-let diasSelecionados = 1; // Valor padrão inicial
-
-function atualizarDashboard(dias) {
-  carregarTopGrupos(dias);
-  carregarTopClientes(dias);
-  carregarChamadosAbertos(dias);
-  carregarChamadosFinalizados(dias);
-  carregarChamadosEmAberto(dias);
-  carregarSlaGlobal(dias);
-  carregarChamadosCriadosResolvidos(dias);
-}
-
-// Listener dos botões de período
-document.querySelectorAll('.filtro-btn').forEach(btn => {
-  btn.addEventListener('click', function () {
-    diasSelecionados = parseInt(this.getAttribute('data-dias'));
-    atualizarDashboard(diasSelecionados);
-  });
-});
-
-// Função: Top 5 grupos
-function carregarTopGrupos(dias) {
-  fetch('/insights/topGruposChamados', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dias })
-  })
-  .then(res => res.json())
-  .then(dados => {
-    const lista = document.getElementById('top-grupos');
-    lista.innerHTML = '';
-
-    if (dados.length === 0) {
-      lista.innerHTML = '<li class="list-group-item bg-transparent text-white">Nenhum grupo encontrado</li>';
-    } else {
-      dados.forEach(item => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item bg-transparent text-white d-flex justify-content-between';
-        li.innerHTML = `<span>${item.grupo}</span><span><strong>${item.total}</strong></span>`;
-        lista.appendChild(li);
-      });
-    }
-  })
-  .catch(err => {
-    console.error('Erro ao carregar top grupos:', err);
-    document.getElementById('top-grupos').innerHTML = '<li class="list-group-item bg-transparent text-danger">Erro ao carregar</li>';
-  });
-}
-
-// Função: Top 5 clientes
-function carregarTopClientes(dias) {
-  fetch('/insights/topClientesChamados', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dias })
-  })
-  .then(res => res.json())
-  .then(dados => {
-    const lista = document.getElementById('top-clientes');
-    lista.innerHTML = '';
-
-    if (dados.length === 0) {
-      lista.innerHTML = '<li class="list-group-item bg-transparent text-white">Nenhum cliente encontrado</li>';
-    } else {
-      dados.forEach(item => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item bg-transparent text-white d-flex justify-content-between';
-        li.innerHTML = `<span>${item.cliente}</span><span><strong>${item.total}</strong></span>`;
-        lista.appendChild(li);
-      });
-    }
-  })
-  .catch(err => {
-    console.error('Erro ao carregar top clientes:', err);
-    document.getElementById('top-clientes').innerHTML = '<li class="list-group-item bg-transparent text-danger">Erro ao carregar</li>';
-  });
-}
-
-// Carregamento inicial da dashboard
-document.addEventListener('DOMContentLoaded', function () {
-  atualizarDashboard(diasSelecionados);
-});
-
-//Script que traz o top 5 chamados filtrado por status-->
-
-document.addEventListener('DOMContentLoaded', function () {
-  carregarTopStatus(1); // valor inicial padrão
-});
-
-// Listener dos botões de filtro (se quiser manter eles funcionando com esse script)
-document.querySelectorAll('.filtro-btn').forEach(btn => {
-  btn.addEventListener('click', function () {
-    const dias = parseInt(this.getAttribute('data-dias'));
-    carregarTopStatus(dias);
-  });
-});
-
-// Função isolada: Top 5 Status
-function carregarTopStatus(dias = 1) {
-  console.log('carregando topStatus com dias =', dias);
-
-  fetch('/insights/topStatusChamados', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dias })
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Erro na resposta da API');
-    }
-    return response.json();
-  })
-  .then(data => {
-    console.log('Dados recebidos:', data);
-    const lista = document.getElementById('top-status');
-    lista.innerHTML = '';
-
-    if (!data || data.length === 0) {
-      lista.innerHTML = '<li class="list-group-item bg-transparent text-white">Nenhum status encontrado</li>';
-    } else {
-      data.forEach(item => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item bg-transparent text-white d-flex justify-content-between';
-        li.innerHTML = `<span>${item.status}</span><span><strong>${item.total}</strong></span>`;
-        lista.appendChild(li);
-      });
-    }
-  })
-  .catch(error => {
-    console.error('Erro ao carregar top status:', error);
-    const lista = document.getElementById('top-status');
-    lista.innerHTML = '<li class="list-group-item bg-transparent text-danger">Erro ao carregar</li>';
-  });
-}
-
-// Script que traz o Top 5 tipos de ocorrência -->
-document.addEventListener('DOMContentLoaded', function () {
-  carregarTopTipos(1); // valor padrão ao carregar a página
-});
-
-// Listener para botões de filtro (se existirem)
-document.querySelectorAll('.filtro-btn').forEach(btn => {
-  btn.addEventListener('click', function () {
-    const dias = parseInt(this.getAttribute('data-dias'));
-    carregarTopTipos(dias);
-  });
-});
-
-// Função que busca e exibe os dados
-function carregarTopTipos(dias = 1) {
-  console.log('Carregando topTipoChamados com dias =', dias);
-
-  fetch('/insights/topTipoChamados', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dias })
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Erro na resposta da API');
-    }
-    return response.json(); // Converte corretamente para JSON
-  })
-  .then(data => {
-    console.log('Dados recebidos:', data);
-
-    const lista = document.getElementById('top-tipo-ocorrencia');
-    lista.innerHTML = '';
-
-    const dados = data.dados;
-
-    if (!dados || dados.length === 0) {
-      lista.innerHTML = '<li class="list-group-item bg-transparent text-white">Nenhum tipo encontrado</li>';
-    } else {
-      dados.forEach(item => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item bg-transparent text-white d-flex justify-content-between';
-        li.innerHTML = `<span>${item.tipo}</span><span><strong>${item.quantidade}</strong></span>`;
-        lista.appendChild(li);
-      });
-    }
-  })
-  .catch(error => {
-    console.error('Erro ao carregar top tipos:', error);
-    const lista = document.getElementById('top-tipo-ocorrencia');
-    lista.innerHTML = '<li class="list-group-item bg-transparent text-danger">Erro ao carregar</li>';
-  });
-}
 
 // Bloco que traz a relação dos chamados abertos e resolvidos-->
 
@@ -720,7 +364,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .catch(error => console.error("Erro de conexão:", error));
   }
 
-  // Carregamento inicial com 7 dias
+  // Carregamento inicial com 1 dia
   carregarAbertosResolvidos(1);
 });
 
@@ -992,7 +636,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 // Script que traz os dados de Tickets Operador-->
-function carregarTicketsPorOperador(dias = 30) {
+function carregarTicketsPorOperador(dias = 1) {
     fetch('/admin/ChamadosSuporte/ticketsOperador', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1067,6 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 //Script que me traz os SLAs filtrados por grupo-->
 document.addEventListener("DOMContentLoaded", () => {
+
     const modalElement = document.getElementById('modalChamadosGrupos');
     const listaChamados = document.getElementById('listaChamadosGrupos');
     const modalInstance = new bootstrap.Modal(modalElement);
@@ -1078,6 +723,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function criarSlaGrupoChart(ctx, label, naoExpirado, quaseEstourando, expirado, codigosCriticos, codigosExpirados) {
         const total = naoExpirado + quaseEstourando + expirado;
+
         return new Chart(ctx, {
             type: 'bar',
             data: {
@@ -1117,15 +763,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     x: { ticks: { color: '#fff' }, grid: { display: false } },
                     y: { beginAtZero: true, ticks: { color: '#fff' }, grid: { display: false } }
                 },
+
                 onClick: (evt, elements) => {
                     if (elements.length > 0) {
                         const idx = elements[0].index;
                         let codigos = [];
 
-                        if (idx === 1 && codigosCriticos.length > 0) { // Quase Estourando
-                            codigos = codigosCriticos;
-                        } else if (idx === 2 && codigosExpirados.length > 0) { // Expirado
-                            codigos = codigosExpirados;
+                        if (idx === 1 && codigosCriticos.length > 0) {
+                            codigos = codigosCriticos; // quase estourando
+                        } 
+                        else if (idx === 2 && codigosExpirados.length > 0) {
+                            codigos = codigosExpirados; // expirado
                         }
 
                         if (codigos.length > 0) {
@@ -1143,6 +791,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 li.appendChild(link);
                                 listaChamados.appendChild(li);
                             });
+
                             modalInstance.show();
                         }
                     }
@@ -1152,10 +801,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Requisição SLA por grupo
     fetch('/dashboard/ChamadosSuporte/sla_andamento_grupos', { method: 'POST' })
         .then(res => res.json())
         .then(data => {
+
             if (data.status === "success") {
+
+                // Atendimento
                 criarSlaGrupoChart(
                     document.getElementById('slaGrupoChart').getContext('2d'),
                     'SLA - Atendimento',
@@ -1163,8 +816,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     data.sla1_quase_estourando || 0,
                     data.sla1_expirado,
                     data.codigos_sla1_critico || [],
-                    data.codigos_sla1 || []
+                    data.codigos_sla1_expirado || []      // CORRIGIDO ✔
                 );
+
+                // Resolução
                 criarSlaGrupoChart(
                     document.getElementById('slaGrupoChart2').getContext('2d'),
                     'SLA - Resolução',
@@ -1172,8 +827,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     data.sla2_quase_estourando || 0,
                     data.sla2_expirado,
                     data.codigos_sla2_critico || [],
-                    data.codigos_sla2 || []
+                    data.codigos_sla2_expirado || []      // CORRIGIDO ✔
                 );
+
             } else {
                 console.error('Erro ao carregar dados de SLA por grupo:', data.message);
             }
@@ -1181,14 +837,18 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(e => console.error('Erro na requisição SLA por grupo:', e));
 });
 
-//Script que me traz os SLAs filtrados por grupo Suporte-->
+
+// Script que me traz os SLAs filtrados por grupo Suporte
 document.addEventListener("DOMContentLoaded", () => {
+
     const modalElement = document.getElementById('modalChamadosExpirados');
     const listaChamados = document.getElementById('listaChamados');
     const modalInstance = new bootstrap.Modal(modalElement);
 
     function criarSlaChart(ctx, label, naoExpirado, quaseEstourando, expirado, codigosExpirados, codigosCriticos) {
+
         const total = naoExpirado + quaseEstourando + expirado;
+
         return new Chart(ctx, {
             type: 'bar',
             data: {
@@ -1209,7 +869,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         callbacks: {
                             label: ctx => {
                                 const value = ctx.raw;
-                                const percent = ((value / total) * 100).toFixed(1);
+                                const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                                 return `${value} (${percent}%)`;
                             }
                         }
@@ -1225,22 +885,33 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 },
                 scales: {
-                    x: { ticks: { color: '#fff' }, grid: { display: false } },
-                    y: { beginAtZero: true, ticks: { color: '#fff' }, grid: { display: false } }
+                    x: { 
+                        ticks: { color: '#fff' },
+                        grid: { display: false }
+                    },
+                    y: { 
+                        beginAtZero: true,
+                        ticks: { color: '#fff' },
+                        grid: { display: false }
+                    }
                 },
+
+                // 👇 AQUI CONTROLA O CLIQUE PARA ABRIR O MODAL
                 onClick: (evt, elements) => {
                     if (elements.length > 0) {
                         const idx = elements[0].index;
                         let codigos = [];
 
-                        if (idx === 1 && codigosCriticos.length > 0) { // Quase estourando
-                            codigos = codigosCriticos;
-                        } else if (idx === 2 && codigosExpirados.length > 0) { // Expirado
-                            codigos = codigosExpirados;
+                        if (idx === 1 && codigosCriticos.length > 0) { 
+                            codigos = codigosCriticos;     // quase estourando
+                        } 
+                        else if (idx === 2 && codigosExpirados.length > 0) {  
+                            codigos = codigosExpirados;    // expirado
                         }
 
                         if (codigos.length > 0) {
                             listaChamados.innerHTML = '';
+
                             codigos.forEach(codigo => {
                                 const li = document.createElement('li');
                                 li.style.marginBottom = '8px';
@@ -1254,6 +925,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 li.appendChild(link);
                                 listaChamados.appendChild(li);
                             });
+
                             modalInstance.show();
                         }
                     }
@@ -1263,28 +935,33 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    //  REQUISIÇÃO PARA BUSCAR DADOS
     fetch('/dashboard/ChamadosSuporte/sla_andamento', { method: 'POST' })
         .then(res => res.json())
         .then(data => {
+
             if (data.status === "success") {
+
                 criarSlaChart(
                     document.getElementById('slaChart').getContext('2d'),
                     'SLA - Atendimento',
                     data.sla1_nao_expirado,
                     data.sla1_quase_estourando || 0,
                     data.sla1_expirado,
-                    data.codigos_sla1 || [],
-                    data.codigos_sla1_critico || []
+                    data.codigos_sla1_expirado || [],   
+                    data.codigos_sla1_critico || []     
                 );
+
                 criarSlaChart(
                     document.getElementById('slaChart2').getContext('2d'),
                     'SLA - Resolução',
                     data.sla2_nao_expirado,
                     data.sla2_quase_estourando || 0,
                     data.sla2_expirado,
-                    data.codigos_sla2 || [],
-                    data.codigos_sla2_critico || []
+                    data.codigos_sla2_expirado || [],   
+                    data.codigos_sla2_critico || []     
                 );
+
             } else {
                 console.error('Erro no carregamento dos dados SLA:', data.message);
             }
@@ -1292,108 +969,6 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch(e => console.error('Erro na requisição SLA:', e));
 });
 
-//Script que traz o top 5 Sub Categorias-->
-document.addEventListener('DOMContentLoaded', function () {
-  carregarTopSubCategorias(1); // valor padrão: 1 dia
-});
-
-// Opcional: se tiver botões com a classe 'filtro-btn', ele usa os mesmos para esse gráfico
-document.querySelectorAll('.filtro-btn').forEach(btn => {
-  btn.addEventListener('click', function () {
-    const dias = parseInt(this.getAttribute('data-dias'));
-    carregarTopSubCategorias(dias);
-  });
-});
-
-function carregarTopSubCategorias(dias = 1) {
-  console.log('Carregando topSubCategorias com dias =', dias);
-
-  fetch('/insights/topSubCategoria', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ dias })
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Erro ao buscar topSubCategorias');
-      }
-      return response.json();
-    })
-    .then(data => {
-      const lista = document.getElementById('top-sub-categorias');
-      lista.innerHTML = '';
-
-      const subcategorias = data.dados;
-
-      if (!subcategorias || subcategorias.length === 0) {
-        lista.innerHTML = '<li class="list-group-item bg-transparent text-white">Nenhuma subcategoria encontrada</li>';
-      } else {
-        subcategorias.forEach(item => {
-          const li = document.createElement('li');
-          li.className = 'list-group-item bg-transparent text-white d-flex justify-content-between';
-          li.innerHTML = `<span>${item.nome}</span><span><strong>${item.quantidade}</strong></span>`;
-          lista.appendChild(li);
-        });
-      }
-    })
-    .catch(error => {
-      console.error('Erro ao carregar subcategorias:', error);
-      const lista = document.getElementById('top-sub-categorias');
-      lista.innerHTML = '<li class="list-group-item bg-transparent text-danger">Erro ao carregar</li>';
-    });
-}
-
-
-//Script que traz o top 5 Categorias-->
-document.addEventListener('DOMContentLoaded', function () {
-  carregarTopCategorias(1); // Valor padrão: últimos 1 dia
-});
-
-// Permite mudar o período via botões se desejar
-document.querySelectorAll('.filtro-btn').forEach(btn => {
-  btn.addEventListener('click', function () {
-    const dias = parseInt(this.getAttribute('data-dias'));
-    carregarTopCategorias(dias);
-  });
-});
-
-function carregarTopCategorias(dias = 1) {
-  fetch('/insights/topCategoria', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dias })
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Erro ao buscar categorias');
-    }
-    return response.json();
-  })
-  .then(data => {
-    const lista = document.getElementById('top-categorias');
-    lista.innerHTML = '';
-
-    const categorias = data.dados;
-
-    if (!categorias || categorias.length === 0) {
-      lista.innerHTML = '<li class="list-group-item bg-transparent text-white">Nenhuma categoria encontrada</li>';
-    } else {
-      categorias.forEach(item => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item bg-transparent text-white d-flex justify-content-between';
-        li.innerHTML = `<span>${item.nome}</span><span><strong>${item.quantidade}</strong></span>`;
-        lista.appendChild(li);
-      });
-    }
-  })
-  .catch(error => {
-    console.error('Erro ao carregar categorias:', error);
-    const lista = document.getElementById('top-categorias');
-    lista.innerHTML = '<li class="list-group-item bg-transparent text-danger">Erro ao carregar</li>';
-  });
-}
 
 //Script que traz a pesquisa de satisfação-->
   document.addEventListener("DOMContentLoaded", function () {
@@ -1414,6 +989,38 @@ function carregarTopCategorias(dias = 1) {
       });
     });
   });
+
+  // Tornar o CSAT clicável para abrir o modal
+    const csatPercentualEl = document.getElementById("csat-percentual");
+    csatPercentualEl.style.cursor = "pointer";
+    csatPercentualEl.addEventListener("click", function () {
+      if (comentariosPesquisa.length === 0) {
+        alert("Nenhum chamado disponível.");
+        return;
+      }
+      const lista = document.getElementById("listaComentarios");
+      lista.innerHTML = "";
+
+      comentariosPesquisa.forEach(codigoChamado => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "8px";
+
+        const link = document.createElement("a");
+        link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigoChamado}`;
+        link.target = "_blank";
+        link.textContent = codigoChamado;
+        link.style.color = "#ff6384"; // cor para contraste
+
+        li.appendChild(link);
+        lista.appendChild(li);
+      });
+
+      // Abrir modal via Bootstrap 5 JS API
+      const modalElement = document.getElementById("modalComentariosPesquisa");
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    });
+  
 
   function atualizarCardPesquisaSatisfacao(dias) {
   fetch('/insights/pSatisfacao', {
@@ -1436,12 +1043,16 @@ function carregarTopCategorias(dias = 1) {
     }
 
     if (data.status === 'success') {
-      csatPercentualEl.textContent = `${data.csat}%`;
-      totalAvaliadoEl.textContent = data.total_respondidas;
+    csatPercentualEl.textContent = `${data.csat}%`;
+    totalAvaliadoEl.textContent = data.total_respondidas;
+
+    // Guardar os códigos dos chamados para o modal
+    comentariosPesquisa = data.referencia_chamados || [];
     } else {
-      csatPercentualEl.textContent = '-';
-      totalAvaliadoEl.textContent = '-';
-      console.error("Erro ao buscar dados da pesquisa:", data);
+        csatPercentualEl.textContent = '-';
+        totalAvaliadoEl.textContent = '-';
+        comentariosPesquisa = [];
+        console.error("Erro ao buscar dados da pesquisa:", data);
     }
   })
   .catch(error => {
@@ -1454,7 +1065,7 @@ function carregarTopCategorias(dias = 1) {
 
 // Script que traz o TMA eo TMS -->
   document.addEventListener("DOMContentLoaded", function () {
-  let diasSelecionados = 30;
+  let diasSelecionados = 1;
   carregarTmaTms(diasSelecionados);
 
   document.querySelectorAll('.filtro-btn').forEach(btn => {
@@ -1497,7 +1108,6 @@ function atualizarIconeTmaTms(idIcone, valorTexto, metaTexto, sentido = "baixo")
 
   icone.className = "";
 
-  // Converte valores de texto para minutos (ex: "1.5 h" -> 90, "12 min" -> 12)
   let valorMin = 0;
   if (valorTexto.includes("h")) {
     valorMin = parseFloat(valorTexto) * 60;
@@ -1514,7 +1124,7 @@ function atualizarIconeTmaTms(idIcone, valorTexto, metaTexto, sentido = "baixo")
     return;
   }
 
-  const margem = 5; // margem aceitável
+  const margem = 5; 
 
   if (sentido === "baixo") {
     if (valorMin <= metaMin) {
@@ -1534,34 +1144,6 @@ function atualizarIconeTmaTms(idIcone, valorTexto, metaTexto, sentido = "baixo")
     }
   }
 }
-
-// Script do botão mestre (não interfere nos demais scripts) -->
-  document.addEventListener("DOMContentLoaded", function () {
-    const toggleBtn = document.getElementById("toggle-botoes");
-    const botoesOperadores = document.getElementById("botoes-operadores");
-    const botoesGrupos = document.getElementById("botoes-grupos");
-
-    let visiveis = false; // começam visíveis
-
-    toggleBtn.addEventListener("click", function () {
-      visiveis = !visiveis;
-
-      // Alterna apenas a visibilidade, sem mexer no layout geral
-      if (visiveis) {
-        botoesOperadores.classList.remove("d-none");
-        botoesOperadores.classList.add("d-flex");
-        botoesGrupos.classList.remove("d-none");
-        botoesGrupos.classList.add("d-flex");
-        this.innerHTML = '<i class="bi bi-eye-slash me-1"></i>';
-      } else {
-        botoesOperadores.classList.remove("d-flex");
-        botoesOperadores.classList.add("d-none");
-        botoesGrupos.classList.remove("d-flex");
-        botoesGrupos.classList.add("d-none");
-        this.innerHTML = '<i class="bi bi-eye me-1"></i>';
-      }
-    });
-  });
 
 // Script que traz os chamados de FCR com lógica de ícone
 let chamadosFcrCodigos = [];
@@ -1593,7 +1175,6 @@ async function atualizarFCR(dias, nomeOperador) {
 
     const fcrSpan = document.getElementById("chamado_fcr");
     const percentualSpan = document.getElementById("percentual_fcr");
-    const icone = document.getElementById("icone_fcr");
 
     if (data.status === "success") {
       const totalFcr = data.total_fcr || 0;
@@ -1605,25 +1186,6 @@ async function atualizarFCR(dias, nomeOperador) {
       percentualSpan.textContent = percentual;
       chamadosFcrCodigos = data.cod_chamados || [];
 
-      // Buscar a meta e comparar
-      const metaRes = await fetch('/okrs/getMetas');
-      if (metaRes.ok) {
-        const metas = await metaRes.json();
-        const metaFcr = metas.fcr;
-
-        if (metaFcr != null && percentualValor != null) {
-          if (percentualValor >= metaFcr) {
-            icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
-            icone.title = "Dentro da meta";
-          } else {
-            icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
-            icone.title = "Abaixo da meta";
-          }
-        } else {
-          icone.className = "";
-          icone.title = "";
-        }
-      }
 
     } else {
       fcrSpan.textContent = "Erro";
@@ -1636,7 +1198,6 @@ async function atualizarFCR(dias, nomeOperador) {
     console.error("Erro ao buscar FCR:", error);
     document.getElementById("chamado_fcr").textContent = "Erro";
     document.getElementById("percentual_fcr").textContent = "-";
-    document.getElementById("icone_fcr").className = "";
     chamadosFcrCodigos = [];
   }
 }
@@ -2154,3 +1715,7 @@ async function carregarChamadasEfetuadas(filtro) {
       document.getElementById("percentual-tms-ligacoes").textContent = "Erro";
     });
   }
+
+
+ 
+

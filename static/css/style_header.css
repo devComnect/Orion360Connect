@@ -11,7 +11,7 @@ header .nav-link {
 
 /* === HEADER === */
   .app-header {
-    background: #1e1e26; /* igual aos cards */
+    background: #9b9ba1; /* igual aos cards */
     border-bottom: 1px solid rgba(255,255,255,0.08);
     padding: 0.8rem 0;
   }
@@ -52,3 +52,97 @@ header .nav-link {
       font-size: 0.9rem;
       text-shadow: 0 0 6px rgba(224,224,255,0.4);
     }
+
+
+body {
+    margin-left: 0;   /* Começa sem sidebar */
+    transition: margin-left .3s ease;
+}
+
+/* Sidebar padrão */
+.sidebar {
+    width: 260px;
+    background: #2f2f37;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    padding-top: 80px;
+    transition: width .3s ease, padding .3s ease;
+    overflow-x: hidden;
+    overflow-y: auto;
+    z-index: 999;
+}
+
+/* Sidebar FECHADA */
+.sidebar.collapsed {
+    width: 0 !important;
+    padding: 0 !important;
+}
+
+/* Body ajusta quando sidebar ABRE */
+body.sidebar-expanded {
+    margin-left: 260px !important;
+}
+
+/* Body quando sidebar FECHADA */
+body.sidebar-collapsed {
+    margin-left: 0 !important;
+}
+
+.sidebar-logo {
+    width: 140px;
+    transition: .3s;
+}
+
+.sidebar.collapsed .sidebar-logo {
+    opacity: 0;
+}
+
+.sidebar.collapsed .sidebar-nav,
+.sidebar.collapsed .submenu-items {
+    display: none !important;
+}
+
+.toggle-btn {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 2000;
+}
+
+.sidebar-nav {
+    list-style: none;
+    padding-left: 0;
+}
+
+.sidebar-nav li a {
+    display: block;
+    padding: 10px 18px;
+    color: #ccc;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: .2s;
+}
+
+.sidebar-nav li a:hover {
+    background: #3f51b5;
+    color: #fff;
+}
+
+/* Submenu */
+.submenu-items {
+    display: none;
+    padding-left: 22px;
+}
+
+.submenu.open .submenu-items {
+    display: block;
+}
+
+.submenu-toggle {
+    cursor: pointer;
+    display: block;
+    padding: 10px 18px;
+    color: #ccc;
+}
