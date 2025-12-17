@@ -81,9 +81,10 @@
         <li class="submenu">
             <a class="submenu-toggle"><i class="bi bi-shield"></i> Guardians ▼</a>
             <ul class="submenu-items">
+                <li><a href="{{ url_for('guardians_bp.central') }}"><i class="bi bi-backpack2"></i> Central</a></li>
                 <li><a href="{{ url_for('guardians_bp.rankings') }}"><i class="bi bi-trophy"></i> Rankings</a></li>
-                <li><a href="{{ url_for('guardians_bp.sobre_o_programa') }}"><i class="bi bi-question-circle"></i> Sobre o Programa</a></li>
-                <li><a href="{{ url_for('guardians_bp.central') }}"><i class="bi bi-backpack2"></i> Central de Treinamentos</a></li>
+                <li><a href="{{ url_for('guardians_bp.sobre_o_programa') }}"><i class="bi bi-battery-charging"></i> Upgrades</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('guardians_bp.feedback_form') }}"><i class="bi bi-flag"></i>Reportar</a>
                 <li><a href="{{ url_for('guardians_bp.meu_perfil') }}"><i class="bi bi-person-circle"></i> Meu Perfil</a></li>
             </ul>
         </li>

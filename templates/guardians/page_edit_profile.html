@@ -1,0 +1,224 @@
+{% extends "base_template.html" %}
+{% block title %}Configuração de Perfil{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/profile.css') }}">
+    <style>
+        body { background-color: #0b0d10; }
+        
+        .edit-card {
+            background: #16191f;
+            border: 1px solid #30363d;
+            border-top: 3px solid var(--neon-blue);
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .section-title {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--neon-blue);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+
+        .form-label {
+            color: #8b949e;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .cyber-input, .cyber-select {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #30363d;
+            color: #fff;
+            border-radius: 4px;
+            padding: 12px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .cyber-input:focus, .cyber-select:focus {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--neon-blue);
+            outline: none;
+            box-shadow: 0 0 10px rgba(13, 202, 240, 0.2);
+        }
+
+        /* Seletor de Cores */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .color-option {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        
+        .color-option:hover { transform: scale(1.1); }
+        
+        .color-radio:checked + .color-option {
+            border-color: #fff;
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        .color-radio:checked + .color-option::after {
+            content: '✔';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #000; /* Contraste */
+            font-size: 0.8rem;
+        }
+
+        .btn-save {
+            background: var(--neon-blue);
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+        .btn-save:hover {
+            background: #3dd5f3;
+            box-shadow: 0 0 20px rgba(13, 202, 240, 0.4);
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: #8b949e;
+            border: 1px solid #30363d;
+            padding: 12px 30px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .btn-cancel:hover { color: #fff; border-color: #fff; }
+
+        /* Preview Insígnia */
+        .insignia-preview-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .preview-img { width: 50px; height: 50px; object-fit: contain;clip-path: circle(48% at center); }
+        .preview-text { font-size: 0.9rem; color: var(--neon-green); }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            
+            <form method="POST" class="edit-card">
+                
+                <div class="mb-5">
+                    <h3 class="section-title"><i class="bi bi-person-badge"></i> Identidade Digital</h3>
+                    
+                    <div class="mb-4">
+                        <label for="nickname" class="form-label">CODENAME (Apelido)</label>
+                        <input type="text" class="cyber-input" id="nickname" name="nickname" 
+                               value="{{ guardian.nickname or '' }}" placeholder="Digite seu codinome..." maxlength="20">
+                        <div class="form-text text-muted small mt-1">Visível nos rankings e comunicações.</div>
+                    </div>
+
+                <div class="mb-5">
+                    <h3 class="section-title"><i class="bi bi-shield-check"></i> Equipamento Ativo</h3>
+                    
+                    <label class="form-label">INSÍGNIA DESTAQUE</label>
+                    <select name="featured_insignia_id" id="featured_insignia_id" class="cyber-select text-muted">
+                        <option value="" data-bonus="">-- Nenhuma --</option>
+                        {% for gi in minhas_insignias %}
+                            <option value="{{ gi.insignia.id }}" 
+                                    data-icon-url="{{ url_for('static', filename=gi.insignia.caminho_imagem) }}"
+                                    data-bonus="{{ gi.insignia.bonus_value if gi.insignia.bonus_value else '' }}"
+                                    data-type="{{ gi.insignia.bonus_type }}"
+                                    {% if guardian.featured_insignia_id == gi.insignia.id %}selected{% endif %}>
+                                {{ gi.insignia.nome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <div id="insignia-preview-container" class="insignia-preview-box" style="display: none;">
+                        <img id="insignia-preview-icon" src="" alt="Icon" class="preview-img">
+                        <div>
+                            <div id="insignia-preview-bonus" class="preview-text"></div>
+                            <small class="text-muted">Bônus Passivo Ativo</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary">
+                    <a href="{{ url_for('guardians_bp.meu_perfil') }}" class="btn-cancel">CANCELAR</a>
+                    <button type="submit" class="btn-save">
+                        <i class="bi bi-save"></i> SALVAR DADOS
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const select = document.getElementById('featured_insignia_id');
+        const previewContainer = document.getElementById('insignia-preview-container');
+        const previewIcon = document.getElementById('insignia-preview-icon');
+        const previewBonus = document.getElementById('insignia-preview-bonus');
+
+        function updatePreview() {
+            const option = select.options[select.selectedIndex];
+            const url = option.dataset.iconUrl;
+            const bonusVal = option.dataset.bonus;
+            const bonusType = option.dataset.type;
+
+            if (url) {
+                previewIcon.src = url;
+                previewContainer.style.display = 'flex';
+                
+                if (bonusVal) {
+                    let desc = `+${bonusVal}% Bônus`;
+                    if(bonusType.includes('QUIZ')) desc += " em Quizzes";
+                    else if(bonusType.includes('CODE')) desc += " em Hacking";
+                    else if(bonusType.includes('PATROL')) desc += " em Patrulha";
+                    else if(bonusType.includes('STREAK')) desc += " em Ofensiva";
+                    
+                    previewBonus.textContent = desc;
+                    previewBonus.style.display = 'block';
+                } else {
+                    previewBonus.style.display = 'none';
+                }
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        }
+
+        select.addEventListener('change', updatePreview);
+        updatePreview(); // Init
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+{# templates/includes/_macros.html #}
+
+{# --- Macro para renderizar o ícone do troféu --- #}
+{% macro render_trophy(tier) %}
+    {# Define o nome e a classe CSS com base no tier #}
+    {% if tier == 1 %}
+        {% set tier_name = "Ouro" %}
+        {% set tier_class = "trophy-gold" %}
+    {% elif tier == 2 %}
+        {% set tier_name = "Prata" %}
+        {% set tier_class = "trophy-silver" %}
+    {% elif tier == 3 %}
+        {% set tier_name = "Bronze" %}
+        {% set tier_class = "trophy-bronze" %}
+    {% else %}
+        {% set tier_name = "" %}
+        {% set tier_class = "" %}
+    {% endif %}
+
+    {# Renderiza o ícone APENAS se um tier válido foi encontrado #}
+    {% if tier_name %}
+        <i class="bi bi-trophy-fill trophy-icon {{ tier_class }}"
+           data-bs-toggle="tooltip" 
+           data-bs-placement="top"
+           title="Vencedor de Temporada (Nível {{ tier_name }}) - Premiado pelo Top 3 em uma temporada anterior."></i>
+    {% endif %}
+{% endmacro %}
+{# --- Fim da Macro --- #}

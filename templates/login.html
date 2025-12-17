@@ -2,11 +2,13 @@
 
 {% block title %}Login{% endblock %}
 
-{# Adiciona a classe especial ao <body> para o estilo de centralização #}
 {% block body_class %}login-page{% endblock %}
 
-{# ESTE BLOCO VAZIO REMOVE O HEADER APENAS NESTA PÁGINA #}
 {% block header %}{% endblock %}
+
+{# --- CORREÇÃO AQUI: Anula as mensagens do topo para não duplicar --- #}
+{% block flash_messages %}{% endblock %}
+{# ------------------------------------------------------------------ #}
 
 {% block content %}
 <div class="container">
@@ -18,9 +20,10 @@
             </div>
 
             <div class="Login">
-                <h2 class="h3 mb-3 fw-normal text-white text-center">Login</h1>
+                {# Corrigi um erro de HTML aqui: fechava h2 com h1 #}
+                <h2 class="h3 mb-3 fw-normal text-white text-center">Login</h2>
 
-                {# Mensagens flash (alertas) #}
+                {# Mensagens flash (alertas) aparecem SÓ AQUI agora #}
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
@@ -52,10 +55,8 @@
 {% endblock %}
 
 {% block styles %}
-    {# Mantemos o link para o CSS específico do login aqui #}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style_login.css')}}">
 {% endblock %}
 
 {% block scripts %}
-    {# A página de login geralmente não precisa de scripts extras #}
 {% endblock %}
