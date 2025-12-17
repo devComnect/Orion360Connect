@@ -15,7 +15,7 @@ from modules.login.routes import login_bp
 from modules.deskmanager.authenticate.routes import auth_bp
 from modules.filas.routes import filas_bp
 from modules.dashboard.routes import dashboard_bp
-from modules.admin.routes import admin_bp
+#from modules.admin.routes import admin_bp
 from modules.operadores.routes import operadores_bp
 from modules.insights.routes import insights_bp
 from modules.relatorios.routes import relatorios_bp
@@ -24,18 +24,18 @@ from modules.insights.grupos.routes import grupos_bp
 from modules.okrs.routes import okrs_bp
 from modules.guardians import guardians_bp, admin_v2_bp #guardians
 
-from modules.tasks.utils import (
-    processar_e_armazenar_performance,
-    processar_e_armazenar_performance_vyrtos,
-    importar_chamados,
-    processar_e_armazenar_performance_incremental,
-    processar_e_armazenar_performance_vyrtos_incremental,
-    importar_pSatisfacao, 
-    importar_fcr_reabertos,
-    processar_e_armazenar_eventos,
-    importar_detalhes_chamadas_hoje,
-    importar_registro_chamadas_incremental
-)
+#from modules.tasks.utils import (
+#    processar_e_armazenar_performance,
+#    processar_e_armazenar_performance_vyrtos,
+#    importar_chamados,
+#    processar_e_armazenar_performance_incremental,
+#    processar_e_armazenar_performance_vyrtos_incremental,
+#    importar_pSatisfacao, 
+#   importar_fcr_reabertos,
+#    processar_e_armazenar_eventos,
+#    importar_detalhes_chamadas_hoje,
+#   importar_registro_chamadas_incremental
+#)
 
 
 
@@ -90,7 +90,7 @@ app.register_blueprint(login_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(filas_bp)
 app.register_blueprint(dashboard_bp)
-app.register_blueprint(admin_bp)
+#app.register_blueprint(admin_bp)
 app.register_blueprint(operadores_bp)
 app.register_blueprint(insights_bp)
 app.register_blueprint(relatorios_bp)

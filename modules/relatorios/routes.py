@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request, send_file, make_response, current_app
-from application.models import Chamado, db, RelatorioColaboradores, PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess, EventosAtendentes, Turnos
+from application.models import Chamado, db, RelatorioColaboradores, PerformanceColaboradores, RegistroChamadas, ChamadasDetalhes, DoorAccessLogs, UserAccess, DeviceAccess, EventosAtendentes
 from application.models import PesquisaSatisfacao
 from datetime import datetime, time as dt_time
 from modules.relatorios.utils import get_turno, get_turno_ligacao, is_hora_valida, cores_por_turno, extrair_ces, extrair_csat, extrair_nps 

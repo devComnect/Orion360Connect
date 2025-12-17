@@ -83,8 +83,8 @@
             <ul class="submenu-items">
                 <li><a href="{{ url_for('guardians_bp.central') }}"><i class="bi bi-backpack2"></i> Central</a></li>
                 <li><a href="{{ url_for('guardians_bp.rankings') }}"><i class="bi bi-trophy"></i> Rankings</a></li>
-                <li><a href="{{ url_for('guardians_bp.sobre_o_programa') }}"><i class="bi bi-battery-charging"></i> Upgrades</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('guardians_bp.feedback_form') }}"><i class="bi bi-flag"></i>Reportar</a>
+                <li><a href="{{ url_for('guardians_bp.loja') }}"><i class="bi bi-battery-charging"></i> Upgrades</a></li>
+                <li><a href="{{ url_for('guardians_bp.feedback_form') }}"><i class="bi bi-flag"></i>Reportar</a>
                 <li><a href="{{ url_for('guardians_bp.meu_perfil') }}"><i class="bi bi-person-circle"></i> Meu Perfil</a></li>
             </ul>
         </li>
@@ -92,7 +92,7 @@
         <hr>
 
         {% if is_guardian_admin %}
-            <li><a href="{{ url_for('guardians_bp.admin') }}">
+            <li><a href="{{ url_for('admin_v2_bp.guardian_hub') }}">
                 <i class="bi bi-shield-lock"></i> Painel Admin
             </a></li>
         {% endif %}

@@ -4,7 +4,7 @@ import requests, json, os
 import calendar
 from modules.deskmanager.authenticate.routes import token_desk
 from datetime import datetime, timedelta
-from dateutil.parser import parse as parse_date, parse_tempo
+#from dateutil.parser import parse as parse_date, parse_tempo
 from application.models import db, Chamado, PerformanceColaboradores, ChamadasDetalhes, DesempenhoAtendenteVyrtos
 from sqlalchemy import extract, func
 
