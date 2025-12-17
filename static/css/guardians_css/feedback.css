@@ -1,0 +1,125 @@
+/* Estilos específicos para o form de feedback */
+body { background-color: #2f2f37; } /* Você pode manter esta regra no HTML ou mover também */
+
+.feedback-container {
+    max-width: 700px;
+    margin: 2rem auto;
+    background-color: #212529;
+    padding: 2.5rem;
+    border-radius: 20px;
+    border: 1px solid #495057;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    color: #fff;
+}
+.feedback-title {
+    color: var(--bs-info);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+.feedback-description {
+     color: #adb5bd;
+     text-align: center;
+     margin-bottom: 2.5rem;
+}
+.form-label {
+    font-weight: 600;
+    margin-bottom: 0.8rem; /* Mais espaço */
+}
+.form-check-label {
+    font-weight: 500;
+}
+/* Estilo para Radio Buttons (similar ao seletor de cor) */
+.report-type-selector {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+.report-type-selector .form-check-input { display: none; } /* Oculta radio original */
+.report-type-selector .form-check-label {
+     flex: 1; /* Ocupa espaço igual */
+     padding: 1rem;
+     border: 2px solid #495057;
+     border-radius: 12px;
+     text-align: center;
+     cursor: pointer;
+     transition: all 0.2s ease;
+     background-color: #2f2f37;
+}
+ .report-type-selector .form-check-label:hover {
+     border-color: #adb5bd;
+     background-color: #3a3f44;
+ }
+ .report-type-selector .form-check-input:checked + .form-check-label {
+      border-color: var(--bs-warning);
+      background-color: rgba(255, 193, 7, 0.1);
+      color: var(--bs-warning);
+      font-weight: 700;
+ }
+ .report-type-selector i { margin-right: 0.5em; }
+
+ /* Estilo Input File */
+ .form-control[type="file"] {
+     background-color: #2f2f37;
+     border-color: #495057;
+     color: #adb5bd;
+ }
+  .form-control[type="file"]::file-selector-button { /* Estilo do botão interno */
+      background-color: #495057;
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      margin-right: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+  }
+   .form-control[type="file"]::file-selector-button:hover {
+       background-color: #6c757d;
+   }
+
+.form-control {
+    background-color: #2f2f37;
+    border: 2px solid #495057;
+    color: #f8f9fa;
+    padding: 0.75rem 1.25rem;
+    font-size: 1.1rem;
+    border-radius: 12px;
+}
+.form-control:focus {
+    background-color: #2f2f37;
+    color: #f8f9fa;
+    border-color: var(--bs-warning); /* Amarelo no foco */
+    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.25);
+}
+
+
+/* Estilo para Botão Principal (Duolingo) */
+.btn-submit-primary {
+    width: 100%;
+    padding: 0.9rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 12px;
+    border: none;
+    transition: all 0.2s ease;
+    background-color: var(--bs-warning); /* Amarelo */
+    color: #333; /* Texto escuro para contraste */
+    box-shadow: 0 4px 0px #c79a00; /* Sombra 3D */
+}
+.btn-submit-primary:hover {
+    background-color: #ffca2c;
+    box-shadow: 0 2px 0px #c79a00;
+    transform: translateY(2px);
+}
+.btn-submit-primary:active {
+    box-shadow: none;
+    transform: translateY(4px);
+}
+
+/* Garante que o ícone do botão seja estilizado */
+.btn-submit-primary i {
+     vertical-align: middle;
+     margin-right: 0.4em;
+}

@@ -41,9 +41,10 @@
                         Guardiões
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="guardiansDropdown">
-                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.rankings') }}">Rankings</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.sobre_o_programa') }}">Sobre o Programa</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.central') }}">Central de Treinamentos</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.central') }}">Central</a></li>
+                         <li><a class="dropdown-item" href="{{ url_for('guardians_bp.rankings') }}">Rankings</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.loja') }}">Upgrades</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('guardians_bp.feedback_form') }}">Reportar</a>
                     </ul>
                 </li>
             </ul>
@@ -53,7 +54,7 @@
             {% if is_authenticated %}
                 {# O botão "Painel Admin" SÓ APARECE se for Admin Guardians #}
                 {% if is_guardian_admin %}
-                    <a href="{{ url_for('guardians_bp.admin') }}" class="btn btn-warning btn-sm me-2">
+                    <a href="{{ url_for('admin_v2_bp.guardian_hub') }}" class="btn btn-warning btn-sm me-2">
                         <i class="bi bi-shield-lock-fill me-1"></i> Painel Admin
                     </a>
                 {% endif %}
