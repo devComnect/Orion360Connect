@@ -3,7 +3,7 @@ from sqlalchemy import not_, func
 from datetime import date, timedelta, datetime
 from flask import flash, g
 from application.models import (db, Guardians, NivelSeguranca, Insignia, GuardianInsignia, 
-                                HistoricoAcao, SpecializationPerkLevel, Perk, GlobalGameSettings,
+                                HistoricoAcao, SpecializationPerkLevel, Perk, GlobalGameSettings, QuizAttempt,
                                 TermoAttempt, AnagramAttempt, GuardianPurchase, ShopItem, GuardianShopState)
 
 # Definição Global de Tipos de Bônus (Usado em Loja, Conquistas e Specs)
@@ -45,7 +45,6 @@ def get_game_setting(key, default_value, type_cast=str):
         try:
             return type_cast(setting.setting_value)
         except (ValueError, TypeError):
-            # Se falhar a conversão (ex: texto num campo int), retorna o default
             return default_value
             
     return default_value
@@ -350,7 +349,7 @@ def calculate_week_days_status(guardian):
         })
     return week_days_status
 
-##DIAS DE VIGILANTE##
+##ATUALIZA OS DIAS DE VIGILANTE E REMOVE STREAK##
 def update_user_streak(guardian):
     """
     Atualiza a ofensiva "Dias de Vigilante" de um usuário.
@@ -751,7 +750,7 @@ def get_or_create_shop_state(guardian):
         new_items = select_unique_daily_items(4)
         state = GuardianShopState(
             guardian_id=guardian.id,
-            current_items_ids=new_items, # Certifique-se que seu DB suporta JSON ou converta para string
+            current_items_ids=new_items, 
             reroll_count=0,
             last_refresh_date=today
         )

@@ -447,9 +447,22 @@
                         {% set r_code = item.rarity if item.rarity else 'COMMON' %}
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="rarity-badge badge-{{ r_code }}">
-                                <span class="rarity-dot"></span> {{ r_code }}
+                                <span class="rarity-dot"></span>
+                                
+                                {% if r_code == 'COMMON' %}
+                                    COMUM
+                                {% elif r_code == 'RARE' %}
+                                    RARO
+                                {% elif r_code == 'EPIC' %}
+                                    ÉPICO
+                                {% elif r_code == 'LEGENDARY' %}
+                                    LENDÁRIO
+                                {% else %}
+                                    {{ r_code }}
+                                {% endif %}
+                                
                             </span>
-                        </div>               
+                        </div>           
                             <span class="badge bg-dark border border-secondary text-muted" style="font-size: 0.65rem;">
                                 {{ item.category|upper }}
                             </span>
@@ -496,7 +509,7 @@
                     {% elif is_sold_out %}
                         <button class="btn-buy-tech btn-disabled" disabled>ESGOTADO</button>
                     {% elif not can_afford %}
-                        <button class="btn-buy-tech btn-disabled" disabled title="Saldo Insuficiente">NO FUNDS</button>
+                        <button class="btn-buy-tech btn-disabled" disabled title="Saldo Insuficiente">SEM MOEDAS</button>
                     {% else %}
                         <form action="{{ url_for('guardians_bp.comprar_item', item_id=item.id) }}" method="POST">
                             <button type="submit" class="btn-buy-tech" onclick="return confirm('Adquirir {{ item.name }}?');">

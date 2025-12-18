@@ -800,9 +800,8 @@ def config_hub():
         redirect_hash = '' 
 
         try:
-            # --- Ações da Aba: Geral (NOVO) ---
+            # --- Ações da Aba: Configs Globais ---
             if action == 'save_global_settings':
-                # Lógica copiada de 'manage_game_settings'
                 for key, value in request.form.items():
                     if key == 'action': # Ignora o campo 'action'
                         continue
@@ -813,7 +812,7 @@ def config_hub():
                 
                 db.session.commit()
                 flash('Configurações do jogo salvas com sucesso!', 'success')
-                redirect_hash = '#tab-geral' # Fica na aba Geral
+                redirect_hash = '#tab-geral' 
 
             # --- Ações da Aba: Especializações ---
             elif action == 'create_specialization':
@@ -1046,7 +1045,7 @@ def config_hub():
 
                 # 1. Busca Top 3 Vencedores (Score) e armazena seus dados
                 top_3_score = Guardians.query.order_by(Guardians.score_atual.desc()).limit(3).all()
-                winners_data = {} # Formato: {guardian_id: (tier, final_score)}
+                winners_data = {} 
                 position_text_map = {1: '1º Lugar', 2: '2º Lugar', 3: '3º Lugar'}
 
                 for i, guardian in enumerate(top_3_score):
@@ -1224,7 +1223,6 @@ def config_hub():
                 missao = MissionTemplate.query.get(mission_id)
                 if missao:
                     nome_missao = missao.title
-                    # (ActiveMissions usam nullable=True, então podemos deletar sem quebrar)
                     db.session.delete(missao)
                     db.session.commit()
                     flash(f"Missão '{nome_missao}' excluída com sucesso.", 'success')
@@ -1244,6 +1242,7 @@ def config_hub():
                 b_val_input = request.form.get('bonus_value')
                 bonus_val = float(b_val_input) if b_val_input else 0.0
                 limit = request.form.get('purchase_limit')
+                rarity = request.form.get('rarity')
                 
                 purchase_limit = int(limit) if limit and int(limit) > 0 else None
                 dur_input = request.form.get('duration_days')
@@ -1252,7 +1251,7 @@ def config_hub():
                 novo_item = ShopItem(
                     name=nome, description=desc, cost=custo, category=categoria,
                     image_path=img_path, bonus_type=bonus_type, bonus_value=bonus_val,
-                    purchase_limit=purchase_limit, is_active=True
+                    purchase_limit=purchase_limit, rarity=rarity, is_active=True
                 )
                 db.session.add(novo_item)
                 db.session.commit()
@@ -1269,9 +1268,9 @@ def config_hub():
                     item.category = request.form.get('category')
                     item.image_path = request.form.get('image_path')
                     item.bonus_type = request.form.get('bonus_type')
+                    item.rarity = request.form.get('rarity')
                     b_val_input = request.form.get('bonus_value')
                     item.bonus_value = float(b_val_input) if b_val_input else 0.0
-                    
                     limit = request.form.get('purchase_limit')
                     item.purchase_limit = int(limit) if limit and int(limit) > 0 else None
                     dur_input = request.form.get('duration_days')
