@@ -186,15 +186,15 @@ def processar_e_armazenar_performance(dias=180, incremental=False):
     data_final = hoje
 
     OPERADORES_MAP = {
-        2020: "Renato",
-        2021: "Matheus",
-        2022: "Gustavo",
-        2023: "Raysa",
-        2024: "Lucas",
-        2025: "Danilo",
-        2028: "Henrique",
-        2029: "Rafael"
-    }
+            1011: "Renato",
+            1012: "Matheus",
+            1014: "Gustavo",
+            1015: "Raysa",
+            1016: "Lucas",
+            1013: "Danilo",
+            1018: "Henrique",
+            1017: "Rafael"
+        }
 
     operadores_ids = list(OPERADORES_MAP.keys())
 
@@ -299,14 +299,14 @@ def processar_e_armazenar_performance_incremental():
         access_token = auth_response["access_token"]
 
         OPERADORES_MAP = {
-            2020: "Renato",
-            2021: "Matheus",
-            2022: "Gustavo",
-            2023: "Raysa",
-            2024: "Lucas",
-            2025: "Danilo",
-            2028: "Henrique",
-            2029: "Rafael"
+            1011: "Renato",
+            1012: "Matheus",
+            1014: "Gustavo",
+            1015: "Raysa",
+            1016: "Lucas",
+            1013: "Danilo",
+            1018: "Henrique",
+            1017: "Rafael"
         }
 
         total_registros = 0
@@ -354,7 +354,7 @@ def processar_e_armazenar_performance_incremental():
                             registro_existente.tempo_online = item.get("tempo_online", 0)
                             registro_existente.tempo_livre = item.get("tempo_livre", 0)
                             registro_existente.tempo_servico = item.get("tempo_servico", 0)
-                            registro_existente.pimprod_refeicao = item.get("pimprod_Refeicao_2", 0)  # <-- AJUSTE AQUI
+                            registro_existente.pimprod_refeicao = item.get("pimprod_Refeicao_2", 0)  
                             registro_existente.tempo_minatend = item.get("tempo_minatend")
                             registro_existente.tempo_medatend = item.get("tempo_medatend")
                             registro_existente.tempo_maxatend = item.get("tempo_maxatend")
@@ -373,7 +373,7 @@ def processar_e_armazenar_performance_incremental():
                                 tempo_online=item.get("tempo_online", 0),
                                 tempo_livre=item.get("tempo_livre", 0),
                                 tempo_servico=item.get("tempo_servico", 0),
-                                pimprod_refeicao=item.get("pimprod_Refeicao_2", 0),  # <-- AJUSTE AQUI
+                                pimprod_refeicao=item.get("pimprod_Refeicao_2", 0),  
                                 tempo_minatend=item.get("tempo_minatend"),
                                 tempo_medatend=item.get("tempo_medatend"),
                                 tempo_maxatend=item.get("tempo_maxatend"),
@@ -432,7 +432,7 @@ def processar_e_armazenar_performance_incremental():
                                 registro_existente.tempo_online = item.get("tempo_online", 0)
                                 registro_existente.tempo_livre = item.get("tempo_livre", 0)
                                 registro_existente.tempo_servico = item.get("tempo_servico", 0)
-                                registro_existente.pimprod_refeicao = item.get("pimprod_Refeicao_2", 0)  # <-- AJUSTE AQUI
+                                registro_existente.pimprod_refeicao = item.get("pimprod_Refeicao_2", 0)  
                                 registro_existente.tempo_minatend = item.get("tempo_minatend")
                                 registro_existente.tempo_medatend = item.get("tempo_medatend")
                                 registro_existente.tempo_maxatend = item.get("tempo_maxatend")
@@ -450,7 +450,7 @@ def processar_e_armazenar_performance_incremental():
                                     tempo_online=item.get("tempo_online", 0),
                                     tempo_livre=item.get("tempo_livre", 0),
                                     tempo_servico=item.get("tempo_servico", 0),
-                                    pimprod_refeicao=item.get("pimprod_Refeicao_2", 0),  # <-- AJUSTE AQUI
+                                    pimprod_refeicao=item.get("pimprod_Refeicao_2", 0),  
                                     tempo_minatend=item.get("tempo_minatend"),
                                     tempo_medatend=item.get("tempo_medatend"),
                                     tempo_maxatend=item.get("tempo_maxatend"),
@@ -485,15 +485,15 @@ def processar_e_armazenar_performance_vyrtos_incremental():
     access_token = auth_response["access_token"]
 
     OPERADORES_MAP = {
-        2020: "Renato",
-        2021: "Matheus",
-        2022: "Gustavo",
-        2023: "Raysa",
-        2024: "Lucas",
-        2025: "Danilo",
-        2028: "Henrique",
-        2029: "Rafael"
-    }
+            1011: "Renato",
+            1012: "Matheus",
+            1014: "Gustavo",
+            1015: "Raysa",
+            1016: "Lucas",
+            1013: "Danilo",
+            1018: "Henrique",
+            1017: "Rafael"
+        }
 
     total_registros = 0
 
@@ -598,17 +598,16 @@ def processar_e_armazenar_performance_vyrtos(incremental=True):
     data_inicial = hoje 
     data_final = hoje
 
-    # IDs e nomes dos operadores
     OPERADORES_MAP = {
-        2020: "Renato",
-        2021: "Matheus",
-        2022: "Gustavo",
-        2023: "Raysa",
-        2024: "Lucas",
-        2025: "Danilo",
-        2028: "Henrique",
-        2029: "Rafael"
-    }
+            1011: "Renato",
+            1012: "Matheus",
+            1014: "Gustavo",
+            1015: "Raysa",
+            1016: "Lucas",
+            1013: "Danilo",
+            1018: "Henrique",
+            1017: "Rafael"
+        }
 
     for operador_id, nome_operador in OPERADORES_MAP.items():
         total_registros_operador = 0
@@ -877,10 +876,8 @@ def importar_chamados():
     total_inseridos = 0
     total_atualizados = 0
 
-    # 🚨 IMPORTANTE: sem context manager!
     for chamado in chamados_api:
         try:
-            # -------------------- DATA CRIAÇÃO --------------------
             data_str = chamado.get("DataCriacao")
             hora_str = chamado.get("HoraCriacao")
 
@@ -898,7 +895,6 @@ def importar_chamados():
             except:
                 continue
 
-            # -------------------- FINALIZAÇÃO --------------------
             data_finalizacao = None
             data_fin = chamado.get("DataFinalizacao")
             hora_fin = chamado.get("HoraFinalizacao")
@@ -915,7 +911,6 @@ def importar_chamados():
                 except:
                     print(f"Erro na finalização do chamado {chamado.get('CodChamado')}")
 
-            # -------------------- CAMPOS --------------------
             chave = chamado.get("Chave")
             existente = Chamado.query.filter_by(chave=chave).first()
 
@@ -927,7 +922,6 @@ def importar_chamados():
             status_nome = chamado.get("NomeStatus", "").strip().lower()
             operador = chamado.get("NomeOperador")
 
-            # Atualiza ServiceOrder separado
             atualizar_service_order(
                 cod_chamado_limpo,
                 data_criacao,
@@ -937,7 +931,6 @@ def importar_chamados():
                 operador
             )
 
-            # -------------------- INSERT / UPDATE --------------------
             if existente:
                 existente.cod_chamado = cod_chamado_original
                 existente.data_criacao = data_criacao
@@ -988,10 +981,9 @@ def importar_chamados():
 
         except Exception as e:
             print(f"Erro ao processar chamado: {e}")
-            db.session.rollback()   # <- rollback seguro
+            db.session.rollback()   
             continue
 
-    # 🔥 commit único no final
     db.session.commit()
 
     return {
@@ -999,7 +991,6 @@ def importar_chamados():
         "inseridos": total_inseridos,
         "atualizados": total_atualizados
     }
-
 
 def importar_pSatisfacao():
     token = token_desk()
@@ -1184,7 +1175,6 @@ def importar_fcr_reabertos():
 
     print("Tarefa finalizada.")
 
-# Converte a data se existir e estiver no formato DD-MM-YYYY
 def parse_data(data_str):
     if data_str:
         try:
@@ -1272,15 +1262,15 @@ def repopular_eventos_180d():
 
     # Mapeamento operadores
     OPERADORES_MAP = {
-        2020: "Renato Ragga",
-        2021: "Matheus",
-        2022: "Gustavo",
-        2023: "Raysa",
-        2024: "Lucas",
-        2025: "Danilo",
-        2028: "Henrique",
-        2029: "Rafael"
-    }
+            1011: "Renato",
+            1012: "Matheus",
+            1014: "Gustavo",
+            1015: "Raysa",
+            1016: "Lucas",
+            1013: "Danilo",
+            1018: "Henrique",
+            1017: "Rafael"
+        }
 
     operadores_ids = list(OPERADORES_MAP.keys())
 
@@ -1525,15 +1515,16 @@ def processar_e_armazenar_eventos():
 
     # Mapeamento operadores
     OPERADORES_MAP = {
-        2020: "Renato Ragga",
-        2021: "Matheus",
-        2022: "Gustavo",
-        2023: "Raysa",
-        2024: "Lucas",
-        2025: "Danilo",
-        2028: "Henrique",
-        2029: "Rafael"
-    }
+            1011: "Renato",
+            1012: "Matheus",
+            1014: "Gustavo",
+            1015: "Raysa",
+            1016: "Lucas",
+            1013: "Danilo",
+            1018: "Henrique",
+            1017: "Rafael",
+
+        }
 
     operadores_ids = list(OPERADORES_MAP.keys())
 
@@ -1546,7 +1537,7 @@ def processar_e_armazenar_eventos():
                 return datetime.strptime(data_str, fmt).date()
             except ValueError:
                 continue
-        print(f"⚠️ Data inválida recebida: {data_str}")
+        print(f"Data inválida recebida: {data_str}")
         return None
 
     def parse_datetime(dt_str):
@@ -1557,7 +1548,7 @@ def processar_e_armazenar_eventos():
                 return datetime.strptime(dt_str, fmt)
             except ValueError:
                 continue
-        print(f"⚠️ Datetime inválido recebido: {dt_str}")
+        print(f" Datetime inválido recebido: {dt_str}")
         return None
 
     def parse_timedelta(valor):
@@ -1600,11 +1591,11 @@ def processar_e_armazenar_eventos():
                 response = tasks.atendenteEventosData(access_token, params)
 
                 if not response:
-                    print(f"❌ [{nome_operador}] Resposta vazia da API")
+                    print(f" [{nome_operador}] Resposta vazia da API")
                     break
 
                 dados = response.get("result", {}).get("data", [])
-                print(f"📦 [{nome_operador}] Registros recebidos: {len(dados)}")
+                print(f"[{nome_operador}] Registros recebidos: {len(dados)}")
 
                 if not dados:
                     break
@@ -2310,7 +2301,6 @@ def importar_chamados_debug():
             print(f"\n[DEBUG] Processando chamado: {cod_debug}")
 
             try:
-                # -------------------- PARSE DATA CRIAÇÃO --------------------
                 data_str = chamado.get("DataCriacao")
                 hora_str = chamado.get("HoraCriacao")
 
@@ -2336,7 +2326,6 @@ def importar_chamados_debug():
                     total_pulados += 1
                     continue
 
-                # -------------------- PARSE FINALIZAÇÃO --------------------
                 data_finalizacao = None
                 data_fin = chamado.get("DataFinalizacao")
                 hora_fin = chamado.get("HoraFinalizacao")
@@ -2357,7 +2346,6 @@ def importar_chamados_debug():
                     except Exception as e:
                         print(f"[WARN] Erro data_finalizacao | Chamado {cod_debug} | {e}")
 
-                # -------------------- CHAVE --------------------
                 chave = chamado.get("Chave")
                 if not chave:
                     print(f"[WARN] Chamado sem chave | CodChamado {cod_debug}")
@@ -2368,7 +2356,6 @@ def importar_chamados_debug():
 
                 print(f"[DEBUG] Chamado {'EXISTENTE' if existente else 'NOVO'} | Chave {chave}")
 
-                # -------------------- SERVICE ORDER --------------------
                 cod_chamado_original = chamado.get("CodChamado")
                 cod_chamado_limpo = (
                     cod_chamado_original.replace("-", "")
@@ -2387,7 +2374,6 @@ def importar_chamados_debug():
                 except Exception as e:
                     print(f"[ERRO] atualizar_service_order | Chamado {cod_debug} | {e}")
 
-                # -------------------- UPDATE / INSERT --------------------
                 if existente:
                     print(f"[DEBUG] Atualizando chamado {cod_debug}")
 
@@ -2456,3 +2442,5 @@ def importar_chamados_debug():
         "atualizados": total_atualizados,
         "pulados": total_pulados
     }
+
+
