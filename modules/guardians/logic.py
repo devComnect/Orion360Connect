@@ -29,7 +29,6 @@ BONUS_TYPES = {
     'ADD_MINIGAME_TOKEN': 'Consumível: +1 Token de Minigame'
 }
 ##
-##
 
 ##CACHE DE CONFIGS GLOBAIS (magic numbers)
 def get_game_setting(key, default_value, type_cast=str):
@@ -49,16 +48,36 @@ def get_game_setting(key, default_value, type_cast=str):
             
     return default_value
 
+def get_global_setting(key, default=None, setting_type=int):
+    """
+    Busca uma configuração global do jogo de forma eficiente, usando um cache por requisição.
+    
+    :param key: A chave da configuração (ex: 'PATROL_MIN_POINTS').
+    :param default: O valor a ser retornado se a chave não for encontrada.
+    :param setting_type: O tipo de dado para o qual o valor deve ser convertido (int, float, str).
+    """
+    if 'game_settings' not in g:
+        settings = GlobalGameSettings.query.all()
+        g.game_settings = {s.setting_key: s.setting_value for s in settings}
+
+    value = g.game_settings.get(key, default)
+
+    try:
+        return setting_type(value)
+    except (ValueError, TypeError):
+        return default
 
 ##CALCULA PONTUAÇÃO FINAL APÓS TODOS OS BONUS E GARANTE O BONUS DE OFENSIVA AO FINAL (CASO NÃO TENHA)
 def calculate_final_score(guardian: Guardians, current_total_score: int, raw_base_score: int, perk_code: str = None):
     """
-    Calcula pontuação final e aplica Streak.
-    Versão com DEBUG detalhado no console.
+    [FUNÇÃO MESTRA DE PONTUAÇÃO]
+    Calcula pontuação final somando: Spec + Conquistas (Múltiplas) + Loja + Streak.
     """
 
     score_with_bonuses = current_total_score
+    
     bonus_breakdown = {
+        'spec_bonus': 0,    
         'conquista_bonus': 0,
         'loja_bonus': 0,
         'streak_total_bonus': 0,
@@ -67,18 +86,36 @@ def calculate_final_score(guardian: Guardians, current_total_score: int, raw_bas
     }
 
     if perk_code:
-        # 1. BÔNUS DE CONQUISTA
-        if guardian.featured_insignia:
-            bonus_type = guardian.featured_insignia.bonus_type
-            bonus_val_pct = guardian.featured_insignia.bonus_value
-            is_applicable = (bonus_type == perk_code) or (bonus_type == 'GLOBAL_SCORE_PCT')
+        # --- 1. BÔNUS DE ESPECIALIZAÇÃO (SPEC) ---
+        spec_pct = get_active_perk_value(guardian, perk_code, default=0)
+        
+        if spec_pct > 0:
+            spec_val = int(round(raw_base_score * (spec_pct / 100.0)))
+            bonus_breakdown['spec_bonus'] = spec_val
+            score_with_bonuses += spec_val
 
-            if is_applicable and bonus_val_pct:
-                bonus_val = int(round(raw_base_score * (bonus_val_pct / 100.0)))
-                bonus_breakdown['conquista_bonus'] = bonus_val
-                score_with_bonuses += bonus_val
+        # --- 2. BÔNUS DE CONQUISTA (MÚLTIPLAS) ---
+        total_badge_bonus = 0
 
-        # 2. BÔNUS DE LOJA (Específico)
+        if guardian.featured_associations:
+            for assoc in guardian.featured_associations:
+                insignia = assoc.insignia
+                
+                if insignia and insignia.bonus_value:
+                    b_type = insignia.bonus_type
+                    b_val_pct = float(insignia.bonus_value)
+                    
+                    is_exact_match = (b_type == perk_code)
+                    is_global = (b_type == 'GLOBAL_SCORE_PCT' and not perk_code.startswith('GCOIN'))
+                    
+                    if is_exact_match or is_global:
+                        badge_val = int(round(raw_base_score * (b_val_pct / 100.0)))
+                        total_badge_bonus += badge_val
+
+        bonus_breakdown['conquista_bonus'] = total_badge_bonus
+        score_with_bonuses += total_badge_bonus
+
+        # --- 3. BÔNUS DE LOJA ---
         shop_bonus_pct = _get_shop_bonus(guardian, perk_code)
         if shop_bonus_pct > 0:
             shop_val = int(round(raw_base_score * (shop_bonus_pct / 100.0)))
@@ -86,24 +123,20 @@ def calculate_final_score(guardian: Guardians, current_total_score: int, raw_bas
             score_with_bonuses += shop_val
 
 
-    # --- 3. BÔNUS DE OFENSIVA (Streak) ---
-
+    # --- 4. BÔNUS DE OFENSIVA (STREAK) ---
     effective_percent = get_effective_streak_percentage(guardian)
-
-    # Cálculo base do streak
-    base_bonus = int(round(score_with_bonuses * (effective_percent / 100.0)))
+    base_streak_val = int(round(score_with_bonuses * (effective_percent / 100.0)))
+    spec_streak_pct = get_active_perk_value(guardian, 'STREAK_BONUS_PCT', default=0)
     
-    # Bônus extra de streak (Caminho Cinza/Gestor)
-    spec_streak_pct = get_total_bonus(guardian, 'STREAK_BONUS_PCT', default=0)
-    spec_bonus = 0
+    spec_streak_val = 0
     if spec_streak_pct > 0:
-        spec_bonus = int(round(base_bonus * (spec_streak_pct / 100.0))) # Ou sobre o total, dependendo da regra
+        spec_streak_val = int(round(base_streak_val * (spec_streak_pct / 100.0)))
     
-    total_streak_bonus = base_bonus + spec_bonus
+    total_streak_bonus = base_streak_val + spec_streak_val
     
     bonus_breakdown['streak_total_bonus'] = total_streak_bonus
-    bonus_breakdown['streak_base_bonus'] = base_bonus
-    bonus_breakdown['streak_spec_bonus'] = spec_bonus
+    bonus_breakdown['streak_base_bonus'] = base_streak_val
+    bonus_breakdown['streak_spec_bonus'] = spec_streak_val
 
     final_score = score_with_bonuses + total_streak_bonus
     
@@ -145,80 +178,92 @@ def get_active_perk_value(guardian: Guardians, perk_code: str, default=0):
 #CALCULA BONUS DE VELOCIDADE E PERFEIÇÃO PARA DESAFIOS
 def calculate_performance_bonuses(guardian: Guardians, event_type: str, raw_score: int, context: dict):
     """
-    Calcula bônus de performance (Tempo e Perfeição) para um evento.
-    Aplica multiplicadores de itens ativos (Sincronizador/Engrenagem).
+    Calcula bônus de performance (Tempo e Perfeição).
+    
+    ATUALIZAÇÕES:
+    - Tempo: Lógica de Threshold (Menor que X segundos = ganha fixo).
+    - Perfeição: Minigame de Senha/Cofre conta para estatística/token, mas NÃO dá pontos extras de perfeição.
     """
     
     time_bonus = 0
     perfection_bonus = 0
-    
-    # Validação de Perfeição
+
     total_possible = context.get('total_possible_points', 0)
     score_check = context.get('raw_score_before_perks', 0)
     is_perfect = (score_check == total_possible and total_possible > 0)
-    
-    # ====================================================
-    # 1. CÁLCULO DO BÔNUS DE VELOCIDADE
-    # ====================================================
-    time_limit = context.get('time_limit_seconds')
-    duration = context.get('duration_seconds')
-    
-    if time_limit and time_limit > 0 and duration is not None:
-        # A. Cálculo Base (Mecânica do Jogo)
-        time_remaining_percent = max(0, (time_limit - duration) / time_limit)
-        divisor = get_global_setting('TIME_BONUS_DIVISOR', default=5.0, setting_type=float)
-        
-        base_time_bonus = 0
-        if divisor > 0:
-            base_time_bonus = int(round(raw_score * (time_remaining_percent / divisor)))
-        
-        # B. Aplicação de Buffs (Sincronizador - SPEED_BONUS_PCT)
-        # Busca bônus de Loja + Spec + Insígnia
-        speed_mult_pct = get_total_bonus(guardian, 'SPEED_BONUS_PCT') 
-        
-        if speed_mult_pct > 0:
-            boost_val = int(base_time_bonus * (speed_mult_pct / 100.0))
-            time_bonus = base_time_bonus + boost_val
-        else:
-            time_bonus = base_time_bonus
-            
+    minigame_type = context.get('minigame_type')
 
+    # ====================================================
+    # 1. CÁLCULO DO BÔNUS DE VELOCIDADE (Threshold Logic)
+    # ====================================================
+    duration = context.get('duration_seconds')
+    speed_limit_key = None
+
+    if event_type == 'quiz':
+        speed_limit_key = 'SPEED_LIMIT_QUIZ'
+    elif event_type == 'minigame':
+        if minigame_type == 'termo':
+            speed_limit_key = 'SPEED_LIMIT_TERMO'
+        elif minigame_type == 'anagram':
+            speed_limit_key = 'SPEED_LIMIT_ANAGRAM'
+        elif minigame_type == 'password':
+            speed_limit_key = 'SPEED_LIMIT_PASSWORD'
+    
+    if speed_limit_key and duration is not None:
+        limit_seconds = get_global_setting(speed_limit_key, default=0, setting_type=int)
+        
+        # Se bateu o tempo limite
+        if limit_seconds > 0 and duration <= limit_seconds:
+            base_time_bonus = get_global_setting('TIME_BONUS_DIVISOR', default=20, setting_type=int)
+            
+            # Aplica Buffs de Velocidade
+            speed_mult_pct = get_total_bonus(guardian, 'SPEED_BONUS_PCT') 
+            if speed_mult_pct > 0:
+                boost_val = int(base_time_bonus * (speed_mult_pct / 100.0))
+                time_bonus = base_time_bonus + boost_val
+            else:
+                time_bonus = base_time_bonus
+    
     # ====================================================
     # 2. CÁLCULO DO BÔNUS DE PERFEIÇÃO
     # ====================================================
+    
+    streak_threshold = get_global_setting('PERFECT_STREAK_THRESHOLD', default=3, setting_type=int)
+    
     if is_perfect:
         base_perf_bonus = 0
         
         if event_type == 'quiz':
-            # Atualiza Streak
             guardian.perfect_quiz_streak = (guardian.perfect_quiz_streak or 0) + 1
             guardian.perfect_quiz_cumulative_count = (guardian.perfect_quiz_cumulative_count or 0) + 1
             
-            # Token de Retake
             try:
                 check_and_award_retake_token(guardian) 
             except Exception as e:
                 print(f"Erro ao dar token quiz: {e}")
             
-            # A. Cálculo Base (Streak Threshold)
-            threshold = get_global_setting('PERFECT_QUIZ_STREAK_THRESHOLD', default=1, setting_type=int)
             bonus_val = get_global_setting('PERFECT_QUIZ_STREAK_BONUS', default=10, setting_type=int)
             
-            if guardian.perfect_quiz_streak > 0 and guardian.perfect_quiz_streak % threshold == 0:
+            if guardian.perfect_quiz_streak > 0 and guardian.perfect_quiz_streak % streak_threshold == 0:
                 base_perf_bonus = bonus_val
         
         elif event_type == 'minigame':
-            # Token de Retake Minigame
+
             try:
                 check_and_award_minigame_token(guardian)
             except Exception as e:
                 print(f"Erro ao dar token minigame: {e}")
             
-            # A. Cálculo Base (Fixo)
-            base_perf_bonus = get_global_setting('PERFECT_MINIGAME_BONUS', default=10, setting_type=int)
+            if minigame_type in ['password', 'secret', 'senha']:
+                base_perf_bonus = 0
+            else:
+                guardian.perfect_minigame_streak = (guardian.perfect_minigame_streak or 0) + 1
+                
+                bonus_val = get_global_setting('PERFECT_MINIGAME_BONUS', default=10, setting_type=int)
+                
+                if guardian.perfect_minigame_streak > 0 and guardian.perfect_minigame_streak % streak_threshold == 0:
+                    base_perf_bonus = bonus_val
 
-        # B. Aplicação de Buffs (Engrenagem - PERFECTION_BONUS_PCT)
-        # Se o jogador ganhou algum bônus base, o item multiplica esse bônus
         if base_perf_bonus > 0:
             perf_mult_pct = get_total_bonus(guardian, 'PERFECTION_BONUS_PCT')
             
@@ -231,38 +276,15 @@ def calculate_performance_bonuses(guardian: Guardians, event_type: str, raw_scor
     else:
         if event_type == 'quiz':
             guardian.perfect_quiz_streak = 0
+            
+        elif event_type == 'minigame':
+             guardian.perfect_minigame_streak = 0
 
     return {
         'time_bonus': int(time_bonus),
         'perfection_bonus': int(perfection_bonus),
         'is_perfect': is_perfect
     }
-
-##CACHE DE CONFIGS GLOBAIS##
-def get_global_setting(key, default=None, setting_type=int):
-    """
-    Busca uma configuração global do jogo de forma eficiente, usando um cache por requisição.
-    
-    :param key: A chave da configuração (ex: 'PATROL_MIN_POINTS').
-    :param default: O valor a ser retornado se a chave não for encontrada.
-    :param setting_type: O tipo de dado para o qual o valor deve ser convertido (int, float, str).
-    """
-    # Verifica se o cache de configurações já foi criado para esta requisição
-    if 'game_settings' not in g:
-        # Se não, busca todas as configurações do banco UMA VEZ e as armazena em 'g'
-        settings = GlobalGameSettings.query.all()
-        # Transforma a lista de objetos em um dicionário simples: {'chave': 'valor'}
-        g.game_settings = {s.setting_key: s.setting_value for s in settings}
-
-    # Busca o valor no cache. Se não encontrar, usa o valor 'default'.
-    value = g.game_settings.get(key, default)
-
-    # Tenta converter o valor para o tipo desejado (int por padrão)
-    try:
-        return setting_type(value)
-    except (ValueError, TypeError):
-        # Se a conversão falhar, retorna o valor default
-        return default
 
 def get_bonus_for_perk(guardian, perk_code):
     """
@@ -283,31 +305,47 @@ def get_bonus_for_perk(guardian, perk_code):
     
     return bonus_value or 0.0
 
+#CALCULA STREAK DE OFENSIVA
+def get_streak_cap(guardian):
+    """
+    Calcula o TETO MÁXIMO da ofensiva (Cap).
+    Base (ex: 10%) + Bônus específicos de itens/conquistas (STREAK_BONUS_PCT).
+    """
+    base_cap = int(get_global_setting('STREAK_BONUS_CAP_PERCENT', default=10))
+    extra_cap = 0.0
+
+    extra_cap += db.session.query(func.sum(ShopItem.bonus_value))\
+        .join(GuardianPurchase, GuardianPurchase.item_id == ShopItem.id)\
+        .filter(
+            GuardianPurchase.guardian_id == guardian.id,
+            ShopItem.bonus_type == 'STREAK_BONUS_PCT',
+            (GuardianPurchase.expires_at == None) | (GuardianPurchase.expires_at > datetime.utcnow())
+        ).scalar() or 0.0
+
+    extra_cap += db.session.query(func.sum(Insignia.bonus_value))\
+        .join(GuardianInsignia, GuardianInsignia.insignia_id == Insignia.id)\
+        .filter(
+            GuardianInsignia.guardian_id == guardian.id,
+            Insignia.bonus_type == 'STREAK_BONUS_PCT' 
+        ).scalar() or 0.0
+
+    return base_cap + int(extra_cap)
+
 def get_effective_streak_percentage(guardian):
     """
-    Calcula o percentual de streak a ser aplicado.
-    Atualizado para somar bônus de Especialização + Conquista + Loja.
+    Calcula a % atual da ofensiva.
+    Regra: 1% por dia, limitado pelo Teto Dinâmico.
     """
     streak_days = guardian.current_streak or 0
+    
     if streak_days <= 0:
         return 0 
 
-    gain_modifier_pct = get_total_bonus(guardian, 'STREAK_GAIN_PCT', default=0)
-    
-    base_percent_per_day = 1.0 
-    effective_percent_per_day = base_percent_per_day * (1 + gain_modifier_pct / 100.0)
-    
-    raw_effective_percentage = streak_days * effective_percent_per_day
+    raw_percentage = float(streak_days)
+    user_cap = get_streak_cap(guardian)
+    final_percentage = min(raw_percentage, user_cap)
 
-    base_cap_percent = get_global_setting('STREAK_BONUS_CAP_PERCENT', default=20)
-
-    cap_increase_percent = get_total_bonus(guardian, 'STREAK_MAX_PCT', default=0)
-
-    effective_cap = base_cap_percent + cap_increase_percent
-
-    final_effective_percentage = min(raw_effective_percentage, effective_cap)
-
-    return round(final_effective_percentage, 2)
+    return round(final_percentage, 2)
 
 ##CALCULA DIAS DA SEMANA PRA CARD EM MEU PERFIL
 def calculate_week_days_status(guardian):
@@ -536,7 +574,7 @@ def check_and_award_achievements(guardian, quiz_context=None):
     """
     try:
         # 1. Busca todas as conquistas que o guardião AINDA NÃO TEM
-        owned_insignia_ids = {gi.insignia_id for gi in guardian.insignias_conquistadas.all()} # .all() é importante aqui
+        owned_insignia_ids = {gi.insignia_id for gi in guardian.insignias_conquistadas.all()} 
         unearned_insignias = Insignia.query.filter(not_(Insignia.id.in_(owned_insignia_ids))).all()
         
         newly_awarded = []
@@ -629,23 +667,38 @@ def check_and_award_achievements(guardian, quiz_context=None):
     
 ##ORDERNAR CONQUSITAS EM MEU PERFIL###
 def get_insignia_category(insignia):
-    """ Determina a categoria de uma insígnia com base no seu código. """
-    code = insignia.achievement_code.upper() # Usa 'code', ajuste se o campo for outro (ex: 'identificador')
+    """ 
+    Determina a categoria de uma insígnia com base no prefixo do seu código. 
+    Retorna a string exata da categoria para exibição no template.
+    """
+    code = insignia.achievement_code.upper() 
 
-    if code.startswith('LEVEL_'):
-        return "Nível"
-    elif code.startswith('SCORE_'):
-        return "Pontuação"
-    elif code.startswith('QUIZ_STREAK_'):
-        return "Quizzes Perfeitos"
-    elif code.startswith('QUIZ_'):
-        return "Quizzes"
-    elif code.startswith('STREAK_'):
-        return "Ofensiva"
+    if code.startswith('QUIZ_'):
+        return "Por Quiz"
+
+    elif code.startswith('MINIGAME_'):
+        return "Por Minigame"
+
     elif code.startswith('PATROL_'):
-        return "Patrulha"
+        return "Por Patrulha"
+
+    elif code.startswith('STREAK_'):
+        return "Por Ofensiva"
+
+    elif code.startswith('ITEM_') or code.startswith('SHOP_'):
+        return "Por Items comprados"
+
+    elif code.startswith('LEVEL_') or code.startswith('SCORE_') or code.startswith('PERFORMANCE_'):
+        return "Por Desempenho"
+
+    elif code.startswith('PHISH_') or code.startswith('REPORT_'):
+        return "Por Report de Phish"
+
+    elif code.startswith('PODIUM_') or code.startswith('TOP_'):
+        return "Por Pódio"
+
     else:
-        return "Outras" # Categoria padrão
+        return "Outras"
 
 def get_achievement_sort_key(insignia):
     """
@@ -653,16 +706,12 @@ def get_achievement_sort_key(insignia):
     Ex: 'LEVEL_10' -> 10, 'SCORE_500' -> 500.
     """
     if insignia.achievement_code:
-        # Usa expressão regular para encontrar todos os números no código
         numeros = re.findall(r'\d+', insignia.achievement_code)
         if numeros:
-            # Retorna o primeiro número encontrado, convertido para inteiro
             return int(numeros[0])
     
-    # Se não encontrar um número no código, usa o requisito_score como fallback
     return insignia.requisito_score if insignia.requisito_score is not None else insignia.id
 
-CATEGORY_ORDER = ["Nível", "Pontuação", "Quizzes Perfeitos", "Quizzes","Ofensiva", "Patrulha", "Outras"]
 
 
 
@@ -797,33 +846,28 @@ def perform_shop_reroll(guardian):
         'next_cost': calculate_reroll_cost(state.reroll_count)
     }
 
-##LIMITA OS SLOTS DO INVETÁRIO (3)
+##LIMITA OS SLOTS DO INVETÁRIO
 def check_shop_slots_available(guardian_id: int) -> bool:
     """
     Verifica se o jogador tem espaço para ativar mais um item passivo.
-    Limite: 3 itens ativos simultaneamente.
     """
-    MAX_SLOTS = 3
+    max_slots = get_game_setting('ITEMS_MODULES_SET_AMOUNT', 4, int)
     now = datetime.utcnow()
     active_items_count = 0
     purchases = GuardianPurchase.query.filter_by(guardian_id=guardian_id).all()
     
     for p in purchases:
-        # Pula consumíveis (Tokens não ocupam slot de buff)
         if p.item.category == 'Consumíveis':
             continue
             
-        # Verifica se ainda está válido
-        # (Lógica simplificada, assumindo que duration_days está no item)
         if p.item.duration_days:
             expiration = p.purchased_at + timedelta(days=p.item.duration_days)
             if now < expiration:
                 active_items_count += 1
         else:
-            # Se for item permanente (duration null), ocupa slot
             active_items_count += 1
             
-    return active_items_count < MAX_SLOTS
+    return active_items_count < max_slots
 
 
 # ==========================================================
@@ -857,28 +901,32 @@ def _get_spec_bonus(guardian: Guardians, perk_code: str) -> float:
 
 def _get_insignia_bonus(guardian: Guardians, perk_code: str) -> float:
     """
-    (Interno) Busca o bônus vindo da Insígnia em Destaque.
+    (Interno) Calcula o bônus TOTAL acumulado de TODAS as Insígnias em Destaque ativas.
     """
-    if not guardian.featured_insignia_id:
+    total_bonus = 0.0
+    
+    if not guardian.featured_associations:
         return 0.0
         
     try:
-        insignia = db.session.query(Insignia.bonus_type, Insignia.bonus_value)\
-            .filter_by(id=guardian.featured_insignia_id).first()
+        for assoc in guardian.featured_associations:
+            insignia = assoc.insignia 
             
-        if insignia and insignia.bonus_value:
-            b_type = insignia.bonus_type
-            
-            # CASO 1: Match Exato (Sempre válido)
-            if b_type == perk_code:
-                return float(insignia.bonus_value)
-            
-            # CASO 2: Match Global (Válido APENAS se não for G-Coins)
-            if b_type == 'GLOBAL_SCORE_PCT' and not perk_code.startswith('GCOIN'):
-                return float(insignia.bonus_value)
+            if insignia and insignia.bonus_value:
+                b_type = insignia.bonus_type
+                valor_atual = float(insignia.bonus_value)
                 
-        return 0.0
-    except Exception:
+
+                if b_type == perk_code:
+                    total_bonus += valor_atual
+                
+
+                elif b_type == 'GLOBAL_SCORE_PCT' and not perk_code.startswith('GCOIN'):
+                    total_bonus += valor_atual
+            
+        return total_bonus
+
+    except Exception as e:
         return 0.0
 
 def _get_shop_bonus(guardian: Guardians, perk_code: str) -> float:
@@ -934,3 +982,6 @@ def get_total_bonus(guardian: Guardians, perk_code: str, default: float = 0.0) -
     except Exception as e:
         print(f"Erro crítico ao calcular bônus total para {perk_code}: {e}")
         return default
+    
+
+

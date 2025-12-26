@@ -12,7 +12,7 @@ from datetime import datetime, date, timedelta
 from werkzeug.utils import secure_filename
 from . import admin_v2_bp
 from modules.guardians.password_game_rules import PASSWORD_RULES_DB
-from application.models import (db, Guardians, NivelSeguranca, Specialization, EventoPontuacao, 
+from application.models import (db, Guardians, NivelSeguranca, Specialization, EventoPontuacao, GuardianFeatured,
                                 Insignia, HistoricoAcao, GuardianInsignia, QuizAttempt, UserAnswer, 
                                 TermoAttempt, AnagramAttempt, Specialization, GameSeason, NivelSeguranca, 
                                 Perk, FeedbackReport, SpecializationPerkLevel, GlobalGameSettings, Quiz,
@@ -200,37 +200,61 @@ def launch_score():
 @admin_v2_bp.route('/launch-achievement', methods=['POST'])
 @guardian_admin_required
 def launch_achievement():
-    """ Processa o modal de Lançar Conquista. """
+    """ Processa o modal de Lançar Conquistas (Suporta Múltiplas). """
     try:
         guardian_id = request.form.get('guardian_id')
-        insignia_id = request.form.get('insignia_id')
+        
+        insignia_ids = request.form.getlist('insignia_ids') 
         
         perfil_guardian = Guardians.query.get(guardian_id)
-        insignia = Insignia.query.get(insignia_id)
 
-        if perfil_guardian and insignia:
-            ja_possui = GuardianInsignia.query.filter_by(guardian_id=guardian_id, insignia_id=insignia_id).first()
-            if not ja_possui:
-                nova_conquista = GuardianInsignia(guardian_id=guardian_id, insignia_id=insignia_id)
-                db.session.add(nova_conquista)
+        if not perfil_guardian:
+            flash("Colaborador não encontrado.", 'danger')
+            return redirect(url_for('admin_v2_bp.guardian_hub'))
+
+        if not insignia_ids:
+            flash("Nenhuma conquista foi selecionada.", 'warning')
+            return redirect(url_for('admin_v2_bp.guardian_hub'))
+
+        count_sucesso = 0
+        nomes_concedidos = []
+
+        for i_id in insignia_ids:
+            insignia = Insignia.query.get(i_id)
+            
+            if insignia:
+                ja_possui = GuardianInsignia.query.filter_by(
+                    guardian_id=guardian_id, 
+                    insignia_id=insignia.id
+                ).first()
                 
-                # Adiciona log de histórico
-                novo_historico = HistoricoAcao(
-                    guardian_id=guardian_id,
-                    descricao=f"Conquistou a insígnia '{insignia.nome}'! (Admin)",
-                    pontuacao=0
-                )
-                db.session.add(novo_historico)
-                db.session.commit()
-                flash(f'Conquista "{insignia.nome}" concedida a {perfil_guardian.nome}.', 'success')
-            else:
-                flash(f'{perfil_guardian.nome} já possui a conquista "{insignia.nome}".', 'warning')
+                if not ja_possui:
+                    nova_conquista = GuardianInsignia(
+                        guardian_id=guardian_id, 
+                        insignia_id=insignia.id
+                    )
+                    db.session.add(nova_conquista)
+                    
+                    novo_historico = HistoricoAcao(
+                        guardian_id=guardian_id,
+                        descricao=f"Conquistou a insígnia '{insignia.nome}'! (Admin)",
+                        pontuacao=0
+                    )
+                    db.session.add(novo_historico)
+                    
+                    count_sucesso += 1
+                    nomes_concedidos.append(insignia.nome)
+
+        if count_sucesso > 0:
+            db.session.commit()
+            flash(f'{count_sucesso} conquistas concedidas a {perfil_guardian.nome}!', 'success')
         else:
-            flash("Colaborador ou insígnia não encontrados.", 'danger')
+            flash(f'{perfil_guardian.nome} já possuía todas as conquistas selecionadas.', 'warning')
             
     except Exception as e:
         db.session.rollback()
-        flash(f"Erro ao conceder insígnia: {e}", "danger")
+        print(f"ERRO NO LAUNCH_ACHIEVEMENT: {e}")
+        flash(f"Erro ao conceder insígnia: {str(e)}", "danger")
         
     return redirect(url_for('admin_v2_bp.guardian_hub'))
 
@@ -299,6 +323,7 @@ def reset_history():
             GuardianPurchase.query.filter_by(guardian_id=perfil_id).delete()
             PasswordAttempt.query.filter_by(guardian_id=perfil_id).delete()
             GuardianShopState.query.filter_by(guardian_id=perfil_id).delete()
+            GuardianFeatured.query.filter_by(guardian_id = perfil_id).delete()
 
             quest_sets_to_delete = WeeklyQuestSet.query.filter_by(guardian_id=perfil_id).all()
             for quest_set in quest_sets_to_delete:
@@ -316,7 +341,7 @@ def reset_history():
             perfil_guardian.current_streak = 0
             perfil_guardian.last_streak_date = None
             perfil_guardian.last_patrol_date = None
-            perfil_guardian.featured_insignia_id = None
+            perfil_guardian.featured_associations = []
             perfil_guardian.last_spec_change_at = None
             perfil_guardian.perfect_quiz_streak = 0
             perfil_guardian.retake_tokens = 1
@@ -327,7 +352,7 @@ def reset_history():
             perfil_guardian.perfect_minigame_cumulative_count = 0
             perfil_guardian.name_color = None
             perfil_guardian.trophy_tier = None 
-            perfil_guardian.featured_insignia_id = None
+            perfil_guardian.avatar_seed = None
             
             
             db.session.commit()
@@ -1059,6 +1084,8 @@ def config_hub():
                     AnagramAttempt.query.delete()
                     GuardianInsignia.query.delete()
                     HistoricoAcao.query.delete()
+                    GuardianFeatured.query.delete()
+                    
                 except Exception as e:
                     db.session.rollback()
                     flash(f'Erro ao limpar tabelas da temporada: {e}', 'danger')
@@ -1071,9 +1098,8 @@ def config_hub():
                     Guardians.last_patrol_date: None,
                     Guardians.specialization_id: None,
                     Guardians.nivel_id: None,
-                    Guardians.featured_insignia_id: None,
                     Guardians.perfect_quiz_streak: 0,
-                    Guardians.retake_tokens: 1, # Reseta para 1 (ou seu default)
+                    Guardians.retake_tokens: 1,
                     Guardians.perfect_quiz_cumulative_count: 0,
                     Guardians.name_color: None
                 }

@@ -1,23 +1,21 @@
 {% extends "base_template.html" %}
 
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+
 {% block title %}Upgrades{% endblock %}
 
 {% block styles %}
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* PALETA EXISTENTE */
             --neon-blue: #0dcaf0;  
             --neon-red: #ff2a6d;   
             --neon-green: #05d9e8; 
             --neon-gold: #fcee0a;  
-            
-            /* NOVAS CORES DE RARIDADE */
             --rarity-common: #adb5bd;    /* Cinza */
             --rarity-rare: #0dcaf0;      /* Azul */
             --rarity-epic: #d63384;      /* Roxo/Magenta */
             --rarity-legendary: #ffc107; /* Dourado */
-
             --bg-dark: #0b0c10;
             --panel-bg: #1f2833;
             --border-tech: #45a29e;
@@ -31,7 +29,6 @@
 
         .font-tech { font-family: 'Share Tech Mono', monospace; }
 
-        /* --- HUD DE MERCADO (Com suporte ao Reroll) --- */
         .market-hud {
             background: rgba(31, 40, 51, 0.9);
             border-bottom: 2px solid var(--border-tech);
@@ -50,11 +47,10 @@
             pointer-events: none;
         }
         
-        /* Grid do HUD: Esquerda (Saldo), Centro (Recursos), Direita (Reroll) */
         .hud-grid {
             display: flex;
             flex-wrap: wrap;
-            justify-content: center; /* Centralizado por padrão */
+            justify-content: center; 
             gap: 30px;
             align-items: center;
         }
@@ -132,7 +128,7 @@
 
         .market-card {
             background: var(--panel-bg);
-            border: 1px solid #333; /* Borda padrão, sobrescrita pela raridade */
+            border: 1px solid #333;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -150,14 +146,13 @@
         .rarity-LEGENDARY { --card-color: var(--rarity-legendary); }
 
         .market-card {
-            border-color: rgba(255,255,255,0.1); /* Padrão */
+            border-color: rgba(255,255,255,0.1);
         }
         
-        /* Aplica a cor da raridade no hover ou numa borda sutil */
         .market-card:hover {
             border-color: var(--card-color);
-            box-shadow: 0 0 20px rgba(var(--card-color), 0.2); /* Nota: CSS puro não faz hex->rgba auto, mas o glow funciona se a cor for definida */
-            box-shadow: 0 0 15px var(--card-color); /* Fallback simples */
+            box-shadow: 0 0 20px rgba(var(--card-color), 0.2); 
+            box-shadow: 0 0 15px var(--card-color); 
         }
 
         .card-header-strip {
@@ -195,12 +190,11 @@
             border-radius: 8px;
             display: flex;
             align-items: center;
-            flex-wrap: wrap; /* Permite quebrar linha em mobile */
+            flex-wrap: wrap; 
             gap: 15px;
             transition: all 0.3s ease;
         }
 
-        /* Estilo especial quando está cheio (3/3) */
         .active-inventory-bar.slots-full {
             border-color: var(--neon-gold);
             box-shadow: 0 0 15px rgba(252, 238, 10, 0.1);
@@ -321,7 +315,7 @@
 {% endblock %}
 
 {% block content %}
-
+{{ render_assistant(assistant_data) }}
 <div class="market-hud font-tech">
     <div class="container">
         
@@ -340,11 +334,11 @@
 
             <div class="d-flex flex-column align-items-center gap-2">
                 <div class="resource-pill">
-                    <i class="bi bi-lightning-fill text-warning"></i> 
+                    <i class="bi bi-bootstrap-reboot text-warning"></i> 
                     <span>Quiz Tokens: <strong class="text-white">{{ guardian.retake_tokens }}</strong></span>
                 </div>
                 <div class="resource-pill">
-                    <i class="bi bi-controller text-info"></i> 
+                    <i class="bi bi-controller text-warning"></i> 
                     <span>Minigame Tokens: <strong class="text-white">{{ guardian.minigame_retake_tokens }}</strong></span>
                 </div>
             </div>
@@ -365,7 +359,6 @@
 
 <div class="container mb-5">
 
-    {% set max_slots = 3 %}
     {% set occupied = active_modules|length %}
     {% set is_full = occupied >= max_slots %}
 

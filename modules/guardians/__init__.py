@@ -2,6 +2,7 @@
 
 from flask import Blueprint
 
+
 guardians_bp = Blueprint(
     'guardians_bp', 
     __name__,
@@ -19,5 +20,5 @@ admin_v2_bp = Blueprint(
 
 from . import routes
 from . import admin_refactored_routes 
-#from . import admin_routes
 from . import missions_logic
+from . import my_profile

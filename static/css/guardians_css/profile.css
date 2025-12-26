@@ -2,16 +2,33 @@
    VARIAVEIS GLOBAIS & THEME (CYBERPUNK)
    ========================================= */
 :root {
+    /* Cores Base */
     --bg-dark: #0b0c10;
     --bg-panel: #1f2833;
     --text-main: #c5c6c7;
-    --neon-blue: #45f3ff; /* Azul Cibersegurança */
-    --neon-green: #39ff14; /* Hacker Green */
-    --neon-red: #ff003c; /* Alerta/Erro */
-    --neon-yellow: #fcee0a; /* Warning */
+    
+    /* Cores Neon */
+    --neon-blue: #0dcaf0; 
+    --neon-green: #39ff14; 
+    --neon-red: #bb2d3b; 
+    --neon-yellow: #fcee0a; 
+    --neon-grey: #b1b6be;
+    
+    /* Raridades RPG */
+    --rarity-common: #adb5bd;    /* Cinza */
+    --rarity-rare: #0dcaf0;      /* Azul */
+    --rarity-epic: #d63384;      /* Roxo/Magenta */
+    --rarity-legendary: #ffc107; /* Dourado */
+
+    /* Utilitários */
     --glass-border: 1px solid rgba(255, 255, 255, 0.1);
-    --tech-font: 'Courier New', Courier, monospace; /* Fonte Hacker */
+    --tech-font: 'Courier New', Courier, monospace;
     --ui-font: system-ui, -apple-system, sans-serif;
+}
+
+/* Reset Básico de Segurança */
+*, *::before, *::after {
+    box-sizing: border-box;
 }
 
 body {
@@ -25,15 +42,17 @@ body {
 .font-tech { font-family: var(--tech-font); letter-spacing: -0.5px; }
 .text-neon-blue { color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
 .text-neon-green { color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
-
+.text-white-glow { color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+.text-neon-red { color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
+.text-neon-grey { color: var(--neon-grey); text-shadow: 0 0 5px var(--neon-grey); }
 /* =========================================
    ESTRUTURA DE CARDS (CYBER PANELS)
    ========================================= */
 .cyber-card {
     background: rgba(31, 40, 51, 0.95);
     border: 1px solid #2c3e50;
-    border-left: 3px solid var(--neon-blue); /* Identidade visual */
-    border-radius: 4px; /* Cantos levemente arredondados, mais quadrados */
+    border-left: 3px solid var(--neon-blue);
+    border-radius: 4px;
     margin-bottom: 1.5rem;
     position: relative;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
@@ -71,8 +90,9 @@ body {
    HEADER DO PERFIL
    ========================================= */
 .profile-hero {
+    /* Fallback color + Gradient + Image */
     background: linear-gradient(180deg, rgba(11,12,16,0) 0%, rgba(11,12,16,1) 100%), 
-                url('https://c4.wallpaperflare.com/wallpaper/586/364/563/digital-art-grid-lines-abstract-dark-background-wallpaper-preview.jpg'); /* Background Tech Genérico ou Asset Local */
+                url('https://c4.wallpaperflare.com/wallpaper/586/364/563/digital-art-grid-lines-abstract-dark-background-wallpaper-preview.jpg');
     background-size: cover;
     background-position: center;
     padding: 3rem 0 1rem 0;
@@ -88,13 +108,13 @@ body {
     border: 2px solid var(--neon-blue);
     padding: 4px;
     background: #000;
-    
 }
 
 .avatar-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    /* Clip-path tech style */
     clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
 }
 
@@ -109,21 +129,23 @@ body {
     padding: 2px 8px;
     font-weight: bold;
     z-index: 2;
+    font-size: 0.8rem;
 }
 
 /* Caminhos (Specializations) Colors */
 .spec-vermelho .avatar-frame, .spec-vermelho .level-badge { border-color: var(--neon-red); color: var(--neon-red); }
 .spec-vermelho .profile-hero { border-bottom-color: var(--neon-red); }
 
-.spec-verde .avatar-frame, .spec-verde .level-badge { border-color: var(--neon-green); color: var(--neon-green); }
-.spec-verde .profile-hero { border-bottom-color: var(--neon-green); }
+.spec-cinza .avatar-frame, .spec-cinza .level-badge { border-color: var(--neon-grey); color: var(--neon-grey); }
+.spec-cinza .profile-hero { border-bottom-color: var(--neon-grey); }
 
 /* =========================================
-   BARRA DE XP & STATS
+   XP & STATS
    ========================================= */
 .xp-system {
     max-width: 600px;
     margin: 1rem auto;
+    padding: 0 15px; /* Padding safe para mobile */
 }
 
 .tech-progress {
@@ -131,7 +153,6 @@ body {
     background: #333;
     border: 1px solid #555;
     position: relative;
-    overflow: visible; /* Para efeitos */
 }
 
 .tech-progress-bar {
@@ -150,7 +171,7 @@ body {
     color: #888;
 }
 
-/* Container de Dias da Semana */
+/* Tracker Semanal */
 .week-tracker {
     display: flex;
     gap: 4px;
@@ -187,28 +208,13 @@ body {
     box-shadow: 0 0 15px var(--neon-blue);
 }
 
-.btn-choose-path {
-    width: 100%;
-    padding: 1.5rem;
-    border: 2px dashed var(--neon-yellow);
-    color: var(--neon-yellow);
-    font-size: 1.2rem;
-    animation: pulse-border 2s infinite;
-    background: rgba(252, 238, 10, 0.05);
-}
-
-@keyframes pulse-border {
-    0% { border-color: rgba(252, 238, 10, 0.4); }
-    50% { border-color: rgba(252, 238, 10, 1); box-shadow: 0 0 20px rgba(252, 238, 10, 0.3); }
-    100% { border-color: rgba(252, 238, 10, 0.4); }
-}
-
 /* =========================================
-   INVENTÁRIO & MISSÕES
+   INVENTÁRIO & GRID
    ========================================= */
 .inventory-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* CORREÇÃO: Grid Responsivo Automático (Minimo 140px por item) */
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 10px;
     padding: 10px;
 }
@@ -219,12 +225,33 @@ body {
     padding: 10px;
     text-align: center;
     position: relative;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100px; /* Garante altura mínima visual */
 }
 
-.inventory-icon { font-size: 1.5rem; margin-bottom: 5px; color: #ffd700; }
-.inventory-count { font-family: var(--tech-font); font-size: 1.2rem; font-weight: bold; color: #fff; }
-.inventory-label { font-size: 0.7rem; text-transform: uppercase; color: #777; }
+/* Estilos de Raridade */
+.inventory-slot.rarity-COMMON { border-color: var(--rarity-common); color: var(--rarity-common); }
+.inventory-slot.rarity-COMMON:hover { box-shadow: 0 0 10px var(--rarity-common); }
 
+.inventory-slot.rarity-RARE { border-color: var(--rarity-rare); color: var(--rarity-rare); }
+.inventory-slot.rarity-RARE:hover { box-shadow: 0 0 15px var(--rarity-rare); background: rgba(13, 202, 240, 0.05); }
+
+.inventory-slot.rarity-EPIC { border-color: var(--rarity-epic); color: var(--rarity-epic); }
+.inventory-slot.rarity-EPIC:hover { box-shadow: 0 0 15px var(--rarity-epic); background: rgba(214, 51, 132, 0.05); }
+
+.inventory-slot.rarity-LEGENDARY { border-color: var(--rarity-legendary); color: var(--rarity-legendary); }
+.inventory-slot.rarity-LEGENDARY:hover { box-shadow: 0 0 20px var(--rarity-legendary); background: rgba(255, 193, 7, 0.05); }
+
+.inventory-slot img { filter: drop-shadow(0 0 2px currentColor); }
+
+.inventory-count { font-family: var(--tech-font); font-size: 1.2rem; font-weight: bold; color: #fff; }
+.inventory-label { font-size: 0.7rem; text-transform: uppercase; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inventory-bonus-text { font-size: 0.65rem; color: #aaa; margin-top: -2px; font-family: var(--tech-font); }
+
+/* Barras de Crafting/Token */
 .crafting-progress {
     height: 4px;
     background: #222;
@@ -292,162 +319,23 @@ body {
 .terminal-item:hover { background: rgba(255,255,255,0.02); }
 .term-date { color: var(--neon-blue); margin-right: 10px; }
 
-
 /* =========================================
-   CUSTOM POPOVER (BUFFS STYLE)
+   WIDGETS & POPOVERS
    ========================================= */
-.custom-popover-mp {
-    /* Sobrescrevendo variáveis do Bootstrap */
-    --bs-popover-bg: #141414;              /* Fundo Escuro */
-    --bs-popover-body-color: #ffffff;
-    --bs-popover-border-color: var(--neon-blue); /* Borda Neon */
-    --bs-popover-header-bg: var(--neon-blue);       /* Cabeçalho mais escuro */
-    --bs-popover-header-color: #ffffff;       /* Texto cabeçalho */
-    --bs-popover-body-padding-x: 0;        /* Reset padding para controle total */
-    --bs-popover-body-padding-y: 0;
-    --bs-popover-max-width: 320px;         /* Um pouco mais largo */
-    
-    font-family: var(--tech-font);         /* Fonte Hacker */
-    box-shadow: 0 0 15px rgba(69, 243, 255, 0.2);
-    border: 1px solid var(--neon-blue);
-}
-
-.custom-popover-mp .popover-header {
-    font-family: var(--tech-font);
-    font-weight: bold;
-    color: #000;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 12px 15px;
-}
-
-.custom-popover-mp .popover-body {
-    padding: 0;
-}
-
-/* Estilo de cada item da lista de buffs */
-.buff-item {
-    padding: 12px 15px;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    transition: background 0.2s;
-}
-
-.buff-item:last-child {
-    border-bottom: none;
-}
-
-.buff-item:hover {
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.buff-icon {
-    font-size: 1.4rem;
-    line-height: 1;
-    margin-top: 2px;
-}
-
-.buff-content {
-    flex: 1;
-}
-
-.buff-title {
-    display: block;
-    font-weight: bold;
-    font-size: 0.9rem;
-    color: #fff;
-    margin-bottom: 2px;
-}
-
-.buff-desc {
-    display: block;
-    font-size: 0.75rem;
-    color: #aaa;
-    line-height: 1.3;
-}
-
-/* Setinha do Popover (Arrow) - Ajuste para ficar escura */
-.custom-popover .popover-arrow::after {
-    --bs-popover-bg: #141414; 
-}
-
-/* Ajustes Finos no Inventário RPG */
-
-/* Slot padrão (Recurso) */
-.resource-slot {
-    border-color: #444;
-}
-
-/* Cores de "Raridade" / Categoria */
-.item-consumable {
-    border-color: #2ecc71 !important; /* Verde RPG Potion */
-    background: linear-gradient(180deg, rgba(46, 204, 113, 0.05), rgba(0,0,0,0));
-}
-.item-consumable .inventory-icon { color: #2ecc71; }
-
-.item-rare {
-    border-color: #9b59b6 !important; /* Roxo Epic */
-    background: linear-gradient(180deg, rgba(155, 89, 182, 0.05), rgba(0,0,0,0));
-}
-.item-rare .inventory-icon { color: #9b59b6; }
-
-.item-legendary {
-    border-color: #f1c40f !important; /* Dourado Legendary */
-    background: linear-gradient(180deg, rgba(241, 196, 15, 0.05), rgba(0,0,0,0));
-}
-.item-legendary .inventory-icon { color: #f1c40f; }
-
-/* Texto de Bônus Minimalista */
-.inventory-bonus-text {
-    font-size: 0.65rem;
-    color: #aaa;
-    margin-top: -2px;
-    font-family: var(--tech-font);
-    letter-spacing: -0.5px;
-}
-
-/* Stack Count (Quantidade) */
-.inventory-slot .inventory-count {
-    font-size: 1.1rem; 
-    /* Ajuste para não brigar com o ícone */
-}
-
-/* =========================================
-   AJUSTE DE IMAGENS (REMOVER FUNDO BRANCO)
-   ========================================= */
-
-/* 1. Para a insígnia de destaque (no cabeçalho, ao lado do nome) */
-.featured-insignia-badge {
-    clip-path: circle(48% at center); /* Cria um círculo que corta o fundo */
-    -webkit-clip-path: circle(48% at center); /* Suporte para Safari/Chrome antigos */
-    /* Usei 48% para garantir que a borda prateada da imagem não seja cortada */
-}
-
-/* 2. Para todas as insígnias na lista de conquistas */
-.insignia-preview {
+/* Insígnias Redondas */
+.featured-insignia-badge, .insignia-preview {
     clip-path: circle(48% at center);
     -webkit-clip-path: circle(48% at center);
-    border-radius: 50%; /* Garante que a sombra/hover também seja circular */
+    border-radius: 50%;
 }
+.insignia-preview:hover { transform: scale(1.1); box-shadow: 0 0 15px rgba(69, 243, 255, 0.3); }
 
-/* Ajuste opcional: sombra circular no hover */
-.insignia-preview:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 15px rgba(69, 243, 255, 0.3); /* Sombra neon circular */
-}
-
-/* =========================================
-   WIDGET DE PROTOCOLO (NOVO DESIGN)
-   ========================================= */
-
+/* Protocol Widget (Path) */
 .protocol-widget {
     display: flex;
     align-items: center;
     padding: 15px 20px;
-    border-radius: 6px; /* Bordas levemente arredondadas, mas técnicas */
+    border-radius: 6px;
     background: rgba(20, 20, 25, 0.8);
     border: 1px solid #333;
     transition: all 0.3s ease;
@@ -455,123 +343,103 @@ body {
     overflow: hidden;
     backdrop-filter: blur(5px);
 }
-
 .protocol-widget::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 4px; height: 100%;
-    background: #555; /* Cor padrão da barra lateral */
-    transition: all 0.3s;
+    content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+    background: #555; transition: all 0.3s;
 }
 
-/* --- ÍCONE ESQUERDO --- */
-.widget-icon {
-    font-size: 1.8rem;
-    margin-right: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 50px;
-    height: 50px;
-    background: rgba(255,255,255,0.05);
+.widget-icon { font-size: 1.8rem; margin-right: 20px; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: rgba(255,255,255,0.05); border-radius: 4px; }
+.widget-content { flex-grow: 1; }
+.widget-title { font-family: var(--tech-font); font-weight: bold; font-size: 1rem; letter-spacing: 1px; margin-bottom: 2px; }
+.widget-desc { font-size: 0.8rem; color: #888; font-family: var(--ui-font); }
+.widget-action { font-family: var(--tech-font); font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; opacity: 0.8; }
+.widget-status-text { font-family: var(--tech-font); font-size: 0.8rem; letter-spacing: 2px; opacity: 0.5; }
+
+/* Estados do Widget */
+.widget-locked { border-color: #333; background: #0f1012; cursor: not-allowed; opacity: 0.9; background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 10px, rgba(255, 255, 255, 0.01) 10px, rgba(255, 255, 255, 0.01) 20px); }
+.widget-locked::before { background: var(--neon-red); }
+.widget-ready { border-color: rgba(13, 202, 240, 0.3); background: linear-gradient(90deg, rgba(13, 202, 240, 0.05), rgba(0,0,0,0)); }
+.widget-ready::before { background: var(--neon-blue); }
+.widget-ready:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(13, 202, 240, 0.15); transform: translateY(-2px); }
+
+/* =========================================
+   STATUS WINDOW (MODAL JRPG)
+   ========================================= */
+
+/* O Botão de abrir */
+.btn-cyber-status {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #45a29e;
+    color: #fff;
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+}
+.btn-cyber-status:hover {
+    background: rgba(69, 243, 255, 0.1);
+    box-shadow: 0 0 15px rgba(69, 243, 255, 0.2);
+    border-color: #66fcf1;
+    transform: translateY(-2px);
+}
+
+/* O Modal em si */
+.cyber-modal-content {
+    background-color: #0b0c10; /* Fundo bem escuro */
+    border: 1px solid var(--neon-blue);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 
+                inset 0 0 20px rgba(13, 202, 240, 0.05);
     border-radius: 4px;
 }
 
-/* --- TEXTOS --- */
-.widget-content {
-    flex-grow: 1;
+/* Fundo da área de lista */
+.status-screen-bg {
+    background: rgba(20, 20, 25, 0.5);
+    min-height: 200px;
 }
 
-.widget-title {
-    font-family: var(--tech-font);
-    font-weight: bold;
-    font-size: 1rem;
-    letter-spacing: 1px;
-    margin-bottom: 2px;
+.buff-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px; /* Mais espaçado no modal */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s;
 }
 
-.widget-desc {
-    font-size: 0.8rem;
-    color: #888;
-    font-family: var(--ui-font);
+.buff-row:hover {
+    background: rgba(255, 255, 255, 0.03);
 }
 
-/* --- AÇÃO/STATUS DIREITA --- */
-.widget-action {
-    font-family: var(--tech-font);
-    font-weight: bold;
-    font-size: 0.9rem;
+.buff-source {
     display: flex;
     align-items: center;
-    gap: 8px;
-    opacity: 0.8;
+    gap: 12px;
+    font-family: var(--ui-font);
+    font-weight: 600;
+    color: #e0e0e0;
+    font-size: 0.95rem;
 }
 
-.widget-status-text {
+.buff-target {
     font-family: var(--tech-font);
-    font-size: 0.8rem;
-    letter-spacing: 2px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
     opacity: 0.5;
+    margin-left: auto; /* Empurra para a direita */
+    margin-right: 15px;
 }
 
-/* ================== VARIANTES DE ESTADO ================== */
-
-/* 1. WARNING (Sem Caminho) - Amarelo Pulsante */
-.widget-warning {
-    border-color: rgba(255, 193, 7, 0.3);
-    background: linear-gradient(90deg, rgba(255, 193, 7, 0.05), rgba(0,0,0,0));
-}
-.widget-warning::before { background: #ffc107; }
-.widget-warning .widget-icon { color: #ffc107; box-shadow: 0 0 10px rgba(255, 193, 7, 0.2); }
-.widget-warning .widget-title { color: #ffc107; }
-.widget-warning .widget-action { color: #ffc107; }
-
-.widget-warning:hover {
-    border-color: #ffc107;
-    box-shadow: 0 0 15px rgba(255, 193, 7, 0.1);
-    transform: translateY(-2px);
+.buff-value {
+    font-family: var(--tech-font);
+    font-weight: bold;
+    font-size: 1.1rem;
+    min-width: 60px;
+    text-align: right;
 }
 
-/* 2. LOCKED (Em Cooldown) - Cinza/Vermelho Tech */
-.widget-locked {
-    border-color: #333;
-    background: #0f1012; /* Bem escuro */
-    cursor: not-allowed;
-    opacity: 0.9;
-}
-.widget-locked::before { background: var(--neon-red); } /* Barra vermelha indicando bloqueio */
-.widget-locked .widget-icon { color: #666; }
-.widget-locked .widget-title { color: #888; }
-.widget-locked .widget-status-text { color: var(--neon-red); }
-
-/* Padrão de listras para indicar "Inativo" */
-.widget-locked {
-    background-image: repeating-linear-gradient(
-        45deg,
-        rgba(0, 0, 0, 0),
-        rgba(0, 0, 0, 0) 10px,
-        rgba(255, 255, 255, 0.01) 10px,
-        rgba(255, 255, 255, 0.01) 20px
-    );
-}
-
-/* 3. READY (Liberado) - Azul/Ciano */
-.widget-ready {
-    border-color: rgba(13, 202, 240, 0.3);
-    background: linear-gradient(90deg, rgba(13, 202, 240, 0.05), rgba(0,0,0,0));
-}
-.widget-ready::before { background: var(--neon-blue); }
-.widget-ready .widget-icon { color: var(--neon-blue); }
-.widget-ready .widget-title { color: #fff; }
-.widget-ready .widget-action { color: var(--neon-blue); }
-
-.widget-ready:hover {
-    border-color: var(--neon-blue);
-    box-shadow: 0 0 15px rgba(13, 202, 240, 0.15);
-    transform: translateY(-2px);
-}
-.widget-ready:hover .widget-action {
-    color: #fff;
-    text-shadow: 0 0 5px var(--neon-blue);
-}
-
+/* Cores dos atributos (Garante que apareçam no fundo escuro) */
+.stat-gold { color: #ffd700; text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+.stat-int  { color: #0dcaf0; text-shadow: 0 0 5px rgba(13, 202, 240, 0.3); }
+.stat-def  { color: #20c997; text-shadow: 0 0 5px rgba(32, 201, 151, 0.3); }
+.stat-dex  { color: #d63384; text-shadow: 0 0 5px rgba(214, 51, 132, 0.3); }
+.stat-str  { color: #ff4d4d; text-shadow: 0 0 5px rgba(255, 77, 77, 0.3); }
+.stat-all  { color: #f8f9fa; }

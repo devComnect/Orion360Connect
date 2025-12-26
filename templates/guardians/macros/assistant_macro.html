@@ -1,0 +1,158 @@
+{% macro render_assistant(assistant_data) %}
+    {% if assistant_data %}
+    
+    <style>
+.osi-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            pointer-events: none;
+            animation: slideInOSI 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.27);
+        }
+
+        .osi-avatar-wrapper {
+            position: relative;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .osi-avatar-wrapper:hover { transform: scale(1.05); }
+
+        .osi-avatar-img {
+            width: 80px; 
+            height: 80px;
+            /* Drop Shadow dinâmico usando a cor do tema */
+            filter: drop-shadow(0 0 8px {{ assistant_data.theme_color }});
+        }
+
+        .osi-bubble {
+            background: rgba(15, 15, 20, 0.95);
+            border: 1px solid {{ assistant_data.theme_color }};
+            border-left: 3px solid {{ assistant_data.theme_color }};
+            border-radius: 6px 6px 0 6px;
+            padding: 15px;
+            width: 300px;
+            color: #e0e0e0
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            animation: fadeInOSI 0.5s 0.6s forwards;
+            margin-bottom: 20px;
+        }
+
+        .osi-header {
+            font-size: 0.7rem;
+            /* Cor do Título dinâmica */
+            color: {{ assistant_data.theme_color }}; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            padding-bottom: 4px;
+        }
+
+        .osi-content { min-height: 40px; line-height: 1.4; margin-bottom: 10px; }
+        
+        .osi-btn {
+            align-self: flex-end;
+            background: transparent;
+            border: 1px solid #444;
+            color: #888;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .osi-btn:hover { 
+            border-color: {{ assistant_data.theme_color }}; 
+            color: {{ assistant_data.theme_color }}; 
+            background: rgba(255, 255, 255, 0.05); 
+        }
+
+        .cursor-blink::after { content: '|'; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        @keyframes slideInOSI { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeInOSI { to { opacity: 1; } }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+
+    <div id="osi-widget" class="osi-container">
+        
+        <div class="osi-bubble">
+            <div class="osi-header">
+                {# Ícone muda dependendo se é tutorial ou lore #}
+                {% if assistant_data.is_tutorial %}
+                    <i class="bi bi-exclamation-circle-fill"></i> {{ assistant_data.title }}
+                {% else %}
+                    <i class="bi bi-broadcast"></i> {{ assistant_data.title }}
+                {% endif %}
+            </div>
+            
+            <div class="osi-content cursor-blink" id="osi-typewriter"></div>
+
+            <button class="osi-btn" onclick="closeOSI('{{ assistant_data.tutorial_id }}', {{ 'true' if assistant_data.is_tutorial else 'false' }})">
+                {% if assistant_data.is_tutorial %}Entendido{% else %}Fechar{% endif %}
+            </button>
+        </div>
+
+        <div class="osi-avatar-wrapper" onclick="document.querySelector('.osi-bubble').classList.toggle('d-none')">
+            <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ assistant_data.avatar_seed }}" class="osi-avatar-img" alt="OSI">
+        </div>
+    </div>
+
+<script>
+        (function(){
+            const text = "{{ assistant_data.text }}";
+            const shouldAutoDismiss = {{ 'true' if assistant_data.auto_dismiss else 'false' }};
+            const el = document.getElementById('osi-typewriter');
+            const widget = document.getElementById('osi-widget');
+            let i = 0;
+
+            function type() {
+                if (i < text.length) {
+                    el.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, 25);
+                } else {
+                    el.classList.remove('cursor-blink');
+                    if (shouldAutoDismiss) { startDismissTimer(); }
+                }
+            }
+            
+            function startDismissTimer() {
+                const readTime = 4000 + (text.length * 60);
+                setTimeout(() => {
+                    if (document.body.contains(widget)) { window.closeOSI(null, false); }
+                }, readTime);
+            }
+
+            setTimeout(type, 1200);
+
+            window.closeOSI = function(tId, isTut) {
+                widget.style.transition = "opacity 0.8s ease, transform 0.8s ease";
+                widget.style.opacity = "0";
+                widget.style.transform = "translateY(30px)";
+                
+                if (isTut && tId && tId !== 'None') {
+                    fetch('/api/mark-tutorial-seen/' + tId, { method: 'POST' }).catch(e => console.error(e));
+                }
+                setTimeout(() => { if(widget) widget.remove(); }, 800);
+            }
+        })();
+    </script>
+    {% endif %}
+{% endmacro %}

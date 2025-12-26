@@ -1,28 +1,27 @@
 # modules/guardians/routes.py
 import traceback
 import os, uuid, random
-from flask_login import current_user
 from werkzeug.utils import secure_filename
-from collections import defaultdict
 from datetime import datetime, date, timedelta, timezone
 from sqlalchemy import func, not_, desc
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm.attributes import flag_modified
-from flask import Blueprint, abort, render_template, redirect, url_for, request, flash, session, jsonify, current_app, json
+from flask import abort, render_template, redirect, url_for, request, flash, session, jsonify, current_app, json
 from modules.guardians.missions_logic import update_mission_progress, get_or_create_active_quest_set
 from modules.login.decorators import login_required
 from modules.login.session_manager import SessionManager
-from modules.guardians.password_game_rules import generate_rules_sequence, get_rules_details, validate_password_backend, PASSWORD_RULES_DB, get_game_config
-from application.models import (MissionCodeEnum, db, TermoGame, Guardians, HistoricoAcao, NivelSeguranca, Insignia, 
-                                EventoPontuacao, Quiz, AnswerOption, QuizAttempt, UserAnswer, Specialization, 
-                                TermoAttempt, AnagramGame, AnagramAttempt, SpecializationPerkLevel, GuardianInsignia, 
-                                Perk, FeedbackReport, GameSeason, WeeklyQuestSet, ShopItem, GuardianPurchase, PasswordAttempt, PasswordGameConfig)
+from modules.guardians.password_game_rules import generate_rules_sequence, get_rules_details, validate_password_backend, get_game_config
+from application.models import (MissionCodeEnum, db, TermoGame, Guardians, HistoricoAcao, NivelSeguranca, Insignia, GuardianFeatured,
+                                EventoPontuacao, Quiz, QuizAttempt, UserAnswer, TermoAttempt, AnagramGame, AnagramAttempt, FeedbackReport, 
+                                GameSeason, WeeklyQuestSet, ShopItem, GuardianPurchase, PasswordAttempt, PasswordGameConfig)
 from .logic import (
-    update_user_streak, atualizar_nivel_usuario, get_achievement_sort_key, get_active_perk_value, 
-    get_global_setting, calculate_week_days_status, get_effective_streak_percentage, calculate_weekly_coin_reward,
-    get_insignia_category, calculate_final_score, calculate_performance_bonuses, calculate_reroll_cost, get_game_setting,
+    update_user_streak, atualizar_nivel_usuario, get_achievement_sort_key, get_active_perk_value, get_total_bonus,
+    get_global_setting, calculate_weekly_coin_reward,
+    calculate_final_score, calculate_performance_bonuses, calculate_reroll_cost, get_game_setting,
     check_shop_slots_available, _get_shop_bonus, _get_insignia_bonus, get_or_create_shop_state, select_unique_daily_items)
+from .utils_assistant import get_assistant_data
 from . import guardians_bp
+
 
 #UPLOAD DE PRINTS PARA REPORT DE BUGS#
 UPLOAD_FOLDER_FEEDBACK = 'static/uploads/feedback'
@@ -55,340 +54,6 @@ BONUS_TYPES = {
 }
 ##
 
-@guardians_bp.route('/meu-perfil', defaults={'perfil_id': None})
-@guardians_bp.route('/meu-perfil/<int:perfil_id>')
-@login_required
-def meu_perfil(perfil_id):
-
-    logged_in_user_id = SessionManager.get("user_id")
-    profile_guardian_id = None 
-    is_own_profile = False
-    logged_in_guardian = Guardians.query.filter_by(user_id=logged_in_user_id).first()
-
-    if perfil_id is None:
-        profile_guardian_id = logged_in_user_id 
-        is_own_profile = True
-        query_filter = Guardians.user_id == profile_guardian_id
-    else:
-        profile_guardian_id = perfil_id # 
-        query_filter = Guardians.id == profile_guardian_id
-        temp_guardian = Guardians.query.get(profile_guardian_id) 
-        if temp_guardian and temp_guardian.user_id == logged_in_user_id:
-             is_own_profile = True
-
-    perfil = Guardians.query.options(
-        joinedload(Guardians.nivel),
-        joinedload(Guardians.specialization),
-        joinedload(Guardians.featured_insignia) if hasattr(Guardians, 'featured_insignia') else None,
-    ).filter(query_filter).first()
-
-    if not perfil:
-        flash("Perfil de Guardião não encontrado.", "danger")
-        return redirect(url_for("home_bp.render_home")) 
-
-    if not is_own_profile and perfil.is_anonymous:
-        flash('Este guardião optou por manter o perfil privado.', 'info')
-        return redirect(url_for('guardians_bp.rankings'))
-
-    guardian_insignias_entries = GuardianInsignia.query.filter_by(
-        guardian_id=perfil.id
-    ).options(
-        joinedload(GuardianInsignia.insignia) 
-    ).all()
-    insignias_ganhas = [gi.insignia for gi in guardian_insignias_entries if gi.insignia]
-    grouped_insignias = defaultdict(list)
-    for insignia in insignias_ganhas:
-        category = get_insignia_category(insignia)
-        grouped_insignias[category].append(insignia)
-
-    CATEGORY_ORDER = ["Nível", "Pontuação", "Ofensiva", "Quizzes Perfeitos", "Quizzes", "Patrulha", "Anagramas", "Termo", "Outras"]
-    categorized_achievements_list = []
-    for category_name in CATEGORY_ORDER:
-        if category_name in grouped_insignias:
-            categorized_achievements_list.append({
-                'category': category_name,
-                'insignias': grouped_insignias[category_name]
-            })
-
-    effective_streak_percent = get_effective_streak_percentage(perfil)
-    week_days_data = calculate_week_days_status(perfil)
-    active_perks_list = []
-
-    # 0. BÔNUS DE OFENSIVA (DIARIO)
-    if effective_streak_percent > 0:
-        desc_streak = f"+{effective_streak_percent}% de Pontos Globais"
-        active_perks_list.append(f"<strong class='text-danger'><i class='bi bi-fire'></i> Ofensiva:</strong> Bônus global de +{perfil.current_streak}%")
-
-    # 1. BÔNUS DE ESPECIALIZAÇÃO (CAMINHO)
-    if perfil.specialization_id and perfil.nivel_id:
-        current_level_number = perfil.nivel.level_number
-        perk_entries = db.session.query(SpecializationPerkLevel).join(Perk).filter(
-            SpecializationPerkLevel.specialization_id == perfil.specialization_id,
-            SpecializationPerkLevel.level == current_level_number
-        ).options(
-            joinedload(SpecializationPerkLevel.perk) 
-        ).order_by(
-            SpecializationPerkLevel.level, Perk.name
-        ).all()
-
-        for entry in perk_entries:
-            value_display = int(entry.bonus_value) if entry.bonus_value == int(entry.bonus_value) else entry.bonus_value
-            description = entry.perk.description_template.format(value=value_display)
-            active_perks_list.append(f"<strong>{entry.perk.name} (Nv.{entry.level}):</strong> {description}")
-
-    # 2. BÔNUS DE CONQUISTA EM DESTAQUE
-    if perfil.featured_insignia and perfil.featured_insignia.bonus_value:
-        ins = perfil.featured_insignia
-        desc_bonus = f"Bônus de {ins.bonus_value}%" 
-        
-        # Formatação amigável
-        if ins.bonus_type == 'QUIZ_BONUS_PCT': desc_bonus = f"+{ins.bonus_value}% pts em Quizzes"
-        elif ins.bonus_type == 'PATROL_BONUS_PCT': desc_bonus = f"+{ins.bonus_value}% pts em Patrulhas"
-        elif ins.bonus_type == 'CODEGAME_BONUS_PCT': desc_bonus = f"+{ins.bonus_value}% pts em Minigames"
-        elif ins.bonus_type == 'STREAK_BONUS_PCT': desc_bonus = f"+{ins.bonus_value}% pts de Ofensiva"
-        elif ins.bonus_type == 'GLOBAL_SCORE_PCT': desc_bonus = f"+{ins.bonus_value}% pts Globais"
-        
-        active_perks_list.append(f"<strong class='text-warning'><i class='bi bi-trophy-fill'></i> {ins.nome}:</strong> {desc_bonus}")
-
-    try:
-        shop_bonuses = db.session.query(ShopItem)\
-            .join(GuardianPurchase, ShopItem.id == GuardianPurchase.item_id)\
-            .filter(
-                GuardianPurchase.guardian_id == perfil.id,
-                ShopItem.bonus_value > 0,
-                ShopItem.bonus_type.isnot(None),
-                ShopItem.is_active == True 
-            ).all()
-
-        for item in shop_bonuses:
-            desc_bonus = f"+{item.bonus_value}"
-            
-            if desc_bonus.endswith('.0'):
-                desc_bonus = desc_bonus[:-2]
-
-            if '_PCT' in item.bonus_type:
-                desc_bonus += "%"
-            
-            # Formatação amigável
-            if item.bonus_type == 'QUIZ_BONUS_PCT': desc_bonus += " em Quizzes"
-            elif item.bonus_type == 'PATROL_BONUS_PCT': desc_bonus += " em Patrulhas"
-            elif item.bonus_type == 'CODEGAME_BONUS_PCT': desc_bonus += " em Minigames"
-            elif item.bonus_type == 'STREAK_BONUS_PCT': desc_bonus += " na Ofensiva"
-            
-            active_perks_list.append(f"<strong class='text-info'><i class='bi bi-cart4'></i> {item.name}:</strong> {desc_bonus}")
-            
-    except Exception as e:
-        print(f"Erro ao buscar bônus de upgrade: {e}")
-
-    # --- MONTAGEM FINAL DO HTML ---
-    if active_perks_list:
-        active_perks_html = "<ul class='mb-0 ps-3'><li>" + "</li><li>".join(active_perks_list) + "</li></ul>"
-    else:
-        active_perks_html = "<p class='mb-0'>Nenhum bônus ativo no momento.</p>"
-
-
-    historico = perfil.historico_acoes.order_by(desc(HistoricoAcao.data_evento)).limit(50)
-
-    numero_conquistas = len(insignias_ganhas)
-
-    nivel_atual = perfil.nivel 
-    proximo_nivel = None
-    progresso_percentual = 0
-    if nivel_atual and perfil.specialization_id:
-        proximo_nivel = NivelSeguranca.query.filter(
-            NivelSeguranca.specialization_id == perfil.specialization_id, 
-            NivelSeguranca.level_number > nivel_atual.level_number 
-        ).order_by(NivelSeguranca.level_number.asc()).first() 
-        if proximo_nivel:
-            score_para_o_nivel = proximo_nivel.score_minimo - nivel_atual.score_minimo
-            score_atual_no_nivel = (perfil.score_atual or 0) - nivel_atual.score_minimo
-            progresso_percentual = max(0, min(100, int((score_atual_no_nivel / score_para_o_nivel) * 100))) if score_para_o_nivel > 0 else 100
-        else: # Já está no nível máximo
-            progresso_percentual = 100
-    elif not perfil.specialization_id:
-        progresso_percentual = 0 # Sem caminho, sem progresso
-        nivel_atual = None 
-
-    todos_os_perfis = Guardians.query.order_by(Guardians.score_atual.desc()).with_entities(Guardians.id).all()
-    ranking_atual = "N/A"
-    try:
-        ranking_atual = [p.id for p in todos_os_perfis].index(perfil.id) + 1
-    except ValueError:
-        pass 
-
-    # --- LÓGICA DE INVENTÁRIO (LOJA) ---
-    # Busca compras que NÃO expiraram ainda (ou que são permanentes)
-    active_purchases = GuardianPurchase.query.options(
-        joinedload(GuardianPurchase.item)
-    ).filter(
-        GuardianPurchase.guardian_id == perfil.id,
-        (GuardianPurchase.expires_at == None) | (GuardianPurchase.expires_at > datetime.utcnow())
-    ).all()
-
-    # Agrupamento (Stacking) estilo RPG:
-    # Transforma uma lista de 5 linhas de compra em: {'id_item': {dados_item, quantidade: 5}}
-    inventory_bag = {}
-    
-    for purchase in active_purchases:
-        item = purchase.item
-        if item.id not in inventory_bag:
-            
-            # Formatação amigável do Bônus para o Card
-            bonus_display = "Item Raro"
-            if item.bonus_value:
-                val = int(item.bonus_value) if item.bonus_value.is_integer() else item.bonus_value
-                if 'PCT' in (item.bonus_type or ''):
-                    bonus_display = f"+{val}% Bônus"
-                else:
-                    bonus_display = f"+{val} Pontos"
-            elif item.category == 'Cosméticos':
-                bonus_display = "Visual"
-            elif item.category == 'Consumíveis':
-                bonus_display = "Uso Único"
-
-            inventory_bag[item.id] = {
-                'name': item.name,
-                'icon': item.image_path or 'bi-box-seam', # Fallback
-                'category': item.category,
-                'bonus_display': bonus_display,
-                'description': item.description,
-                'count': 0
-            }
-        
-        inventory_bag[item.id]['count'] += 1
-
-    # --- LÓGICA DE COOLDOWN DO CAMINHO (NOVA) ---
-    spec_is_locked = False
-    spec_days_remaining = 0
-    COOLDOWN_DAYS = 14
-    
-    if perfil.last_spec_change_at:
-        # Use datetime.utcnow() ou datetime.now() conforme seu padrão de banco
-        time_since_change = datetime.utcnow() - perfil.last_spec_change_at
-        if time_since_change < timedelta(days=COOLDOWN_DAYS):
-            spec_is_locked = True
-            spec_days_remaining = COOLDOWN_DAYS - time_since_change.days
-
-    # --- LÓGICA DE CONTAGEM DE MINIGAMES ---
-    termo_count = TermoAttempt.query.filter_by(guardian_id=perfil.id, is_won=True).count()
-    password_count = PasswordAttempt.query.filter_by(guardian_id=perfil.id, is_won=True).count()
-    anagram_count = AnagramAttempt.query.filter(AnagramAttempt.guardian_id == perfil.id,AnagramAttempt.completed_at.isnot(None)).count()
-    minigames_count = termo_count + password_count + anagram_count
-
-    quizzes_respondidos_count = QuizAttempt.query.filter_by(guardian_id=perfil.id).count()
-    patrols_completed_count = HistoricoAcao.query.filter(
-         HistoricoAcao.guardian_id == perfil.id,
-         HistoricoAcao.descricao.like('Realizou Patrulha Diária:%')
-     ).count()
-    
-    patrol_completed_today = (perfil.last_patrol_date == date.today())
-    quizzes_needed_for_token = get_global_setting('QUIZZES_FOR_TOKEN', default=5)
-    completed_perfect_quizzes = perfil.perfect_quiz_cumulative_count or 0
-    quizzes_remaining_for_token = quizzes_needed_for_token - (completed_perfect_quizzes % quizzes_needed_for_token) if quizzes_needed_for_token > 0 else 0
-    minigames_needed_for_token = get_global_setting('MINIGAMES_FOR_TOKEN', default=5, setting_type=int)
-    completed_perfect_minigames = perfil.perfect_minigame_cumulative_count or 0
-    minigames_remaining = minigames_needed_for_token - (completed_perfect_minigames % minigames_needed_for_token) if minigames_needed_for_token > 0 else 0
-
-    quest_set = None
-    active_missions = []
-    
-    # SÓ executa se for o perfil do próprio usuário E o guardião foi encontrado
-    if is_own_profile and logged_in_guardian:
-        try:
-            quest_data = get_or_create_active_quest_set(logged_in_guardian) 
-            quest_set = quest_data.get('set')
-            active_missions = quest_data.get('missions') # Esta é uma lista
-
-            if quest_set:
-                total_count = len(active_missions)
-                completed_count = sum(1 for m in active_missions if m.is_completed)
-                
-                quest_set.total_missions_count = total_count
-                quest_set.completed_missions_count = completed_count
-                
-                for m in active_missions:
-                    m.description_display = m.title_generated 
-
-        except Exception as e:
-            print(f"Erro ao buscar/criar missões semanais: {e}")
-            flash("Não foi possível carregar suas missões semanais.", "danger")
-
-    return render_template(
-        'guardians/page_meu_perfil.html',
-        perfil=perfil,
-        is_own_profile=is_own_profile,
-        historico=historico,
-        categorized_achievements_list=categorized_achievements_list,
-        nivel_atual=nivel_atual,
-        proximo_nivel=proximo_nivel,
-        progresso_percentual=progresso_percentual,
-        inventory_bag=inventory_bag,
-        ranking_atual=ranking_atual,
-        numero_conquistas=numero_conquistas,
-        quizzes_respondidos_count=quizzes_respondidos_count,
-        minigames_count=minigames_count,
-        quizzes_needed_for_token=quizzes_needed_for_token,
-        minigames_needed_for_token=minigames_needed_for_token,
-        patrol_completed_today=patrol_completed_today,
-        patrols_completed_count=patrols_completed_count,
-        quizzes_remaining=quizzes_remaining_for_token,
-        effective_streak_percent=effective_streak_percent,
-        week_days_data=week_days_data,
-        active_perks_html=active_perks_html,
-        quest_set=quest_set,
-        active_missions=active_missions,
-        spec_is_locked=spec_is_locked,       
-        spec_days_remaining=spec_days_remaining,
-        minigames_remaining=minigames_remaining
-    )
-
-
-##ROTA PRA EDITAR PERFIL
-@guardians_bp.route('/meu-perfil/editar', methods=['GET', 'POST'])
-@login_required
-def edit_profile():
-    logged_in_user_id = SessionManager.get("user_id")
-    guardian = Guardians.query.filter_by(user_id=logged_in_user_id).first()
-
-    if not guardian:
-        flash("Perfil de Guardião não pôde ser carregado para edição.", "danger")
-        return redirect(url_for('guardians_bp.meu_perfil'))
-
-    minhas_insignias = GuardianInsignia.query.filter_by(
-        guardian_id=guardian.id
-    ).options(
-        joinedload(GuardianInsignia.insignia)
-    ).all()
-    available_colors = {
-        'Padrão (Branco)': None, 'Dourado': '#FFD700', 'Vermelho': '#BB2D3B', 'Azul Escuro': '#006EC7', 'Cinza': '#C0C0C0',
-        'Bronze': '#CD7F32', 'Azul': '#00BFFF', 'Verde': '#39FF14',
-        'Magenta': '#FF00FF', 
-    }
-
-    if request.method == 'POST':
-        
-        # 1. Salva 
-        guardian.nickname = request.form.get('nickname')
-        guardian.is_anonymous = 'is_anonymous' in request.form
-        guardian.opt_in_real_name_ranking = 'opt_in_real_name_ranking' in request.form
-        
-        featured_id = request.form.get('featured_insignia_id')
-        guardian.featured_insignia_id = int(featured_id) if featured_id else None
-        
-        selected_color = request.form.get('name_color')
-        if selected_color in available_colors.values():
-            guardian.name_color = selected_color if selected_color else None
-        
-        db.session.commit()
-        flash('Perfil atualizado com sucesso!', 'success')
-        return redirect(url_for('guardians_bp.meu_perfil'))
-
-    return render_template('guardians/page_edit_profile.html', 
-                           guardian=guardian,
-                           perfil=guardian,
-                           minhas_insignias=minhas_insignias,
-                           available_colors=available_colors)
-    
 ##ROTA DA PAGINA DE RANKINGS
 @guardians_bp.route('/rankings')
 @login_required 
@@ -400,9 +65,12 @@ def rankings():
     
     current_guardian_id = guardian_logado.id if guardian_logado else -1
 
-    ranking_global = Guardians.query.options(joinedload(Guardians.featured_insignia)).order_by(desc(Guardians.score_atual)).all()
+    ranking_global = Guardians.query.order_by(desc(Guardians.score_atual)).all()
 
-    ranking_streak = Guardians.query.options(joinedload(Guardians.featured_insignia)).order_by(Guardians.current_streak.is_(None), desc(Guardians.current_streak)).all()
+    ranking_streak = Guardians.query.order_by(
+        Guardians.current_streak.is_(None), 
+        desc(Guardians.current_streak)
+    ).all()
 
     active_season = GameSeason.query.filter_by(is_active=True).first()
 
@@ -758,7 +426,6 @@ def submit_quiz():
 
         # --- Lógica de Abandono / Tempo Esgotado ---
         is_timer_expired = request.form.get('timer_expired') == 'true'
-        is_abandoned = request.form.get('abandoned') == 'true'
         if request.form.get('timer_expired') == 'true' or request.form.get('abandoned') == 'true':
             message = "Tempo esgotado! Tentativa zerada." if is_timer_expired else "Quiz abandonado! Tentativa zerada."
             attempt.score = 0
@@ -780,7 +447,6 @@ def submit_quiz():
             submitted_ids = [int(opt_id) for opt_id in submitted_option_ids_str]
             
             for selected_id in submitted_ids:
-                # Salva a resposta do usuário
                 user_answer = UserAnswer(
                     quiz_attempt_id=attempt.id,
                     question_id=question.id,
@@ -788,7 +454,6 @@ def submit_quiz():
                 )    
                 db.session.add(user_answer)
                 
-                # Verifica se está correta
             correct_options = [opt for opt in question.options if opt.is_correct]
             correct_ids = [opt.id for opt in correct_options]
             if set(submitted_ids) == set(correct_ids):
@@ -1093,7 +758,6 @@ def check_patrol_guess():
     data = request.get_json()
     guess = data.get('guess', '')
 
-    # Validação básica
     if not guess or len(guess) != 4 or not guess.isdigit():
         return jsonify({'status': 'error', 'message': 'Inválido. Digite 4 números.'}), 400
 
@@ -1103,39 +767,32 @@ def check_patrol_guess():
 
     session['patrol_attempts'] += 1
     attempts_count = session['patrol_attempts']
-    
-    # --- LÓGICA DO MASTERMIND (CODEBREAKER) ---
-    # Feedback: 'correct' (Verde), 'present' (Amarelo), 'absent' (Vermelho)
     feedback = ['absent'] * 4
     secret_list = list(secret)
     guess_list = list(guess)
     
-    # Passada 1: Verifica posições exatas (Verde)
     for i in range(4):
         if guess_list[i] == secret_list[i]:
             current_digit = guess_list[i]
             
-            # Verifica se esse número que eu acertei aparece mais de 1x na senha
             if secret.count(current_digit) > 1:
-                feedback[i] = 'correct_multi' # Verde Especial (Certo + Repetido)
+                feedback[i] = 'correct_multi' 
             else:
-                feedback[i] = 'correct'       # Verde Normal (Certo + Único)
+                feedback[i] = 'correct'      
                 
             secret_list[i] = None
             guess_list[i] = None
 
-    # Passada 2: Verifica números certos em posições erradas (Amarelo)
     for i in range(4):
-        if guess_list[i] is not None: # Se não foi marcado como exato
+        if guess_list[i] is not None: 
             current_digit = guess_list[i]
             if current_digit in secret_list:
                 frequency_in_secret = secret.count(current_digit)
                 if frequency_in_secret > 1:
-                    feedback[i] = 'multi'   # É repetido (Azul)
+                    feedback[i] = 'multi'  
                 else:
-                    feedback[i] = 'present' # É único (Amarelo)
+                    feedback[i] = 'present' 
                 
-                # Remove a primeira ocorrência para não contar duplicado
                 secret_list[secret_list.index(current_digit)] = None
 
 
@@ -1153,40 +810,51 @@ def check_patrol_guess():
         'guess': guess
     }
 
-    # --- CENÁRIO DE VITÓRIA (Aplica os Prêmios) ---
     if is_winner:
         user_id = SessionManager.get("user_id")
-        guardian = Guardians.query.filter_by(user_id=user_id).first()
+        guardian = Guardians.query.options(
+            joinedload(Guardians.featured_associations).joinedload(GuardianFeatured.insignia)
+        ).filter_by(user_id=user_id).first()
         
-        # 1. Base
-        base_min_pts = get_global_setting('PATROL_MIN_POINTS', default=1)
-        base_max_pts = get_global_setting('PATROL_MAX_POINTS', default=3)
-        base_xp = random.randint(base_min_pts, base_max_pts)  
+        base_xp_setting = int(get_global_setting('PATROL_EXP_POINTS', default=100))
+        safe_attempts = max(1, attempts_count) 
         
-        # 2. Spec + Loja
-        spec_pct = get_active_perk_value(guardian, 'PATROL_BONUS_PCT', default=0)
-        shop_pct = _get_shop_bonus(guardian, 'PATROL_BONUS_PCT')
-    
-        base_boosted = round(base_xp * (1 + (spec_pct + shop_pct) / 100.0))
+        raw_xp_calculated = int(base_xp_setting / safe_attempts)
         
-        # 3. Soma Streak
-        score_data = calculate_final_score(guardian, base_boosted, base_boosted, perk_code=None)
+        score_data = calculate_final_score(guardian, raw_xp_calculated, raw_xp_calculated, perk_code='PATROL_BONUS_PCT')
         final_score = score_data['final_score']
 
-        # 4. Salvar
+        coin_min = int(get_global_setting('PATROL_COIN_MIN', default=1))
+        coin_max = int(get_global_setting('PATROL_COIN_MAX', default=3))
+        
+        base_coins = random.randint(coin_min, coin_max)
+        
+        coin_bonus_pct = get_total_bonus(guardian, 'GCOIN_BONUS_PCT')
+        bonus_coins_val = 0
+        if coin_bonus_pct > 0:
+            bonus_coins_val = int(base_coins * (coin_bonus_pct / 100.0))
+        
+        total_coins = base_coins + bonus_coins_val
+
         guardian.score_atual = (guardian.score_atual or 0) + final_score
+        guardian.guardian_coins = (guardian.guardian_coins or 0) + total_coins
         guardian.last_patrol_date = date.today()
         update_user_streak(guardian)
 
-        # 6. Histórico
-        total_bonus = final_score - base_xp
-        desc = f"Codebreaker (Patrulha) concluído: +{final_score} pts"
-        if total_bonus > 0: desc += f" (Bônus: +{total_bonus})"
+        total_xp_bonus = final_score - raw_xp_calculated
+        desc = f"Codebreaker (Patrulha): +{final_score} XP"
+        if total_xp_bonus > 0: 
+            desc += f" (Bônus XP: +{total_xp_bonus})"
         
+        if total_coins > 0:
+            desc += f" | +{total_coins} GC"
+            if bonus_coins_val > 0:
+                desc += f" (Bônus GC: +{bonus_coins_val})"
+
         db.session.add(HistoricoAcao(guardian_id=guardian.id, descricao=desc, pontuacao=final_score))
         
-        # 7. Level Up e Missões
         atualizar_nivel_usuario(guardian)
+        
         try:
             update_mission_progress(guardian, MissionCodeEnum.PATROL_COUNT)
             update_mission_progress(guardian, MissionCodeEnum.ANY_CHALLENGE_COUNT)
@@ -1194,15 +862,16 @@ def check_patrol_guess():
         
         db.session.commit()
         
-        # Limpa a sessão
         session.pop('patrol_secret', None)
         session.pop('patrol_attempts', None)
         
         response_data['status'] = 'win'
         response_data['total_score'] = final_score
-        response_data['message'] = f"Acesso concedido! Código quebrado. (+{final_score} XP)"
+        response_data['total_coins'] = total_coins 
+        
+        msg_coins = f" e +{total_coins} Moedas" if total_coins > 0 else ""
+        response_data['message'] = f"Acesso concedido! Código quebrado em {safe_attempts} tentativa(s). (+{final_score} XP{msg_coins})"
 
-    # --- CENÁRIO DE DERROTA ---
     elif is_game_over:
         session.pop('patrol_secret', None)
         session.pop('patrol_history', None)
@@ -1212,107 +881,6 @@ def check_patrol_guess():
 
     return jsonify(response_data)
     
-# == ROTA PARA ESCOLHA DE ESPECIALIZAÇÃO                  ==
-@guardians_bp.route('/escolher-caminho', methods=['GET', 'POST'])
-@login_required
-def choose_specialization():
-    user_id = session.get('user_id')
-    guardian = Guardians.query.filter_by(user_id=user_id).first()
-
-    # --- LÓGICA DE COOLDOWN (14 DIAS) ---
-    COOLDOWN_DAYS = 14
-    is_locked = False
-    days_remaining = 0
-    
-    if guardian.last_spec_change_at:
-        # Calcula quanto tempo passou desde a última troca
-        # Se usar datetime.utcnow() no banco, use aqui também. Se usar local, use datetime.now()
-        now = datetime.utcnow() 
-        time_since_change = now - guardian.last_spec_change_at
-        
-        if time_since_change < timedelta(days=COOLDOWN_DAYS):
-            is_locked = True
-            days_remaining = COOLDOWN_DAYS - time_since_change.days
-
-    if request.method == 'POST':
-        # 1. Bloqueio de Segurança no Backend
-        if is_locked:
-            flash(f"Protocolo em resfriamento. Aguarde {days_remaining} dias para recalibrar seu caminho.", "danger")
-            return redirect(url_for('guardians_bp.meu_perfil', perfil_id=guardian.id))
-
-        choice_id = request.form.get('specialization_id')
-        if choice_id:
-            # Verifica se ele está escolhendo o MESMO caminho que já tem (opcional, mas bom evitar resetar nivel a toa)
-            if guardian.specialization_id == int(choice_id):
-                 flash('Você já segue este protocolo.', 'info')
-                 return redirect(url_for('guardians_bp.meu_perfil', perfil_id=guardian.id))
-
-            # Atualiza Especialização
-            guardian.specialization_id = int(choice_id)
-            guardian.nivel_id = None 
-            
-            # --- ATUALIZA A DATA DA TROCA ---
-            guardian.last_spec_change_at = datetime.utcnow() 
-            
-            db.session.flush()
-            level_up, _ = atualizar_nivel_usuario(guardian)
-            db.session.commit()
-            
-            chosen_spec = Specialization.query.get(choice_id)
-            flash(f'Protocolo {chosen_spec.name} iniciado! Próxima troca disponível em {COOLDOWN_DAYS} dias.', 'success')
-            return redirect(url_for('guardians_bp.meu_perfil', perfil_id=guardian.id))
-        
-
-    all_specializations = Specialization.query.options(
-        db.joinedload(Specialization.levels),
-        db.joinedload(Specialization.perks).joinedload(SpecializationPerkLevel.perk)
-    ).order_by(Specialization.id).all()
-    
-    specs_data_para_template = []
-    
-    for spec in all_specializations:
-        perks_by_level = defaultdict(list)
-        for perk_link in spec.perks:
-            perks_by_level[perk_link.level].append(perk_link)
-
-        sorted_levels = sorted(spec.levels, key=lambda x: x.level_number)
-
-        spec_info = {
-            "id": spec.id,
-            "name": spec.name,
-            "description": spec.description,
-            "spec_code": spec.spec_code.lower(),
-            "main_avatar": sorted_levels[0].avatar_url if sorted_levels else 'img/default.png',
-            "color_hex": spec.color_hex or '#0dcaf0',
-            "levels": []
-        }
-        
-        for nivel in sorted_levels:
-            level_info = {
-                "level_number": nivel.level_number,
-                "level_name": nivel.nome,
-                "avatar_url": nivel.avatar_url,
-                "score_minimo": nivel.score_minimo,
-                "perks": []
-            }
-            
-            for perk_link in perks_by_level[nivel.level_number]:
-                perk_info = {
-                    "name": perk_link.perk.name,
-                    "description": perk_link.perk.description_template.format(value=int(perk_link.bonus_value))
-                }
-                level_info["perks"].append(perk_info)
-                
-            spec_info["levels"].append(level_info)
-            
-        specs_data_para_template.append(spec_info)
-
-    return render_template(
-        'guardians/page_choose_specialization.html', 
-        specializations_data=specs_data_para_template,
-        is_locked=is_locked, 
-        days_remaining=days_remaining
-    )
 
 # == ROTA PARA TERMOGAME                  ==
 @guardians_bp.route('/termo/<int:game_id>')
@@ -1382,7 +950,6 @@ def check_termo_guess():
         attempt.streak_total_bonus = 0
         db.session.commit()
         
-        # --- GANCHO DA MISSÃO (QUANDO PERDE/ABANDONA) ---
         try:
             update_mission_progress(guardian, MissionCodeEnum.MINIGAME_COUNT)
         except Exception as e:
@@ -1450,14 +1017,15 @@ def check_termo_guess():
 
         # --- 3. CÁLCULO DE PERFORMANCE ---
         duration_seconds = (datetime.now(timezone.utc) - attempt.started_at.replace(tzinfo=timezone.utc)).total_seconds()
-        is_perfect = (num_guesses <= 2)
+        is_perfect = (num_guesses <= 4)
 
         bonus_context = {
             'raw_score_before_perks': base_points_raw,
             'total_possible_points': max_score,
             'duration_seconds': duration_seconds,
             'time_limit_seconds': game.time_limit_seconds,
-            'is_perfect': is_perfect
+            'is_perfect': is_perfect,
+            'minigame_type': 'termo'
         }
 
         performance_bonuses = calculate_performance_bonuses(guardian, 'minigame', base_score_boosted, bonus_context)
@@ -1491,7 +1059,6 @@ def check_termo_guess():
 
     if game_over:
         attempt.completed_at = datetime.now(timezone.utc)
-        
         attempt.score = base_score_boosted if is_winner else 0
         attempt.final_score = final_score
         attempt.base_points = base_points_raw if is_winner else 0 
@@ -1545,7 +1112,6 @@ def termo_result(attempt_id):
     num_guesses = len(attempt.guesses) if attempt.guesses else 0
     max_attempts = attempt.game.max_attempts
 
-
     max_score = attempt.game.points_reward
     base_points_display = 0
     if attempt.is_won:
@@ -1581,7 +1147,7 @@ def termo_result(attempt_id):
         'final_score': attempt.final_score,
         'duration_seconds': round(duration_seconds, 2) if duration_seconds is not None else None,
         'is_winner': attempt.is_won,
-        'is_perfect': (attempt.is_won and num_guesses <= 2),
+        'is_perfect': (attempt.is_won and num_guesses <= 4),
         'score_breakdown': score_breakdown,
         'accuracy_info': {
             'label': 'Tentativas',
@@ -1710,7 +1276,8 @@ def submit_anagram():
         'total_possible_points': total_possible_words * game.points_per_word,
         'duration_seconds': duration_seconds,
         'time_limit_seconds': game.time_limit_seconds,
-        'is_perfect': (correct_count == total_possible_words and total_possible_words > 0)
+        'is_perfect': (correct_count == total_possible_words and total_possible_words > 0),
+        'minigame_type': 'anagram'
     }
     
     performance_bonuses = calculate_performance_bonuses(guardian, 'minigame', base_score_boosted, bonus_context)
@@ -1984,7 +1551,8 @@ def submit_password_game(attempt_id):
             'total_possible_points': base_points_raw,
             'duration_seconds': duration_seconds,
             'time_limit_seconds': config.time_limit_seconds,
-            'is_perfect': is_perfect 
+            'is_perfect': is_perfect,
+            'minigame_type': 'password'
         }
 
         performance_bonuses = calculate_performance_bonuses(guardian, 'minigame', base_score_boosted, bonus_context)
@@ -2316,13 +1884,11 @@ def claim_weekly_reward():
     """
     Processa o resgate do baú semanal com lógica de RNG e Bônus de Loja.
     """
-    
-    # 1. Identifica o Guardião
     user_id = SessionManager.get("user_id")
     guardian = Guardians.query.filter_by(user_id=user_id).first()
     
     if not guardian:
-        flash("Sua sessão expirou ou o guardião não foi encontrado.", "danger")
+        flash("Sua sessão expirou.", "danger")
         return redirect(url_for('auth_bp.login'))
 
     quest_set = WeeklyQuestSet.query.filter_by(
@@ -2331,29 +1897,39 @@ def claim_weekly_reward():
         is_claimed=False   
     ).first()
 
-    # 2. Validações
     if not quest_set:
-        open_set = WeeklyQuestSet.query.filter_by(guardian_id=guardian.id, is_claimed=False).first()
-        if open_set:
-            flash("Você ainda não completou todas as missões deste pacote!", "warning")
-        else:
-            flash("Nenhuma recompensa disponível para resgate no momento.", "info")
-            
+        flash("Nenhuma recompensa disponível.", "info")
         return redirect(url_for('guardians_bp.meu_perfil', perfil_id=guardian.id))
 
-    # 3. Processa a Recompensa
     try:
-        # A. CÁLCULO BASE (Salário + Sorteio RNG)
+        # A. CÁLCULO BASE
         reward_data = calculate_weekly_coin_reward()
-        
         raw_coins = reward_data['total'] 
         rarity = reward_data['breakdown']['rarity']
         
-        # B. CÁLCULO DE MULTIPLICADORES (Itens de Loja)
-        shop_bonus_pct = _get_shop_bonus(guardian, 'GCOIN_BONUS_PCT')
+        # B. CÁLCULO DE MULTIPLICADORES (Itens de Loja e Insígnias)
+        # Recupera os valores brutos (ex: 85.0, 20.0)
+        shop_bonus_val = _get_shop_bonus(guardian, 'GCOIN_BONUS_PCT')
+        insignia_bonus_val = _get_insignia_bonus(guardian, 'GCOIN_BONUS_PCT')
         
-        # Aplica o bônus sobre o valor bruto
-        final_coins = int(raw_coins * (1 + shop_bonus_pct / 100.0))
+        # === DEBUG VISUAL NO CONSOLE ===
+        print(f"\n[DEBUG CLAIM REWARD]")
+        print(f"Base: {raw_coins}")
+        print(f"Shop Bonus (Bruto): {shop_bonus_val}")     # Esperado: 85.0
+        print(f"Insignia Bonus (Bruto): {insignia_bonus_val}") # Esperado: 20.0 (Ignorando Global)
+        
+        # CORREÇÃO MATEMÁTICA AQUI:
+        # Somamos os bônus primeiro, DEPOIS dividimos por 100
+        total_bonus_pct = shop_bonus_val + insignia_bonus_val
+        multiplier = 1 + (total_bonus_pct / 100.0)
+        
+        final_coins = int(raw_coins * multiplier)
+        
+        print(f"Multiplier: {multiplier} (1 + {total_bonus_pct}/100)")
+        print(f"Final: {final_coins}")
+        print(f"--------------------\n")
+        # ===============================
+
         bonus_value_gained = final_coins - raw_coins 
         
         # C. APLICAÇÃO DO RESGATE
@@ -2368,7 +1944,7 @@ def claim_weekly_reward():
         msg_hist = f"Resgatou Recompensa {rarity_label}: +{final_coins} GC"
         
         if bonus_value_gained > 0:
-            msg_hist += f" (Inclui bônus de item: +{bonus_value_gained})"
+            msg_hist += f" (Bônus: +{bonus_value_gained})"
 
         novo_historico = HistoricoAcao(
             guardian_id=guardian.id,
@@ -2377,10 +1953,11 @@ def claim_weekly_reward():
         )
         db.session.add(novo_historico)
         
-        # E. FINALIZAÇÃO E NOVO CICLO
         db.session.commit() 
 
         get_or_create_active_quest_set(guardian)
+        
+        # Flash message ajustada
         flash_msg = f"Recompensa resgatada! +{final_coins} G-Coins."
         flash_cat = "success"
         
@@ -2393,7 +1970,7 @@ def claim_weekly_reward():
     except Exception as e:
         db.session.rollback()
         print(f"Erro claim reward: {e}")
-        flash(f"Ocorreu um erro ao processar o resgate. Tente novamente.", "danger")
+        flash(f"Ocorreu um erro ao processar o resgate.", "danger")
 
     return redirect(url_for('guardians_bp.meu_perfil', perfil_id=guardian.id))
 
@@ -2432,8 +2009,9 @@ def loja():
                 active_modules.append(p.item)
                 seen_module_ids.add(p.item.id)
 
-    # 4. Calcula custo atual do reroll
     reroll_cost = calculate_reroll_cost(shop_state.reroll_count)
+    max_slots = get_game_setting('ITEMS_MODULES_SET_AMOUNT', 4, int)
+    assistant_payload = get_assistant_data(guardian, 'loja')
 
     return render_template(
         'guardians/page_loja.html',
@@ -2443,7 +2021,9 @@ def loja():
         purchase_counts=purchase_counts,
         reroll_cost=reroll_cost, 
         reroll_count=shop_state.reroll_count,
-        BONUS_TYPES=BONUS_TYPES
+        BONUS_TYPES=BONUS_TYPES,
+        max_slots=max_slots,
+        assistant_data=assistant_payload
     )
 
 @guardians_bp.route('/guardians/loja/reroll', methods=['POST'])
@@ -2499,7 +2079,7 @@ def comprar_item(item_id):
     purchased_count = len(purchases)
 
     # Limite a 4 itens por inventário
-    if item.category != 'Consumíveis': # Tokens podem comprar à vontade
+    if item.category != 'Consumíveis':
         if not check_shop_slots_available(guardian.id):
             flash('Seus slots de memória estão cheios!', 'warning')
             return redirect(url_for('guardians_bp.loja'))
@@ -2513,12 +2093,10 @@ def comprar_item(item_id):
     if not is_consumable:
         now = datetime.utcnow()
         for p in purchases:
-            # Se o item é permanente (duration_days é None ou 0), e o cara já comprou, já era.
             if not item.duration_days or item.duration_days == 0:
                 flash("Você já possui este item permanente.", "warning")
                 return redirect(url_for('guardians_bp.loja'))
             
-            # Se tem duração, calcula expiração
             expiration_date = p.purchased_at + timedelta(days=item.duration_days)
             if now < expiration_date:
                 days_left = (expiration_date - now).days
@@ -2527,6 +2105,9 @@ def comprar_item(item_id):
 
     try:
         # 3. Processa o Pagamento
+        if guardian.guardian_coins < item.cost:
+            flash('Saldo insuficiente de Guardian Coins!', 'danger')
+            return redirect(url_for('guardians_bp.loja'))
         guardian.guardian_coins -= item.cost
         
         # 4. Entrega o Item
@@ -2618,3 +2199,23 @@ def descartar_item(item_id):
         flash("Erro ao processar o descarte.", "danger")
         
     return redirect(url_for('guardians_bp.loja'))
+
+# ROTA DO ASSISTENTE DE TUTORIAIS
+@guardians_bp.route('/api/mark-tutorial-seen/<tutorial_id>', methods=['POST'])
+@login_required
+def mark_tutorial_seen(tutorial_id):
+    user_id = SessionManager.get("user_id")
+    guardian = Guardians.query.filter_by(user_id=user_id).first()
+    
+    if guardian:
+        current_data = dict(guardian.tutorials_seen or {})
+        current_data[tutorial_id] = True
+        
+        guardian.tutorials_seen = current_data
+        
+        # db.session.flag_modified(guardian, "tutorials_seen") # Alternativa se o acima falhar
+        db.session.commit()
+        
+        return jsonify({"status": "success", "id": tutorial_id})
+    
+    return jsonify({"status": "error"}), 400
