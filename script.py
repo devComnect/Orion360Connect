@@ -20,9 +20,9 @@ from sqlalchemy import func
 
 
 
-with app.app_context():
+'''with app.app_context():
     print("Tarefa em execução!")
-    importar_chamados_debug()
+    importar_chamados_debug()'''
 
 
 '''with app.app_context():
@@ -33,14 +33,14 @@ with app.app_context():
         data_fim=date(2025, 10, 30)
     )'''
 
-'''with app.app_context():
+with app.app_context():
     registros = importar_performance_operador(
-        operador_id=2029,
-        nome_operador="Rafael",
-        data_inicio=date(2025, 10, 7),
-        data_fim=date(2025, 10, 7)
+        operador_id=2018,
+        nome_operador="Henrique",
+        data_inicio=date(2025, 12, 20),
+        data_fim=date(2025, 12, 23)
     )
-    print(f"Total registros importados: {registros}")'''
+    print(f"Total registros importados: {registros}")
 
 
 

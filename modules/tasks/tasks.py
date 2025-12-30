@@ -186,14 +186,14 @@ def processar_e_armazenar_performance(dias=180, incremental=False):
     data_final = hoje
 
     OPERADORES_MAP = {
-            1011: "Renato",
-            1012: "Matheus",
-            1014: "Gustavo",
-            1015: "Raysa",
-            1016: "Lucas",
-            1013: "Danilo",
-            1018: "Henrique",
-            1017: "Rafael"
+            2011: "Renato",
+            2012: "Matheus",
+            2014: "Gustavo",
+            2015: "Raysa",
+            2016: "Lucas",
+            2013: "Danilo",
+            2018: "Henrique",
+            2017: "Rafael"
         }
 
     operadores_ids = list(OPERADORES_MAP.keys())
@@ -299,14 +299,14 @@ def processar_e_armazenar_performance_incremental():
         access_token = auth_response["access_token"]
 
         OPERADORES_MAP = {
-            1011: "Renato",
-            1012: "Matheus",
-            1014: "Gustavo",
-            1015: "Raysa",
-            1016: "Lucas",
-            1013: "Danilo",
-            1018: "Henrique",
-            1017: "Rafael"
+            2011: "Renato",
+            2012: "Matheus",
+            2014: "Gustavo",
+            2015: "Raysa",
+            2016: "Lucas",
+            2013: "Danilo",
+            2018: "Henrique",
+            2017: "Rafael"
         }
 
         total_registros = 0
@@ -485,14 +485,14 @@ def processar_e_armazenar_performance_vyrtos_incremental():
     access_token = auth_response["access_token"]
 
     OPERADORES_MAP = {
-            1011: "Renato",
-            1012: "Matheus",
-            1014: "Gustavo",
-            1015: "Raysa",
-            1016: "Lucas",
-            1013: "Danilo",
-            1018: "Henrique",
-            1017: "Rafael"
+            2011: "Renato",
+            2012: "Matheus",
+            2014: "Gustavo",
+            2015: "Raysa",
+            2016: "Lucas",
+            2013: "Danilo",
+            2018: "Henrique",
+            2017: "Rafael"
         }
 
     total_registros = 0
@@ -599,14 +599,14 @@ def processar_e_armazenar_performance_vyrtos(incremental=True):
     data_final = hoje
 
     OPERADORES_MAP = {
-            1011: "Renato",
-            1012: "Matheus",
-            1014: "Gustavo",
-            1015: "Raysa",
-            1016: "Lucas",
-            1013: "Danilo",
-            1018: "Henrique",
-            1017: "Rafael"
+            2011: "Renato",
+            2012: "Matheus",
+            2014: "Gustavo",
+            2015: "Raysa",
+            2016: "Lucas",
+            2013: "Danilo",
+            2018: "Henrique",
+            2017: "Rafael"
         }
 
     for operador_id, nome_operador in OPERADORES_MAP.items():
@@ -1262,14 +1262,14 @@ def repopular_eventos_180d():
 
     # Mapeamento operadores
     OPERADORES_MAP = {
-            1011: "Renato",
-            1012: "Matheus",
-            1014: "Gustavo",
-            1015: "Raysa",
-            1016: "Lucas",
-            1013: "Danilo",
-            1018: "Henrique",
-            1017: "Rafael"
+            2011: "Renato",
+            2012: "Matheus",
+            2014: "Gustavo",
+            2015: "Raysa",
+            2016: "Lucas",
+            2013: "Danilo",
+            2018: "Henrique",
+            2017: "Rafael"
         }
 
     operadores_ids = list(OPERADORES_MAP.keys())
@@ -1401,7 +1401,6 @@ def repopular_eventos_operador_180d(operador_id: int, nome_operador: str = None)
 
     print(f"Iniciando importação de eventos do operador {operador_id} de {data_inicial} até {data_final}")
 
-    # Limpar eventos do operador
     try:
         db.session.execute(text(f"DELETE FROM eventos_atendente WHERE atendente = {operador_id}"))
         db.session.commit()
@@ -1411,14 +1410,12 @@ def repopular_eventos_operador_180d(operador_id: int, nome_operador: str = None)
         print(f"Erro ao apagar registros: {e}")
         return {"status": "error", "message": "Falha ao limpar tabela"}
 
-    # Autenticação
     auth_response = authenticate_relatorio(CREDENTIALS["username"], CREDENTIALS["password"])
     if "access_token" not in auth_response:
         print("Falha na autenticação")
         return {"status": "error", "message": "Falha na autenticação"}
     access_token = auth_response["access_token"]
 
-    # Função auxiliar para converter strings de data/hora
     def parse_datetime_safe(dt_str):
         if not dt_str or dt_str.strip() in ["-", ""]:
             return None
@@ -1429,7 +1426,6 @@ def repopular_eventos_operador_180d(operador_id: int, nome_operador: str = None)
                 continue
         return None
 
-    # Função auxiliar para converter duração
     def parse_timedelta_safe(valor):
         if not valor or valor.strip() in ["-", ""]:
             return None
@@ -1439,7 +1435,6 @@ def repopular_eventos_operador_180d(operador_id: int, nome_operador: str = None)
         except:
             return None
 
-    # Intervalos menores para não sobrecarregar a API
     for inicio, fim in gerar_intervalos(data_inicial, data_final, tamanho=7):  # 7 dias por vez
         offset = 0
         total_registros = 0
@@ -1515,15 +1510,14 @@ def processar_e_armazenar_eventos():
 
     # Mapeamento operadores
     OPERADORES_MAP = {
-            1011: "Renato",
-            1012: "Matheus",
-            1014: "Gustavo",
-            1015: "Raysa",
-            1016: "Lucas",
-            1013: "Danilo",
-            1018: "Henrique",
-            1017: "Rafael",
-
+            2011: "Renato",
+            2012: "Matheus",
+            2014: "Gustavo",
+            2015: "Raysa",
+            2016: "Lucas",
+            2013: "Danilo",
+            2018: "Henrique",
+            2017: "Rafael"
         }
 
     operadores_ids = list(OPERADORES_MAP.keys())
@@ -1558,7 +1552,7 @@ def processar_e_armazenar_eventos():
             h, m, s = map(int, valor.split(":"))
             return timedelta(hours=h, minutes=m, seconds=s)
         except Exception as e:
-            print(f"⚠️ Erro ao parsear timedelta '{valor}': {e}")
+            print(f" Erro ao parsear timedelta '{valor}': {e}")
             return None
 
     def parse_bool(valor):
