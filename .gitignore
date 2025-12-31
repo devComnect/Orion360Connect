@@ -1,4 +1,4 @@
-app.py
+
 # Arquivos de Bytecode e otimizados do Python
 __pycache__/
 *.py[cod]
