@@ -1,0 +1,122 @@
+{% extends "base_template.html" %}
+
+{% block title %}Resultado: {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="result-summary-card text-white">
+
+                <div class="text-center mb-4">
+                    <h2>Quiz Concluído!</h2>
+                    <p class="text-muted">Veja seu desempenho em "{{ quiz.title }}"</p>
+                </div>
+                
+                <div class="total-score-display">
+                    <span class="score-label">Pontuação Total</span>
+                    <span class="score-value">{{ results.total_score }}</span>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <p class="mb-2">Pontos Base: <strong>{{ results.score }}</strong></p>
+                    <div class="bonus-pill">
+                        <i class="bi bi-fire"></i> Bônus de Ofensiva: +{{ results.bonus }}
+                    </div>
+                </div>
+
+                <div class="text-center mb-4">
+                    <p class="mb-2">Você acertou <strong>{{ results.correct_answers }}</strong> de <strong>{{ results.total_questions }}</strong> perguntas.</p>
+                    {% set accuracy = (results.correct_answers / results.total_questions * 100) | int %}
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ accuracy }}%;" aria-valuenow="{{ accuracy }}"></div>
+                    </div>
+                </div>
+
+                {% if results.duration_seconds is defined %}
+                <div class="text-center mb-5">
+                    <div class="completion-time-display">
+                        <i class="bi bi-stopwatch"></i> Tempo de Conclusão: <strong id="completion-time">{{ results.duration_seconds }}</strong>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="review-section mt-4">
+                    <h4 class="text-center mb-4">Revisão das Respostas</h4>
+
+                    {# Loop para mostrar cada pergunta e suas respostas #}
+                    {% for question in quiz.questions %}
+                        {% set q_result = results.details[question.id|string] %}
+
+                        <div class="question-review-item {% if q_result.is_correct %}correct{% else %}incorrect{% endif %}">
+                            <p class="mb-2">
+                                <i class="bi {% if q_result.is_correct %}bi-check-circle-fill text-success{% else %}bi-x-circle-fill text-danger{% endif %} me-2"></i>
+                                <strong>{{ loop.index }}. {{ question.question_text }}</strong>
+                            </p>
+                            <div class="ms-4">
+                                {% for option in question.options %}
+                                    {% set is_correct = option.id == q_result.correct_option_id %}
+                                    {% set is_submitted = option.id == q_result.submitted_option_id %}
+
+                                    <div class="review-option 
+                                        {% if is_correct %}correct-answer{% endif %} 
+                                        {% if is_submitted and not is_correct %}wrong-choice{% endif %}">
+
+                                        {% if is_submitted and is_correct %}
+                                            <i class="bi bi-check-lg me-2"></i> <strong>Sua resposta (Correta)</strong>
+                                        {% elif is_submitted and not is_correct %}
+                                            <i class="bi bi-x-lg me-2"></i> <strong>Sua resposta (Incorreta)</strong>
+                                        {% elif is_correct and not is_submitted %}
+                                            <i class="bi bi-arrow-right me-2"></i> <strong>Resposta Correta</strong>
+                                        {% else %}
+                                            <i class="bi bi-circle me-2" style="opacity: 0.2;"></i>
+                                        {% endif %}
+
+                                        {{ option.option_text }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-grid gap-2 mt-5">
+                    <a href="{{ url_for('guardians_bp.rankings') }}" class="btn btn-lg btn-primary">Ver os Rankings</a>
+                    <a href="{{ url_for('guardians_bp.central') }}" class="btn btn-outline-light">Voltar para a Central</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{# Biblioteca para a animação de confetes #}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- LÓGICA DO CONFETE ---
+    // Dispara confetes se o usuário acertou mais da metade das questões
+    const correctAnswers = {{ results.correct_answers }};
+    const totalQuestions = {{ results.total_questions }};
+    if (correctAnswers / totalQuestions > 0.5) {
+        confetti({
+            particleCount: 150,
+            spread: 90,
+            origin: { y: 0.6 }
+        });
+    }
+
+    // --- LÓGICA PARA FORMATAR O TEMPO ---
+    const timeEl = document.getElementById('completion-time');
+    if (timeEl) {
+        const totalSeconds = parseInt(timeEl.textContent, 10);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        timeEl.textContent = `${minutes}m ${seconds}s`;
+    }
+});
+</script>
+{% endblock %}

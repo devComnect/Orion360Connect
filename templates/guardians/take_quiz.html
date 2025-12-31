@@ -1,0 +1,182 @@
+{% extends "base_template.html" %}
+
+{% block title %}Quiz: {{ quiz.title }}{% endblock %}
+
+{% block content %}
+{% if quiz.time_limit_seconds %}
+    <div class="quiz-timer" id="quiz-timer">
+        <i class="bi bi-stopwatch-fill"></i> <span id="time">--:--</span>
+    </div>
+{% endif %}
+
+<div class="container mt-4 no-select" oncontextmenu="return false;">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="quiz-container text-white">
+                <div class="text-center mb-4">
+                    <h2 class="quiz-title">{{ quiz.title }}</h2> {# Classe nova: quiz-title #}
+                    <p class="text-muted">{{ quiz.description }}</p>
+                </div>
+                
+                
+                <div class="d-flex justify-content-center align-items-center mb-4" id="quiz-stepper">
+                    {# O JavaScript irá preencher os botões de passo aqui #}
+                </div>
+
+                <form action="{{ url_for('guardians_bp.submit_quiz') }}" method="POST" id="quiz-form">
+                    <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+
+                    {% for question in quiz.questions %}
+                        <div class="quiz-question {% if loop.first %}active{% endif %}" id="question-{{ loop.index }}">
+                            <h4>{{ loop.index }}. {{ question.question_text }} <span class="badge btn-primary float-end">{{ question.points }} pts</span></h4>
+
+                            <hr class="mb-4">
+                            
+                            <div class="ms-3">
+                                {% for option in question.options %}
+                                    <div class="form-check answer-option">
+                                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" required>
+                                        <label class="form-check-label" for="option_{{ option.id }}">{{ option.option_text }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <div class="quiz-navigation">
+                        <button type="button" class="btn btn-outline-secondary" id="prev-btn" style="display: none;">&laquo; Anterior</button>
+                        <button type="button" class="btn btn-primary" id="next-btn">Próxima &raquo;</button> 
+                        
+                        <button type="submit" class="btn btn-lg btn-success" id="submit-btn" style="display: none;">Finalizar e Enviar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-warning alert-dismissible fade show text-center small quiz-disclaimer" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Atenção:</strong> Sair desta página antes de finalizar resultará em 0 pontos e a tentativa será contada.
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const quizForm = document.getElementById('quiz-form');
+    if (!quizForm) return;
+    
+    // Elementos da página
+    const questions = document.querySelectorAll('.quiz-question');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const stepperContainer = document.getElementById('quiz-stepper');
+
+    // Variáveis de estado
+    let currentQuestionIndex = 0;
+    const totalQuestions = questions.length;
+    let answeredQuestions = new Array(totalQuestions).fill(false);
+    const stepButtons = []; // Vamos guardar os botões aqui
+
+    // --- CRIA OS BOTÕES DO STEPPER ---
+    for (let i = 0; i < totalQuestions; i++) {
+        const stepBtn = document.createElement('div');
+        stepBtn.className = 'quiz-step-btn';
+        stepBtn.textContent = i + 1;
+        stepBtn.dataset.index = i;
+        stepperContainer.appendChild(stepBtn);
+        stepButtons.push(stepBtn); // Adiciona o botão à nossa lista
+
+        stepBtn.addEventListener('click', () => {
+            // Permite navegar para qualquer questão JÁ RESPONDIDA ou anterior à atual
+            if (answeredQuestions[i] || i < currentQuestionIndex) {
+                currentQuestionIndex = i;
+                updateQuizState();
+            }
+        });
+    }
+
+    // --- FUNÇÃO MESTRA PARA ATUALIZAR A TELA ---
+    function updateQuizState() {
+        // Mostra a pergunta correta
+        questions.forEach((q, index) => {
+            q.classList.toggle('active', index === currentQuestionIndex);
+        });
+
+        // Atualiza os botões do stepper
+        stepButtons.forEach((btn, index) => {
+            btn.classList.remove('current', 'completed');
+            if (answeredQuestions[index]) {
+                btn.classList.add('completed');
+            }
+            if (index === currentQuestionIndex) {
+                btn.classList.add('current');
+            }
+        });
+
+        // Atualiza os botões de navegação (Anterior, Próxima, Finalizar)
+        prevBtn.style.display = currentQuestionIndex > 0 ? 'inline-block' : 'none';
+        nextBtn.style.display = currentQuestionIndex < totalQuestions - 1 ? 'inline-block' : 'none';
+        submitBtn.style.display = currentQuestionIndex === totalQuestions - 1 ? 'inline-block' : 'none';
+    }
+
+    // --- LÓGICA DOS CLIQUES NOS BOTÕES ---
+    nextBtn.addEventListener('click', () => {
+        const currentQuestionDiv = questions[currentQuestionIndex];
+        if (!currentQuestionDiv.querySelector('input[type="radio"]:checked')) {
+            alert('Por favor, selecione uma resposta antes de prosseguir.');
+            return;
+        }
+        answeredQuestions[currentQuestionIndex] = true; // Marca a questão como respondida
+        
+        if (currentQuestionIndex < totalQuestions - 1) {
+            currentQuestionIndex++;
+            updateQuizState();
+        } else {
+             // Se estiver na última pergunta, o clique em "Próxima" não faz nada
+             // porque o botão "Finalizar" já está visível.
+        }
+    });
+
+    prevBtn.addEventListener('click', () => {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            updateQuizState();
+        }
+    });
+
+    // --- LÓGICA DO TIMER ---
+    const timerElement = document.getElementById('time');
+    const remainingTime = {{ remaining_time or 'null' }};
+
+    if (timerElement && remainingTime !== null) {
+        let timeInSeconds = Math.floor(remainingTime);
+        const countdown = setInterval(function() {
+            if (timeInSeconds <= 0) {
+                clearInterval(countdown);
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'timer_expired';
+                hiddenInput.value = 'true';
+                quizForm.appendChild(hiddenInput);
+                alert('O tempo acabou! Game Over.');
+                quizForm.submit();
+            } else {
+                timeInSeconds--;
+                const minutes = Math.floor(timeInSeconds / 60);
+                let seconds = timeInSeconds % 60;
+                seconds = seconds < 10 ? '0' + seconds : seconds;
+                timerElement.textContent = `${minutes}:${seconds}`;
+            }
+        }, 1000);
+    }
+
+    // Inicializa o estado do quiz na primeira vez que a página carrega
+    updateQuizState(); 
+});
+</script>
+{% endblock %}

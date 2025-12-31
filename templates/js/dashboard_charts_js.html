@@ -372,7 +372,7 @@ fetch('/dashboard/call/v2/report/queue_status', { method: 'POST' })
           datasets: res.datasets.map(ds => ({
             ...ds,
             fill: false,
-            barThickness: 20, // aumenta a grossura da barra
+            barThickness: 20,
             borderWidth: 2,
             tension: 0.1,
             pointRadius: 4,
@@ -436,7 +436,7 @@ fetch('/dashboard/call/v2/report/queue_status_vyrtus', { method: 'POST' })
             tension: 0.2,
             pointRadius: 4,
             pointHoverRadius: 6,
-            barThickness: 20, // aumenta a grossura da barra
+            barThickness: 20,
             borderWidth: 2
           }))
         },

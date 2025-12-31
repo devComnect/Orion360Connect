@@ -1,0 +1,76 @@
+{% extends "base_template.html" %}
+
+{% block title %}Analytics & Relatórios{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-warning mb-0">Analytics & Relatórios</h2>
+            <a href="{{ url_for('guardians_bp.admin') }}" class="btn btn-outline-secondary">Voltar ao Painel Admin</a>
+    </div>
+    
+
+    <div class="row g-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="analytics-card">
+                <div class="card-icon"><i class="bi bi-person-check-fill"></i></div>
+                <div class="card-value">{{ active_guardians }}</div>
+                <div class="card-label">Guardiões Ativos (Últimos 30 dias)</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="analytics-card">
+                <div class="card-icon"><i class="bi bi-patch-question-fill"></i></div>
+                <div class="card-value">{{ total_quizzes }}</div>
+                <div class="card-label">Total de Quizzes Respondidos</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="analytics-card">
+                <div class="card-icon"><i class="bi bi-shield-fill-exclamation"></i></div>
+                <div class="card-value">{{ total_reports }}</div>
+                <div class="card-label">Total de Phishings Reportados</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="analytics-card">
+                <div class="card-icon"><i class="bi bi-star-fill"></i></div>
+                <div class="card-value">{{ avg_score }}</div>
+                <div class="card-label">Média de Pontos por Guardião</div>
+            </div>
+        </div>
+    </div>
+    
+        <div class="row mt-5">
+        <div class="col-12">
+            <a href="{{ url_for('guardians_bp.quiz_hub') }}" class="text-decoration-none">
+                <div class="card analytics-hub-link-card">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="card-title text-warning mb-1">Análise de Quizzes</h4>
+                            <p class="card-text text-muted mb-0">
+                                Explore o desempenho geral, analise perguntas específicas e identifique pontos de dificuldade na equipe.
+                            </p>
+                        </div>
+                        <i class="bi bi-arrow-right-circle-fill display-4 text-warning"></i>
+                    </div>
+                    <a/>
+                </div>
+
+        <hr class="my-5">
+            <div class="col-12">
+                <a href="{{ url_for('guardians_bp.report_hub') }}" class="text-decoration-none">
+                    <div class="card analytics-hub-link-card">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <h4 class="card-title text-warning mb-1">Relatório Individual de Desempenho</h4>
+                                <p class="card-text text-muted mb-0">
+                                    Selecione um colaborador para ver em detalhe sua pontuação, histórico de quizzes, conquistas e mais.
+                                </p>
+                            </div>
+                            <i class="bi bi-arrow-right-circle-fill display-4 text-warning"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+{% endblock %}

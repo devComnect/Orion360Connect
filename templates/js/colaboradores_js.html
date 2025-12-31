@@ -69,7 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // --- Pausas detalhadas ---
     const pausasProdutivas = dados.pausas_produtivas || 0;
     const pausasImprodutivas = dados.pausas_improdutivas || 0;
     const totalPausas = pausasProdutivas + pausasImprodutivas;
@@ -95,7 +94,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("info-pausas").innerHTML = legendaPausas;
   }
 
-  // --- Modal de pausas ---
   window.mostrarPausas = function() {
   const lista = document.getElementById("listaPausas");
   lista.innerHTML = "";
@@ -106,12 +104,10 @@ document.addEventListener("DOMContentLoaded", () => {
     pausasDetalhes.forEach(pausa => {
       const li = document.createElement("li");
 
-      // Define se é produtiva ou improdutiva com base no valor de 'parametro'
       const parametrosProdutivos = ['3', '4', '7'];
       const isProdutiva = parametrosProdutivos.includes(String(pausa.parametro));
 
-      // Define a cor com base no tipo
-      const cor = isProdutiva ? '#ADFF2F' : '#FF4500'; // verde ou vermelho
+      const cor = isProdutiva ? '#ADFF2F' : '#FF4500'; 
 
       li.style.color = cor;
       li.textContent = `${pausa.nome_pausa} - Total: ${pausa.total} - Duração: ${pausa.duracao}`;
@@ -122,8 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const modal = new bootstrap.Modal(document.getElementById("modalPausas"));
   modal.show();
 }
-
-
 
   async function atualizarTotalChamados(dias = 1) {
     try {
@@ -173,7 +167,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-<!-- Bloco que traz a relação de chamados abertos e ligações atendidas-->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const colaborador = document.getElementById("colaboradorNome").textContent.trim();

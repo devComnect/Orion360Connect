@@ -1,0 +1,59 @@
+{% extends "base_template.html" %}
+{% block title %}Análise: {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-warning">Análise de Resultados: {{ quiz.title }}</h2>
+        <a href="{{ url_for('guardians_bp.analytics') }}" class="btn btn-outline-secondary">Voltar para Hub</a>
+    </div>
+
+
+    {% for q_id, data in analysis.items() %}
+        <div class="card bg-dark text-white mb-3">
+            <div class="card-header">{{ data.question_text }}</div>
+            <div class="card-body">
+                <p class="text-muted">Total de Respostas: {{ data.total_responses }}</p>
+                {% for option in data.options %}
+                    {% set percentage = (option.count / data.total_responses * 100) | round(1) if data.total_responses > 0 else 0 %}
+                    <div class="mb-2">
+                        <span>{{ option.option_text }} {% if option.is_correct %}<i class="bi bi-check-circle-fill text-success"></i>{% endif %}</span>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%;" aria-valuenow="{{ percentage }}">{{ percentage }}% ({{ option.count }})</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<hr class="my-5">
+
+<h3 class="text-info mb-4">Respostas Individuais Detalhadas</h3>
+
+{% for question in quiz.questions %}
+    <div class="card bg-dark text-white mb-3">
+        <div class="card-header">
+            <strong>Pergunta {{ loop.index }}:</strong> {{ question.question_text }}
+        </div>
+        <ul class="list-group list-group-flush">
+            {% for response in detailed_responses if response.question_id == question.id %}
+                <li class="list-group-item bg-dark text-white d-flex justify-content-between">
+                    <span><i class="bi bi-person-fill me-2 text-muted"></i>{{ response.guardian_name }}</span>
+                    <span>
+                        Respondeu: "{{ response.answer_text }}"
+                        {% if response.is_correct %}
+                            <i class="bi bi-check-circle-fill text-success ms-2" title="Resposta Correta"></i>
+                        {% else %}
+                            <i class="bi bi-x-circle-fill text-danger ms-2" title="Resposta Incorreta"></i>
+                        {% endif %}
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endfor %}
+
+{% endblock %}
