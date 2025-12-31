@@ -1,5 +1,8 @@
 {% extends "base_template.html" %}
+<<<<<<< HEAD
+=======
 {% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+>>>>>>> origin/guardians
 
 {% block title %}Perfil // {{ perfil.nickname or perfil.nome }}{% endblock %}
 
@@ -9,6 +12,24 @@
 
 {% block content %}
 {% import 'guardians/macros/render_trophy.html' as macros with context%}
+<<<<<<< HEAD
+
+{# --- LÓGICA DE COR E ÍCONE DO CAMINHO --- #}
+{% set spec = perfil.specialization %}
+{% set spec_class = '' %}
+{% if spec %}
+    {% if spec.spec_code.lower() == 'vermelho' %}{% set spec_class = 'spec-vermelho' %}
+    {% elif spec.spec_code.lower() == 'verde' %}{% set spec_class = 'spec-verde' %}
+    {% endif %}
+{% endif %}
+
+<div class="profile-page-wrapper {{ spec_class }}">
+
+    <section class="profile-hero text-center">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-start position-absolute top-0 start-0 w-100 p-3 z-3 mt-4">
+                <div class="team-badge font-tech text-muted small">
+=======
 {{ render_assistant(assistant_data) }}
 
 {% set spec = perfil.specialization %}
@@ -46,17 +67,41 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-start position-absolute top-0 start-0 w-100 p-3 z-3 mt-4">
                 <div class="team-badge font-tech text-muted small text-truncate" style="max-width: 200px;">
+>>>>>>> origin/guardians
                     <i class="bi bi-people-fill"></i> EQUIPE: {{ perfil.departamento_nome or 'S/ EQUIPE' }}
                 </div>
                 {% if is_own_profile %}
                 <div> 
+<<<<<<< HEAD
+                    <a href="{{ url_for('guardians_bp.edit_profile') }}" class="btn-outline-dark text-neon-blue">
+=======
                     <a href="{{ url_for('guardians_bp.edit_profile') }}" class="profile-edit-button btn-outline-dark {{ theme_text_class }}">
+>>>>>>> origin/guardians
                         <i class="bi bi-pencil-square"></i> EDITAR
                     </a>
                 </div>
                 {% endif %}
             </div>
 
+<<<<<<< HEAD
+            <div class="avatar-frame mb-3 mt-4">
+                <img src="{{ url_for('static', filename=perfil.avatar_path) }}" alt="User Avatar" class="avatar-img">
+                <div class="level-badge" data-bs-toggle="tooltip" title="Nível Atual">
+                    LVL.{{ nivel_atual.level_number if nivel_atual else '0' }}
+                </div>
+            </div>
+
+            <h2 class="text-white text-uppercase fw-bold mb-0">
+                {{ macros.render_trophy(perfil.trophy_tier) }} 
+                {{ perfil.nickname or perfil.nome }}
+                {% if perfil.featured_insignia %}
+                    <img src="{{ url_for('static', filename=perfil.featured_insignia.caminho_imagem) }}" 
+                         class="ms-2 featured-insignia-badge" width="24" data-bs-toggle="tooltip" title="{{ perfil.featured_insignia.nome }}">
+                {% endif %}
+            </h2>
+            <div class="text-neon-blue font-tech mb-2">
+                {% if spec %}
+=======
             <div class="avatar-frame mb-3 mt-4" style="border-color: {{ theme_color }};">
                 {% if perfil.avatar_seed %}
                     <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ perfil.avatar_seed }}" alt="User Avatar" class="avatar-img">
@@ -110,6 +155,7 @@
                             alt="Selo" 
                             style="width: 24px; height: 24px; filter: drop-shadow(0 0 3px {{ theme_color }});">
                     {% endif %}
+>>>>>>> origin/guardians
                     // ESPECIALIZAÇÃO: {{ spec.name|upper }} //
                 {% else %}
                     // GUARDIÃO SEM ESPECIALIZAÇÃO //
@@ -117,6 +163,14 @@
             </div>
 
             <div class="xp-system">
+<<<<<<< HEAD
+                <div class="tech-progress">
+                    <div class="tech-progress-bar" style="width: {{ progresso_percentual }}%;"></div>
+                </div>
+                <div class="xp-numbers">
+                    <span>XP ATUAL: {{ perfil.score_atual or 0 }}</span>
+                    <span>PRÓX: {{ proximo_nivel.score_minimo if proximo_nivel else 'MAX' }}</span>
+=======
                 {% set bar_width = progresso_percentual %}
                 {% set next_target_label = proximo_nivel.score_minimo if proximo_nivel else 'MAX' %}
                 {% if not spec and min_xp_required and min_xp_required > 0 %}
@@ -136,6 +190,7 @@
                 <div class="xp-numbers">
                     <span>XP ATUAL: {{ perfil.score_atual or 0 }}</span>
                     <span>PRÓX: {{ next_target_label }}</span>
+>>>>>>> origin/guardians
                 </div>
             </div>
 
@@ -149,6 +204,19 @@
                 {% endfor %}
             </div>
 
+<<<<<<< HEAD
+            {% if active_perks_html and active_perks_html != "<p class='mb-0'>Nenhum bônus ativo no momento.</p>" %}
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-outline-dark text-muted font-tech" 
+                            type="button"
+                            data-bs-toggle="popover" 
+                            data-bs-html="true" 
+                            data-bs-placement="bottom" 
+                            data-bs-custom-class="custom-popover-mp" 
+                            title="SISTEMA DE BUFFS ATIVOS" 
+                            data-bs-content="{{ active_perks_html|safe }}">
+                        <i class="bi bi-lightning-charge-fill text-warning"></i> VER BUFFS
+=======
             {% if active_perks_html and active_perks_html != "<div class='p-2 text-center text-muted small'>Nenhum modificador ativo.</div>" %}
                 <div class="mt-3">
                     <button class="btn btn-sm btn-cyber-status font-tech px-4 py-2" 
@@ -157,6 +225,7 @@
                             data-bs-target="#statusWindowModal">
                         <i class="bi bi-cpu text-warning me-2"></i> Modificadores
                         <span class="ms-2 badge bg-dark border border-secondary text-muted" style="font-size: 0.6rem;">+</span>
+>>>>>>> origin/guardians
                     </button>
                 </div>
             {% endif %}
@@ -164,6 +233,31 @@
     </section>
 
     <div class="container mt-4 mb-5">
+<<<<<<< HEAD
+        
+        {% if is_own_profile %}
+        <div class="row mb-4">
+            <div class="col-12">
+                
+                {% if not spec %}
+                    <a href="{{ url_for('guardians_bp.choose_specialization') }}" class="protocol-widget widget-warning text-decoration-none">
+                        <div class="widget-icon">
+                            <i class="bi bi-exclamation-diamond-fill"></i>
+                        </div>
+                        <div class="widget-content">
+                            <div class="widget-title">SISTEMA NÃO INICIALIZADO</div>
+                            <div class="widget-desc">Nenhum protocolo de segurança ativo. Clique para selecionar sua especialização.</div>
+                        </div>
+                        <div class="widget-action">
+                            INICIAR <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </a>
+
+                {% elif spec_is_locked %}
+                    <div class="protocol-widget widget-locked" data-bs-toggle="tooltip" title="Protocolo recém alterado. Aguarde estabilização.">
+                        <div class="widget-icon">
+                            <i class="bi bi-lock-fill"></i>
+=======
         {% if is_own_profile %}
         <div class="row mb-4">
             <div class="col-12">
@@ -173,6 +267,7 @@
                     <div class="protocol-widget widget-locked" data-bs-toggle="tooltip" title="Protocolo recém alterado. Aguarde estabilização.">
                         <div class="widget-icon">
                             <i class="bi bi-clock-history"></i>
+>>>>>>> origin/guardians
                         </div>
                         <div class="widget-content">
                             <div class="widget-title text-uppercase">>> {{ spec.name }} ATIVO</div>
@@ -181,6 +276,8 @@
                             </div>
                         </div>
                         <div class="widget-status-text">
+<<<<<<< HEAD
+=======
                             AGUARDE
                         </div>
                     </div>
@@ -198,10 +295,20 @@
                             </div>
                         </div>
                         <div class="widget-status-text text-warning">
+>>>>>>> origin/guardians
                             BLOQUEADO
                         </div>
                     </div>
 
+<<<<<<< HEAD
+                {% else %}
+                    <a href="{{ url_for('guardians_bp.choose_specialization') }}" class="protocol-widget widget-ready text-decoration-none">
+                        <div class="widget-icon">
+                            <i class="bi bi-sliders"></i>
+                        </div>
+                        <div class="widget-content">
+                            <div class="widget-title text-uppercase">PROTOCOLO {{ spec.name }} ESTÁVEL</div>
+=======
                 {# CASO 4: PRONTO PARA TROCAR #}
                 {% else %}
                     <a href="{{ url_for('guardians_bp.choose_specialization') }}" class="protocol-widget widget-ready text-decoration-none" style="border-color: {{ theme_color }};">
@@ -210,11 +317,16 @@
                         </div>
                         <div class="widget-content">
                             <div class="widget-title text-uppercase {{ theme_text_class }}">PROTOCOLO {{ spec.name }} ESTÁVEL</div>
+>>>>>>> origin/guardians
                             <div class="widget-desc">
                                 <span class="text-neon-green">● PRONTO PARA RECALIBRAGEM</span> // Você pode alterar seu caminho agora.
                             </div>
                         </div>
+<<<<<<< HEAD
+                        <div class="widget-action">
+=======
                         <div class="widget-action {{ theme_text_class }}">
+>>>>>>> origin/guardians
                             ALTERAR <i class="bi bi-arrow-repeat"></i>
                         </div>
                     </a>
@@ -317,6 +429,22 @@
                 </div>
                 
                 <div class="cyber-card">
+<<<<<<< HEAD
+                    <div class="cyber-header">
+                        <div class="cyber-title"><i class="bi bi-award text-neon-blue"></i> CONQUISTAS ADQUIRIDAS</div>
+                    </div>
+                    <div class="p-3">
+                        {% if categorized_achievements_list %}
+                            {% for group in categorized_achievements_list %}
+                                <div class="mb-3">
+                                    <h6 class="text-uppercase text-muted font-tech small border-bottom border-dark pb-1">{{ group.category }}</h6>
+                                    <div class="d-flex flex-wrap gap-3 mt-2">
+                                        {% for insignia in group.insignias %}
+                                            <div class="text-center" style="width: 100px;">
+                                                <img src="{{ url_for('static', filename=insignia.caminho_imagem) }}" 
+                                                     class="img-fluid drop-shadow featured-insignia-badge insignia-preview
+                                                     data-bs-toggle="tooltip" title="{{ insignia.descricao }}">
+=======
                     <div class="cyber-header d-flex justify-content-between align-items-center">
                         <div class="cyber-title">
                             <i class="bi bi-trophy-fill text-neon-blue me-2"></i>GALERIA DE CONQUISTAS
@@ -379,16 +507,21 @@
                                                     data-bs-placement="bottom"
                                                     title="{{ insignia.nome }}: {{ insignia.descricao }}"
                                                     style="opacity: 0.9; transition: all 0.2s; object-fit: cover;">
+>>>>>>> origin/guardians
                                             </div>
                                         {% endfor %}
                                     </div>
                                 </div>
                             {% endfor %}
                         {% else %}
+<<<<<<< HEAD
+                            <p class="text-center text-muted">Nenhuma insígnia registrada.</p>
+=======
                             <div class="text-center py-5 text-muted opacity-50">
                                 <i class="bi bi-lock fs-1 d-block mb-2"></i>
                                 <p>Nenhuma conquista desbloqueada ainda.</p>
                             </div>
+>>>>>>> origin/guardians
                         {% endif %}
                     </div>
                 </div>
@@ -422,7 +555,11 @@
                 {% if is_own_profile %}
                 <div class="cyber-card">
                     <div class="cyber-header">
+<<<<<<< HEAD
+                        <div class="cyber-title"><i class="bi bi-backpack2 text-neon-blue"></i> INVENTÁRIO</div>
+=======
                         <div class="inventory-profile-card cyber-title"><i class="bi bi-backpack2 text-neon-blue"></i> INVENTÁRIO</div>
+>>>>>>> origin/guardians
                     </div>
                     
                     <div class="p-2">
@@ -453,7 +590,11 @@
                         <div class="inventory-grid mb-3">
                             
                             <div class="inventory-slot resource-slot">
+<<<<<<< HEAD
+                                <div class="inventory-icon text-neon-blue"><i class="bi bi-coin"></i></div>
+=======
                                 <div class="inventory-icon text-neon-blue"><i class="bi bi-bootstrap-reboot"></i></div>
+>>>>>>> origin/guardians
                                 <div class="inventory-count">{{ perfil.retake_tokens or 0 }}</div>
                                 <div class="inventory-label">Quiz Tokens</div>
                                 
@@ -483,7 +624,11 @@
 
                         <hr class="border-secondary opacity-25 my-2">
 
+<<<<<<< HEAD
+                        <h6 class="font-tech small text-muted text-uppercase ms-1 mb-2">
+=======
                         <h6 class="active-modules-class font-tech small text-muted text-uppercase ms-1 mb-2">
+>>>>>>> origin/guardians
                                     <i class="bi bi-battery-charging"></i> Módulos Ativos
                                 </h6>
                                 
@@ -494,10 +639,26 @@
                                         {% for item_id, item_data in inventory_bag.items() %}
                                             
                                             {# --- FILTRO DE VISUALIZAÇÃO --- #}
+<<<<<<< HEAD
+                                            {# Pula o item se for um Token (pois já aparecem na seção 'Recursos' acima) #}
+=======
+>>>>>>> origin/guardians
                                             {% if 'Token' not in item_data.name %}
                                             
                                                 {% set ns.has_visible_items = true %}
 
+<<<<<<< HEAD
+                                                {% set rarity_class = '' %}
+                                                {% if item_data.category == 'Bônus' %}{% set rarity_class = 'item-rare' %}
+                                                {% elif item_data.category == 'Consumíveis' %}{% set rarity_class = 'item-consumable' %}
+                                                {% elif item_data.category == 'Cosméticos' %}{% set rarity_class = 'item-legendary' %}
+                                                {% endif %}
+
+                                                <div class="inventory-slot {{ rarity_class }}" 
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-html="true"
+                                                    title="<strong class='text-uppercase'>{{ item_data.name }}</strong><br><small>{{ item_data.description }}</small>">
+=======
                                                 {# --- NOVA LÓGICA DE RARIDADE --- #}
                                                 {# Tenta pegar a raridade do item, se não existir, assume COMUM #}
                                                 {% set r_code = item_data.rarity if item_data.rarity else 'COMMON' %}
@@ -507,6 +668,7 @@
                                                     data-bs-toggle="tooltip" 
                                                     data-bs-html="true"
                                                     title="<strong class='text-uppercase' style='color: var(--rarity-{{ r_code|lower }})'>{{ item_data.name }}</strong><br><small>{{ item_data.description }}</small>">
+>>>>>>> origin/guardians
                                                     
                                                     <div class="inventory-icon">
                                                         {% if 'bi-' in item_data.icon %}
@@ -518,17 +680,24 @@
 
                                                     <div class="inventory-count">x{{ item_data.count }}</div>
                                                     <div class="inventory-label text-truncate px-1">{{ item_data.name }}</div>
+<<<<<<< HEAD
+                                                    <div class="inventory-bonus-text">{{ item_data.bonus_display }}</div>
+=======
                                                     
                                                     {# Opcional: Mostra a raridade pequena no lugar do bonus ou mantem o bonus #}
                                                     <div class="inventory-bonus-text" style="opacity: 0.8;">
                                                         {{ item_data.bonus_display }}
                                                     </div>
+>>>>>>> origin/guardians
                                                 </div>
                                             {% endif %}
                                         {% endfor %}
                                     {% endif %}
 
+<<<<<<< HEAD
+=======
                                     {# --- SLOT VAZIO (Placeholder) --- #}
+>>>>>>> origin/guardians
                                     {% if not inventory_bag or not ns.has_visible_items %}
                                         <div class="inventory-slot resource-slot opacity-50 border-dashed" style="grid-column: span 2; border-style: dashed !important;">
                                             <div class="py-2">
@@ -599,6 +768,8 @@
     </div>
 </div>
 
+<<<<<<< HEAD
+=======
 <div class="modal fade" id="statusWindowModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content cyber-modal-content">
@@ -626,6 +797,7 @@
     </div>
 </div>
 
+>>>>>>> origin/guardians
 {% endblock %}
 
 {% block scripts %}

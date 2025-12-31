@@ -2,8 +2,11 @@ from functools import wraps
 from flask import redirect, url_for, request, flash, session
 from .session_manager import SessionManager
 from application.models import User, Guardians
+<<<<<<< HEAD
+=======
 from .session_manager import SessionManager
 from application.models import User, Guardians
+>>>>>>> origin/guardians
 
 def login_required(f):
     @wraps(f)
@@ -59,6 +62,8 @@ def guardian_admin_required(f):
         flash('Você não tem permissão de administrador para acessar esta área.', 'danger')
         return redirect(url_for('home_bp.render_performance'))
 
+<<<<<<< HEAD
+=======
     return decorated_function
 ###
 def guardian_admin_required(f):
@@ -91,4 +96,5 @@ def guardian_admin_required(f):
         flash('Você não tem permissão de administrador para acessar esta área.', 'danger')
         return redirect(url_for('home_bp.render_performance'))
 
+>>>>>>> origin/guardians
     return decorated_function
