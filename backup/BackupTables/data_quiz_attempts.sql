@@ -1,0 +1,58 @@
+-- MySQL dump 10.13  Distrib 8.0.42, for Win64 (x86_64)
+--
+-- Host: localhost    Database: data
+-- ------------------------------------------------------
+-- Server version	8.2.0
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `quiz_attempts`
+--
+
+DROP TABLE IF EXISTS `quiz_attempts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `quiz_attempts` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `guardian_id` int NOT NULL,
+  `quiz_id` int NOT NULL,
+  `score` int NOT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `guardian_id` (`guardian_id`),
+  KEY `quiz_id` (`quiz_id`),
+  CONSTRAINT `quiz_attempts_ibfk_1` FOREIGN KEY (`guardian_id`) REFERENCES `guardians` (`id`),
+  CONSTRAINT `quiz_attempts_ibfk_2` FOREIGN KEY (`quiz_id`) REFERENCES `quizzes` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `quiz_attempts`
+--
+
+LOCK TABLES `quiz_attempts` WRITE;
+/*!40000 ALTER TABLE `quiz_attempts` DISABLE KEYS */;
+INSERT INTO `quiz_attempts` VALUES (2,11,15,9,'2025-09-09 15:50:34'),(3,6,15,9,'2025-09-09 16:51:26'),(4,4,15,9,'2025-09-09 16:54:51'),(5,4,17,15,'2025-09-09 16:56:35'),(6,6,17,15,'2025-09-09 16:58:16'),(7,1,15,9,'2025-09-09 17:00:57'),(8,4,18,27,'2025-09-09 17:01:19'),(9,5,15,6,'2025-09-09 17:05:50'),(10,5,17,15,'2025-09-09 17:08:46'),(11,5,18,27,'2025-09-09 17:13:47'),(12,7,15,9,'2025-09-09 17:17:43'),(13,7,17,12,'2025-09-09 17:20:01'),(14,7,18,24,'2025-09-09 17:24:55'),(15,6,18,27,'2025-09-09 17:53:40'),(16,8,15,9,'2025-09-10 08:02:33'),(17,8,17,15,'2025-09-10 08:04:11'),(18,8,18,24,'2025-09-10 08:10:38'),(19,11,17,15,'2025-09-10 08:54:38'),(20,11,18,27,'2025-09-10 08:59:32'),(21,14,15,9,'2025-09-10 09:59:07'),(22,9,15,9,'2025-09-10 09:59:17'),(23,9,17,15,'2025-09-10 10:01:04'),(24,9,18,27,'2025-09-10 10:06:17'),(25,14,17,12,'2025-09-10 10:26:15'),(26,2,15,9,'2025-09-10 14:57:56'),(27,2,17,15,'2025-09-10 15:09:15'),(28,10,15,9,'2025-09-10 15:20:28'),(29,2,18,27,'2025-09-10 15:31:10'),(30,1,17,15,'2025-09-10 21:36:25'),(31,11,19,9,'2025-09-11 08:56:15'),(32,8,19,9,'2025-09-11 09:40:45');
+/*!40000 ALTER TABLE `quiz_attempts` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2025-09-11 12:25:37
