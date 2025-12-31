@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, request
-from settings import endpoints
+from settings import endpoints 
 import requests, json, os
 import calendar
+from modules.dashboard.extensions import payload, tipos_desejados, mapeamento_tipos, cores, grupos_desejados
+from modules.dashboard.utils import parse_tempo
 from modules.deskmanager.authenticate.routes import token_desk
 from datetime import datetime, timedelta
-#from dateutil.parser import parse as parse_date, parse_tempo
+from dateutil.parser import parse as parse_date
 from application.models import db, Chamado, PerformanceColaboradores, ChamadasDetalhes, DesempenhoAtendenteVyrtos
 from sqlalchemy import extract, func
 
@@ -13,64 +15,18 @@ dashboard_bp = Blueprint('dashboard_bp', __name__, url_prefix='/dashboard')
 @dashboard_bp.route('/ChamadosSuporte/fila', methods=['POST'])
 def listar_chamados_fila():
     token_response = token_desk()
-
-    payload = {
-        "Pesquisa": "",
-        "Tatual": "",
-        "Ativo": "NaFila",
-        "StatusSLA": "S",
-        "Colunas": {
-            "Chave": "on",
-            "CodChamado": "on",
-            "NomePrioridade": "on",
-            "DataCriacao": "on",
-            "HoraCriacao": "on",
-            "DataFinalizacao": "on",
-            "HoraFinalizacao": "on",
-            "DataAlteracao": "on",
-            "HoraAlteracao": "on",
-            "NomeStatus": "on",
-            "Assunto": "on",
-            "Descricao": "on",
-            "ChaveUsuario": "on",
-            "NomeUsuario": "on",
-            "SobrenomeUsuario": "on",
-            "NomeCompletoSolicitante": "on",
-            "SolicitanteEmail": "on",
-            "NomeOperador": "on",
-            "SobrenomeOperador": "on",
-            "TotalAcoes": "on",
-            "TotalAnexos": "on",
-            "Sla": "on",
-            "CodGrupo": "on",
-            "NomeGrupo": "on",
-            "CodSolicitacao": "off",
-            "CodSubCategoria": "off",
-            "CodTipoOcorrencia": "off",
-            "CodCategoriaTipo": "off",
-            "CodPrioridadeAtual": "off",
-            "CodStatusAtual": "off"
-        },
-        "Ordem": [{
-            "Coluna": "Chave",
-            "Direcao": "true"
-        }]
-    }
-
     try:
         response = requests.post(
-            'https://api.desk.ms/ChamadosSuporte/lista',
+            endpoints.LISTA_CHAMADOS_SUPORTE,
             headers={
                 'Authorization': f'{token_response}',
                 'Content-Type': 'application/json'
             },
             json=payload
         )
-        # Verifica se a requisição foi bem sucedida
         if response.status_code == 200:
             data = response.json()
             
-            # Captura apenas o total do retorno
             total_chamados = data.get("total", "0")
             
             return jsonify({
@@ -95,8 +51,6 @@ def listar_chamados_fila():
 def listar_sla_andamento():
     try:
         hoje = datetime.now()
-
-        # Filtrar chamados do grupo de SUPORTE que não estão resolvidos/cancelados
         chamados = (
             Chamado.query.filter(
                 Chamado.nome_grupo.ilike('%SUPORTE%'),
@@ -104,11 +58,9 @@ def listar_sla_andamento():
             ).all()
         )
 
-        # Contadores
         sla1_expirado = sla1_urgente = sla1_quase_estourando = sla1_normal = 0
         sla2_expirado = sla2_urgente = sla2_quase_estourando = sla2_normal = 0
 
-        # Listas de códigos
         codigos_sla1_expirado = []
         codigos_sla1_urgente = []
         codigos_sla1_critico = []
@@ -124,7 +76,6 @@ def listar_sla_andamento():
             s1 = (chamado.status_sla_atendimento or "").strip()
             s2 = (chamado.status_sla_resolucao or "").strip()
 
-            # ====== SLA 1 (Atendimento) ======
             if s1.startswith("Expirado"):
                 sla1_expirado += 1
                 codigos_sla1_expirado.append(cod)
@@ -141,7 +92,6 @@ def listar_sla_andamento():
                 sla1_normal += 1
                 codigos_sla1_normal.append(cod)
 
-            # ====== SLA 2 (Resolução) ======
             if s2.startswith("Expirado"):
                 sla2_expirado += 1
                 codigos_sla2_expirado.append(cod)
@@ -161,13 +111,11 @@ def listar_sla_andamento():
         return jsonify({
             "status": "success",
 
-            # SLA 1 - Atendimento
             "sla1_expirado": sla1_expirado,
             "sla1_urgente": sla1_urgente,
             "sla1_quase_estourando": sla1_quase_estourando,
             "sla1_nao_expirado": sla1_normal,
 
-            # SLA 2 - Resolução
             "sla2_expirado": sla2_expirado,
             "sla2_urgente": sla2_urgente,
             "sla2_quase_estourando": sla2_quase_estourando,
@@ -175,7 +123,6 @@ def listar_sla_andamento():
 
             "total": len(chamados),
 
-            # Listas para os modais
             "codigos_sla1_expirado": codigos_sla1_expirado,
             "codigos_sla1_urgente": codigos_sla1_urgente,
             "codigos_sla1_critico": codigos_sla1_critico,
@@ -200,7 +147,6 @@ def listar_sla_andamento():
 @dashboard_bp.route('/ChamadosSuporte/estatisticas_mensais', methods=['GET'])
 def estatisticas_chamados():
     try:
-        # Obter todos os chamados abertos (não resolvidos ou cancelados)
         chamados_abertos = db.session.query(
             Chamado.chave, 
             Chamado.nome_status,
@@ -210,7 +156,6 @@ def estatisticas_chamados():
             Chamado.nome_grupo != 'SUPORTE TI'
         ).all()
 
-        # Processar os resultados
         status_counts = {}
         grupos = set()
         
@@ -223,7 +168,6 @@ def estatisticas_chamados():
                 status_counts[status] = 0
             status_counts[status] += 1
 
-        # Formatar resposta para o gráfico
         labels = list(status_counts.keys())
         dados = list(status_counts.values())
         
@@ -239,10 +183,10 @@ def estatisticas_chamados():
                     ]
                 }],
                 "total": sum(dados),
-                "grupos": list(grupos)  # Lista de grupos associados
+                "grupos": list(grupos) 
             },
             "chamados_abertos": [{
-                "chave": chamado.chave,  # Retornando chave em vez de id
+                "chave": chamado.chave,  
                 "nome_status": chamado.nome_status,
                 "nome_grupo": chamado.nome_grupo
             } for chamado in chamados_abertos]
@@ -256,11 +200,9 @@ def estatisticas_chamados():
     
 @dashboard_bp.route('/ChamadosSuporte/por_grupo_mes_atual', methods=['GET'])
 def chamados_por_grupo_mes():
-
     try:
         hoje = datetime.now()
 
-        # Consulta agrupando por grupo
         resultados = db.session.query(
             Chamado.nome_grupo,
             func.count(Chamado.id).label('total')
@@ -287,7 +229,7 @@ def chamados_por_grupo_mes():
                         '#007bff', '#6610f2', '#6f42c1',
                         '#e83e8c', '#fd7e14', '#20c997',
                         '#17a2b8', '#6c757d', '#343a40'
-                    ] * len(labels)  # repete as cores se precisar
+                    ] * len(labels)  
                 }]
             },
             "mes_referencia": f"{hoje.month}/{hoje.year}"
@@ -307,17 +249,6 @@ def chamados_por_tipo_solicitacao_hoje():
         inicio_dia = datetime.combine(hoje, datetime.min.time())
         fim_dia = inicio_dia + timedelta(days=1)
 
-        tipos_desejados = ['000003', '000101', '000004', '000060', '000001', '000071']
-        mapeamento_tipos = {
-            '000101': 'Portal Comnect',
-            '000071': 'Interno',
-            '000003': 'E-mail',
-            '000004': 'Telefone',
-            '000001': 'Portal Solicitante',
-            '000060': 'WhatsApp'
-        }
-
-        # Consulta agrupando por tipo e hora
         resultados = db.session.query(
             Chamado.cod_solicitacao,
             func.extract('hour', Chamado.data_criacao).label('hora'),
@@ -331,20 +262,16 @@ def chamados_por_tipo_solicitacao_hoje():
             'hora'
         ).all()
 
-        # Inicializar estrutura: {tipo: [0, 0, ..., 0] para cada hora}
         dados_por_tipo = {
             cod: [0] * 24 for cod in tipos_desejados
         }
 
-        # Preencher os dados
         for cod_tipo, hora, total in resultados:
             hora = int(hora)
             if cod_tipo in dados_por_tipo and 0 <= hora <= 23:
                 dados_por_tipo[cod_tipo][hora] = total
 
-        cores = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
 
-        # Construir os datasets
         datasets = []
         for i, cod in enumerate(tipos_desejados):
             datasets.append({
@@ -360,7 +287,7 @@ def chamados_por_tipo_solicitacao_hoje():
         return jsonify({
             'status': 'success',
             'data': {
-                'labels': [f"{h:02d}h" for h in range(24)],  # Eixo X: horas
+                'labels': [f"{h:02d}h" for h in range(24)], 
                 'datasets': datasets
             },
             'data_referencia': hoje.strftime('%d/%m/%Y')
@@ -380,7 +307,6 @@ def chamados_abertos_vs_resolvidos():
         total_por_hora = {hora: 0 for hora in horas_do_dia}
         resolvidos_por_hora = {hora: 0 for hora in horas_do_dia}
 
-        # Chamados abertos no dia atual (por hora da criação)
         resultados_abertos = db.session.query(
             func.extract('hour', Chamado.data_criacao).label('hora'),
             func.count(Chamado.id)
@@ -392,7 +318,6 @@ def chamados_abertos_vs_resolvidos():
         for hora, total in resultados_abertos:
             total_por_hora[int(hora)] = total
 
-        # Chamados resolvidos no dia atual (por hora da finalização)
         resultados_resolvidos = db.session.query(
             func.extract('hour', Chamado.data_finalizacao).label('hora'),
             func.count(Chamado.id)
@@ -438,10 +363,7 @@ def chamados_abertos_vs_resolvidos():
 @dashboard_bp.route('/ChamadosSuporte/sla_andamento_grupos', methods=['POST'])
 def listar_sla_andamento_grupos():
     try:
-        grupos_desejados = ['INFOSEC', 'DEV', 'NOC', 'CSM']
         mes_referencia_atual = datetime.now().strftime('%Y-%m')
-
-        # Filtrar apenas chamados relevantes
         chamados = Chamado.query.filter(
             Chamado.nome_status.notin_(['Resolvido', 'Cancelado']),
             Chamado.nome_prioridade.notin_(['5 - Planejada', '4 - Baixa']),
@@ -453,13 +375,9 @@ def listar_sla_andamento_grupos():
             )
         ).all()
 
-        # Contadores SLA 1
         sla1_expirado = sla1_urgente = sla1_quase_estourando = sla1_normal = 0
-
-        # Contadores SLA 2
         sla2_expirado = sla2_urgente = sla2_quase_estourando = sla2_normal = 0
 
-        # Listas de códigos para modais
         codigos_sla1_expirado = []
         codigos_sla1_urgente = []
         codigos_sla1_critico = []
@@ -470,15 +388,11 @@ def listar_sla_andamento_grupos():
         codigos_sla2_critico = []
         codigos_sla2_normal = []
 
-        # Processar chamados
         for chamado in chamados:
             cod = chamado.cod_chamado
             s1 = (chamado.status_sla_atendimento or "").strip()
             s2 = (chamado.status_sla_resolucao or "").strip()
 
-            # =========================
-            # SLA 1 - Atendimento
-            # =========================
             if s1.startswith("Expirado"):
                 sla1_expirado += 1
                 codigos_sla1_expirado.append(cod)
@@ -495,9 +409,6 @@ def listar_sla_andamento_grupos():
                 sla1_normal += 1
                 codigos_sla1_normal.append(cod)
 
-            # =========================
-            # SLA 2 - Resolução
-            # =========================
             if s2.startswith("Expirado"):
                 sla2_expirado += 1
                 codigos_sla2_expirado.append(cod)
@@ -517,19 +428,16 @@ def listar_sla_andamento_grupos():
         return jsonify({
             "status": "success",
 
-            # SLA Atendimento
             "sla1_expirado": sla1_expirado,
             "sla1_urgente": sla1_urgente,
             "sla1_quase_estourando": sla1_quase_estourando,
             "sla1_nao_expirado": sla1_normal,
 
-            # SLA Resolução
             "sla2_expirado": sla2_expirado,
             "sla2_urgente": sla2_urgente,
             "sla2_quase_estourando": sla2_quase_estourando,
             "sla2_nao_expirado": sla2_normal,
 
-            # Códigos para modais
             "codigos_sla1_expirado": codigos_sla1_expirado,
             "codigos_sla1_urgente": codigos_sla1_urgente,
             "codigos_sla1_critico": codigos_sla1_critico,
@@ -555,10 +463,9 @@ def listar_sla_andamento_grupos():
 @dashboard_bp.route('/v2/report/attendants_performance', methods=['POST'])
 def buscar_desempenho_atendentes():
     try:
-        hoje = datetime.now().date()  # apenas a data
+        hoje = datetime.now().date()  
         ontem = hoje - timedelta(days=1)
 
-        # Consulta no banco de dados PerformanceColaboradores
         resultados = (
             db.session.query(
                 PerformanceColaboradores.name,

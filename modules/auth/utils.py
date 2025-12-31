@@ -33,7 +33,6 @@ def authenticate(username, password):
     except requests.exceptions.RequestException as e:
         return {"error": str(e), "status_code": 500}
     
-
 def authenticate_relatorio(username, password):
     data = {
         'username': username,
