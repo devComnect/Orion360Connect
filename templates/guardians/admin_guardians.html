@@ -56,7 +56,17 @@
                                 {% for g in guardians %}
                                 <tr>
                                     <td>
+<<<<<<< HEAD
                                         <img src="{{ url_for('static', filename=(g.avatar_path or 'img/default_avatar.png')) }}" alt="Avatar" class="guardian-table-avatar">
+=======
+                                        {% if g.avatar_seed %}
+                                            <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ g.avatar_seed }}" alt="Avatar" class="guardian-table-avatar">
+                                        {% else %}
+                                            <div class="guardian-table-avatar d-flex align-items-center justify-content-center bg-dark border border-secondary">
+                                                <i class="bi bi-person-circle text-muted" style="font-size: 1.5rem;"></i>
+                                            </div>
+                                        {% endif %}
+>>>>>>> origin/guardians
                                     </td>
                                     <td>
                                         {% if g.trophy_tier == 1 %}<i class="bi bi-trophy-fill trophy-icon-admin trophy-gold"></i>{% endif %}
@@ -108,9 +118,13 @@
                                                         data-perfil-minigame-tokens="{{ g.minigame_retake_tokens or 0 }}"
                                                         data-perfil-nickname="{{ g.nickname or '' }}"
                                                         data-perfil-is-anonymous="{{ g.is_anonymous }}"
+<<<<<<< HEAD
                                                         data-perfil-perfect-cumulative="{{ g.perfect_quiz_cumulative_count or 0 }}"
                                                         data-perfil-featured-insignia-id="{{ g.featured_insignia_id or '' }}"
                                                         data-perfil-name-color="{{ g.name_color or '#ffffff' }}">
+=======
+                                                        data-perfil-perfect-cumulative="{{ g.perfect_quiz_cumulative_count or 0 }}">
+>>>>>>> origin/guardians
                                                         <i class="bi bi-pencil-square me-2"></i>Editar Perfil
                                                     </a>
                                                 </li>
@@ -175,6 +189,7 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
+<<<<<<< HEAD
                         <label class="form-label">Selecione a Conquista:</label>
                         <select name="insignia_id" class="form-select" required>
                         {% if insignias %}    
@@ -183,6 +198,33 @@
                                 <option disabled>ERRO: Nenhuma conquista carregada (Variável 'insignias' vazia)</option>
                             {% endif %}
                         </select>
+=======
+                        <div class="mb-2">
+                            <label class="form-label">Selecione as Conquistas:</label>
+                            <small class="text-muted d-block mb-2">Marque todas que deseja conceder.</small>
+                        </div>
+
+                        <div class="card bg-secondary border-0 p-2" style="max-height: 300px; overflow-y: auto;">
+                            {% if insignias %}
+                                {% for conquista in insignias %}
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" 
+                                            name="insignia_ids" 
+                                            value="{{ conquista.id }}" 
+                                            id="chk_{{ g.id }}_{{ conquista.id }}">
+                                        
+                                        <label class="form-check-label text-white" for="chk_{{ g.id }}_{{ conquista.id }}">
+                                            <strong>{{ conquista.nome }} -- {{ conquista.achievement_code }}</strong>
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted py-3">
+                                    <i class="bi bi-exclamation-circle"></i> Nenhuma conquista cadastrada.
+                                </div>
+                            {% endif %}
+                        </div>
+>>>>>>> origin/guardians
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -204,7 +246,11 @@
                     </div>
                     <div class="modal-body">
                         <label class="form-label">Selecione a Conquista a Remover:</label>
+<<<<<<< HEAD
                         <select name="insignia_id" class="form-select" required>
+=======
+                        <select name="insignia_ids" class="form-select" required>
+>>>>>>> origin/guardians
                             {# Lógica simplificada: Assume que grouped_insignias existe no contexto #}
                             {% if grouped_insignias and grouped_insignias[g.id] %}
                                 <option value="" disabled selected>Selecione uma conquista...</option>
@@ -278,6 +324,7 @@
                                 </select>
                             </div>
                             <div class="mb-3">
+<<<<<<< HEAD
                                 <label for="edit-featured-insignia" class="form-label">Insígnia em Destaque</label>
                                 <select class="form-select" id="edit-featured-insignia" name="featured_insignia_id">
                                     <option value="">Nenhuma</option>
@@ -287,6 +334,8 @@
                                 </select>
                             </div>
                             <div class="mb-3">
+=======
+>>>>>>> origin/guardians
                                 <label for="edit-retake_tokens" class="form-label">Tokens de Quiz</label>
                                 <input type="number" class="form-control" id="edit-retake_tokens" name="retake_tokens">
                             </div>
@@ -354,7 +403,10 @@ document.addEventListener('DOMContentLoaded', function () {
             // --- Preencher Moedas ---
             var inputMoedas = modal.querySelector('#edit-moedas');
             if(inputMoedas) inputMoedas.value = dataset.perfilMoedas;
+<<<<<<< HEAD
             // ------------------------------
+=======
+>>>>>>> origin/guardians
 
             modal.querySelector('#edit-current_streak').value = dataset.perfilStreak;
             modal.querySelector('#edit-retake_tokens').value = dataset.perfilTokens;
@@ -369,6 +421,7 @@ document.addEventListener('DOMContentLoaded', function () {
             var selectSpec = modal.querySelector('#edit-specialization_id');
             if(selectSpec) selectSpec.value = dataset.perfilSpecId;
 
+<<<<<<< HEAD
             // Select (Dropdown) - Insígnia Destaque
             var selectInsignia = modal.querySelector('#edit-featured-insignia');
             if(selectInsignia) selectInsignia.value = dataset.perfilFeaturedInsigniaId;
@@ -377,6 +430,8 @@ document.addEventListener('DOMContentLoaded', function () {
             var inputColor = modal.querySelector('#edit-name-color');
             if(inputColor) inputColor.value = dataset.perfilNameColor;
 
+=======
+>>>>>>> origin/guardians
             // Checkboxes (converter string 'True'/'False' para boolean)
             modal.querySelector('#edit-is_admin').checked = (dataset.perfilIsAdmin === 'True');
             modal.querySelector('#edit-opt_in_ranking').checked = (dataset.perfilOptIn === 'True');

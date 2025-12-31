@@ -9,30 +9,9 @@
 {% block content %}
 <div class="container-fluid my-4 px-5">
   <!-- Botão voltar -->
-  <div class="row mb-2">
-    <div class="col-auto">
-      <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">Voltar</a>
-    </div>
-  </div>
-
-  <!-- Título -->
-  <h1 class="text-center mb-4 text-white">Dashboard</h1>
-   
+  <br><br><br><br>
   <!-- Primeira linha -->
   <div class="row mt-2">
-    <!-- Abertos vs Status -->
-    <div class="col-md-4">
-      <div class="card h-100">
-        <div class="card-header text-center">
-          Abertos vs Status <i class="bi bi-pie-chart-fill"></i>
-          <span class="badge bg-primary ms-2" id="mes-referencia"></span>
-        </div>
-        <div class="card-body d-flex flex-column align-items-center card-body-grafico">
-          <canvas id="statusChart"></canvas>
-        </div>
-      </div>
-    </div>
-
     <!-- Abertos vs Resolvidos -->
     <div class="col-md-4">
       <div class="card h-100">
@@ -43,9 +22,22 @@
           <div id="resumoAbertosResolvidos" class="text-white small d-flex justify-content-center gap-3 flex-wrap">
             <p class="mb-0"><strong>Total Abertos:</strong> <span id="totalAbertos">-</span></p>
             <p class="mb-0"><strong>Total Resolvidos:</strong> <span id="totalResolvidos">-</span></p>
-            <p class="mb-0"><strong>Diferença:</strong> <span id="diferencaAbertosResolvidos">-</span></p>
+            <p class="mb-0"><strong>Ativos:</strong> <span id="diferencaAbertosResolvidos">-</span></p>
           </div>
           <canvas id="LinhaAbertosResolvidosChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+     <!-- Abertos vs Status -->
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-header text-center">
+          Abertos vs Status <i class="bi bi-pie-chart-fill"></i>
+          <span class="badge bg-primary ms-2" id="mes-referencia"></span>
+        </div>
+        <div class="card-body d-flex flex-column align-items-center card-body-grafico">
+          <canvas id="statusChart"></canvas>
         </div>
       </div>
     </div>
@@ -65,28 +57,28 @@
 <div class="row mt-5">
     <!-- SLA Suporte -->
     <div class="col-md-3">
-        <div class="card ">
+        <div class="card h-100">
             <div class="card-header text-center py-2">
                 <small>SLA - Suporte</small> <i class="bi bi-alarm-fill"></i><br>
                 <small>Atendimento / Resolução</small>
             </div>
-            <div class="card-body p-2 d-flex justify-content-between align-items-center" style="height: 220px;">
-                <canvas id="slaChart" style="width: 45%; height: 100%;"></canvas>
-                <canvas id="slaChart2" style="width: 45%; height: 100%;"></canvas>
+            <div class="card-body p-2 d-flex justify-content-between align-items-center" style="height: 100px;">
+                <canvas id="slaChart" style="flex: 1; max-width: 48%;"></canvas>
+                <canvas id="slaChart2" style="flex: 1; max-width: 48%;"></canvas>
             </div>
         </div>
     </div>
 
     <!-- SLA Grupo -->
     <div class="col-md-3">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-header text-center py-2">
                 <small>SLA - Por Grupo</small> <i class="bi bi-alarm-fill"></i><br>
                 <small>Atendimento / Resolução</small>
             </div>
-            <div class="card-body p-2 d-flex justify-content-between align-items-center" style="height: 220px;">
-                <canvas id="slaGrupoChart" style="width: 45%; height: 100%;"></canvas>
-                <canvas id="slaGrupoChart2" style="width: 45%; height: 100%;"></canvas>
+            <div class="card-body p-2 d-flex justify-content-between align-items-center" style="height: 100px;">
+                <canvas id="slaGrupoChart" style="flex: 1; max-width: 48%;"></canvas>
+                <canvas id="slaGrupoChart2" style="flex: 1; max-width: 48%;"></canvas>
             </div>
         </div>
     </div>
@@ -135,47 +127,13 @@
   </div>
 </div>
 
-<!-- Modal Preto para mostrar chamados expirados -->
-<div class="modal fade" id="modalChamadosExpirados" tabindex="-1" aria-labelledby="modalChamadosExpiradosLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalChamadosExpiradosLabel">Ocorrências Pendentes</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaChamados" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal exclusivo para SLA por Grupo -->
-<div class="modal fade" id="modalChamadosGrupos" tabindex="-1" aria-labelledby="modalChamadosGruposLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalChamadosGruposLabel">Ocorrências Pendentes</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaChamadosGrupos" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
+<!--Inclusão de modals para visualização-->
+{% include 'modal/dashboard/modal_dashboard.html' %}
 {% endblock %}
 
+
 {% block scripts %}
-    {% include 'js/dashboard_js.html' %}
-    {% include 'js/dashboard_charts_js.html' %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% include 'js/dashboard_charts_js.html' %}
 {% endblock %}
 

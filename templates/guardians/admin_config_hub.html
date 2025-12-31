@@ -65,6 +65,7 @@
 
         <div class="tab-content pt-4" id="configTabContent">
             
+                    
             <div class="tab-pane fade show active" id="tab-geral" role="tabpanel">
                 <form method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-geral">
                     <input type="hidden" name="action" value="save_global_settings">
@@ -125,6 +126,7 @@
                 </form>
             </div>
 
+            
             <div class="tab-pane fade" id="tab-specializations" role="tabpanel">
                 <h1 class="text-white mb-4"><i class="bi bi-stars me-2"></i> Gerenciar Especializações</h1>
                 
@@ -362,6 +364,44 @@
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                         <button type="submit" class="btn btn-primary">Salvar Todos os Bônus</button>
+            {% if specializations %}
+                {% for spec in specializations %}
+                <div class="modal fade" id="addLevelModal-{{ spec.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content bg-dark text-white">
+                                <form method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations" enctype="multipart/form-data">
+                                    <input type="hidden" name="action" value="create_level_for_spec">
+                                    <input type="hidden" name="spec_id" value="{{ spec.id }}">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Adicionar Nível a <span class="text-info">{{ spec.name }}</span></h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        
+                                        <div class="mb-3">
+                                            <label for="level_number" class="form-label">Número do Nível</label>
+                                            <input type="number" class="form-control bg-secondary text-white border-0" name="level_number" placeholder="Ex: 1, 2, 3..." required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="nome" class="form-label">Nome do Nível</label>
+                                            <input type="text" class="form-control bg-secondary text-white border-0" name="nome" placeholder="Ex: Iniciante, Mestre..." required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="score_minimo" class="form-label">Score Mínimo</label>
+                                            <input type="number" class="form-control bg-secondary text-white border-0" name="score_minimo" placeholder="Ex: 1000" required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="avatar" class="form-label">Avatar do Nível (Opcional)</label>
+                                            <input type="file" class="form-control bg-secondary text-white border-0" name="avatar_file">
+                                        </div>
+
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary">Adicionar Nível</button>
                                     </div>
                                 </form>
                             </div>
@@ -563,7 +603,6 @@
                 </div>
             </div>
             {% endfor %}
-
             <div class="tab-pane fade" id="tab-events" role="tabpanel">
                 <div class="card bg-dark text-white shadow">
                     <div class="card-header"><h4>Criar Novo Evento</h4></div>
@@ -628,7 +667,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="tab-pane fade" id="tab-missoes" role="tabpanel" aria-labelledby="tab-missoes-link">
                 <div class="row">
                     <div class="col-md-4">

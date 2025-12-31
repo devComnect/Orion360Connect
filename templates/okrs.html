@@ -3,246 +3,420 @@
 {% block title %}OKRs{% endblock %}
 
 {% block styles %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css_guardians/style_okrs.css') }}">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Plugin de Anotação (metas) -->
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style_okrs.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+
 <style>
-  /* Carrossel - setas ajustadas */
-    #carouselGraficos .carousel-control-prev,
-    #carouselGraficos .carousel-control-next {
-      width: 40px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 10;
-    }
+  /* Ajuste das setas do carrossel */
+  #carouselGraficos .carousel-control-prev,
+  #carouselGraficos .carousel-control-next {
+    width: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+  }
 
-    #carouselGraficos .carousel-control-prev {
-      left: -20px; /* fora do conteúdo */
-    }
+  #carouselGraficos .carousel-control-prev {
+    left: -20px;
+  }
 
-    #carouselGraficos .carousel-control-next {
-      right: -20px; /* fora do conteúdo */
-    }
+  #carouselGraficos .carousel-control-next {
+    right: -20px;
+  }
 
-    #carouselGraficos .carousel-control-prev-icon,
-    #carouselGraficos .carousel-control-next-icon {
-      background-color: rgba(0,0,0,0.6);
-      border-radius: 50%;
-      padding: 10px;
-      width: 35px;
-      height: 35px;
-      background-size: 50% 50%;
-    }
+  #carouselGraficos .carousel-control-prev-icon,
+  #carouselGraficos .carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    padding: 10px;
+    width: 35px;
+    height: 35px;
+    background-size: 50% 50%;
+  }
 
-    #carouselGraficos .carousel-inner .row {
-      padding-left: 15px;
-      padding-right: 15px;
-    }
+  #carouselGraficos .carousel-inner .row {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="container-fluid my-4 px-5">
+    <br><br><br><br>
+  <div class="text-end mb-3">
+    <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#modalDefinirMetas">
+      Definir Metas
+    </button>
+    <button class="btn btn-sm btn-outline-light" id="btnExportarAnual">
+      Exportar Anual
+    </button>
+  </div>
 
-  <div class="container-fluid my-4 px-5">
-    <!-- Botão Voltar-->
-    <div class="row mb-2">
-      <div class="col-auto">
-        <div class="btn-group" role="group" aria-label="bottomVoltar">
-          <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">Voltar</a>
-        </div>
-      </div>
-    </div>
-
-    <div class="row justify-content-center text-white">
-      <h1 class="text-center">OKRs</h1>
-    </div>
-
-
-    <div class="text-end mb-3">
-      <!--<button class="btn btn-sm btn-outline-light me-2" onclick="exportarPDF()">📄 Exportar PDF</button>
-      <button class="btn btn-sm btn-outline-light" onclick="exportarExcel()">📊 Exportar Excel</button>-->
-      <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#modalDefinirMetas">
-        📊 Definir Metas
-      </button>
-    </div>
-
-    <!-- Botões de filtro de período -->
-    <div class="row justify-content-center mb-4">
-      <div class="col-auto">
-        <div class="btn-group">
-          <button class="btn btn-outline-secondary filtro-btn" data-dias="30">Mês</button>
-          <button class="btn btn-outline-secondary filtro-btn" data-dias="60">Bimestre</button>
-          <button class="btn btn-outline-secondary filtro-btn" data-dias="90">Trimestre</button>
-          <button class="btn btn-outline-secondary filtro-btn" data-dias="180">Semestre</button>
-          <button class="btn btn-outline-secondary filtro-btn" data-dias="365">Ano</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Fluxograma - layout em árvore -->
-    <div class="fluxograma text-white">
-
-  <!-- Gráficos de Evolução Mensal dos OKRs -->
+  <!-- Carrossel de Gráficos -->
   <div class="row mt-3 gx-4">
     <div class="col-12">
       <div id="carouselGraficos" class="carousel slide" data-bs-interval="false" data-bs-ride="false">
         <div class="carousel-inner">
 
-          <!-- SLIDE 1 – Fluxograma compacto (agora como primeiro e ativo) -->
-          <div class="carousel-item slide-compacto active">
-            <h3 class="text-center">Metas</h3>
-            <div class="fluxograma text-white p-2">
+          <!-- SLIDE 1 – Metas + Evoluções -->
+          <div class="carousel-item active">
 
-              <div class="fluxo">
-              <h6 class="mb-2">CSAT (%)</h6>
-              <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-csat">--</span></div>
+            <!-- Bloco superior (objetivos principais) -->
+            <div class="fluxograma-topo text-white p-1">
+              <div class="fluxo" id="objetivo1">
+                <h6 class="mb-2">Excelência no atendimento ao cliente - 100%</h6>
+              </div>
+
+              <div class="fluxo" id="objetivo1">
+                <h6 class="mb-2">Metas</h6>
+              </div>
+
+              <div class="fluxo" id="objetivo2">
+                <h6 class="mb-2">Eficiência operacional do suporte - 100%</h6>
+              </div>
             </div>
 
-            <div class="fluxo">
-              <h6 class="mb-2">SLA Atendimento (%)</h6>
-              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
+            <!-- Bloco inferior (metas detalhadas) -->
+            <div class="fluxograma text-white p-2 position-relative">
+
+
+              <!-- Metas relacionadas à Excelência no atendimento -->
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">CSAT (%)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-csat">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Atendimento (%)</h6>
+                <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Solução (%)</h6>
+                <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">Reabertura (%)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
+              </div>
+
+              <!-- Metas relacionadas à Eficiência operacional -->
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMA (min)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMS (h)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">FCR (%)</h6>
+                <div class="info-item2" id="fcr-card"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
+              </div>
+
             </div>
 
-            <div class="fluxo">
-              <h6 class="mb-2">SLA Solução (%)</h6>
-              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
+
+           <!-- Bloco inferior (metas detalhadas) -->
+            <div class="fluxograma text-white p-2 position-relative">
+              <!-- Metas relacionadas à Excelência no atendimento -->
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">CSAT - Acumulado (%)</h6>
+                <div class="info-item2"><span id="meta-acumulada-csat">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Atendimento - Acumulado (%)</h6>
+                <div class="info-item2 text-center"><span id="meta-acumulada-sla-atendimento">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Solução - Acumulado (%)</h6>
+                <div class="info-item2 text-center"><span id="meta-acumulada-sla-solucao">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">Reabertura - Acumulado (%)</h6>
+                <div class="info-item2"><span id="meta-acumulada-reabertura">--</span></div>
+              </div>
+
+              <!-- Metas relacionadas à Eficiência operacional -->
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMA - Acumulado (min)</h6>
+                <div class="info-item2"><span id="meta-acumulada-tma">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMS - Acumulado (h)</h6>
+                <div class="info-item2"><span id="meta-acumulada-tms">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">FCR - Acumulado (%)</h6>
+                <div class="info-item2" id="fcr-card"><span id="meta-acumulada-fcr">--</span></div>
+              </div>
+
             </div>
 
-            <div class="fluxo">
-              <h6 class="mb-2">Reabertura (%)</h6>
-              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
+            <!-- Botões de Filtro -->
+            <div class="row justify-content-center my-4">
+              <div class="col-auto">
+                <div class="btn-group">
+                  <button class="btn btn-outline-secondary filtro-btn" data-dias="30">Mês</button>
+                  <button class="btn btn-outline-secondary filtro-btn" data-dias="90">Trimestre</button>
+                  <button class="btn btn-outline-secondary filtro-btn" data-dias="180">Semestre</button>
+                  <button class="btn btn-outline-secondary filtro-btn" data-dias="365">Ano</button>
+                </div>
+              </div>
             </div>
 
-            <div class="fluxo">
-              <h6 class="mb-2">TMA (m)</h6>
-              <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
-            </div>
-
-            <div class="fluxo">
-              <h6 class="mb-2">TMS (h)</h6>
-              <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
-            </div>
-
-            <div class="fluxo">
-              <h6 class="mb-2">FCR (%)</h6>
-              <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
-            </div>
-
-            <br>
+            <!-- Gráficos -->
             <div class="row g-3">
               <div class="col-md-6 mb-4">
-                <div class="fluxo-card" style="padding: 2rem;">
+                <div class="fluxo-card p-4 position-relative">
+
+                  <!-- Título -->
                   <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
-                  <canvas id="graficoTmaTms" height="80"></canvas>
-                </div>
-              </div>
+
+                  <!-- Botão no canto superior direito -->
+                  <div class="dropdown filtro-grafico-dropdown">
+                      <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+                              data-bs-toggle="dropdown" aria-expanded="false">
+                        Filtros
+                      </button>
+
+                      <ul class="dropdown-menu dropdown-menu-end">
+                        <li class="dropdown-header">Semestre</li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2025-1">1º Sem 2025</a></li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2025-2">2º Sem 2025</a></li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2024-1">1º Sem 2024</a></li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2024-2">2º Sem 2024</a></li>
+
+                        <li><hr class="dropdown-divider"></li>
+
+                        <li class="dropdown-header">Ano Completo</li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="ano" data-valor="2025">2025</a></li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="ano" data-valor="2024">2024</a></li>
+
+                        <li><hr class="dropdown-divider"></li>
+
+                        <li class="dropdown-header">Mês Específico</li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="mes" data-valor="2025-01">Jan/2025</a></li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="mes" data-valor="2025-02">Fev/2025</a></li>
+                        <!-- Você pode gerar esses meses dinamicamente no futuro -->
+                      </ul>
+                    </div>
+
+                      <!-- Gráfico -->
+                      <canvas id="graficoTmaTms" height="90"></canvas>
+                    </div>
+                  </div>
+
 
               <div class="col-md-6 mb-4">
-                <div class="fluxo-card" style="padding: 2rem;">
+                <div class="fluxo-card p-4">
                   <h5 class="text-center mb-4">Evolução do SLA</h5>
-                  <canvas id="graficoSLA" height="80"></canvas>
+                  <canvas id="graficoSLA" height="90"></canvas>
                 </div>
               </div>
 
-              <!-- Linha 2: FCR + CSAT -->
               <div class="col-md-6 mb-4">
-                <div class="fluxo-card" style="padding: 2rem;">
+                <div class="fluxo-card p-4">
                   <h5 class="text-center mb-4">Evolução do FCR</h5>
-                  <canvas id="graficoFCR" height="80"></canvas>
+                  <canvas id="graficoFCR" height="90"></canvas>
                 </div>
               </div>
 
               <div class="col-md-6 mb-4">
-                <div class="fluxo-card" style="padding: 2rem;">
+                <div class="fluxo-card p-4">
                   <h5 class="text-center mb-4">Evolução do CSAT</h5>
-                  <canvas id="graficoCSAT" height="80"></canvas>
+                  <canvas id="graficoCSAT" height="90"></canvas>
                 </div>
               </div>
-
-            </div>
             </div>
           </div>
 
 
-          <!-- SLIDE 2 – Gráficos (antes era o primeiro) -->
+          <!-- SLIDE 2 – Quarter Comparativo -->
           <div class="carousel-item">
-            <!-- SLIDE 1 – Fluxograma compacto (agora como primeiro e ativo) -->
-          <div class="carousel-item slide-compacto active">
-            <h3 class="text-center">Médias</h3>
-            <div class="fluxograma text-white p-2">
-
-              <div class="fluxo">
-              <h6 class="mb-2">CSAT (%)</h6>
-              <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-csat">--</span></div>
-            </div>
-
-            <div class="fluxo">
-              <h6 class="mb-2">SLA Atendimento (%)</h6>
-              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
-            </div>
-
-            <div class="fluxo">
-              <h6 class="mb-2">SLA Solução (%)</h6>
-              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
-            </div>
-
-            <div class="fluxo">
-              <h6 class="mb-2">Reabertura (%)</h6>
-              <div class="info-item2 text-center"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
-            </div>
-
-            <div class="fluxo">
-              <h6 class="mb-2">TMA (m)</h6>
-              <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
-            </div>
-
-            <div class="fluxo">
-              <h6 class="mb-2">TMS (h)</h6>
-              <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
-            </div>
-
-            <div class="fluxo">
-              <h6 class="mb-2">FCR (%)</h6>
-              <div class="info-item2"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
-            </div>
-
-            <br>
-            <div class="row g-3">
+            <h3 class="text-center">Quarter TMA & TMS</h3>
+            <div class="row g-3 mt-4">
               <div class="col-md-6 mb-4">
-                <div class="fluxo-card" style="padding: 2rem;">
-                  <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
-                  <canvas id="graficoTmaTms" height="80"></canvas>
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Q1 - Jan | Fev | Mar</h5>
+                  <canvas id="graficoQ1TMATMS" height="80"></canvas>
                 </div>
               </div>
 
               <div class="col-md-6 mb-4">
-                <div class="fluxo-card" style="padding: 2rem;">
-                  <h5 class="text-center mb-4">Evolução do SLA</h5>
-                  <canvas id="graficoSLA" height="80"></canvas>
-                </div>
-              </div>
-
-              <!-- Linha 2: FCR + CSAT -->
-              <div class="col-md-6 mb-4">
-                <div class="fluxo-card" style="padding: 2rem;">
-                  <h5 class="text-center mb-4">Evolução do FCR</h5>
-                  <canvas id="graficoFCR" height="80"></canvas>
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Q2 - Abr | Mai | Jun</h5>
+                  <canvas id="graficoQ2TMATMS" height="80"></canvas>
                 </div>
               </div>
 
               <div class="col-md-6 mb-4">
-                <div class="fluxo-card" style="padding: 2rem;">
-                  <h5 class="text-center mb-4">Evolução do CSAT</h5>
-                  <canvas id="graficoCSAT" height="80"></canvas>
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Q3 - Jul | Ago | Set</h5>
+                  <canvas id="graficoQ3TMATMS" height="80"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Q4 - Out | Nov | Dez</h5>
+                  <canvas id="graficoQ4TMATMS" height="80"></canvas>
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- SLIDE 3 – Quarter SLA -->
+          <div class="carousel-item">
+            <h3 class="text-center mb-4">Quarter SLA</h3>
+              <div class="row g-3 mt-4">
+                <div class="col-md-6 mb-4">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q1 - Jan | Fev | Mar</h5>
+                    <canvas id="graficoQ1SLA" height="80"></canvas>
+                  </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q2 - Abr | Mai | Jun</h5>
+                    <canvas id="graficoQ2SLA" height="80"></canvas>
+                  </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q3 - Jul | Ago | Set</h5>
+                    <canvas id="graficoQ3SLA" height="80"></canvas>
+                  </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q4 - Out | Nov | Dez</h5>
+                    <canvas id="graficoQ4SLA" height="80"></canvas>
+                  </div>
+                </div>
+              </div>
+          </div>
+
+          <!-- SLIDE 4 – Quarter FCR -->
+          <div class="carousel-item">
+            <h3 class="text-center mb-4">Quarter FCR</h3>
+              <div class="row g-3 mt-4">
+                <div class="col-md-6 mb-4">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q1 - Jan | Fev | Mar</h5>
+                    <canvas id="graficoQ1FCR" height="80"></canvas>
+                  </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q2 - Abr | Mai | Jun</h5>
+                    <canvas id="graficoQ2FCR" height="80"></canvas>
+                  </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q3 - Jul | Ago | Set</h5>
+                    <canvas id="graficoQ3FCR" height="80"></canvas>
+                  </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q4 - Out | Nov | Dez</h5>
+                    <canvas id="graficoQ4FCR" height="80"></canvas>
+                  </div>
+                </div>
+              </div> 
+          </div>
+
+          <!-- SLIDE 4 – Quarter CSAT -->
+          <div class="carousel-item">
+            <h3 class="text-center mb-4">Quarter CSAT</h3>
+              <div class="row g-3 mt-4">
+                <div class="col-md-6 mb-4">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q1 - Jan | Fev | Mar</h5>
+                    <canvas id="graficoQ1CSAT" height="80"></canvas>
+                  </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q2 - Abr | Mai | Jun</h5>
+                    <canvas id="graficoQ2CSAT" height="80"></canvas>
+                  </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q3 - Jul | Ago | Set</h5>
+                    <canvas id="graficoQ3CSAT" height="80"></canvas>
+                  </div>
+                </div>
+
+                <div class="col-md-6 col-lg-6">
+                  <div class="fluxo-card p-4">
+                    <h5 class="text-center mb-3">Q4 - Out | Nov | Dez</h5>
+                    <canvas id="graficoQ4CSAT" height="80"></canvas>
+                  </div>
+                </div>
+              </div>
+            
+          </div>
+
+          <!-- SLIDE 5 – Acumulado -->
+          <div class="carousel-item">
+            <h3 class="text-center mb-4">Acumulado</h3>
+              <div class="row g-3 mt-4">
+                <!-- Gráficos -->
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução Acumulada TMA & TMS</h5>
+                  <canvas id="graficoAcumuladoTmaTms" height="80"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução Acumulada SLA</h5>
+                  <canvas id="graficoAcumuladoSLA" height="120"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução Acumulada FCR</h5>
+                  <canvas id="graficoAcumuladoFCR" height="80"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução Acumulada CSAT</h5>
+                  <canvas id="graficoAcumuladoCSAT" height="80"></canvas>
+                </div>
+              </div>
             </div>
+            
           </div>
         </div>
 
-        <!-- Controles de navegação do carrossel -->
+        <!-- Controles -->
         <button class="carousel-control-prev" type="button" data-bs-target="#carouselGraficos" data-bs-slide="prev">
           <span class="carousel-control-prev-icon bg-dark rounded-circle" aria-hidden="true"></span>
           <span class="visually-hidden">Anterior</span>
@@ -255,88 +429,13 @@
       </div>
     </div>
   </div>
-</div> <!-- FIM da container-fluid -->
-
-  <!-- Modal para mostrar os códigos -->
-<div class="modal fade" id="modalCodigos" tabindex="-1" aria-labelledby="modalCodigosLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalCodigosLabel">Chamados</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaCodigos" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
 </div>
 
-
-<!-- Modal Definir Metas -->
-<div class="modal fade" id="modalDefinirMetas" tabindex="-1" aria-labelledby="modalDefinirMetasLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content" style="background-color: #1c1c1c; color: #fff;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalDefinirMetasLabel">Definir Metas</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <form id="formMetas">
-        <div class="modal-body">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label">Reabertos</label>
-              <input type="number" class="form-control bg-dark text-white" name="reabertos">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">FCR</label>
-              <input type="number" class="form-control bg-dark text-white" name="fcr">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">TMA</label>
-              <input type="number" class="form-control bg-dark text-white" name="tma">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">TMS</label>
-              <input type="number" class="form-control bg-dark text-white" name="tms">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">TMIN</label>
-              <input type="number" class="form-control bg-dark text-white" name="tmin">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">TMAX</label>
-              <input type="number" class="form-control bg-dark text-white" name="tmax">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">SLA Atendimento Prazo</label>
-              <input type="number" class="form-control bg-dark text-white" name="sla_atendimento_prazo">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">SLA Resolução Prazo</label>
-              <input type="number" class="form-control bg-dark text-white" name="sla_resolucao_prazo">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">CSAT</label>
-              <input type="number" class="form-control bg-dark text-white" name="csat">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer border-0">
-          <button type="submit" class="btn btn-primary">Salvar Metas</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
+{% include 'modal/okrs/modal_okrs.html' %}
 {% endblock %}
 
-
 {% block scripts %}
-  <script src="{{ url_for('static', filename='js/okrs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/okrs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/okrs_quarters.js') }}"></script>
+<script src="{{ url_for('static', filename='js/okrs_acumulados.js') }}"></script>
 {% endblock %}

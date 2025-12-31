@@ -97,20 +97,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Modal de pausas ---
   window.mostrarPausas = function() {
-    const lista = document.getElementById("listaPausas");
-    lista.innerHTML = "";
-    if (!pausasDetalhes || pausasDetalhes.length === 0) {
-      lista.innerHTML = "<li>Nenhuma pausa registrada.</li>";
-    } else {
-      pausasDetalhes.forEach(pausa => {
-        const li = document.createElement("li");
-        li.textContent = `${pausa.nome_pausa} - Total: ${pausa.total} - Duração: ${pausa.duracao}`;
-        lista.appendChild(li);
-      });
-    }
-    const modal = new bootstrap.Modal(document.getElementById("modalPausas"));
-    modal.show();
+  const lista = document.getElementById("listaPausas");
+  lista.innerHTML = "";
+
+  if (!pausasDetalhes || pausasDetalhes.length === 0) {
+    lista.innerHTML = "<li>Nenhuma pausa registrada.</li>";
+  } else {
+    pausasDetalhes.forEach(pausa => {
+      const li = document.createElement("li");
+
+      // Define se é produtiva ou improdutiva com base no valor de 'parametro'
+      const parametrosProdutivos = ['3', '4', '7'];
+      const isProdutiva = parametrosProdutivos.includes(String(pausa.parametro));
+
+      // Define a cor com base no tipo
+      const cor = isProdutiva ? '#ADFF2F' : '#FF4500'; // verde ou vermelho
+
+      li.style.color = cor;
+      li.textContent = `${pausa.nome_pausa} - Total: ${pausa.total} - Duração: ${pausa.duracao}`;
+      lista.appendChild(li);
+    });
   }
+
+  const modal = new bootstrap.Modal(document.getElementById("modalPausas"));
+  modal.show();
+}
+
+
 
   async function atualizarTotalChamados(dias = 1) {
     try {

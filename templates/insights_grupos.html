@@ -3,50 +3,14 @@
 
 {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css_guardians/style_insights_grupos.css') }}">
-    <style>
-      /* Carrossel - setas ajustadas */
-    #carouselGraficos .carousel-control-prev,
-    #carouselGraficos .carousel-control-next {
-      width: 40px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 10;
-    }
-
-    #carouselGraficos .carousel-control-prev {
-      left: -20px; /* fora do conteúdo */
-    }
-
-    #carouselGraficos .carousel-control-next {
-      right: -20px; /* fora do conteúdo */
-    }
-
-    #carouselGraficos .carousel-control-prev-icon,
-    #carouselGraficos .carousel-control-next-icon {
-      background-color: rgba(0,0,0,0.6);
-      border-radius: 50%;
-      padding: 10px;
-      width: 35px;
-      height: 35px;
-      background-size: 50% 50%;
-    }
-
-    #carouselGraficos .carousel-inner .row {
-      padding-left: 15px;
-      padding-right: 15px;
-    }
-    </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid my-4 px-5">
-  <div class="row mb-2">
-        <div class="col-auto">
-            <div class="btn-group" role="group" aria-label="bottomVoltar">
-                <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">Voltar</a>
-            </div>
-        </div>
-    </div>
+    <br>
+      <br>
+        <br>
+          <br>
 
     <div class="row mb-4">
         <div class="col text-center ">
@@ -218,7 +182,7 @@
                   <div id="resumoAdminAbertosResolvidos" class="text-center text-white small d-flex gap-3 mb-0">
                     <p class="mb-1"><strong>Total Abertos:</strong> <span id="adminTotalAbertos">-</span></p>
                     <p class="mb-1"><strong>Total Resolvidos:</strong> <span id="adminTotalResolvidos">-</span></p>
-                    <p class="mb-1"><strong>Diferença:</strong> <span id="adminDiferenca">-</span></p>
+                    <p class="mb-1"><strong>Ativos:</strong> <span id="adminDiferenca">-</span></p>
                   </div>
                 </div>
               </div>
@@ -283,59 +247,8 @@
   </div> <!-- FIM da .row -->
 </div>
 
-<!-- Modal para mostrar os códigos -->
- <div class="modal fade" id="modalCodigos" tabindex="-1" aria-labelledby="modalCodigosLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalCodigosLabel">Chamados</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaCodigos" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
+{% include 'modal/insights/modal_insights_grupos.html' %}
 
-<div class="modal fade" id="modalChamadosExpirados" tabindex="-1" aria-labelledby="modalChamadosExpiradosLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-        <div class="modal-header border-0">
-            <h5 class="modal-title" id="modalChamadosExpiradosLabel">Chamados Expirados</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-        </div>
-        <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-            <ul id="listaChamados" class="list-unstyled mb-0"></ul>
-        </div>
-        <div class="modal-footer border-0">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-        </div>
-        </div>
-    </div>
-    </div>
-
-
-<!-- Modal exclusivo para SLA por Grupo -->
-<div class="modal fade" id="modalChamadosGrupos" tabindex="-1" aria-labelledby="modalChamadosGruposLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalChamadosGruposLabel">Chamados Expirados - Por Grupo</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaChamadosGrupos" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
 {% endblock %}
 
 {% block scripts %}

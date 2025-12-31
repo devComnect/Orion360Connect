@@ -1,0 +1,111 @@
+{% extends "base_template.html" %}
+{% block title %}Operação{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style_insights.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4 px-5">
+    
+    <br>
+      <br>
+        <br>
+          <br>
+
+    <div class="row mb-4">
+        <div class="col text-center ">
+            <h2 class="fw-bold text-white">Operação</h2>
+        </div>
+    </div>
+
+  <!-- Botões de filtro de período -->
+  <div class="row justify-content-center mb-4">
+    <div class="col-auto">
+      <div class="btn-group">
+        <button class="btn btn-outline-secondary filtro-btn" data-dias="7">7 dias</button>
+        <button class="btn btn-outline-secondary filtro-btn" data-dias="15">15 dias</button>
+        <button class="btn btn-outline-secondary filtro-btn" data-dias="30">30 dias</button>
+        <button class="btn btn-outline-secondary filtro-btn" data-dias="90">90 dias</button>
+        <button class="btn btn-outline-secondary filtro-btn" data-dias="180">180 dias</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LINHA DE CARDS -->
+  <div class="row g-4">
+
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <h6>Top 5 Clientes <i class="bi bi-building-gear"></i></h6>
+          <ul id="top-clientes" class="list-group list-group-flush mt-3">
+            <li class="list-group-item bg-transparent text-white">Carregando...</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <h6>Top 5 Status <i class="bi bi-file-earmark-check-fill"></i></h6>
+          <ul id="top-status" class="list-group list-group-flush mt-3">
+            <li class="list-group-item bg-transparent text-white">Carregando...</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <h6>Top 5 Grupos <i class="bi bi-people"></i></h6>
+          <ul id="top-grupos" class="list-group list-group-flush mt-3">
+            <li class="list-group-item bg-transparent text-white">Carregando...</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <h6>Top 5 Tipo Ocorrência <i class="bi bi-send-check-fill"></i></h6>
+          <ul id="top-tipo-ocorrencia" class="list-group list-group-flush mt-3">
+            <li class="list-group-item bg-transparent text-white">Carregando...</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <h6>Top 5 Categorias <i class="bi bi-stack"></i></h6>
+          <ul id="top-categorias" class="list-group list-group-flush mt-3">
+            <li class="list-group-item bg-transparent text-white">Carregando...</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <h6>Top 5 Sub - Categorias <i class="bi bi-stack-overflow"></i></h6>
+          <ul id="top-sub-categorias" class="list-group list-group-flush mt-3">
+            <li class="list-group-item bg-transparent text-white">Carregando...</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- fim row -->
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/operacao.js') }}"></script>
+{% endblock %}

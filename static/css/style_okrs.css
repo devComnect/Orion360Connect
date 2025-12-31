@@ -32,7 +32,7 @@
     font-weight: 400;
     background: #2f2f37;
     color: white;
-    padding: 2rem;
+    padding: 1rem;
     border: none;
     border-radius: 16px;
     min-width: 280px;
@@ -56,15 +56,7 @@
   font-size: 1rem;
 }
 
- .info-item2 {
-  display: flex;
-  justify-content: space-between;
-  justify-content: center; /* Centraliza horizontalmente */
-  align-items: center;     /* Centraliza verticalmente */
-  text-align: center;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-}
+ 
 
 .info-item .value {
   text-align: right;
@@ -137,15 +129,41 @@
   /* Reduz espaços internos dos info-items */
   .card-compacto .info-item {
    font-size: 0.95rem;
-  margin-bottom: 0.5rem;
+   margin-bottom: 0.5rem;
   }
 
   /* Opcional: reduz altura geral do fluxograma */
   .fluxograma {
     padding: 1rem 0;
     display: flex;
-  flex-wrap: wrap; /* Permite quebra de linha se necessário */
-  gap: 0.75rem; /* Espaço entre os cards */
-  justify-content: center;
-  padding: 1rem;
+    flex-wrap: wrap; /* Permite quebra de linha se necessário */
+    gap: 0.60rem; /* Espaço entre os cards */
+    justify-content: center;
+    padding: 1rem;
+    }
+
+  /* Organização visual em colunas */
+  .fluxograma-topo {
+    display: flex;
+    justify-content: space-evenly;
+    position: relative;
+    margin-bottom: 30px;
   }
+
+
+.filtro-grafico-dropdown {
+  position: absolute;
+  color: #2f2f37;
+  top: 10px;
+  right: 10px;
+}
+
+
+  /* espaço entre grupo-esquerda e grupo-direita 
+.grupo-esquerda {
+  margin-right: 3rem; /* aumenta ou diminui conforme desejar *
+}
+
+.grupo-direita {
+  margin-left: 3rem;
+}*/

@@ -2,6 +2,7 @@
    VARIAVEIS GLOBAIS & THEME (CYBERPUNK)
    ========================================= */
 :root {
+<<<<<<< HEAD
     --bg-dark: #0b0c10;
     --bg-panel: #1f2833;
     --text-main: #c5c6c7;
@@ -14,6 +15,37 @@
     --ui-font: system-ui, -apple-system, sans-serif;
 }
 
+=======
+    /* Cores Base */
+    --bg-dark: #0b0c10;
+    --bg-panel: #1f2833;
+    --text-main: #c5c6c7;
+    
+    /* Cores Neon */
+    --neon-blue: #0dcaf0; 
+    --neon-green: #39ff14; 
+    --neon-red: #bb2d3b; 
+    --neon-yellow: #fcee0a; 
+    --neon-grey: #b1b6be;
+    
+    /* Raridades RPG */
+    --rarity-common: #adb5bd;    /* Cinza */
+    --rarity-rare: #0dcaf0;      /* Azul */
+    --rarity-epic: #d63384;      /* Roxo/Magenta */
+    --rarity-legendary: #ffc107; /* Dourado */
+
+    /* Utilitários */
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+    --tech-font: 'Courier New', Courier, monospace;
+    --ui-font: system-ui, -apple-system, sans-serif;
+}
+
+/* Reset Básico de Segurança */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+>>>>>>> origin/guardians
 body {
     background-color: var(--bg-dark);
     color: var(--text-main);
@@ -25,15 +57,26 @@ body {
 .font-tech { font-family: var(--tech-font); letter-spacing: -0.5px; }
 .text-neon-blue { color: var(--neon-blue); text-shadow: 0 0 5px var(--neon-blue); }
 .text-neon-green { color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green); }
+<<<<<<< HEAD
 
+=======
+.text-white-glow { color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+.text-neon-red { color: var(--neon-red); text-shadow: 0 0 5px var(--neon-red); }
+.text-neon-grey { color: var(--neon-grey); text-shadow: 0 0 5px var(--neon-grey); }
+>>>>>>> origin/guardians
 /* =========================================
    ESTRUTURA DE CARDS (CYBER PANELS)
    ========================================= */
 .cyber-card {
     background: rgba(31, 40, 51, 0.95);
     border: 1px solid #2c3e50;
+<<<<<<< HEAD
     border-left: 3px solid var(--neon-blue); /* Identidade visual */
     border-radius: 4px; /* Cantos levemente arredondados, mais quadrados */
+=======
+    border-left: 3px solid var(--neon-blue);
+    border-radius: 4px;
+>>>>>>> origin/guardians
     margin-bottom: 1.5rem;
     position: relative;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
@@ -71,8 +114,14 @@ body {
    HEADER DO PERFIL
    ========================================= */
 .profile-hero {
+<<<<<<< HEAD
     background: linear-gradient(180deg, rgba(11,12,16,0) 0%, rgba(11,12,16,1) 100%), 
                 url('https://c4.wallpaperflare.com/wallpaper/586/364/563/digital-art-grid-lines-abstract-dark-background-wallpaper-preview.jpg'); /* Background Tech Genérico ou Asset Local */
+=======
+    /* Fallback color + Gradient + Image */
+    background: linear-gradient(180deg, rgba(11,12,16,0) 0%, rgba(11,12,16,1) 100%), 
+                url('https://c4.wallpaperflare.com/wallpaper/586/364/563/digital-art-grid-lines-abstract-dark-background-wallpaper-preview.jpg');
+>>>>>>> origin/guardians
     background-size: cover;
     background-position: center;
     padding: 3rem 0 1rem 0;
@@ -88,13 +137,20 @@ body {
     border: 2px solid var(--neon-blue);
     padding: 4px;
     background: #000;
+<<<<<<< HEAD
     
+=======
+>>>>>>> origin/guardians
 }
 
 .avatar-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+<<<<<<< HEAD
+=======
+    /* Clip-path tech style */
+>>>>>>> origin/guardians
     clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
 }
 
@@ -109,21 +165,37 @@ body {
     padding: 2px 8px;
     font-weight: bold;
     z-index: 2;
+<<<<<<< HEAD
+=======
+    font-size: 0.8rem;
+>>>>>>> origin/guardians
 }
 
 /* Caminhos (Specializations) Colors */
 .spec-vermelho .avatar-frame, .spec-vermelho .level-badge { border-color: var(--neon-red); color: var(--neon-red); }
 .spec-vermelho .profile-hero { border-bottom-color: var(--neon-red); }
 
+<<<<<<< HEAD
 .spec-verde .avatar-frame, .spec-verde .level-badge { border-color: var(--neon-green); color: var(--neon-green); }
 .spec-verde .profile-hero { border-bottom-color: var(--neon-green); }
 
 /* =========================================
    BARRA DE XP & STATS
+=======
+.spec-cinza .avatar-frame, .spec-cinza .level-badge { border-color: var(--neon-grey); color: var(--neon-grey); }
+.spec-cinza .profile-hero { border-bottom-color: var(--neon-grey); }
+
+/* =========================================
+   XP & STATS
+>>>>>>> origin/guardians
    ========================================= */
 .xp-system {
     max-width: 600px;
     margin: 1rem auto;
+<<<<<<< HEAD
+=======
+    padding: 0 15px; /* Padding safe para mobile */
+>>>>>>> origin/guardians
 }
 
 .tech-progress {
@@ -131,7 +203,10 @@ body {
     background: #333;
     border: 1px solid #555;
     position: relative;
+<<<<<<< HEAD
     overflow: visible; /* Para efeitos */
+=======
+>>>>>>> origin/guardians
 }
 
 .tech-progress-bar {
@@ -150,7 +225,11 @@ body {
     color: #888;
 }
 
+<<<<<<< HEAD
 /* Container de Dias da Semana */
+=======
+/* Tracker Semanal */
+>>>>>>> origin/guardians
 .week-tracker {
     display: flex;
     gap: 4px;
@@ -187,6 +266,7 @@ body {
     box-shadow: 0 0 15px var(--neon-blue);
 }
 
+<<<<<<< HEAD
 .btn-choose-path {
     width: 100%;
     padding: 1.5rem;
@@ -209,6 +289,15 @@ body {
 .inventory-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
+=======
+/* =========================================
+   INVENTÁRIO & GRID
+   ========================================= */
+.inventory-grid {
+    display: grid;
+    /* CORREÇÃO: Grid Responsivo Automático (Minimo 140px por item) */
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+>>>>>>> origin/guardians
     gap: 10px;
     padding: 10px;
 }
@@ -219,12 +308,42 @@ body {
     padding: 10px;
     text-align: center;
     position: relative;
+<<<<<<< HEAD
 }
 
 .inventory-icon { font-size: 1.5rem; margin-bottom: 5px; color: #ffd700; }
 .inventory-count { font-family: var(--tech-font); font-size: 1.2rem; font-weight: bold; color: #fff; }
 .inventory-label { font-size: 0.7rem; text-transform: uppercase; color: #777; }
 
+=======
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100px; /* Garante altura mínima visual */
+}
+
+/* Estilos de Raridade */
+.inventory-slot.rarity-COMMON { border-color: var(--rarity-common); color: var(--rarity-common); }
+.inventory-slot.rarity-COMMON:hover { box-shadow: 0 0 10px var(--rarity-common); }
+
+.inventory-slot.rarity-RARE { border-color: var(--rarity-rare); color: var(--rarity-rare); }
+.inventory-slot.rarity-RARE:hover { box-shadow: 0 0 15px var(--rarity-rare); background: rgba(13, 202, 240, 0.05); }
+
+.inventory-slot.rarity-EPIC { border-color: var(--rarity-epic); color: var(--rarity-epic); }
+.inventory-slot.rarity-EPIC:hover { box-shadow: 0 0 15px var(--rarity-epic); background: rgba(214, 51, 132, 0.05); }
+
+.inventory-slot.rarity-LEGENDARY { border-color: var(--rarity-legendary); color: var(--rarity-legendary); }
+.inventory-slot.rarity-LEGENDARY:hover { box-shadow: 0 0 20px var(--rarity-legendary); background: rgba(255, 193, 7, 0.05); }
+
+.inventory-slot img { filter: drop-shadow(0 0 2px currentColor); }
+
+.inventory-count { font-family: var(--tech-font); font-size: 1.2rem; font-weight: bold; color: #fff; }
+.inventory-label { font-size: 0.7rem; text-transform: uppercase; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inventory-bonus-text { font-size: 0.65rem; color: #aaa; margin-top: -2px; font-family: var(--tech-font); }
+
+/* Barras de Crafting/Token */
+>>>>>>> origin/guardians
 .crafting-progress {
     height: 4px;
     background: #222;
@@ -292,6 +411,7 @@ body {
 .terminal-item:hover { background: rgba(255,255,255,0.02); }
 .term-date { color: var(--neon-blue); margin-right: 10px; }
 
+<<<<<<< HEAD
 
 /* =========================================
    CUSTOM POPOVER (BUFFS STYLE)
@@ -443,11 +563,29 @@ body {
    WIDGET DE PROTOCOLO (NOVO DESIGN)
    ========================================= */
 
+=======
+/* =========================================
+   WIDGETS & POPOVERS
+   ========================================= */
+/* Insígnias Redondas */
+.featured-insignia-badge, .insignia-preview {
+    clip-path: circle(48% at center);
+    -webkit-clip-path: circle(48% at center);
+    border-radius: 50%;
+}
+.insignia-preview:hover { transform: scale(1.1); box-shadow: 0 0 15px rgba(69, 243, 255, 0.3); }
+
+/* Protocol Widget (Path) */
+>>>>>>> origin/guardians
 .protocol-widget {
     display: flex;
     align-items: center;
     padding: 15px 20px;
+<<<<<<< HEAD
     border-radius: 6px; /* Bordas levemente arredondadas, mas técnicas */
+=======
+    border-radius: 6px;
+>>>>>>> origin/guardians
     background: rgba(20, 20, 25, 0.8);
     border: 1px solid #333;
     transition: all 0.3s ease;
@@ -455,6 +593,7 @@ body {
     overflow: hidden;
     backdrop-filter: blur(5px);
 }
+<<<<<<< HEAD
 
 .protocol-widget::before {
     content: '';
@@ -575,3 +714,105 @@ body {
     text-shadow: 0 0 5px var(--neon-blue);
 }
 
+=======
+.protocol-widget::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+    background: #555; transition: all 0.3s;
+}
+
+.widget-icon { font-size: 1.8rem; margin-right: 20px; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: rgba(255,255,255,0.05); border-radius: 4px; }
+.widget-content { flex-grow: 1; }
+.widget-title { font-family: var(--tech-font); font-weight: bold; font-size: 1rem; letter-spacing: 1px; margin-bottom: 2px; }
+.widget-desc { font-size: 0.8rem; color: #888; font-family: var(--ui-font); }
+.widget-action { font-family: var(--tech-font); font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; opacity: 0.8; }
+.widget-status-text { font-family: var(--tech-font); font-size: 0.8rem; letter-spacing: 2px; opacity: 0.5; }
+
+/* Estados do Widget */
+.widget-locked { border-color: #333; background: #0f1012; cursor: not-allowed; opacity: 0.9; background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0) 10px, rgba(255, 255, 255, 0.01) 10px, rgba(255, 255, 255, 0.01) 20px); }
+.widget-locked::before { background: var(--neon-red); }
+.widget-ready { border-color: rgba(13, 202, 240, 0.3); background: linear-gradient(90deg, rgba(13, 202, 240, 0.05), rgba(0,0,0,0)); }
+.widget-ready::before { background: var(--neon-blue); }
+.widget-ready:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(13, 202, 240, 0.15); transform: translateY(-2px); }
+
+/* =========================================
+   STATUS WINDOW (MODAL JRPG)
+   ========================================= */
+
+/* O Botão de abrir */
+.btn-cyber-status {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #45a29e;
+    color: #fff;
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+}
+.btn-cyber-status:hover {
+    background: rgba(69, 243, 255, 0.1);
+    box-shadow: 0 0 15px rgba(69, 243, 255, 0.2);
+    border-color: #66fcf1;
+    transform: translateY(-2px);
+}
+
+/* O Modal em si */
+.cyber-modal-content {
+    background-color: #0b0c10; /* Fundo bem escuro */
+    border: 1px solid var(--neon-blue);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 
+                inset 0 0 20px rgba(13, 202, 240, 0.05);
+    border-radius: 4px;
+}
+
+/* Fundo da área de lista */
+.status-screen-bg {
+    background: rgba(20, 20, 25, 0.5);
+    min-height: 200px;
+}
+
+.buff-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px; /* Mais espaçado no modal */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s;
+}
+
+.buff-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.buff-source {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--ui-font);
+    font-weight: 600;
+    color: #e0e0e0;
+    font-size: 0.95rem;
+}
+
+.buff-target {
+    font-family: var(--tech-font);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    opacity: 0.5;
+    margin-left: auto; /* Empurra para a direita */
+    margin-right: 15px;
+}
+
+.buff-value {
+    font-family: var(--tech-font);
+    font-weight: bold;
+    font-size: 1.1rem;
+    min-width: 60px;
+    text-align: right;
+}
+
+/* Cores dos atributos (Garante que apareçam no fundo escuro) */
+.stat-gold { color: #ffd700; text-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+.stat-int  { color: #0dcaf0; text-shadow: 0 0 5px rgba(13, 202, 240, 0.3); }
+.stat-def  { color: #20c997; text-shadow: 0 0 5px rgba(32, 201, 151, 0.3); }
+.stat-dex  { color: #d63384; text-shadow: 0 0 5px rgba(214, 51, 132, 0.3); }
+.stat-str  { color: #ff4d4d; text-shadow: 0 0 5px rgba(255, 77, 77, 0.3); }
+.stat-all  { color: #f8f9fa; }
+>>>>>>> origin/guardians

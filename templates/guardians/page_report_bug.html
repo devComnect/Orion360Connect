@@ -1,15 +1,25 @@
 {% extends "base_template.html" %}
+<<<<<<< HEAD
 
+=======
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+>>>>>>> origin/guardians
 {% block title %}Reportar Anomalia{% endblock %}
 
 {% block styles %}
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
+<<<<<<< HEAD
             --neon-red: #ff2a6d;   /* Bugs / Erros */
             --neon-blue: #0dcaf0;  /* Feedback / Sugestão */
             --neon-yellow: #fcee0a; /* Atenção */
             
+=======
+            --neon-red: #ff2a6d;  
+            --neon-blue: #0dcaf0; 
+            --neon-yellow: #fcee0a;
+>>>>>>> origin/guardians
             --bg-dark: #0b0c10;
             --panel-bg: #1f2833;
             --border-tech: #45a29e;
@@ -49,7 +59,11 @@
         .diagnostic-panel {
             background: rgba(31, 40, 51, 0.8);
             border: 1px solid var(--border-tech);
+<<<<<<< HEAD
             border-left: 4px solid var(--neon-red); /* Default Bug Color */
+=======
+            border-left: 4px solid var(--neon-red); 
+>>>>>>> origin/guardians
             border-radius: 4px;
             padding: 40px;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
@@ -79,7 +93,11 @@
         }
 
         .type-option {
+<<<<<<< HEAD
             display: none; /* Esconde o radio real */
+=======
+            display: none;
+>>>>>>> origin/guardians
         }
 
         .type-label {
@@ -211,6 +229,10 @@
 {% endblock %}
 
 {% block content %}
+<<<<<<< HEAD
+=======
+{{ render_assistant(assistant_data) }}
+>>>>>>> origin/guardians
 <div class="container">
 
     <div class="report-header font-tech">

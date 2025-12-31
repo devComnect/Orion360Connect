@@ -385,6 +385,15 @@ class Guardians(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
+<<<<<<< HEAD
+=======
+    # --- NOVOS CONTADORES DE ESTATÍSTICAS (Adicionado para Conquistas) ---
+    stat_patrol_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    stat_minigame_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    stat_shop_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    stat_quiz_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+
+>>>>>>> origin/guardians
     #Sistema de moedas
     guardian_coins = db.Column(db.Integer, nullable=False, default=0, server_default='0')
 
@@ -395,6 +404,7 @@ class Guardians(db.Model):
     ##Personalizar perfil
     nickname = db.Column(db.String(100), nullable=True)
     is_anonymous = db.Column(db.Boolean, default=False, nullable=False) # Para anonimato no perfil
+<<<<<<< HEAD
     avatar_config = db.Column(db.JSON, nullable=True)
 
 
@@ -486,7 +496,113 @@ class Guardians(db.Model):
                 
         # 3. Fallback Final: Se tudo acima falhar, retorna o avatar padrão.
         return 'img/avatares/default.png'
+=======
+    avatar_seed = db.Column(db.String(100), default='GuardianDefault')
+>>>>>>> origin/guardians
     
+    
+    #Adicao de cor no nome
+    name_color = db.Column(db.String(7), nullable=True) # Para armazenar um código HEX, ex: #FFD700
+
+    # Armazena o melhor troféu permanente: 1=Ouro, 2=Prata, 3=Bronze
+    trophy_tier = db.Column(db.Integer, nullable=True)
+
+    
+    # Chave estrangeira para classe user
+    user_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), unique=True, nullable=False)
+
+    # Informações pessoais
+    nome = db.Column(db.String(100)) 
+    email = db.Column(db.String(255), unique=True)
+    grupo = db.Column(db.String(100))  # Equivale a department_name
+    
+    # Permissao de admin
+    is_admin = db.Column(db.Boolean, default=False)
+
+    # Pontuação , ranking e anonimato
+    score_atual = db.Column(db.Integer, default=0)
+    opt_in_real_name_ranking = db.Column(db.Boolean, default=False)
+    is_anonymous = db.Column(db.Boolean, nullable=False, default=False)
+
+
+    # Dados do departamento (embutidos)
+    departamento_id = db.Column(db.Integer)  # Departments.department_id
+    departamento_nome = db.Column(db.String(100))  # Departments.department_name
+    departamento_score = db.Column(db.Integer, default=0)
+
+    # Últimas atividades
+    ultima_atividade = db.Column(db.DateTime)
+    last_spec_change_at = db.Column(db.DateTime, nullable=True)
+    tutorials_seen = db.Column(db.JSON, default=dict)
+    
+    #Add patrulha diaria
+    last_patrol_date = db.Column(db.Date, nullable=True)
+    
+    # Coluna para contar a sequência de quizzes com nota máxima.
+    perfect_quiz_streak = db.Column(db.Integer, nullable=False, default=0)
+    perfect_quiz_cumulative_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    perfect_minigame_cumulative_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    perfect_minigame_streak = db.Column(db.Integer, default=0)
+
+
+    # Controle de criação/atualização
+    criado_em = db.Column(db.DateTime, default=db.func.current_timestamp())
+    atualizado_em = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    #Relacionamento com a tabela de conquistas em destaque
+    featured_associations = db.relationship(
+        'GuardianFeatured',
+        back_populates='guardian',
+        cascade='all, delete-orphan' 
+    )
+    
+    # Adicione a chave estrangeira para o nível de segurança
+    nivel_id = db.Column(db.Integer, db.ForeignKey('niveis_seguranca.id'))
+    nivel = db.relationship("NivelSeguranca")
+
+    # Chave estrangeira para a nova tabela Specialization
+    specialization_id = db.Column(db.Integer, db.ForeignKey('specialization.id'), nullable=True)
+    specialization = db.relationship('Specialization')
+    
+    # Relacionamentos com as novas classes
+    historico_acoes = db.relationship("HistoricoAcao", back_populates="guardian", lazy='dynamic')
+    insignias_conquistadas = db.relationship("GuardianInsignia", back_populates="guardian", lazy='dynamic')
+    current_streak = db.Column(db.Integer, default=0)
+    last_streak_date = db.Column(db.Date, nullable=True)
+    quiz_attempts = db.relationship("QuizAttempt", back_populates="guardian", cascade="all, delete-orphan", lazy='dynamic')
+    weekly_quest_sets = db.relationship('WeeklyQuestSet', back_populates='guardian', cascade="all, delete-orphan", lazy='dynamic')
+
+    @property
+    def avatar_path(self):
+        """
+        Retorna o caminho do avatar de forma segura, com múltiplos fallbacks.
+        Garante que NUNCA retorne um valor nulo.
+        """
+        if self.nivel and self.nivel.avatar_url:
+            return self.nivel.avatar_url
+        
+        if self.specialization:
+            primeiro_nivel = NivelSeguranca.query.filter_by(
+                specialization_id=self.specialization_id,
+                level_number=1
+            ).first()
+            if primeiro_nivel and primeiro_nivel.avatar_url:
+                return primeiro_nivel.avatar_url
+                
+        return 'img/avatares/default.png'
+    
+
+class GuardianFeatured(db.Model):
+    __tablename__ = 'guardian_featured'
+    
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), primary_key=True)
+    insignia_id = db.Column(db.Integer, db.ForeignKey('insignias.id'), primary_key=True)
+    slot_index = db.Column(db.Integer, default=0) 
+    equipado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
+    insignia = db.relationship("Insignia")
+    guardian = db.relationship("Guardians")
+
 class NivelSeguranca(db.Model):
     __tablename__ = 'niveis_seguranca'
     id = db.Column(db.Integer, primary_key=True)
@@ -502,16 +618,14 @@ class Insignia(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False, unique=True)
     descricao = db.Column(db.Text, nullable=False)
-    requisito_score = db.Column(db.Integer, default=0) # Pontuação mínima para obter a insígnia
+    requisito_score = db.Column(db.Integer, default=0)
     caminho_imagem = db.Column(db.String(255))
     bonus_type = db.Column(db.String(50), nullable=True) 
     bonus_value = db.Column(db.Float, nullable=True)    
     
-    achievement_code = db.Column(db.String(50), nullable=False, unique=True, index=True)  #id para conquistas automaticas
+    achievement_code = db.Column(db.String(50), nullable=False, unique=True, index=True) 
 
-    
-    # Relacionamento com a tabela de junção
-    conquistas = db.relationship("GuardianInsignia", back_populates="insignia")
+    conquistas = db.relationship("GuardianInsignia", back_populates="insignia", cascade="all, delete-orphan")
     
 class HistoricoAcao(db.Model):
     __tablename__ = 'historico_acoes'
@@ -529,7 +643,6 @@ class GuardianInsignia(db.Model):
     guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), primary_key=True)
     insignia_id = db.Column(db.Integer, db.ForeignKey('insignias.id'), primary_key=True)
     data_conquista = db.Column(db.DateTime, default=db.func.now())
-    
     
     # Relacionamentos com as classes principais
     guardian = db.relationship("Guardians", back_populates="insignias_conquistadas")
@@ -946,7 +1059,10 @@ class GuardianPurchase(db.Model):
     def __repr__(self):
         return f'<Purchase {self.guardian_id} bought {self.item_id}>'
     
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/guardians
 class GuardianShopState(db.Model):
     __tablename__ = 'guardian_shop_states'
     
@@ -956,4 +1072,20 @@ class GuardianShopState(db.Model):
     reroll_count = db.Column(db.Integer, default=0)
     last_refresh_date = db.Column(db.Date, nullable=False) 
     
+<<<<<<< HEAD
     guardian = db.relationship('Guardians', backref=db.backref('shop_state', uselist=False))
+=======
+    guardian = db.relationship('Guardians', backref=db.backref('shop_state', uselist=False))
+
+class AchievementCategory(db.Model):
+    __tablename__ = 'achievement_categories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True) 
+    order = db.Column(db.Integer, default=0, nullable=False)
+    icon = db.Column(db.String(100))
+    desc = db.Column(db.String(100))
+    
+    def __repr__(self):
+        return f"<Category {self.name} (Order: {self.order})>"
+>>>>>>> origin/guardians

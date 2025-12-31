@@ -1,0 +1,158 @@
+{% extends "base_template.html" %}
+
+{% block title %}OKRs{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style_okrs.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4 px-5">
+  <!-- Botão Voltar -->
+  <div class="row mb-2">
+    <div class="col-auto">
+      <div class="btn-group" role="group" aria-label="bottomVoltar">
+        <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">Voltar</a>
+      </div>
+    </div>
+  </div>
+  <br>
+    <br>
+      <br>
+        <br>
+
+  <div class="row justify-content-center text-white">
+    <h1 class="text-center">OKRs</h1>
+  </div>
+
+  <!-- Carrossel de Gráficos -->
+  <div class="row mt-3 gx-4">
+    <div class="col-12">
+      <div id="carouselGraficos" class="carousel slide" data-bs-interval="false" data-bs-ride="false">
+        <div class="carousel-inner">
+
+          <!-- SLIDE 1 – Metas + Evoluções -->
+          <div class="carousel-item active">
+            <!-- Bloco inferior (metas detalhadas) -->
+            <div class="fluxograma text-white p-2 position-relative">
+
+
+              <!-- Metas relacionadas à Excelência no atendimento -->
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">CSAT (%)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-csat">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Atendimento (%)</h6>
+                <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-atendimento">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">SLA Solução (%)</h6>
+                <div class="info-item2 text-center"><i class="bi bi-arrow-bar-up"></i><span id="meta-sla-solucao">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-esquerda">
+                <h6 class="mb-2">Reabertura (%)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-reabertura">--</span></div>
+              </div>
+
+              <!-- Metas relacionadas à Eficiência operacional -->
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMA (min)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tma">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">TMS (h)</h6>
+                <div class="info-item2"><i class="bi bi-arrow-bar-down"></i><span id="meta-tms">--</span></div>
+              </div>
+
+              <div class="fluxo grupo-direita">
+                <h6 class="mb-2">FCR (%)</h6>
+                <div class="info-item2" id="fcr-card"><i class="bi bi-arrow-bar-up"></i><span id="meta-fcr">--</span></div>
+              </div>
+
+            </div>
+
+            <!-- Gráficos -->
+            <div class="row g-3">
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4 position-relative">
+
+                  <!-- Título -->
+                  <h5 class="text-center mb-4">Evolução TMA & TMS</h5>
+
+                  <!-- Botão no canto superior direito -->
+                  <div class="dropdown filtro-grafico-dropdown">
+                      <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button"
+                              data-bs-toggle="dropdown" aria-expanded="false">
+                        Filtros
+                      </button>
+
+                      <ul class="dropdown-menu dropdown-menu-end">
+                        <li class="dropdown-header">Semestre</li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2025-1">1º Sem 2025</a></li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2025-2">2º Sem 2025</a></li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2024-1">1º Sem 2024</a></li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="semestre" data-valor="2024-2">2º Sem 2024</a></li>
+
+                        <li><hr class="dropdown-divider"></li>
+
+                        <li class="dropdown-header">Ano Completo</li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="ano" data-valor="2025">2025</a></li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="ano" data-valor="2024">2024</a></li>
+
+                        <li><hr class="dropdown-divider"></li>
+
+                        <li class="dropdown-header">Mês Específico</li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="mes" data-valor="2025-01">Jan/2025</a></li>
+                        <li><a class="dropdown-item filtro-opcao" data-filtro="mes" data-valor="2025-02">Fev/2025</a></li>
+                        <!-- Você pode gerar esses meses dinamicamente no futuro -->
+                      </ul>
+                    </div>
+
+                      <!-- Gráfico -->
+                      <canvas id="graficoTmaTms" height="90"></canvas>
+                    </div>
+                  </div>
+
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução do SLA</h5>
+                  <canvas id="graficoSLA" height="90"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução do FCR</h5>
+                  <canvas id="graficoFCR" height="90"></canvas>
+                </div>
+              </div>
+
+              <div class="col-md-6 mb-4">
+                <div class="fluxo-card p-4">
+                  <h5 class="text-center mb-4">Evolução do CSAT</h5>
+                  <canvas id="graficoCSAT" height="90"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/okrs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/okrs_acumulados.js') }}"></script>
+<script src="{{ url_for('static', filename='js/okrs_individual.js') }}"></script>
+
+{% endblock %}

@@ -11,13 +11,11 @@
 {% block content %}
 
     <div class="container-fluid my-4 px-5">
-  <div class="row mb-2">
-    <div class="col-auto">
-      <div class="btn-group" role="group" aria-label="bottomVoltar">
-        <a href="{{ url_for('home_bp.render_insights') }}" class="btn btn-outline-secondary">Voltar</a>
-      </div>
-    </div>
-  </div>
+  
+  <br>
+    <br>
+      <br>
+        <br>
 
   <h3 class="text-center mb-4">
     <span>Desempenho de</span> <span id="colaboradorNome">Colaborador</span>
@@ -144,7 +142,6 @@
         <span class="text-success">TMS</span>
         <span class="value" id="percentual-tms">-</span>
       </div>
-      
     </div>
   </div>
 </div>
@@ -266,80 +263,10 @@
   </div>
 </div>
 
-<!-- Modal para Pausas -->
-<div class="modal fade" id="modalPausas" tabindex="-1" aria-labelledby="modalPausasLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalPausasLabel">Detalhes das Pausas</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaPausas" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modais -->
-<div class="modal fade" id="modalChamadosExpirados" tabindex="-1" aria-labelledby="modalChamadosExpiradosLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalChamadosExpiradosLabel">Chamados Expirados</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaChamados" style="list-style:none; padding-left: 0;"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="modalComentariosPesquisa" tabindex="-1" aria-labelledby="modalComentariosPesquisaLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalComentariosPesquisaLabel">Comentários da Pesquisa</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaComentarios" style="list-style:none; padding-left: 0;"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal para mostrar os códigos -->
-<div class="modal fade" id="modalCodigos" tabindex="-1" aria-labelledby="modalCodigosLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: #121212; color: #f1f1f1;">
-      <div class="modal-header border-0">
-        <h5 class="modal-title" id="modalCodigosLabel">Chamados</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-        <ul id="listaCodigos" class="list-unstyled mb-0"></ul>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
-    </div>
-  </div>
-</div>
+{% include 'modal/operadores/modal_operadores.html' %}
 {% endblock %}
 
 
 {% block scripts %}  
-
   {% include 'js/colaboradores_js.html' %}
 {% endblock %}

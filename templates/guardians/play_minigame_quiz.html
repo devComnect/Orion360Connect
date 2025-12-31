@@ -1,4 +1,8 @@
 {% extends "base_template.html" %}
+<<<<<<< HEAD
+=======
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+>>>>>>> origin/guardians
 
 {% block title %}Avaliação: {{ quiz.title }}{% endblock %}
 
@@ -7,12 +11,19 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/take_quiz.css') }}">
     <style>
         body { background-color: #121418; overflow-x: hidden; }
+<<<<<<< HEAD
         /* Ajuste para o botão de sair parecer clicável */
+=======
+>>>>>>> origin/guardians
         .hud-close-btn { background: none; border: none; padding: 0; cursor: pointer; }
     </style>
 {% endblock %}
 
 {% block content %}
+<<<<<<< HEAD
+=======
+{{ render_assistant(assistant_data) }}
+>>>>>>> origin/guardians
 <div id="quiz-game-container" data-timer="{{ remaining_time if remaining_time else 0 }}">
 
     <header class="hud-header">
@@ -116,7 +127,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
     const submitBtn = document.getElementById('submit-btn');
+<<<<<<< HEAD
     const abortBtn = document.getElementById('abort-btn'); // Botão Sair
+=======
+    const abortBtn = document.getElementById('abort-btn'); 
+>>>>>>> origin/guardians
     const progressBar = document.getElementById('progress-bar');
     const timerDisplay = document.getElementById('timer-display');
     const abandonedInput = document.getElementById('abandoned_input');
@@ -172,7 +187,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- INTERAÇÃO VISUAL ---
     const inputs = document.querySelectorAll('.option-input');
     inputs.forEach(input => {
+<<<<<<< HEAD
         // Evento de clique no label inteiro para melhor UX
+=======
+>>>>>>> origin/guardians
         input.parentElement.addEventListener('click', function(e) {
             setTimeout(() => {
                 if (input.checked) {
@@ -183,7 +201,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 10);
         });
         
+<<<<<<< HEAD
         // Listener direto no input para casos de teclado/navegação
+=======
+>>>>>>> origin/guardians
         input.addEventListener('change', function() {
             const visual = this.parentElement.querySelector('.option-visual');
             if (this.checked) visual.classList.add('selected');
@@ -228,6 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- ALTERAÇÃO 3: Lógica de Abortar Missão ---
     abortBtn.addEventListener('click', (e) => {
         e.preventDefault();
+<<<<<<< HEAD
         // Confirmação nativa (ou pode usar Swal se preferir)
         if(confirm("ATENÇÃO: Deseja abortar o protocolo?\n\nIsso encerrará a tentativa atual e sua pontuação será calculada apenas com o que foi respondido até agora (Tentativa zerada/incompleta).")) {
             // Marca flag de abandono
@@ -235,13 +257,22 @@ document.addEventListener('DOMContentLoaded', function() {
             // Remove a validação 'required' dos inputs para permitir envio incompleto
             document.querySelectorAll('input[required]').forEach(input => input.removeAttribute('required'));
             // Envia o formulário
+=======
+        if(confirm("ATENÇÃO: Deseja abortar o protocolo?\n\nIsso encerrará a tentativa atual e sua pontuação será calculada apenas com o que foi respondido até agora (Tentativa zerada/incompleta).")) {
+            abandonedInput.value = 'true';
+            document.querySelectorAll('input[required]').forEach(input => input.removeAttribute('required'));
+>>>>>>> origin/guardians
             form.submit();
         }
     });
 
     // Hover effect no botão de fechar (JS extra para cor do icone)
     abortBtn.addEventListener('mouseenter', () => {
+<<<<<<< HEAD
         abortBtn.querySelector('i').style.color = '#dc3545'; // Vermelho
+=======
+        abortBtn.querySelector('i').style.color = '#dc3545'; 
+>>>>>>> origin/guardians
     });
     abortBtn.addEventListener('mouseleave', () => {
         abortBtn.querySelector('i').style.color = '#fff';

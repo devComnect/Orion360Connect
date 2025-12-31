@@ -4,13 +4,11 @@ import requests, json, os
 import calendar
 from modules.deskmanager.authenticate.routes import token_desk
 from datetime import datetime, timedelta
-from dateutil.parser import parse as parse_date
+#from dateutil.parser import parse as parse_date, parse_tempo
 from application.models import db, Chamado, PerformanceColaboradores, ChamadasDetalhes, DesempenhoAtendenteVyrtos
 from sqlalchemy import extract, func
 
-
 dashboard_bp = Blueprint('dashboard_bp', __name__, url_prefix='/dashboard')
-
 
 @dashboard_bp.route('/ChamadosSuporte/fila', methods=['POST'])
 def listar_chamados_fila():
@@ -93,79 +91,101 @@ def listar_chamados_fila():
             "details": str(e)
         }), 500
 
-def parse_tempo(s):
-    try:
-        negativo = s.startswith('-')
-        h, m, s = map(int, s.replace('-', '').split(':'))
-        delta = timedelta(hours=h, minutes=m, seconds=s)
-        return -delta if negativo else delta
-    except:
-        return None
-
 @dashboard_bp.route('/ChamadosSuporte/sla_andamento', methods=['POST'])
 def listar_sla_andamento():
     try:
         hoje = datetime.now()
 
-        chamados = Chamado.query.filter(
-            Chamado.nome_grupo.ilike('%SUPORTE%'),
-            ~Chamado.nome_status.in_(["Resolvido", "Cancelado"])
-        ).all()
+        # Filtrar chamados do grupo de SUPORTE que não estão resolvidos/cancelados
+        chamados = (
+            Chamado.query.filter(
+                Chamado.nome_grupo.ilike('%SUPORTE%'),
+                ~Chamado.nome_status.in_(["Resolvido", "Cancelado"])
+            ).all()
+        )
 
-        sla1_expirado = 0
-        sla1_nao_expirado = 0
-        sla2_expirado = 0
-        sla2_nao_expirado = 0
-        sla1_quase_estourando = 0
-        sla2_quase_estourando = 0
+        # Contadores
+        sla1_expirado = sla1_urgente = sla1_quase_estourando = sla1_normal = 0
+        sla2_expirado = sla2_urgente = sla2_quase_estourando = sla2_normal = 0
 
-        codigos_sla1 = []
-        codigos_sla2 = []
+        # Listas de códigos
+        codigos_sla1_expirado = []
+        codigos_sla1_urgente = []
         codigos_sla1_critico = []
+        codigos_sla1_normal = []
+
+        codigos_sla2_expirado = []
+        codigos_sla2_urgente = []
         codigos_sla2_critico = []
+        codigos_sla2_normal = []
 
         for chamado in chamados:
-            sla1 = (chamado.sla_atendimento or "").strip().upper()
-            sla2 = (chamado.sla_resolucao or "").strip().upper()
-            restante1_raw = (chamado.restante_p_atendimento or "").strip()
-            restante2_raw = (chamado.restante_s_atendimento or "").strip()
-            restante1 = parse_tempo(restante1_raw)
-            restante2 = parse_tempo(restante2_raw)
             cod = chamado.cod_chamado
+            s1 = (chamado.status_sla_atendimento or "").strip()
+            s2 = (chamado.status_sla_resolucao or "").strip()
 
-            # SLA 1 - Atendimento
-            if sla1 == "S" or (restante1 is not None and restante1 <= timedelta(minutes=0)):
+            # ====== SLA 1 (Atendimento) ======
+            if s1.startswith("Expirado"):
                 sla1_expirado += 1
-                codigos_sla1.append(cod)
-            elif restante1 is not None and restante1 <= timedelta(minutes=5):
+                codigos_sla1_expirado.append(cod)
+
+            elif s1 == "Urgente":
+                sla1_urgente += 1
+                codigos_sla1_urgente.append(cod)
+
+            elif s1 == "Atenção":
                 sla1_quase_estourando += 1
                 codigos_sla1_critico.append(cod)
-            elif restante1 is not None:
-                sla1_nao_expirado += 1
 
-            # SLA 2 - Resolução
-            if sla2 == "S" or (restante2 is not None and restante2 <= timedelta(minutes=0)):
+            elif s1 == "Normal":
+                sla1_normal += 1
+                codigos_sla1_normal.append(cod)
+
+            # ====== SLA 2 (Resolução) ======
+            if s2.startswith("Expirado"):
                 sla2_expirado += 1
-                codigos_sla2.append(cod)
-            elif restante2 is not None and restante2 <= timedelta(minutes=5):
+                codigos_sla2_expirado.append(cod)
+
+            elif s2 == "Urgente":
+                sla2_urgente += 1
+                codigos_sla2_urgente.append(cod)
+
+            elif s2 == "Atenção":
                 sla2_quase_estourando += 1
                 codigos_sla2_critico.append(cod)
-            elif restante2 is not None:
-                sla2_nao_expirado += 1
+
+            elif s2 == "Normal":
+                sla2_normal += 1
+                codigos_sla2_normal.append(cod)
 
         return jsonify({
             "status": "success",
+
+            # SLA 1 - Atendimento
             "sla1_expirado": sla1_expirado,
-            "sla1_nao_expirado": sla1_nao_expirado,
+            "sla1_urgente": sla1_urgente,
             "sla1_quase_estourando": sla1_quase_estourando,
+            "sla1_nao_expirado": sla1_normal,
+
+            # SLA 2 - Resolução
             "sla2_expirado": sla2_expirado,
-            "sla2_nao_expirado": sla2_nao_expirado,
+            "sla2_urgente": sla2_urgente,
             "sla2_quase_estourando": sla2_quase_estourando,
+            "sla2_nao_expirado": sla2_normal,
+
             "total": len(chamados),
-            "codigos_sla1": codigos_sla1,
-            "codigos_sla2": codigos_sla2,
+
+            # Listas para os modais
+            "codigos_sla1_expirado": codigos_sla1_expirado,
+            "codigos_sla1_urgente": codigos_sla1_urgente,
             "codigos_sla1_critico": codigos_sla1_critico,
+            "codigos_sla1_normal": codigos_sla1_normal,
+
+            "codigos_sla2_expirado": codigos_sla2_expirado,
+            "codigos_sla2_urgente": codigos_sla2_urgente,
             "codigos_sla2_critico": codigos_sla2_critico,
+            "codigos_sla2_normal": codigos_sla2_normal,
+
             "grupo_filtrado": "SUPORTE",
             "mes_referencia": hoje.strftime("%Y-%m")
         })
@@ -186,7 +206,8 @@ def estatisticas_chamados():
             Chamado.nome_status,
             Chamado.nome_grupo
         ).filter(
-            Chamado.nome_status.notin_(['cancelado', 'resolvido'])
+            Chamado.nome_status.notin_(['cancelado', 'resolvido']),
+            Chamado.nome_grupo != 'SUPORTE TI'
         ).all()
 
         # Processar os resultados
@@ -416,83 +437,120 @@ def chamados_abertos_vs_resolvidos():
 
 @dashboard_bp.route('/ChamadosSuporte/sla_andamento_grupos', methods=['POST'])
 def listar_sla_andamento_grupos():
-    grupos_desejados = ['INFOSEC', 'DEV', 'NOC', 'CSM']
-    mes_referencia_atual = datetime.now().strftime('%Y-%m')
+    try:
+        grupos_desejados = ['INFOSEC', 'DEV', 'NOC', 'CSM']
+        mes_referencia_atual = datetime.now().strftime('%Y-%m')
 
-    chamados = Chamado.query.filter(
-        Chamado.nome_status.notin_(['Resolvido', 'Cancelado']),
-        Chamado.nome_prioridade.notin_(['5 - Planejada', '4 - Baixa']),
-        db.or_(
-            Chamado.nome_grupo.ilike('%DEV%'),
-            Chamado.nome_grupo.ilike('%INFOSEC%'),
-            Chamado.nome_grupo.ilike('%CSM%'),
-            Chamado.nome_grupo.ilike('%NOC%')
-        ),
-        Chamado.sla_atendimento.in_(['S', 'N']),
-        Chamado.sla_resolucao.in_(['S', 'N']),
-    ).all()
+        # Filtrar apenas chamados relevantes
+        chamados = Chamado.query.filter(
+            Chamado.nome_status.notin_(['Resolvido', 'Cancelado']),
+            Chamado.nome_prioridade.notin_(['5 - Planejada', '4 - Baixa']),
+            db.or_(
+                Chamado.nome_grupo.ilike('%DEV%'),
+                Chamado.nome_grupo.ilike('%INFOSEC%'),
+                Chamado.nome_grupo.ilike('%CSM%'),
+                Chamado.nome_grupo.ilike('%NOC%')
+            )
+        ).all()
 
-    # Contadores
-    sla1_expirado = sla1_nao_expirado = sla1_quase_estourando = 0
-    sla2_expirado = sla2_nao_expirado = sla2_quase_estourando = 0
+        # Contadores SLA 1
+        sla1_expirado = sla1_urgente = sla1_quase_estourando = sla1_normal = 0
 
-    # Listas de códigos
-    codigos_sla1 = []
-    codigos_sla2 = []
-    codigos_sla1_critico = []
-    codigos_sla2_critico = []
+        # Contadores SLA 2
+        sla2_expirado = sla2_urgente = sla2_quase_estourando = sla2_normal = 0
 
-    for chamado in chamados:
-        restante1_raw = (chamado.restante_p_atendimento or "").strip()
-        restante2_raw = (chamado.restante_s_atendimento or "").strip()
-        restante1 = parse_tempo(restante1_raw)
-        restante2 = parse_tempo(restante2_raw)
-        cod = chamado.cod_chamado
+        # Listas de códigos para modais
+        codigos_sla1_expirado = []
+        codigos_sla1_urgente = []
+        codigos_sla1_critico = []
+        codigos_sla1_normal = []
 
-        # SLA Atendimento
-        if chamado.sla_atendimento == "S":
-            sla1_expirado += 1
-            codigos_sla1.append(cod)
-        elif chamado.sla_atendimento == "N" and restante1 is not None:
-            if timedelta(minutes=0) < restante1 <= timedelta(minutes=5):
+        codigos_sla2_expirado = []
+        codigos_sla2_urgente = []
+        codigos_sla2_critico = []
+        codigos_sla2_normal = []
+
+        # Processar chamados
+        for chamado in chamados:
+            cod = chamado.cod_chamado
+            s1 = (chamado.status_sla_atendimento or "").strip()
+            s2 = (chamado.status_sla_resolucao or "").strip()
+
+            # =========================
+            # SLA 1 - Atendimento
+            # =========================
+            if s1.startswith("Expirado"):
+                sla1_expirado += 1
+                codigos_sla1_expirado.append(cod)
+
+            elif s1 == "Urgente":
+                sla1_urgente += 1
+                codigos_sla1_urgente.append(cod)
+
+            elif s1 == "Atenção":
                 sla1_quase_estourando += 1
                 codigos_sla1_critico.append(cod)
-            elif restante1 > timedelta(minutes=10):
-                sla1_nao_expirado += 1
-            else:
-                sla1_expirado += 1
-                codigos_sla1.append(cod)
 
-        # SLA Resolução
-        if chamado.sla_resolucao == "S":
-            sla2_expirado += 1
-            codigos_sla2.append(cod)
-        elif chamado.sla_resolucao == "N" and restante2 is not None:
-            if timedelta(minutes=0) < restante2 <= timedelta(minutes=5):
+            elif s1 == "Normal":
+                sla1_normal += 1
+                codigos_sla1_normal.append(cod)
+
+            # =========================
+            # SLA 2 - Resolução
+            # =========================
+            if s2.startswith("Expirado"):
+                sla2_expirado += 1
+                codigos_sla2_expirado.append(cod)
+
+            elif s2 == "Urgente":
+                sla2_urgente += 1
+                codigos_sla2_urgente.append(cod)
+
+            elif s2 == "Atenção":
                 sla2_quase_estourando += 1
                 codigos_sla2_critico.append(cod)
-            elif restante2 > timedelta(minutes=10):
-                sla2_nao_expirado += 1
-            else:
-                sla2_expirado += 1
-                codigos_sla2.append(cod)
 
-    return jsonify({
-        "status": "success",
-        "sla1_expirado": sla1_expirado,
-        "sla1_nao_expirado": sla1_nao_expirado,
-        "sla1_quase_estourando": sla1_quase_estourando,
-        "sla2_expirado": sla2_expirado,
-        "sla2_nao_expirado": sla2_nao_expirado,
-        "sla2_quase_estourando": sla2_quase_estourando,
-        "codigos_sla1": codigos_sla1,
-        "codigos_sla2": codigos_sla2,
-        "codigos_sla1_critico": codigos_sla1_critico,
-        "codigos_sla2_critico": codigos_sla2_critico,
-        "total": len(chamados),
-        "grupos": grupos_desejados,
-        "mes_referencia": mes_referencia_atual
-    })
+            elif s2 == "Normal":
+                sla2_normal += 1
+                codigos_sla2_normal.append(cod)
+
+        return jsonify({
+            "status": "success",
+
+            # SLA Atendimento
+            "sla1_expirado": sla1_expirado,
+            "sla1_urgente": sla1_urgente,
+            "sla1_quase_estourando": sla1_quase_estourando,
+            "sla1_nao_expirado": sla1_normal,
+
+            # SLA Resolução
+            "sla2_expirado": sla2_expirado,
+            "sla2_urgente": sla2_urgente,
+            "sla2_quase_estourando": sla2_quase_estourando,
+            "sla2_nao_expirado": sla2_normal,
+
+            # Códigos para modais
+            "codigos_sla1_expirado": codigos_sla1_expirado,
+            "codigos_sla1_urgente": codigos_sla1_urgente,
+            "codigos_sla1_critico": codigos_sla1_critico,
+            "codigos_sla1_normal": codigos_sla1_normal,
+
+            "codigos_sla2_expirado": codigos_sla2_expirado,
+            "codigos_sla2_urgente": codigos_sla2_urgente,
+            "codigos_sla2_critico": codigos_sla2_critico,
+            "codigos_sla2_normal": codigos_sla2_normal,
+
+            "total": len(chamados),
+            "grupos": grupos_desejados,
+            "mes_referencia": mes_referencia_atual
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Erro ao consultar",
+            "details": str(e)
+        }), 500
 
 @dashboard_bp.route('/v2/report/attendants_performance', methods=['POST'])
 def buscar_desempenho_atendentes():
@@ -528,7 +586,6 @@ def buscar_desempenho_atendentes():
             "message": "Erro inesperado ao buscar desempenho de atendentes.",
             "details": str(e)
         }), 500
-
 
 @dashboard_bp.route('/v2/report/attendants_performance_vyrtos', methods=['POST'])
 def buscar_ligacoes_atendidas_vyrtos():
