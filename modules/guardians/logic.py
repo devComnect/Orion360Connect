@@ -3,13 +3,8 @@ from sqlalchemy import not_, func
 from datetime import date, timedelta, datetime
 from flask import flash, g
 from application.models import (db, Guardians, NivelSeguranca, Insignia, GuardianInsignia, 
-<<<<<<< HEAD
-                                HistoricoAcao, SpecializationPerkLevel, Perk, GlobalGameSettings,
-                                TermoAttempt, AnagramAttempt, GuardianPurchase, ShopItem, GuardianShopState)
-=======
                                 HistoricoAcao, SpecializationPerkLevel, Perk, GlobalGameSettings, QuizAttempt,
                                 TermoAttempt, AnagramAttempt, GuardianPurchase, ShopItem, GuardianShopState, PasswordAttempt)
->>>>>>> origin/guardians
 
 # Definição Global de Tipos de Bônus (Usado em Loja, Conquistas e Specs)
 BONUS_TYPES = {
@@ -34,10 +29,6 @@ BONUS_TYPES = {
     'ADD_MINIGAME_TOKEN': 'Consumível: +1 Token de Minigame'
 }
 ##
-<<<<<<< HEAD
-##
-=======
->>>>>>> origin/guardians
 
 ##CACHE DE CONFIGS GLOBAIS (magic numbers)
 def get_game_setting(key, default_value, type_cast=str):
@@ -53,16 +44,10 @@ def get_game_setting(key, default_value, type_cast=str):
         try:
             return type_cast(setting.setting_value)
         except (ValueError, TypeError):
-<<<<<<< HEAD
-            # Se falhar a conversão (ex: texto num campo int), retorna o default
-=======
->>>>>>> origin/guardians
             return default_value
             
     return default_value
 
-<<<<<<< HEAD
-=======
 def get_global_setting(key, default=None, setting_type=int):
     """
     Busca uma configuração global do jogo de forma eficiente, usando um cache por requisição.
@@ -81,19 +66,10 @@ def get_global_setting(key, default=None, setting_type=int):
         return setting_type(value)
     except (ValueError, TypeError):
         return default
->>>>>>> origin/guardians
 
 ##CALCULA PONTUAÇÃO FINAL APÓS TODOS OS BONUS E GARANTE O BONUS DE OFENSIVA AO FINAL (CASO NÃO TENHA)
 def calculate_final_score(guardian: Guardians, current_total_score: int, raw_base_score: int, perk_code: str = None):
     """
-<<<<<<< HEAD
-    Calcula pontuação final e aplica Streak.
-    Versão com DEBUG detalhado no console.
-    """
-
-    score_with_bonuses = current_total_score
-    bonus_breakdown = {
-=======
     [FUNÇÃO MESTRA DE PONTUAÇÃO]
     Calcula pontuação final somando: Spec + Conquistas (Múltiplas) + Loja + Streak.
     """
@@ -102,7 +78,6 @@ def calculate_final_score(guardian: Guardians, current_total_score: int, raw_bas
     
     bonus_breakdown = {
         'spec_bonus': 0,    
->>>>>>> origin/guardians
         'conquista_bonus': 0,
         'loja_bonus': 0,
         'streak_total_bonus': 0,
@@ -111,289 +86,6 @@ def calculate_final_score(guardian: Guardians, current_total_score: int, raw_bas
     }
 
     if perk_code:
-<<<<<<< HEAD
-        # 1. BÔNUS DE CONQUISTA
-        if guardian.featured_insignia:
-            bonus_type = guardian.featured_insignia.bonus_type
-            bonus_val_pct = guardian.featured_insignia.bonus_value
-            is_applicable = (bonus_type == perk_code) or (bonus_type == 'GLOBAL_SCORE_PCT')
-
-            if is_applicable and bonus_val_pct:
-                bonus_val = int(round(raw_base_score * (bonus_val_pct / 100.0)))
-                bonus_breakdown['conquista_bonus'] = bonus_val
-                score_with_bonuses += bonus_val
-
-        # 2. BÔNUS DE LOJA (Específico)
-        shop_bonus_pct = _get_shop_bonus(guardian, perk_code)
-        if shop_bonus_pct > 0:
-            shop_val = int(round(raw_base_score * (shop_bonus_pct / 100.0)))
-            bonus_breakdown['loja_bonus'] = shop_val
-            score_with_bonuses += shop_val
-
-
-    # --- 3. BÔNUS DE OFENSIVA (Streak) ---
-
-    effective_percent = get_effective_streak_percentage(guardian)
-
-    # Cálculo base do streak
-    base_bonus = int(round(score_with_bonuses * (effective_percent / 100.0)))
-    
-    # Bônus extra de streak (Caminho Cinza/Gestor)
-    spec_streak_pct = get_total_bonus(guardian, 'STREAK_BONUS_PCT', default=0)
-    spec_bonus = 0
-    if spec_streak_pct > 0:
-        spec_bonus = int(round(base_bonus * (spec_streak_pct / 100.0))) # Ou sobre o total, dependendo da regra
-    
-    total_streak_bonus = base_bonus + spec_bonus
-    
-    bonus_breakdown['streak_total_bonus'] = total_streak_bonus
-    bonus_breakdown['streak_base_bonus'] = base_bonus
-    bonus_breakdown['streak_spec_bonus'] = spec_bonus
-
-    final_score = score_with_bonuses + total_streak_bonus
-    
-    return {
-        'base_score': raw_base_score,
-        'final_score': int(final_score),
-        'breakdown': bonus_breakdown
-    }
-
-#BUSCA O VALOR DO PERK ATUAL PARA O GUARDIAO DE ACORDO COM O NIVEL
-def get_active_perk_value(guardian: Guardians, perk_code: str, default=0):
-    """
-    Busca o valor de um perk ativo para o guardião, considerando seu nível atual.
-    Retorna o valor do nível mais alto caso o mesmo perk exista em múltiplos níveis (upgrades).
-    """
-    if not guardian or not guardian.specialization_id or not guardian.nivel_id:
-        return default
-
-    try:
-        current_level_number = guardian.nivel.level_number
-    except AttributeError:
-        current_nivel = NivelSeguranca.query.get(guardian.nivel_id)
-        if not current_nivel: return default
-        current_level_number = current_nivel.level_number
-
-    perk_entry = db.session.query(SpecializationPerkLevel).join(Perk).filter(
-        SpecializationPerkLevel.specialization_id == guardian.specialization_id,
-        Perk.perk_code == perk_code,
-        SpecializationPerkLevel.level <= current_level_number
-    ).order_by(
-        SpecializationPerkLevel.level.desc()
-    ).first()
-
-    if perk_entry:
-        return perk_entry.bonus_value
-    else:
-        return default
-
-#CALCULA BONUS DE VELOCIDADE E PERFEIÇÃO PARA DESAFIOS
-def calculate_performance_bonuses(guardian: Guardians, event_type: str, raw_score: int, context: dict):
-    """
-    Calcula bônus de performance (Tempo e Perfeição) para um evento.
-    Aplica multiplicadores de itens ativos (Sincronizador/Engrenagem).
-    """
-    
-    time_bonus = 0
-    perfection_bonus = 0
-    
-    # Validação de Perfeição
-    total_possible = context.get('total_possible_points', 0)
-    score_check = context.get('raw_score_before_perks', 0)
-    is_perfect = (score_check == total_possible and total_possible > 0)
-    
-    # ====================================================
-    # 1. CÁLCULO DO BÔNUS DE VELOCIDADE
-    # ====================================================
-    time_limit = context.get('time_limit_seconds')
-    duration = context.get('duration_seconds')
-    
-    if time_limit and time_limit > 0 and duration is not None:
-        # A. Cálculo Base (Mecânica do Jogo)
-        time_remaining_percent = max(0, (time_limit - duration) / time_limit)
-        divisor = get_global_setting('TIME_BONUS_DIVISOR', default=5.0, setting_type=float)
-        
-        base_time_bonus = 0
-        if divisor > 0:
-            base_time_bonus = int(round(raw_score * (time_remaining_percent / divisor)))
-        
-        # B. Aplicação de Buffs (Sincronizador - SPEED_BONUS_PCT)
-        # Busca bônus de Loja + Spec + Insígnia
-        speed_mult_pct = get_total_bonus(guardian, 'SPEED_BONUS_PCT') 
-        
-        if speed_mult_pct > 0:
-            boost_val = int(base_time_bonus * (speed_mult_pct / 100.0))
-            time_bonus = base_time_bonus + boost_val
-        else:
-            time_bonus = base_time_bonus
-            
-
-    # ====================================================
-    # 2. CÁLCULO DO BÔNUS DE PERFEIÇÃO
-    # ====================================================
-    if is_perfect:
-        base_perf_bonus = 0
-        
-        if event_type == 'quiz':
-            # Atualiza Streak
-            guardian.perfect_quiz_streak = (guardian.perfect_quiz_streak or 0) + 1
-            guardian.perfect_quiz_cumulative_count = (guardian.perfect_quiz_cumulative_count or 0) + 1
-            
-            # Token de Retake
-            try:
-                check_and_award_retake_token(guardian) 
-            except Exception as e:
-                print(f"Erro ao dar token quiz: {e}")
-            
-            # A. Cálculo Base (Streak Threshold)
-            threshold = get_global_setting('PERFECT_QUIZ_STREAK_THRESHOLD', default=1, setting_type=int)
-            bonus_val = get_global_setting('PERFECT_QUIZ_STREAK_BONUS', default=10, setting_type=int)
-            
-            if guardian.perfect_quiz_streak > 0 and guardian.perfect_quiz_streak % threshold == 0:
-                base_perf_bonus = bonus_val
-        
-        elif event_type == 'minigame':
-            # Token de Retake Minigame
-            try:
-                check_and_award_minigame_token(guardian)
-            except Exception as e:
-                print(f"Erro ao dar token minigame: {e}")
-            
-            # A. Cálculo Base (Fixo)
-            base_perf_bonus = get_global_setting('PERFECT_MINIGAME_BONUS', default=10, setting_type=int)
-
-        # B. Aplicação de Buffs (Engrenagem - PERFECTION_BONUS_PCT)
-        # Se o jogador ganhou algum bônus base, o item multiplica esse bônus
-        if base_perf_bonus > 0:
-            perf_mult_pct = get_total_bonus(guardian, 'PERFECTION_BONUS_PCT')
-            
-            if perf_mult_pct > 0:
-                boost_val = int(base_perf_bonus * (perf_mult_pct / 100.0))
-                perfection_bonus = base_perf_bonus + boost_val
-            else:
-                perfection_bonus = base_perf_bonus
-
-    else:
-        if event_type == 'quiz':
-            guardian.perfect_quiz_streak = 0
-
-    return {
-        'time_bonus': int(time_bonus),
-        'perfection_bonus': int(perfection_bonus),
-        'is_perfect': is_perfect
-    }
-
-##CACHE DE CONFIGS GLOBAIS##
-def get_global_setting(key, default=None, setting_type=int):
-    """
-    Busca uma configuração global do jogo de forma eficiente, usando um cache por requisição.
-    
-    :param key: A chave da configuração (ex: 'PATROL_MIN_POINTS').
-    :param default: O valor a ser retornado se a chave não for encontrada.
-    :param setting_type: O tipo de dado para o qual o valor deve ser convertido (int, float, str).
-    """
-    # Verifica se o cache de configurações já foi criado para esta requisição
-    if 'game_settings' not in g:
-        # Se não, busca todas as configurações do banco UMA VEZ e as armazena em 'g'
-        settings = GlobalGameSettings.query.all()
-        # Transforma a lista de objetos em um dicionário simples: {'chave': 'valor'}
-        g.game_settings = {s.setting_key: s.setting_value for s in settings}
-
-    # Busca o valor no cache. Se não encontrar, usa o valor 'default'.
-    value = g.game_settings.get(key, default)
-
-    # Tenta converter o valor para o tipo desejado (int por padrão)
-    try:
-        return setting_type(value)
-    except (ValueError, TypeError):
-        # Se a conversão falhar, retorna o valor default
-        return default
-
-def get_bonus_for_perk(guardian, perk_code):
-    """
-    Função genérica que busca o valor de um bônus para um guardião no banco de dados,
-    baseado na sua especialização.
-    """
-    # Se o guardião não tiver especialização ou nível, não há bônus.
-    if not guardian or not guardian.specialization_id or not guardian.nivel:
-        return 0.0
-
-    current_level_number = guardian.nivel.level_number
-
-    bonus_value = db.session.query(SpecializationPerkLevel.bonus_value).join(Perk).filter(
-        SpecializationPerkLevel.specialization_id == guardian.specialization_id,
-        SpecializationPerkLevel.level == current_level_number,
-        Perk.perk_code == perk_code
-    ).scalar()
-    
-    return bonus_value or 0.0
-
-def get_effective_streak_percentage(guardian):
-    """
-    Calcula o percentual de streak a ser aplicado.
-    Atualizado para somar bônus de Especialização + Conquista + Loja.
-    """
-    streak_days = guardian.current_streak or 0
-    if streak_days <= 0:
-        return 0 
-
-    gain_modifier_pct = get_total_bonus(guardian, 'STREAK_GAIN_PCT', default=0)
-    
-    base_percent_per_day = 1.0 
-    effective_percent_per_day = base_percent_per_day * (1 + gain_modifier_pct / 100.0)
-    
-    raw_effective_percentage = streak_days * effective_percent_per_day
-
-    base_cap_percent = get_global_setting('STREAK_BONUS_CAP_PERCENT', default=20)
-
-    cap_increase_percent = get_total_bonus(guardian, 'STREAK_MAX_PCT', default=0)
-
-    effective_cap = base_cap_percent + cap_increase_percent
-
-    final_effective_percentage = min(raw_effective_percentage, effective_cap)
-
-    return round(final_effective_percentage, 2)
-
-##CALCULA DIAS DA SEMANA PRA CARD EM MEU PERFIL
-def calculate_week_days_status(guardian):
-    today = date.today()
-    start_of_week = today - timedelta(days=today.weekday()) # Segunda-feira
-    start_of_week_dt = datetime.combine(start_of_week, datetime.min.time())
-    end_of_today_dt = datetime.combine(today, datetime.max.time())
-
-    recent_activity_dates = db.session.query(
-        func.date(HistoricoAcao.data_evento)
-    ).filter(
-        HistoricoAcao.guardian_id == guardian.id,
-        HistoricoAcao.data_evento.between(start_of_week_dt, end_of_today_dt)
-    ).distinct().all()
-    completed_dates = {result[0] for result in recent_activity_dates}
-
-    week_days_status = []
-    day_names = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
-
-    for i in range(7):
-        current_day = start_of_week + timedelta(days=i)
-        status = 'pending'
-        if current_day < today:
-            if current_day in completed_dates:
-                status = 'completed'
-            elif current_day.weekday() < 5: # Só marca 'lost' em dias úteis
-                 status = 'lost'
-            else: # Fim de semana inativo
-                status = 'weekend'
-        elif current_day == today and current_day in completed_dates: # Marca hoje como completed se já houve ação
-            status = 'completed'
-
-
-        week_days_status.append({
-            'date': current_day,
-            'status': status,
-            'is_today': current_day == today,
-            'day_name': day_names[i]
-        })
-    return week_days_status
-=======
         # --- 1. BÔNUS DE ESPECIALIZAÇÃO (SPEC) ---
         spec_pct = get_active_perk_value(guardian, perk_code, default=0)
         
@@ -401,7 +93,6 @@ def calculate_week_days_status(guardian):
             spec_val = int(round(raw_base_score * (spec_pct / 100.0)))
             bonus_breakdown['spec_bonus'] = spec_val
             score_with_bonuses += spec_val
->>>>>>> origin/guardians
 
         # --- 2. BÔNUS DE CONQUISTA (MÚLTIPLAS) ---
         total_badge_bonus = 0
@@ -737,281 +428,6 @@ def update_user_streak(guardian):
 
 
 #FUNÇÃO QUE ATUALIZA NIVEL
-<<<<<<< HEAD
-def atualizar_nivel_usuario(guardian, quiz_context=None):
-    """
-    Função robusta que define ou atualiza o nível de um guardião.
-    Ela encontra o NÍVEL MAIS ALTO para o qual o score atual do usuário se qualifica.
-    """
-    level_up_occurred = False
-    old_level_id = guardian.nivel_id
-
-    # A verificação de conquistas agora acontece no final, garantindo que sempre rode.
-    novas_conquistas = [] 
-
-    # --- LÓGICA DE NÍVEL (Só executa se o guardião tiver um caminho) ---
-    if guardian.specialization:
-        
-        # 1. Busca TODOS os níveis da especialização do usuário, do MAIOR score para o MENOR.
-        trilha_de_niveis = NivelSeguranca.query.filter_by(
-            specialization_id=guardian.specialization_id
-        ).order_by(NivelSeguranca.score_minimo.desc()).all()
-
-        nivel_correto_para_score = None
-        # 2. Encontra o primeiro nível (o mais alto) que o usuário já alcançou com seu score.
-        for nivel in trilha_de_niveis:
-            if guardian.score_atual >= nivel.score_minimo:
-                nivel_correto_para_score = nivel
-                break # Encontramos o mais alto, podemos parar o loop.
-        
-        # 3. Se o nível correto encontrado for diferente do nível atual do guardião, atualizamos.
-        if nivel_correto_para_score and nivel_correto_para_score.id != guardian.nivel_id:
-            guardian.nivel = nivel_correto_para_score
-            level_up_occurred = True
-
-    # --- GATILHO UNIVERSAL DE CONQUISTAS (Executa sempre, após qualquer mudança) ---
-    novas_conquistas = check_and_award_achievements(guardian, quiz_context=quiz_context)
-    
-    return level_up_occurred, novas_conquistas
-
-##ATRIBUI TOKENS DE RETAKE
-def check_and_award_retake_token(guardian):
-    """
-    Verifica se o guardião alcançou o marco para ganhar um novo token de retake de quiz.
-    """
-    # --- Ponto de Extensibilidade ---
-    quizzes_needed = get_global_setting('QUIZZES_FOR_TOKEN', default=5)
-    # --------------------------------
-
-    count = guardian.perfect_quiz_cumulative_count or 0
-    
-    # Verifica se o contador é um múltiplo de 'quizzes_needed' e não é zero
-    if count > 0 and count % quizzes_needed == 0:
-        guardian.retake_tokens = (guardian.retake_tokens or 0) + 1
-        
-        # Cria um registro no histórico para notificar o usuário
-        history_entry = HistoricoAcao(
-            guardian_id=guardian.id,
-            descricao=f"Ganhou +1 Token de Retake por completar {count} quizzes perfeitos!",
-            pontuacao=0
-        )
-        db.session.add(history_entry)
-        flash(f"Parabéns! Você ganhou +1 Token de Retake por sua dedicação!", "success")
-        return True
-        
-    return False 
-
-def check_and_award_minigame_token(guardian: Guardians):
-    """
-    Verifica se o guardião atingiu o N de minigames perfeitos
-    para ganhar um novo token de retake de minigame.
-    """
-    try:
-        guardian.perfect_minigame_cumulative_count = (guardian.perfect_minigame_cumulative_count or 0) + 1
-        threshold = get_global_setting('MINIGAMES_FOR_TOKEN', default=5, setting_type=int)
-        
-        if threshold > 0 and guardian.perfect_minigame_cumulative_count % threshold == 0:
-            guardian.minigame_retake_tokens = (guardian.minigame_retake_tokens or 0) + 1
-            db.session.add(guardian)
-            
-            history_entry = HistoricoAcao(
-                guardian_id=guardian.id, 
-                descricao=f"Ganhou 1 Token de Retake (Minigame) por completar {threshold} minigames perfeitamente!", 
-                pontuacao=0
-            )
-            db.session.add(history_entry)
-        
-    except Exception as e:
-        print(f"Erro ao checar token de minigame: {e}")
-
-
-#SISTEMA DE RECOMPENSAS COM BASE EM DROP
-def calculate_weekly_coin_reward():
-    """
-    Calcula a recompensa semanal somando:
-    1. Valor Base Garantido (Segurança)
-    2. Valor de Sorteio (RNG Ponderado)
-    """
-    
-    # 1. SEGURANÇA: Valor Mínimo Garantido
-    base_guaranteed = get_game_setting('WEEKLY_MIN_PASSIVE', 50, int)
-    
-    # 2. SORTEIO: Busca configurações
-    chance_common = get_game_setting('DROP_CHANCE_COMMON', 60, int)
-    chance_rare = get_game_setting('DROP_CHANCE_RARE', 30, int)
-    chance_epic = get_game_setting('DROP_CHANCE_EPIC', 10, int)
-    
-    val_common = get_game_setting('DROP_VAL_COMMON', 20, int)
-    val_rare = get_game_setting('DROP_VAL_RARE', 50, int)
-    val_epic = get_game_setting('DROP_VAL_EPIC', 100, int)
-    
-    # Define as opções e os pesos
-    options = ['COMMON', 'RARE', 'EPIC']
-    weights = [chance_common, chance_rare, chance_epic]
-    
-    # Sorteia baseado nos pesos (k=1 retorna uma lista com 1 item)
-    result_type = random.choices(options, weights=weights, k=1)[0]
-    
-    # Define o valor do sorteio
-    rng_value = 0
-    if result_type == 'COMMON':
-        rng_value = val_common
-    elif result_type == 'RARE':
-        rng_value = val_rare
-    elif result_type == 'EPIC':
-        rng_value = val_epic
-        
-    total_coins = base_guaranteed + rng_value
-    
-    return {
-        'total': total_coins,
-        'breakdown': {
-            'base': base_guaranteed,
-            'rng': rng_value,
-            'rarity': result_type # Útil para mostrar animação diferente no front
-        }
-    }
-
-
-# ==========================================================
-# ============= SISTEMA DE CONQUISTAS ================
-# ==========================================================
-def check_and_award_achievements(guardian, quiz_context=None):
-    """
-    Verifica e concede conquistas automáticas a um guardião.
-    Refatorado para 6 trilhas principais (Pontos, Quizzes, Minigames, Patrulhas, G-Coins, Reports).
-    Retorna uma lista de nomes das novas conquistas ganhas.
-    """
-    try:
-        # 1. Busca todas as conquistas que o guardião AINDA NÃO TEM
-        owned_insignia_ids = {gi.insignia_id for gi in guardian.insignias_conquistadas.all()} # .all() é importante aqui
-        unearned_insignias = Insignia.query.filter(not_(Insignia.id.in_(owned_insignia_ids))).all()
-        
-        newly_awarded = []
-        
-        # 2. Cache de dados para evitar múltiplas buscas
-        score = guardian.score_atual
-        quiz_count = None
-        minigame_count = None
-        patrol_count = None
-        gcoin_spent_count = None # Usaremos o NÚMERO de compras
-        report_count = None
-
-        # 3. Loop apenas nas conquistas não ganhas
-        for insignia in unearned_insignias:
-            awarded = False
-            code = insignia.achievement_code
-
-            # --- TRILHA 1: PONTOS GANHOS (Bônus de Ofensiva) ---
-            if code.startswith('SCORE_'):
-                # (Ajuste os valores de score como desejar)
-                if code == 'SCORE_1' and score >= 100: awarded = True
-                elif code == 'SCORE_2' and score >= 1000: awarded = True
-                elif code == 'SCORE_3' and score >= 2500: awarded = True
-                elif code == 'SCORE_4' and score >= 5000: awarded = True
-                elif code == 'SCORE_5' and score >= 10000: awarded = True
-
-            # --- TRILHA 2: QUIZZES FEITOS (Bônus de Quiz) ---
-            elif code.startswith('QUIZ_COUNT_'):
-                if quiz_count is None: # Busca no banco apenas uma vez
-                    quiz_count = guardian.quiz_attempts.count()
-                
-                if code == 'QUIZ_COUNT_1' and quiz_count >= 1: awarded = True
-                elif code == 'QUIZ_COUNT_2' and quiz_count >= 10: awarded = True
-                elif code == 'QUIZ_COUNT_3' and quiz_count >= 50: awarded = True
-                elif code == 'QUIZ_COUNT_4' and quiz_count >= 100: awarded = True
-                elif code == 'QUIZ_COUNT_5' and quiz_count >= 200: awarded = True
-
-            # --- TRILHA 3: MINIGAMES FEITOS (Bônus de Minigame) ---
-            elif code.startswith('MINIGAME_'):
-                if minigame_count is None: # Busca no banco apenas uma vez
-                    termo_count = TermoAttempt.query.filter_by(guardian_id=guardian.id).count()
-                    anagram_count = AnagramAttempt.query.filter_by(guardian_id=guardian.id).count()
-                    minigame_count = termo_count + anagram_count
-                
-                if code == 'MINIGAME_1' and minigame_count >= 1: awarded = True
-                elif code == 'MINIGAME_2' and minigame_count >= 10: awarded = True
-                elif code == 'MINIGAME_3' and minigame_count >= 50: awarded = True
-                elif code == 'MINIGAME_4' and minigame_count >= 100: awarded = True
-                elif code == 'MINIGAME_5' and minigame_count >= 200: awarded = True
-
-            # --- TRILHA 4: PATRULHAS FEITAS (Bônus de Patrulha) ---
-            elif code.startswith('PATROL_'):
-                if patrol_count is None: # Busca no banco apenas uma vez
-                    patrol_count = guardian.historico_acoes.filter(HistoricoAcao.descricao.like('Realizou Patrulha Diária:%')).count()
-                
-                if code == 'PATROL_1' and patrol_count >= 1: awarded = True
-                elif code == 'PATROL_2' and patrol_count >= 10: awarded = True
-                elif code == 'PATROL_3' and patrol_count >= 50: awarded = True
-                elif code == 'PATROL_4' and patrol_count >= 100: awarded = True
-                elif code == 'PATROL_5' and patrol_count >= 200: awarded = True
-
-            # --- TRILHA 5: G-COINS GASTOS (Bônus de G-Coins) ---
-            # (Assumindo que o histórico de compra será 'Comprou %')
-            elif code.startswith('GCOIN_'):
-                if gcoin_spent_count is None: # Busca no banco apenas uma vez
-                    # (Usamos o NÚMERO de compras, não o valor)
-                    gcoin_spent_count = guardian.historico_acoes.filter(HistoricoAcao.descricao.like('Comprou %')).count() 
-                
-                if code == 'GCOIN_1' and gcoin_spent_count >= 1: awarded = True
-                elif code == 'GCOIN_2' and gcoin_spent_count >= 3: awarded = True
-                elif code == 'GCOIN_3' and gcoin_spent_count >= 5: awarded = True
-                elif code == 'GCOIN_4' and gcoin_spent_count >= 10: awarded = True
-                elif code == 'GCOIN_5' and gcoin_spent_count >= 20: awarded = True
-
-            # --- TRILHA 6: REPORTS FEITOS (Bônus Indefinido) ---
-            
-            # --- Lógica de Concessão ---
-            if awarded:
-                nova_conquista = GuardianInsignia(guardian_id=guardian.id, insignia_id=insignia.id)
-                db.session.add(nova_conquista)
-                novo_historico = HistoricoAcao(guardian_id=guardian.id, descricao=f"Conquistou a insígnia '{insignia.nome}'!", pontuacao=0)
-                db.session.add(novo_historico)
-                newly_awarded.append(insignia.nome)
-        
-        return newly_awarded
-    
-    except Exception as e:
-        print(f"ERRO ao checar conquistas: {e}")
-        return []
-    
-##ORDERNAR CONQUSITAS EM MEU PERFIL###
-def get_insignia_category(insignia):
-    """ Determina a categoria de uma insígnia com base no seu código. """
-    code = insignia.achievement_code.upper() # Usa 'code', ajuste se o campo for outro (ex: 'identificador')
-
-    if code.startswith('LEVEL_'):
-        return "Nível"
-    elif code.startswith('SCORE_'):
-        return "Pontuação"
-    elif code.startswith('QUIZ_STREAK_'):
-        return "Quizzes Perfeitos"
-    elif code.startswith('QUIZ_'):
-        return "Quizzes"
-    elif code.startswith('STREAK_'):
-        return "Ofensiva"
-    elif code.startswith('PATROL_'):
-        return "Patrulha"
-    else:
-        return "Outras" # Categoria padrão
-
-def get_achievement_sort_key(insignia):
-    """
-    Extrai um valor numérico do achievement_code para permitir a ordenação correta.
-    Ex: 'LEVEL_10' -> 10, 'SCORE_500' -> 500.
-    """
-    if insignia.achievement_code:
-        # Usa expressão regular para encontrar todos os números no código
-        numeros = re.findall(r'\d+', insignia.achievement_code)
-        if numeros:
-            # Retorna o primeiro número encontrado, convertido para inteiro
-            return int(numeros[0])
-    
-    # Se não encontrar um número no código, usa o requisito_score como fallback
-    return insignia.requisito_score if insignia.requisito_score is not None else insignia.id
-
-CATEGORY_ORDER = ["Nível", "Pontuação", "Quizzes Perfeitos", "Quizzes","Ofensiva", "Patrulha", "Outras"]
-=======
 def atualizar_nivel_usuario(guardian):
     """
     Sincroniza o progresso do guardião:
@@ -1053,7 +469,6 @@ def atualizar_nivel_usuario(guardian):
         print(f"Erro ao sincronizar nível/conquistas: {e}")
 
     return level_up_occurred, novas_conquistas
->>>>>>> origin/guardians
 
 ##ATRIBUI TOKENS DE RETAKE
 def check_and_award_retake_token(guardian):

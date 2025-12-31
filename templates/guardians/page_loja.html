@@ -1,37 +1,21 @@
 {% extends "base_template.html" %}
 
-<<<<<<< HEAD
-=======
 {% from "guardians/macros/assistant_macro.html" import render_assistant %} 
 
->>>>>>> origin/guardians
 {% block title %}Upgrades{% endblock %}
 
 {% block styles %}
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
-<<<<<<< HEAD
-            /* PALETA EXISTENTE */
-=======
->>>>>>> origin/guardians
             --neon-blue: #0dcaf0;  
             --neon-red: #ff2a6d;   
             --neon-green: #05d9e8; 
             --neon-gold: #fcee0a;  
-<<<<<<< HEAD
-            
-            /* NOVAS CORES DE RARIDADE */
-=======
->>>>>>> origin/guardians
             --rarity-common: #adb5bd;    /* Cinza */
             --rarity-rare: #0dcaf0;      /* Azul */
             --rarity-epic: #d63384;      /* Roxo/Magenta */
             --rarity-legendary: #ffc107; /* Dourado */
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/guardians
             --bg-dark: #0b0c10;
             --panel-bg: #1f2833;
             --border-tech: #45a29e;
@@ -45,10 +29,6 @@
 
         .font-tech { font-family: 'Share Tech Mono', monospace; }
 
-<<<<<<< HEAD
-        /* --- HUD DE MERCADO (Com suporte ao Reroll) --- */
-=======
->>>>>>> origin/guardians
         .market-hud {
             background: rgba(31, 40, 51, 0.9);
             border-bottom: 2px solid var(--border-tech);
@@ -67,18 +47,10 @@
             pointer-events: none;
         }
         
-<<<<<<< HEAD
-        /* Grid do HUD: Esquerda (Saldo), Centro (Recursos), Direita (Reroll) */
-        .hud-grid {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center; /* Centralizado por padrão */
-=======
         .hud-grid {
             display: flex;
             flex-wrap: wrap;
             justify-content: center; 
->>>>>>> origin/guardians
             gap: 30px;
             align-items: center;
         }
@@ -156,11 +128,7 @@
 
         .market-card {
             background: var(--panel-bg);
-<<<<<<< HEAD
-            border: 1px solid #333; /* Borda padrão, sobrescrita pela raridade */
-=======
             border: 1px solid #333;
->>>>>>> origin/guardians
             position: relative;
             display: flex;
             flex-direction: column;
@@ -178,16 +146,6 @@
         .rarity-LEGENDARY { --card-color: var(--rarity-legendary); }
 
         .market-card {
-<<<<<<< HEAD
-            border-color: rgba(255,255,255,0.1); /* Padrão */
-        }
-        
-        /* Aplica a cor da raridade no hover ou numa borda sutil */
-        .market-card:hover {
-            border-color: var(--card-color);
-            box-shadow: 0 0 20px rgba(var(--card-color), 0.2); /* Nota: CSS puro não faz hex->rgba auto, mas o glow funciona se a cor for definida */
-            box-shadow: 0 0 15px var(--card-color); /* Fallback simples */
-=======
             border-color: rgba(255,255,255,0.1);
         }
         
@@ -195,7 +153,6 @@
             border-color: var(--card-color);
             box-shadow: 0 0 20px rgba(var(--card-color), 0.2); 
             box-shadow: 0 0 15px var(--card-color); 
->>>>>>> origin/guardians
         }
 
         .card-header-strip {
@@ -233,19 +190,11 @@
             border-radius: 8px;
             display: flex;
             align-items: center;
-<<<<<<< HEAD
-            flex-wrap: wrap; /* Permite quebrar linha em mobile */
-=======
             flex-wrap: wrap; 
->>>>>>> origin/guardians
             gap: 15px;
             transition: all 0.3s ease;
         }
 
-<<<<<<< HEAD
-        /* Estilo especial quando está cheio (3/3) */
-=======
->>>>>>> origin/guardians
         .active-inventory-bar.slots-full {
             border-color: var(--neon-gold);
             box-shadow: 0 0 15px rgba(252, 238, 10, 0.1);
@@ -366,11 +315,7 @@
 {% endblock %}
 
 {% block content %}
-<<<<<<< HEAD
-
-=======
 {{ render_assistant(assistant_data) }}
->>>>>>> origin/guardians
 <div class="market-hud font-tech">
     <div class="container">
         
@@ -389,19 +334,11 @@
 
             <div class="d-flex flex-column align-items-center gap-2">
                 <div class="resource-pill">
-<<<<<<< HEAD
-                    <i class="bi bi-lightning-fill text-warning"></i> 
-                    <span>Quiz Tokens: <strong class="text-white">{{ guardian.retake_tokens }}</strong></span>
-                </div>
-                <div class="resource-pill">
-                    <i class="bi bi-controller text-info"></i> 
-=======
                     <i class="bi bi-bootstrap-reboot text-warning"></i> 
                     <span>Quiz Tokens: <strong class="text-white">{{ guardian.retake_tokens }}</strong></span>
                 </div>
                 <div class="resource-pill">
                     <i class="bi bi-controller text-warning"></i> 
->>>>>>> origin/guardians
                     <span>Minigame Tokens: <strong class="text-white">{{ guardian.minigame_retake_tokens }}</strong></span>
                 </div>
             </div>
@@ -422,10 +359,6 @@
 
 <div class="container mb-5">
 
-<<<<<<< HEAD
-    {% set max_slots = 3 %}
-=======
->>>>>>> origin/guardians
     {% set occupied = active_modules|length %}
     {% set is_full = occupied >= max_slots %}
 
@@ -507,11 +440,6 @@
                         {% set r_code = item.rarity if item.rarity else 'COMMON' %}
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="rarity-badge badge-{{ r_code }}">
-<<<<<<< HEAD
-                                <span class="rarity-dot"></span> {{ r_code }}
-                            </span>
-                        </div>               
-=======
                                 <span class="rarity-dot"></span>
                                 
                                 {% if r_code == 'COMMON' %}
@@ -528,7 +456,6 @@
                                 
                             </span>
                         </div>           
->>>>>>> origin/guardians
                             <span class="badge bg-dark border border-secondary text-muted" style="font-size: 0.65rem;">
                                 {{ item.category|upper }}
                             </span>
@@ -575,11 +502,7 @@
                     {% elif is_sold_out %}
                         <button class="btn-buy-tech btn-disabled" disabled>ESGOTADO</button>
                     {% elif not can_afford %}
-<<<<<<< HEAD
-                        <button class="btn-buy-tech btn-disabled" disabled title="Saldo Insuficiente">NO FUNDS</button>
-=======
                         <button class="btn-buy-tech btn-disabled" disabled title="Saldo Insuficiente">SEM MOEDAS</button>
->>>>>>> origin/guardians
                     {% else %}
                         <form action="{{ url_for('guardians_bp.comprar_item', item_id=item.id) }}" method="POST">
                             <button type="submit" class="btn-buy-tech" onclick="return confirm('Adquirir {{ item.name }}?');">

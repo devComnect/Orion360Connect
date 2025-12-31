@@ -1,9 +1,5 @@
 {% extends "base_template.html" %}
-<<<<<<< HEAD
-
-=======
 {% from "guardians/macros/assistant_macro.html" import render_assistant %} 
->>>>>>> origin/guardians
 {% block title %}Rankings Globais{% endblock %}
 
 {% block styles %}
@@ -149,11 +145,7 @@
             font-size: 3rem;
             font-weight: bold;
             font-family: 'Share Tech Mono', monospace;
-<<<<<<< HEAD
-            opacity: 0.1;
-=======
             opacity: 0.5;
->>>>>>> origin/guardians
             position: absolute;
             bottom: 0;
             right: 10px;
@@ -257,88 +249,6 @@
             cursor: pointer;
         }
         /* --- TERMINAL MODAL DESIGN --- */
-<<<<<<< HEAD
-    .terminal-content {
-        background-color: #0a0a0a;
-        border: 2px solid var(--neon-blue);
-        box-shadow: 0 0 30px rgba(13, 202, 240, 0.15);
-        border-radius: 6px;
-        overflow: hidden;
-        position: relative;
-    }
-
-    /* Scanline Effect (Linha passando) */
-    .terminal-content::before {
-        content: " ";
-        display: block;
-        position: absolute;
-        top: 0; left: 0; bottom: 0; right: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-        z-index: 2;
-        background-size: 100% 2px, 3px 100%;
-        pointer-events: none;
-    }
-
-    .terminal-header-bar {
-        background: var(--neon-blue);
-        color: #000;
-        padding: 5px 10px;
-        font-family: 'Share Tech Mono', monospace;
-        font-weight: bold;
-        font-size: 0.9rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .terminal-body {
-        padding: 20px;
-        min-height: 300px;
-        font-family: 'Share Tech Mono', monospace;
-        color: #fff;
-        font-size: 1rem;
-        overflow-y: auto;
-        position: relative;
-        z-index: 3;
-    }
-
-    /* Textos do Terminal */
-    .term-line {
-        margin-bottom: 5px;
-        opacity: 0; /* Começa invisível para animação */
-        transform: translateX(-10px);
-        transition: all 0.1s ease-out;
-    }
-    .term-line.visible {
-        opacity: 1;
-        transform: translateX(0);
-    }
-
-    .term-prefix { color: var(--neon-blue); margin-right: 10px; }
-    .term-success { color: var(--neon-green); }
-    .term-warning { color: var(--neon-gold); }
-    .term-highlight { color: #fff; font-weight: bold; background: rgba(13, 202, 240, 0.2); padding: 0 5px; }
-
-    /* Cursor Piscante */
-    .cursor-blink {
-        display: inline-block;
-        width: 10px;
-        height: 1.2em;
-        background-color: var(--neon-blue);
-        animation: blink 1s step-end infinite;
-        vertical-align: text-bottom;
-        margin-left: 5px;
-    }
-
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-    /* Custom Scrollbar para o terminal */
-    .terminal-body::-webkit-scrollbar { width: 8px; }
-    .terminal-body::-webkit-scrollbar-track { background: #000; }
-    .terminal-body::-webkit-scrollbar-thumb { background: var(--neon-blue); border-radius: 4px; }
-    
-    @keyframes float { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -10px); } }
-=======
         .terminal-content {
             background-color: #0a0a0a;
             border: 2px solid var(--neon-blue);
@@ -419,15 +329,11 @@
         .terminal-body::-webkit-scrollbar-thumb { background: var(--neon-blue); border-radius: 4px; }
         
         @keyframes float { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -10px); } }
->>>>>>> origin/guardians
     </style>
 {% endblock %}
 
 {% block content %}
-<<<<<<< HEAD
-=======
 {{ render_assistant(assistant_data) }}
->>>>>>> origin/guardians
 {% import 'guardians/macros/render_trophy.html' as macros with context%}
 
 <div class="ranking-header">
@@ -449,13 +355,8 @@
 <div class="container mb-5">
 
     <ul class="nav nav-pills justify-content-center mb-5 tech-tabs" id="rankingTab" role="tablist">
-<<<<<<< HEAD
-         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#individual"><i class="bi bi-person-fill"></i> GUARDIANS</button></li>
-         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#streak"><i class="bi bi-fire"></i> OFENSIVA</button></li>
-=======
          <li class="global-rank-button nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#individual"><i class="bi bi-person-fill"></i> GERAL</button></li>
          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#streak"><i class="bi bi-fire"></i> VIGILANTE</button></li>
->>>>>>> origin/guardians
     </ul>
 
     <div class="tab-content" id="rankingTabContent">
@@ -465,15 +366,6 @@
     <div class="tab-pane fade show active" id="individual">
         {% if ranking_global %}
             
-<<<<<<< HEAD
-            {% if ranking_global|length >= 3 %}
-            <div class="podium-container d-none d-md-flex">
-                
-                {% set p2 = ranking_global[1] %}
-                <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=p2.id) }}" class="podium-card podium-2 text-decoration-none">
-                    <div class="podium-avatar-wrapper">
-                        <img src="{{ url_for('static', filename=(p2.avatar_path or 'img/default_avatar.png')) }}" class="podium-avatar">
-=======
             {# --- PODIUM (TOP 3) --- #}
             {% if ranking_global|length >= 3 %}
             <div class="podium-container d-none d-md-flex">
@@ -490,24 +382,17 @@
                                 <i class="bi bi-person-circle text-muted" style="font-size: 2.5rem;"></i>
                             </div>
                         {% endif %}
->>>>>>> origin/guardians
                     </div>
                     <div class="podium-name">{{ p2.nickname or p2.nome }}</div>
                     <div class="podium-score">{{ p2.score_atual }} XP</div>
                     <div class="podium-rank">2</div>
                 </a>
 
-<<<<<<< HEAD
-=======
                 {# --- 1º LUGAR --- #}
->>>>>>> origin/guardians
                 {% set p1 = ranking_global[0] %}
                 <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=p1.id) }}" class="podium-card podium-1 text-decoration-none">
                     <div class="podium-avatar-wrapper">
                         <i class="bi bi-crown-fill crown-icon"></i>
-<<<<<<< HEAD
-                        <img src="{{ url_for('static', filename=(p1.avatar_path or 'img/default_avatar.png')) }}" class="podium-avatar" style="border: 2px solid #ffd700;">
-=======
                         
                         {% if p1.avatar_seed %}
                             <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ p1.avatar_seed }}" class="podium-avatar" style="border: 2px solid #ffd700;" alt="Avatar">
@@ -516,19 +401,12 @@
                                 <i class="bi bi-person-circle text-warning" style="font-size: 3rem;"></i>
                             </div>
                         {% endif %}
->>>>>>> origin/guardians
                     </div>
                     <div class="podium-name text-warning">{{ p1.nickname or p1.nome }}</div>
                     <div class="podium-score">{{ p1.score_atual }} XP</div>
                     <div class="podium-rank">1</div>
                 </a>
 
-<<<<<<< HEAD
-                {% set p3 = ranking_global[2] %}
-                <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=p3.id) }}" class="podium-card podium-3 text-decoration-none">
-                    <div class="podium-avatar-wrapper">
-                        <img src="{{ url_for('static', filename=(p3.avatar_path or 'img/default_avatar.png')) }}" class="podium-avatar">
-=======
                 {# --- 3º LUGAR --- #}
                 {% set p3 = ranking_global[2] %}
                 <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=p3.id) }}" class="podium-card podium-3 text-decoration-none">
@@ -540,7 +418,6 @@
                                 <i class="bi bi-person-circle text-muted" style="font-size: 2.5rem;"></i>
                             </div>
                         {% endif %}
->>>>>>> origin/guardians
                     </div>
                     <div class="podium-name">{{ p3.nickname or p3.nome }}</div>
                     <div class="podium-score">{{ p3.score_atual }} XP</div>
@@ -549,18 +426,12 @@
             </div>
             {% endif %}
 
-<<<<<<< HEAD
-=======
             {# --- LISTA GERAL --- #}
->>>>>>> origin/guardians
             <div class="ranking-list-container">
                 {% for perfil in ranking_global %}
                     <div class="rank-row {% if loop.index <= 3 %}d-md-none{% endif %} {% if perfil.id == current_user_id %}current-user{% endif %}">
                         <div class="rank-num">#{{ loop.index }}</div>
                         <div class="rank-user-info">
-<<<<<<< HEAD
-                            <img src="{{ url_for('static', filename=(perfil.avatar_path or 'img/default_avatar.png')) }}" class="mini-avatar">
-=======
                             
                             {# Lógica do Avatar na Lista #}
                             {% if perfil.avatar_seed %}
@@ -571,7 +442,6 @@
                                 </div>
                             {% endif %}
                             
->>>>>>> origin/guardians
                             <div>
                                 <div class="rank-user-name">
                                     <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id) }}" class="text-white text-decoration-none stretched-link">
@@ -598,15 +468,6 @@
     <div class="tab-pane fade" id="streak">
         {% if ranking_streak %}
             
-<<<<<<< HEAD
-            {% if ranking_streak|length >= 3 %}
-            <div class="podium-container d-none d-md-flex">
-                
-                {% set s2 = ranking_streak[1] %}
-                <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=s2.id) }}" class="podium-card podium-2 text-decoration-none">
-                    <div class="podium-avatar-wrapper">
-                        <img src="{{ url_for('static', filename=(s2.avatar_path or 'img/default_avatar.png')) }}" class="podium-avatar">
-=======
             {# --- PODIUM STREAK (TOP 3) --- #}
             {% if ranking_streak|length >= 3 %}
             <div class="podium-container d-none d-md-flex">
@@ -622,24 +483,17 @@
                                 <i class="bi bi-person-circle text-muted" style="font-size: 2.5rem;"></i>
                             </div>
                         {% endif %}
->>>>>>> origin/guardians
                     </div>
                     <div class="podium-name">{{ s2.nickname or s2.nome }}</div>
                     <div class="podium-score text-danger"><i class="bi bi-fire"></i> {{ s2.current_streak }}</div>
                     <div class="podium-rank">2</div>
                 </a>
 
-<<<<<<< HEAD
-=======
                 {# --- 1º LUGAR (Fogo/Vermelho) --- #}
->>>>>>> origin/guardians
                 {% set s1 = ranking_streak[0] %}
                 <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=s1.id) }}" class="podium-card podium-1 text-decoration-none">
                     <div class="podium-avatar-wrapper">
                         <i class="bi bi-fire crown-icon text-danger"></i>
-<<<<<<< HEAD
-                        <img src="{{ url_for('static', filename=(s1.avatar_path or 'img/default_avatar.png')) }}" class="podium-avatar" style="border: 2px solid #dc3545;">
-=======
                         
                         {% if s1.avatar_seed %}
                             <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ s1.avatar_seed }}" class="podium-avatar" style="border: 2px solid #dc3545;" alt="Avatar">
@@ -649,19 +503,12 @@
                                 <i class="bi bi-person-circle text-danger" style="font-size: 3rem;"></i>
                             </div>
                         {% endif %}
->>>>>>> origin/guardians
                     </div>
                     <div class="podium-name text-white">{{ s1.nickname or s1.nome }}</div>
                     <div class="podium-score text-danger fw-bold" style="font-size: 1.4rem;"><i class="bi bi-fire"></i> {{ s1.current_streak }}</div>
                     <div class="podium-rank">1</div>
                 </a>
 
-<<<<<<< HEAD
-                {% set s3 = ranking_streak[2] %}
-                <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=s3.id) }}" class="podium-card podium-3 text-decoration-none">
-                    <div class="podium-avatar-wrapper">
-                        <img src="{{ url_for('static', filename=(s3.avatar_path or 'img/default_avatar.png')) }}" class="podium-avatar">
-=======
                 {# --- 3º LUGAR (Bronze) --- #}
                 {% set s3 = ranking_streak[2] %}
                 <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=s3.id) }}" class="podium-card podium-3 text-decoration-none">
@@ -673,7 +520,6 @@
                                 <i class="bi bi-person-circle text-muted" style="font-size: 2.5rem;"></i>
                             </div>
                         {% endif %}
->>>>>>> origin/guardians
                     </div>
                     <div class="podium-name">{{ s3.nickname or s3.nome }}</div>
                     <div class="podium-score text-danger"><i class="bi bi-fire"></i> {{ s3.current_streak }}</div>
@@ -682,18 +528,11 @@
             </div>
             {% endif %}
 
-<<<<<<< HEAD
-=======
             {# --- LISTA GERAL (STREAK) --- #}
->>>>>>> origin/guardians
             <div class="ranking-list-container">
                 {% for perfil in ranking_streak %}
                     <div class="rank-row {% if loop.index <= 3 %}d-md-none{% endif %} {% if perfil.id == current_user_id %}current-user{% endif %}">
                         <div class="rank-num">#{{ loop.index }}</div>
-<<<<<<< HEAD
-                        <div class="rank-user-info">
-                            <img src="{{ url_for('static', filename=(perfil.avatar_path or 'img/default_avatar.png')) }}" class="mini-avatar">
-=======
                         
                         <div class="rank-user-info">
                             {# Lógica Avatar Lista #}
@@ -705,7 +544,6 @@
                                 </div>
                             {% endif %}
 
->>>>>>> origin/guardians
                             <div>
                                 <div class="rank-user-name">
                                     <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id) }}" class="text-white text-decoration-none stretched-link">
@@ -715,17 +553,11 @@
                                 <div class="rank-dept-small text-muted">OFENSIVA</div>
                             </div>
                         </div>
-<<<<<<< HEAD
-                        <div class="rank-total-score text-danger">
-                            <i class="bi bi-fire me-1"></i> {{ perfil.current_streak }}
-                        </div>
-=======
                         
                         <div class="rank-total-score text-danger">
                             <i class="bi bi-fire me-1"></i> {{ perfil.current_streak }}
                         </div>
                         
->>>>>>> origin/guardians
                         <div class="ms-3 text-muted opacity-50"><i class="bi bi-chevron-right"></i></div>
                     </div>
                 {% endfor %}
@@ -736,87 +568,6 @@
         {% endif %}
     </div>
 
-<<<<<<< HEAD
-    <div class="tab-pane fade" id="departamento">
-        </div>
-
-    </div>
-
-    <div class="tab-pane fade" id="streak">
-        {% if ranking_streak %}
-            
-            {% if ranking_streak|length >= 3 %}
-            <div class="podium-container d-none d-md-flex">
-                
-                {% set s2 = ranking_streak[1] %}
-                <div class="podium-card podium-2">
-                    <div class="podium-avatar-wrapper">
-                        <img src="{{ url_for('static', filename=(s2.avatar_path or 'img/default_avatar.png')) }}" class="podium-avatar">
-                    </div>
-                    <div class="podium-name">{{ s2.nickname or s2.nome }}</div>
-                    <div class="podium-score text-danger">
-                        <i class="bi bi-fire"></i> {{ s2.current_streak }} DIAS
-                    </div>
-                    <div class="podium-rank">2</div>
-                </div>
-
-                {% set s1 = ranking_streak[0] %}
-                <div class="podium-card podium-1">
-                    <div class="podium-avatar-wrapper">
-                        <i class="bi bi-fire crown-icon text-danger"></i>
-                        <img src="{{ url_for('static', filename=(s1.avatar_path or 'img/default_avatar.png')) }}" class="podium-avatar" style="border: 2px solid #dc3545;">
-                    </div>
-                    <div class="podium-name text-white">{{ s1.nickname or s1.nome }}</div>
-                    <div class="podium-score text-danger fw-bold" style="font-size: 1.4rem;">
-                        <i class="bi bi-fire"></i> {{ s1.current_streak }} DIAS
-                    </div>
-                    <div class="podium-rank">1</div>
-                </div>
-
-                {% set s3 = ranking_streak[2] %}
-                <div class="podium-card podium-3">
-                    <div class="podium-avatar-wrapper">
-                        <img src="{{ url_for('static', filename=(s3.avatar_path or 'img/default_avatar.png')) }}" class="podium-avatar">
-                    </div>
-                    <div class="podium-name">{{ s3.nickname or s3.nome }}</div>
-                    <div class="podium-score text-danger">
-                        <i class="bi bi-fire"></i> {{ s3.current_streak }} DIAS
-                    </div>
-                    <div class="podium-rank">3</div>
-                </div>
-            </div>
-            {% endif %}
-
-            <div class="ranking-list-container">
-                {% for perfil in ranking_streak %}
-                    <div class="rank-row {% if loop.index <= 3 %}d-md-none{% endif %} {% if perfil.id == current_user_id %}current-user{% endif %}">
-                        <div class="rank-num">#{{ loop.index }}</div>
-                        
-                        <div class="rank-user-info">
-                            <img src="{{ url_for('static', filename=(perfil.avatar_path or 'img/default_avatar.png')) }}" class="mini-avatar">
-                            <div>
-                                <div class="rank-user-name">
-                                    <a href="{{ url_for('guardians_bp.meu_perfil', perfil_id=perfil.id) }}" class="text-white text-decoration-none">
-                                        {{ perfil.nickname or perfil.nome }}
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="rank-total-score text-danger">
-                            <i class="bi bi-fire me-1"></i> {{ perfil.current_streak }}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-
-        {% else %}
-            <div class="text-center py-5 text-muted font-tech">// NENHUMA OFENSIVA ATIVA //</div>
-        {% endif %}
-    </div>
-
-=======
->>>>>>> origin/guardians
     </div> </div>
 
     <div class="modal fade" id="rewardsModalPlaceholder" tabindex="-1" aria-hidden="true">
