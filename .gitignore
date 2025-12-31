@@ -54,3 +54,9 @@ Thumbs.db
 # Arquivos de cobertura de testes
 .coverage
 htmlcov/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
