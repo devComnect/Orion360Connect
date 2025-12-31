@@ -2,216 +2,274 @@ from app import db
 from application.models import Insignia 
 
 def seed_insignias():
-    print(">>> Iniciando seed de Insígnias (Conquistas)...")
+    print("--- INICIANDO SEED DE INSÍGNIAS ---")
     
-    DEFAULT_IMG = "img/conquistas/acumulador.png"
-
-    insignias_data = [
-        # --- 1. CATEGORIA: POR QUIZ ---
+    # Configuração Padrão
+    DEFAULT_IMG = "img/conquistas/veterano-de-guerra.png"
+    
+    # Lista Mestra de Dados
+    data = [
+        # ==========================================
+        # 🟦 TRILHA SCORE (SCORE_)
+        # ==========================================
         {
-            "nome": "Iniciado da Rede", "achievement_code": "QUIZ_NOVICE_1",
-            "descricao": "O primeiro passo para a sabedoria é questionar.\nVocê completou seus primeiros módulos.",
-            "bonus_type": "QUIZ_BONUS_PCT", "bonus_value": 2.0
+            "code": "SCORE_1",
+            "nome": "Primeiro Sinal",
+            "desc": "Você deixou de ser ruído e passou a ser detectado pela Grid.",
+            "req": 500,
+            "b_type": "GLOBAL_SCORE_PCT",
+            "b_val": 1.0
         },
         {
-            "nome": "Analista de Protocolos", "achievement_code": "QUIZ_INTERMEDIATE_1",
-            "descricao": "Sua dedicação aos estudos foi notada.\nRetenção de dados aumentada.",
-            "bonus_type": "QUIZ_BONUS_PCT", "bonus_value": 4.0
+            "code": "SCORE_2",
+            "nome": "Presença Reconhecida",
+            "desc": "Seu padrão começa a se repetir nos registros do sistema.",
+            "req": 2500,
+            "b_type": "GLOBAL_SCORE_PCT",
+            "b_val": 2.0
         },
         {
-            "nome": "Mestre do Conhecimento", "achievement_code": "QUIZ_ADVANCED_1",
-            "descricao": "Não há pergunta sem resposta.\nReferência teórica para a equipe.",
-            "bonus_type": "QUIZ_BONUS_PCT", "bonus_value": 7.0
+            "code": "SCORE_3",
+            "nome": "Assinatura Estável",
+            "desc": "A Grid agora prevê sua atuação antes mesmo do impacto.",
+            "req": 5000,
+            "b_type": "GLOBAL_SCORE_PCT",
+            "b_val": 3.0
         },
         {
-            "nome": "Oráculo do Sistema", "achievement_code": "QUIZ_MASTER_1",
-            "descricao": "Biblioteca ambulante de cibersegurança.\nProcessamento neural acelerado.",
-            "bonus_type": "QUIZ_BONUS_PCT", "bonus_value": 10.0
-        },
-
-        # --- 2. CATEGORIA: POR MINIGAME ---
-        {
-            "nome": "Linguista do DNS", "achievement_code": "MINIGAME_TERMO_PRO",
-            "descricao": "Decifrando domínios com precisão cirúrgica.\nVocabulário técnico afiado.",
-            "bonus_type": "TERMO_BONUS_PCT", "bonus_value": 5.0
+            "code": "SCORE_4",
+            "nome": "Anomalia Persistente",
+            "desc": "Você não é mais exceção — é uma variável permanente.",
+            "req": 10000,
+            "b_type": "GLOBAL_SCORE_PCT",
+            "b_val": 4.0
         },
         {
-            "nome": "Criptógrafo da Ordem", "achievement_code": "MINIGAME_ANAGRAM_PRO",
-            "descricao": "Reorganizando o caos em informação.\nCertificados decifrados.",
-            "bonus_type": "ANAGRAM_BONUS_PCT", "bonus_value": 5.0
-        },
-        {
-            "nome": "Quebrador de Cofres", "achievement_code": "MINIGAME_SECRET_PRO",
-            "descricao": "Padrões complexos são quebra-cabeças infantis.\nAcesso concedido.",
-            "bonus_type": "PW_BONUS_PCT", "bonus_value": 5.0
-        },
-        {
-            "nome": "Processador Neural", "achievement_code": "MINIGAME_SPEED_MASTER",
-            "descricao": "Reflexos superam a latência da rede.\Eficiência motora suprema.",
-            "bonus_type": "SPEED_BONUS_PCT", "bonus_value": 5.0
-        },
-
-        # --- 3. CATEGORIA: POR PATRULHA ---
-        {
-            "nome": "Vigia Noturno", "achievement_code": "PATROL_ROOKIE",
-            "descricao": "Enquanto outros dormem, você monitora.",
-            "bonus_type": "PATROL_BONUS_PCT", "bonus_value": 2.5
-        },
-        {
-            "nome": "Olho da Torre", "achievement_code": "PATROL_WATCHER",
-            "descricao": "Nada passa despercebido no seu setor.",
-            "bonus_type": "PATROL_BONUS_PCT", "bonus_value": 5.0
-        },
-        {
-            "nome": "Sentinela Onipresente", "achievement_code": "PATROL_GUARDIAN",
-            "descricao": "Sua presença no sistema é constante como um heartbeat.",
-            "bonus_type": "PATROL_BONUS_PCT", "bonus_value": 7.5
-        },
-        {
-            "nome": "Guardião da Fronteira", "achievement_code": "PATROL_LEGEND",
-            "descricao": "A primeira e a última linha de defesa.",
-            "bonus_type": "PATROL_BONUS_PCT", "bonus_value": 10.0
+            "code": "SCORE_5",
+            "nome": "Entidade Registrada",
+            "desc": "Seu rastro é oficial. Apagar seria custoso demais.",
+            "req": 20000,
+            "b_type": "GLOBAL_SCORE_PCT",
+            "b_val": 5.0
         },
 
-        # --- 4. CATEGORIA: POR OFENSIVA ---
+        # ==========================================
+        # 🟩 TRILHA QUIZ (QUIZ_COUNT_)
+        # ==========================================
         {
-            "nome": "Conexão Estável", "achievement_code": "STREAK_WEEKLY",
-            "descricao": "Sete dias sem falhas de pacote.\nConsistência estabelecida.",
-            "bonus_type": "STREAK_BONUS_PCT", "bonus_value": 3.0
+            "code": "QUIZ_COUNT_1",
+            "nome": "Primeira Validação",
+            "desc": "Você respondeu. O sistema escutou.",
+            "req": 1,
+            "b_type": "QUIZ_BONUS_PCT",
+            "b_val": 3.0
         },
         {
-            "nome": "Fluxo Contínuo", "achievement_code": "STREAK_MONTHLY",
-            "descricao": "Um mês inteiro de dedicação ininterrupta.",
-            "bonus_type": "STREAK_BONUS_PCT", "bonus_value": 6.0
+            "code": "QUIZ_COUNT_2",
+            "nome": "Linha de Raciocínio",
+            "desc": "A repetição transformou tentativa em método.",
+            "req": 10,
+            "b_type": "QUIZ_BONUS_PCT",
+            "b_val": 6.0
         },
         {
-            "nome": "Persistência de Dados", "achievement_code": "STREAK_QUARTERLY",
-            "descricao": "Faça chuva ou faça sol, o log registra sua presença.",
-            "bonus_type": "STREAK_BONUS_PCT", "bonus_value": 9.0
+            "code": "QUIZ_COUNT_3",
+            "nome": "Consistência Analítica",
+            "desc": "Erros diminuem quando o padrão se consolida.",
+            "req": 25,
+            "b_type": "QUIZ_BONUS_PCT",
+            "b_val": 12.0
         },
         {
-            "nome": "Imortal Digital", "achievement_code": "STREAK_YEARLY",
-            "descricao": "O tempo passa, mas sua ofensiva permanece.\nLenda viva.",
-            "bonus_type": "STREAK_BONUS_PCT", "bonus_value": 15.0
-        },
-
-        # --- 5. CATEGORIA: POR ITEMS ---
-        {
-            "nome": "Consumidor Beta", "achievement_code": "ITEM_BUYER_1",
-            "descricao": "Adquirindo as primeiras ferramentas do ofício.",
-            "bonus_type": "GCOIN_BONUS_PCT", "bonus_value": 2.0
+            "code": "QUIZ_COUNT_4",
+            "nome": "Operador Cognitivo",
+            "desc": "Você processa informação como o próprio sistema.",
+            "req": 50,
+            "b_type": "QUIZ_BONUS_PCT",
+            "b_val": 20.0
         },
         {
-            "nome": "Mercador de Bits", "achievement_code": "ITEM_COLLECTOR_1",
-            "descricao": "Seu inventário começa a dar inveja aos novatos.",
-            "bonus_type": "GCOIN_BONUS_PCT", "bonus_value": 5.0
-        },
-        {
-            "nome": "Magnata do Cyberespaço", "achievement_code": "ITEM_WHALE_1",
-            "descricao": "A economia do servidor gira em torno das suas transações.",
-            "bonus_type": "GCOIN_BONUS_PCT", "bonus_value": 8.0
-        },
-        {
-            "nome": "Arsenal Completo", "achievement_code": "ITEM_COMPLETIONIST",
-            "descricao": "Não há mais nada na loja que você não possua.",
-            "bonus_type": "GCOIN_BONUS_PCT", "bonus_value": 12.0
-        },
-
-        # --- 6. CATEGORIA: POR DESEMPENHO ---
-        {
-            "nome": "Agente Promissor", "achievement_code": "LEVEL_10_REACHED",
-            "descricao": "Superando a fase de recrutamento com louvor.",
-            "bonus_type": "GLOBAL_SCORE_PCT", "bonus_value": 2.0
-        },
-        {
-            "nome": "Operativo de Elite", "achievement_code": "LEVEL_50_REACHED",
-            "descricao": "Metade do caminho para a glória.\nExperiência respeitável.",
-            "bonus_type": "GLOBAL_SCORE_PCT", "bonus_value": 5.0
-        },
-        {
-            "nome": "Veterano de Guerra", "achievement_code": "SCORE_HIGH_ROLLER",
-            "descricao": "Milhares de pontos acumulados em combate real.",
-            "bonus_type": "GLOBAL_SCORE_PCT", "bonus_value": 8.0
-        },
-        {
-            "nome": "Singularidade", "achievement_code": "LEVEL_MAX_CAP",
-            "descricao": "Você atingiu o teto teórico de performance.\nMais máquina do que humano.",
-            "bonus_type": "GLOBAL_SCORE_PCT", "bonus_value": 10.0
+            "code": "QUIZ_COUNT_5",
+            "nome": "Arquitetura Mental",
+            "desc": "Conhecimento deixou de ser adquirido — passou a ser produzido.",
+            "req": 100,
+            "b_type": "QUIZ_BONUS_PCT",
+            "b_val": 30.0
         },
 
-        # --- 7. CATEGORIA: POR REPORT DE PHISH ---
+        # ==========================================
+        # 🟨 TRILHA MINIGAMES (MINIGAME_)
+        # ==========================================
         {
-            "nome": "Filtro Humano", "achievement_code": "PHISH_DETECT_NOVICE",
-            "descricao": "Separando o lixo do que é legítimo.",
-            "bonus_type": "PERFECTION_BONUS_PCT", "bonus_value": 3.0
+            "code": "MINIGAME_1",
+            "nome": "Primeiro Protocolo",
+            "desc": "Você aceitou o desafio fora da teoria.",
+            "req": 1,
+            "b_type": "TERMO_BONUS_PCT", # Específico conforme solicitado
+            "b_val": 5.0
         },
         {
-            "nome": "Caçador de Iscas", "achievement_code": "PHISH_DETECT_INTER",
-            "descricao": "Identificando armadilhas sociais com facilidade.",
-            "bonus_type": "PERFECTION_BONUS_PCT", "bonus_value": 6.0
+            "code": "MINIGAME_2",
+            "nome": "Decodificador Iniciante",
+            "desc": "Padrões começam a ceder sob pressão repetida.",
+            "req": 10,
+            "b_type": "ANAGRAM_BONUS_PCT",
+            "b_val": 5.0
         },
         {
-            "nome": "Terror dos Scammers", "achievement_code": "PHISH_DETECT_ADV",
-            "descricao": "Seu nome está na lista negra dos atacantes.",
-            "bonus_type": "PERFECTION_BONUS_PCT", "bonus_value": 9.0
+            "code": "MINIGAME_3",
+            "nome": "Quebrador de Estruturas",
+            "desc": "Sistemas fechados não permanecem fechados por muito tempo.",
+            "req": 25,
+            "b_type": "PW_BONUS_PCT",
+            "b_val": 20.0
         },
         {
-            "nome": "Firewall Biológico", "achievement_code": "PHISH_DETECT_MASTER",
-            "descricao": "Nenhum e-mail malicioso sobrevive à sua triagem.",
-            "bonus_type": "PERFECTION_BONUS_PCT", "bonus_value": 12.0
+            "code": "MINIGAME_4",
+            "nome": "Operador de Campo",
+            "desc": "Execução eficiente supera tentativa bruta.",
+            "req": 50,
+            "b_type": "TERMO_BONUS_PCT",
+            "b_val": 20.0
+        },
+        {
+            "code": "MINIGAME_5",
+            "nome": "Especialista em Ruptura",
+            "desc": "Nenhuma cifra resiste à insistência correta.",
+            "req": 100,
+            "b_type": "ANAGRAM_BONUS_PCT",
+            "b_val": 20.0
         },
 
-        # --- 8. CATEGORIA: POR PÓDIO ---
+        # ==========================================
+        # 🟥 TRILHA PATRULHA (PATROL_)
+        # ==========================================
         {
-            "nome": "Competidor Nascido", "achievement_code": "PODIUM_TOP_10",
-            "descricao": "Entrando no hall da fama, entre os 10 melhores.",
-            "bonus_type": "GLOBAL_SCORE_PCT", "bonus_value": 3.0
+            "code": "PATROL_1",
+            "nome": "Primeira Ronda",
+            "desc": "Você saiu do núcleo e tocou o perímetro.",
+            "req": 1,
+            "b_type": "PATROL_BONUS_PCT",
+            "b_val": 5.0
         },
         {
-            "nome": "Medalhista de Bronze", "achievement_code": "PODIUM_TOP_3",
-            "descricao": "Um lugar no pódio garantido.",
-            "bonus_type": "GLOBAL_SCORE_PCT", "bonus_value": 6.0
+            "code": "PATROL_2",
+            "nome": "Vigilância Ativa",
+            "desc": "A Grid começa a confiar sua fronteira a você.",
+            "req": 7,
+            "b_type": "PATROL_BONUS_PCT",
+            "b_val": 10.0
         },
         {
-            "nome": "Vice-Campeão", "achievement_code": "PODIUM_TOP_2",
-            "descricao": "Por um bit não foi o primeiro.\nRival digno.",
-            "bonus_type": "GLOBAL_SCORE_PCT", "bonus_value": 9.0
+            "code": "PATROL_3",
+            "nome": "Controle Territorial",
+            "desc": "Rotas são seguras porque você passou por elas.",
+            "req": 14,
+            "b_type": "PATROL_BONUS_PCT",
+            "b_val": 20.0
         },
         {
-            "nome": "Lenda Viva", "achievement_code": "PODIUM_TOP_1",
-            "descricao": "O topo da cadeia alimentar digital.",
-            "bonus_type": "ADD_QUIZ_TOKEN", 
-            "bonus_value": 1.0 
+            "code": "PATROL_4",
+            "nome": "Zona Sob Observação",
+            "desc": "Nada se move sem ser notado.",
+            "req": 30,
+            "b_type": "PATROL_BONUS_PCT",
+            "b_val": 35.0
+        },
+        {
+            "code": "PATROL_5",
+            "nome": "Guardião do Perímetro",
+            "desc": "O território responde primeiro a você.",
+            "req": 60,
+            "b_type": "PATROL_BONUS_PCT",
+            "b_val": 50.0
+        },
+
+        # ==========================================
+        # 🟪 TRILHA SHOP (SHOP_)
+        # ==========================================
+        {
+            "code": "SHOP_1",
+            "nome": "Primeiro Investimento",
+            "desc": "Toda vantagem começa com uma escolha.",
+            "req": 1,
+            "b_type": "GCOIN_BONUS_PCT",
+            "b_val": 5.0
+        },
+        {
+            "code": "SHOP_2",
+            "nome": "Otimização Inicial",
+            "desc": "Eficiência não é sorte. É acúmulo.",
+            "req": 5,
+            "b_type": "GCOIN_BONUS_PCT",
+            "b_val": 10.0
+        },
+        {
+            "code": "SHOP_3",
+            "nome": "Estrutura Aprimorada",
+            "desc": "Seu desempenho agora é modular.",
+            "req": 10,
+            "b_type": "GCOIN_BONUS_PCT",
+            "b_val": 15.0
+        },
+        {
+            "code": "SHOP_4",
+            "nome": "Arquitetura de Vantagem",
+            "desc": "Cada ação rende mais do que antes.",
+            "req": 20,
+            "b_type": "GCOIN_BONUS_PCT",
+            "b_val": 20.0
+        },
+        {
+            "code": "SHOP_5",
+            "nome": "Economia de Guerra",
+            "desc": "Você não gasta recursos. Você os converte.",
+            "req": 50,
+            "b_type": "GCOIN_BONUS_PCT",
+            "b_val": 25.0
         }
     ]
 
-    print(f"Preparando para inserir {len(insignias_data)} insígnias...")
+    # Processamento
+    count_created = 0
+    count_updated = 0
 
-    for data in insignias_data:
-        insignia = Insignia.query.filter_by(achievement_code=data['achievement_code']).first()
+    try:
+        for item in data:
+            # Verifica se já existe pelo código único
+            insignia = Insignia.query.filter_by(achievement_code=item['code']).first()
+
+            if insignia:
+                # Se existe, atualiza os dados para garantir que textos/bônus estejam sincronizados
+                insignia.nome = item['nome']
+                insignia.descricao = item['desc']
+                insignia.requisito_score = item['req'] # Usando campo existente da sua classe
+                insignia.caminho_imagem = DEFAULT_IMG
+                insignia.bonus_type = item['b_type']
+                insignia.bonus_value = item['b_val']
+                count_updated += 1
+            else:
+                # Se não existe, cria
+                new_insignia = Insignia(
+                    achievement_code=item['code'],
+                    nome=item['nome'],
+                    descricao=item['desc'],
+                    requisito_score=item['req'],
+                    caminho_imagem=DEFAULT_IMG,
+                    bonus_type=item['b_type'],
+                    bonus_value=item['b_val']
+                )
+                db.session.add(new_insignia)
+                count_created += 1
         
-        if not insignia:
-            insignia = Insignia(
-                nome=data['nome'],
-                achievement_code=data['achievement_code'],
-                descricao=data['descricao'],
-                requisito_score=0,
-                caminho_imagem=DEFAULT_IMG,
-                bonus_type=data['bonus_type'],
-                bonus_value=data['bonus_value']
-            )
-            db.session.add(insignia)
-            print(f" [+] CRIADO: {data['nome']}")
-        else:
-            insignia.nome = data['nome']
-            insignia.descricao = data['descricao']
-            insignia.bonus_type = data['bonus_type']
-            insignia.bonus_value = data['bonus_value']
-            insignia.caminho_imagem = DEFAULT_IMG
-            print(f" [.] ATUALIZADO: {data['nome']}")
+        db.session.commit()
+        print(f"--- SEED CONCLUÍDO ---")
+        print(f"Criados: {count_created}")
+        print(f"Atualizados: {count_updated}")
 
-    db.session.commit()
-    print(">>> Seed de Insígnias concluído!")
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERRO AO RODAR SEED: {e}")
 
 # --- FUNÇÃO PRINCIPAL ESPERADA PELO APP.PY ---
 def run_all_seeds():

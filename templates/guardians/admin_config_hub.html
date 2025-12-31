@@ -266,7 +266,28 @@
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
+                                        
+                                        <div class="mb-3">
+                                            <label for="level_number" class="form-label">Número do Nível</label>
+                                            <input type="number" class="form-control bg-secondary text-white border-0" name="level_number" placeholder="Ex: 1, 2, 3..." required>
                                         </div>
+
+                                        <div class="mb-3">
+                                            <label for="nome" class="form-label">Nome do Nível</label>
+                                            <input type="text" class="form-control bg-secondary text-white border-0" name="nome" placeholder="Ex: Iniciante, Mestre..." required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="score_minimo" class="form-label">Score Mínimo</label>
+                                            <input type="number" class="form-control bg-secondary text-white border-0" name="score_minimo" placeholder="Ex: 1000" required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="avatar" class="form-label">Avatar do Nível (Opcional)</label>
+                                            <input type="file" class="form-control bg-secondary text-white border-0" name="avatar_file">
+                                        </div>
+
+                                    </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                         <button type="submit" class="btn btn-primary">Adicionar Nível</button>
@@ -275,6 +296,7 @@
                             </div>
                         </div>
                 </div>
+
                 <div class="modal fade" id="editSpecializationModal-{{ spec.id }}" tabindex="-1">
                     <div class="modal-dialog">
                         <div class="modal-content bg-dark text-white">
@@ -319,7 +341,8 @@
 
                         </div>
                     </div>
-                </div>            
+                </div>  
+
                 <div class="modal fade modal-lg" id="manageBonusesModal-{{ spec.id }}" tabindex="-1">
                             <div class="modal-dialog modal-dialog-scrollable">
                                 <div class="modal-content bg-dark text-white">

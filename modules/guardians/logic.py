@@ -4,7 +4,7 @@ from datetime import date, timedelta, datetime
 from flask import flash, g
 from application.models import (db, Guardians, NivelSeguranca, Insignia, GuardianInsignia, 
                                 HistoricoAcao, SpecializationPerkLevel, Perk, GlobalGameSettings, QuizAttempt,
-                                TermoAttempt, AnagramAttempt, GuardianPurchase, ShopItem, GuardianShopState)
+                                TermoAttempt, AnagramAttempt, GuardianPurchase, ShopItem, GuardianShopState, PasswordAttempt)
 
 # Definição Global de Tipos de Bônus (Usado em Loja, Conquistas e Specs)
 BONUS_TYPES = {
@@ -428,40 +428,46 @@ def update_user_streak(guardian):
 
 
 #FUNÇÃO QUE ATUALIZA NIVEL
-def atualizar_nivel_usuario(guardian, quiz_context=None):
+def atualizar_nivel_usuario(guardian):
     """
-    Função robusta que define ou atualiza o nível de um guardião.
-    Ela encontra o NÍVEL MAIS ALTO para o qual o score atual do usuário se qualifica.
+    Sincroniza o progresso do guardião:
+    1. Verifica se o XP atual permite subir de nível.
+    2. Verifica se alguma nova conquista foi desbloqueada (Score, Quiz, Minigame, Patrulha, Loja).
+    
+    Retorna:
+        (level_up_occurred: bool, novas_conquistas: list)
     """
     level_up_occurred = False
-    old_level_id = guardian.nivel_id
+    
+    # --- 1. LÓGICA DE NÍVEL (Level Up) ---
+    if guardian.specialization_id:
 
-    # A verificação de conquistas agora acontece no final, garantindo que sempre rode.
-    novas_conquistas = [] 
-
-    # --- LÓGICA DE NÍVEL (Só executa se o guardião tiver um caminho) ---
-    if guardian.specialization:
-        
-        # 1. Busca TODOS os níveis da especialização do usuário, do MAIOR score para o MENOR.
         trilha_de_niveis = NivelSeguranca.query.filter_by(
             specialization_id=guardian.specialization_id
         ).order_by(NivelSeguranca.score_minimo.desc()).all()
 
-        nivel_correto_para_score = None
-        # 2. Encontra o primeiro nível (o mais alto) que o usuário já alcançou com seu score.
+        nivel_alvo = None
+        
         for nivel in trilha_de_niveis:
             if guardian.score_atual >= nivel.score_minimo:
-                nivel_correto_para_score = nivel
-                break # Encontramos o mais alto, podemos parar o loop.
+                nivel_alvo = nivel
+                break 
         
-        # 3. Se o nível correto encontrado for diferente do nível atual do guardião, atualizamos.
-        if nivel_correto_para_score and nivel_correto_para_score.id != guardian.nivel_id:
-            guardian.nivel = nivel_correto_para_score
+        if nivel_alvo and nivel_alvo.id != guardian.nivel_id:
+            guardian.nivel = nivel_alvo
             level_up_occurred = True
+            log = HistoricoAcao(guardian_id=guardian.id, descricao=f"Promovido para {nivel_alvo.nome}", pontuacao=0)
+            db.session.add(log)
 
-    # --- GATILHO UNIVERSAL DE CONQUISTAS (Executa sempre, após qualquer mudança) ---
-    novas_conquistas = check_and_award_achievements(guardian, quiz_context=quiz_context)
+    # --- 2. GATILHO DE CONQUISTAS (Achievements) ---
+    novas_conquistas = check_and_award_achievements(guardian)
     
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao sincronizar nível/conquistas: {e}")
+
     return level_up_occurred, novas_conquistas
 
 ##ATRIBUI TOKENS DE RETAKE
@@ -566,104 +572,82 @@ def calculate_weekly_coin_reward():
 # ==========================================================
 # ============= SISTEMA DE CONQUISTAS ================
 # ==========================================================
-def check_and_award_achievements(guardian, quiz_context=None):
-    """
-    Verifica e concede conquistas automáticas a um guardião.
-    Refatorado para 6 trilhas principais (Pontos, Quizzes, Minigames, Patrulhas, G-Coins, Reports).
-    Retorna uma lista de nomes das novas conquistas ganhas.
-    """
-    try:
-        # 1. Busca todas as conquistas que o guardião AINDA NÃO TEM
-        owned_insignia_ids = {gi.insignia_id for gi in guardian.insignias_conquistadas.all()} 
-        unearned_insignias = Insignia.query.filter(not_(Insignia.id.in_(owned_insignia_ids))).all()
-        
-        newly_awarded = []
-        
-        # 2. Cache de dados para evitar múltiplas buscas
-        score = guardian.score_atual
-        quiz_count = None
-        minigame_count = None
-        patrol_count = None
-        gcoin_spent_count = None # Usaremos o NÚMERO de compras
-        report_count = None
-
-        # 3. Loop apenas nas conquistas não ganhas
-        for insignia in unearned_insignias:
-            awarded = False
-            code = insignia.achievement_code
-
-            # --- TRILHA 1: PONTOS GANHOS (Bônus de Ofensiva) ---
-            if code.startswith('SCORE_'):
-                # (Ajuste os valores de score como desejar)
-                if code == 'SCORE_1' and score >= 100: awarded = True
-                elif code == 'SCORE_2' and score >= 1000: awarded = True
-                elif code == 'SCORE_3' and score >= 2500: awarded = True
-                elif code == 'SCORE_4' and score >= 5000: awarded = True
-                elif code == 'SCORE_5' and score >= 10000: awarded = True
-
-            # --- TRILHA 2: QUIZZES FEITOS (Bônus de Quiz) ---
-            elif code.startswith('QUIZ_COUNT_'):
-                if quiz_count is None: # Busca no banco apenas uma vez
-                    quiz_count = guardian.quiz_attempts.filter(QuizAttempt.score > 0).count()
-                
-                if code == 'QUIZ_COUNT_1' and quiz_count >= 1: awarded = True
-                elif code == 'QUIZ_COUNT_2' and quiz_count >= 10: awarded = True
-                elif code == 'QUIZ_COUNT_3' and quiz_count >= 50: awarded = True
-                elif code == 'QUIZ_COUNT_4' and quiz_count >= 100: awarded = True
-                elif code == 'QUIZ_COUNT_5' and quiz_count >= 200: awarded = True
-
-            # --- TRILHA 3: MINIGAMES FEITOS (Bônus de Minigame) ---
-            elif code.startswith('MINIGAME_'):
-                if minigame_count is None: # Busca no banco apenas uma vez
-                    termo_count = TermoAttempt.query.filter_by(guardian_id=guardian.id).count()
-                    anagram_count = AnagramAttempt.query.filter_by(guardian_id=guardian.id).count()
-                    minigame_count = termo_count + anagram_count
-                
-                if code == 'MINIGAME_1' and minigame_count >= 1: awarded = True
-                elif code == 'MINIGAME_2' and minigame_count >= 10: awarded = True
-                elif code == 'MINIGAME_3' and minigame_count >= 50: awarded = True
-                elif code == 'MINIGAME_4' and minigame_count >= 100: awarded = True
-                elif code == 'MINIGAME_5' and minigame_count >= 200: awarded = True
-
-            # --- TRILHA 4: PATRULHAS FEITAS (Bônus de Patrulha) ---
-            elif code.startswith('PATROL_'):
-                if patrol_count is None: # Busca no banco apenas uma vez
-                    patrol_count = guardian.historico_acoes.filter(HistoricoAcao.descricao.like('Realizou Patrulha Diária:%')).count()
-                
-                if code == 'PATROL_1' and patrol_count >= 1: awarded = True
-                elif code == 'PATROL_2' and patrol_count >= 10: awarded = True
-                elif code == 'PATROL_3' and patrol_count >= 50: awarded = True
-                elif code == 'PATROL_4' and patrol_count >= 100: awarded = True
-                elif code == 'PATROL_5' and patrol_count >= 200: awarded = True
-
-            # --- TRILHA 5: G-COINS GASTOS (Bônus de G-Coins) ---
-            # (Assumindo que o histórico de compra será 'Comprou %')
-            elif code.startswith('GCOIN_'):
-                if gcoin_spent_count is None: # Busca no banco apenas uma vez
-                    # (Usamos o NÚMERO de compras, não o valor)
-                    gcoin_spent_count = guardian.historico_acoes.filter(HistoricoAcao.descricao.like('Comprou %')).count() 
-                
-                if code == 'GCOIN_1' and gcoin_spent_count >= 1: awarded = True
-                elif code == 'GCOIN_2' and gcoin_spent_count >= 3: awarded = True
-                elif code == 'GCOIN_3' and gcoin_spent_count >= 5: awarded = True
-                elif code == 'GCOIN_4' and gcoin_spent_count >= 10: awarded = True
-                elif code == 'GCOIN_5' and gcoin_spent_count >= 20: awarded = True
-
-            # --- TRILHA 6: REPORTS FEITOS (Bônus Indefinido) ---
-            
-            # --- Lógica de Concessão ---
-            if awarded:
-                nova_conquista = GuardianInsignia(guardian_id=guardian.id, insignia_id=insignia.id)
-                db.session.add(nova_conquista)
-                novo_historico = HistoricoAcao(guardian_id=guardian.id, descricao=f"Conquistou a insígnia '{insignia.nome}'!", pontuacao=0)
-                db.session.add(novo_historico)
-                newly_awarded.append(insignia.nome)
-        
-        return newly_awarded
+def check_and_award_achievements(guardian):
     
-    except Exception as e:
-        print(f"ERRO ao checar conquistas: {e}")
-        return []
+    # 1. Carrega estatísticas DIRETAMENTE das novas colunas
+    # (O 'or 0' garante que não quebre se for None por algum motivo legado)
+    current_score = guardian.score_atual or 0
+    quiz_count = guardian.stat_quiz_count or 0
+    patrol_count = guardian.stat_patrol_count or 0
+    minigame_count = guardian.stat_minigame_count or 0
+    shop_count = guardian.stat_shop_count or 0
+
+
+    # 2. Prepara listas
+    # Pega IDs que eu já tenho (usando .all() se for lazy dynamic)
+    if hasattr(guardian.insignias_conquistadas, 'all'):
+        my_insignia_ids = [gi.insignia_id for gi in guardian.insignias_conquistadas.all()]
+    else:
+        my_insignia_ids = [gi.insignia_id for gi in guardian.insignias_conquistadas]
+
+    all_insignias = Insignia.query.all()
+    unearned = [ins for ins in all_insignias if ins.id not in my_insignia_ids]
+    
+    newly_awarded = []
+
+    # 3. Avaliação
+    for insignia in unearned:
+        code = insignia.achievement_code
+        awarded = False
+
+        try:
+            parts = code.split('_')
+            level = int(parts[-1]) 
+        except:
+            continue
+
+        # --- TRILHAS ---
+        if code.startswith('SCORE_'):
+            reqs = {1: 500, 2: 2500, 3: 5000, 4: 10000, 5: 20000}
+            if current_score >= reqs.get(level, 999999): awarded = True
+
+        elif code.startswith('QUIZ_COUNT_'): 
+            reqs = {1: 1, 2: 10, 3: 25, 4: 50, 5: 100}
+            if quiz_count >= reqs.get(level, 9999): awarded = True
+
+        elif code.startswith('PATROL_'):
+            reqs = {1: 1, 2: 7, 3: 14, 4: 30, 5: 60}
+            if patrol_count >= reqs.get(level, 9999): awarded = True
+
+        elif code.startswith('MINIGAME_'):
+            reqs = {1: 1, 2: 10, 3: 25, 4: 50, 5: 100}
+            if minigame_count >= reqs.get(level, 9999): awarded = True
+
+        elif code.startswith('SHOP_'):
+            reqs = {1: 1, 2: 5, 3: 10, 4: 20, 5: 50}
+            if shop_count >= reqs.get(level, 9999): awarded = True
+
+        # --- CONCESSÃO ---
+        if awarded:
+            new_grant = GuardianInsignia(
+                guardian_id=guardian.id,
+                insignia_id=insignia.id,
+                data_conquista=datetime.utcnow()
+            )
+            db.session.add(new_grant)
+            newly_awarded.append(insignia)
+
+    # 4. Commit apenas se houve ganho
+    if newly_awarded:
+        try:
+            db.session.commit()
+            return newly_awarded
+        except Exception as e:
+            db.session.rollback()
+            print(f"Erro ao salvar conquistas: {e}")
+            return []
+    
+    return []
     
 ##ORDERNAR CONQUSITAS EM MEU PERFIL###
 def get_insignia_category(insignia):

@@ -1,18 +1,16 @@
 {% extends "base_template.html" %}
-
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
 {% block title %}Central de Operações{% endblock %}
 
 {% block styles %}
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* PALETA CYBERPUNK */
-            --neon-blue: #0dcaf0;  /* Avaliação/Defesa */
-            --neon-red: #ff2a6d;   /* Ofensiva/Hacker */
-            --neon-green: #05d9e8; /* Decriptação */
-            --neon-yellow: #fcee0a; /* Segurança Máxima */
+            --neon-blue: #0dcaf0;  
+            --neon-red: #ff2a6d;  
+            --neon-green: #05d9e8; 
+            --neon-yellow: #fcee0a; 
             --neon-grey: #ADB5BD;
-            
             --bg-dark: #0b0c10;
             --panel-bg: #1f2833;
             --border-color: #45a29e;
@@ -106,7 +104,7 @@
                 20px 0, 100% 0, 
                 100% calc(100% - 20px), calc(100% - 20px) 100%, 
                 0 100%, 0 20px
-            ); /* Formato Tech Recortado */
+            );
         }
 
         .op-card:hover {
@@ -153,7 +151,7 @@
             font-size: 0.9rem;
             line-height: 1.5;
             margin-bottom: 20px;
-            height: 42px; /* Limita a 2 linhas */
+            height: 42px;
             overflow: hidden;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -198,7 +196,7 @@
             
             width: 60px;
             height: 60px;
-            border-radius: 50px; /* Começa redondo */
+            border-radius: 50px;
             
             background: rgba(11, 12, 16, 0.9);
             border: 2px solid var(--neon-blue);
@@ -214,7 +212,7 @@
         .fab-icon {
             font-size: 1.8rem;
             transition: transform 0.3s;
-            display: flex; /* Centraliza o ícone */
+            display: flex; 
         }
 
         .fab-text {
@@ -230,7 +228,7 @@
 
         /* Efeito Hover (Expandir) */
         .fab-manual:hover {
-            width: 160px; /* Expands to pill shape */
+            width: 160px; 
             background: var(--neon-blue);
             color: #000;
             box-shadow: 0 0 30px rgba(13, 202, 240, 0.6);
@@ -261,6 +259,7 @@
 {% endblock %}
 
 {% block content %}
+{{ render_assistant(assistant_data) }}
 <div class="container mt-4 mb-5">
     
     <div class="hud-header d-flex justify-content-between align-items-end">

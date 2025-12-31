@@ -6,7 +6,7 @@ from collections import defaultdict
 from .logic import atualizar_nivel_usuario
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func, case, text, desc
+from sqlalchemy import func, case, text, desc, text
 import re, uuid
 from datetime import datetime, date, timedelta
 from werkzeug.utils import secure_filename
@@ -337,6 +337,10 @@ def reset_history():
             for attempt in anagram_attempts_to_delete:
                 db.session.delete(attempt)
      
+            perfil_guardian.stat_patrol_count = 0
+            perfil_guardian.stat_minigame_count = 0
+            perfil_guardian.stat_shop_count = 0
+            perfil_guardian.stat_quiz_count = 0
             perfil_guardian.score_atual = 0
             perfil_guardian.current_streak = 0
             perfil_guardian.last_streak_date = None
@@ -353,6 +357,7 @@ def reset_history():
             perfil_guardian.name_color = None
             perfil_guardian.trophy_tier = None 
             perfil_guardian.avatar_seed = None
+            perfil_guardian.tutorials_seen = None
             
             
             db.session.commit()
@@ -2078,12 +2083,15 @@ def content_hub():
                 insignia_id = request.form.get('insignia_id')
                 insignia = Insignia.query.get(insignia_id)
                 redirect_hash = '#tab-insignias'
+                
                 if insignia:
                     try:
-
+                        GuardianFeatured.query.filter_by(insignia_id=insignia_id).delete()
                         GuardianInsignia.query.filter_by(insignia_id=insignia_id).delete()
+
                         db.session.delete(insignia)
                         db.session.commit()
+                        
                         flash(f"Insígnia '{insignia.nome}' e todas as suas concessões foram excluídas com sucesso!", 'success')
                     except Exception as e:
                         db.session.rollback()
@@ -2113,7 +2121,6 @@ def content_hub():
                 db.session.commit()
                 flash('Configurações do Password Vault atualizadas!', 'success')
                 redirect_hash = '#tab-password'
-
 
             else:
                 flash(f'Ação POST desconhecida: {action}', 'warning')

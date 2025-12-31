@@ -59,11 +59,10 @@ BONUS_TYPES = {
 @login_required 
 def rankings():
     
-    logged_in_user_id = SessionManager.get("user_id")
+    user_id = SessionManager.get("user_id")
+    guardian = Guardians.query.filter_by(user_id=user_id).first()
     
-    guardian_logado = Guardians.query.filter_by(user_id=logged_in_user_id).first()
-    
-    current_guardian_id = guardian_logado.id if guardian_logado else -1
+    current_guardian_id = guardian.id if guardian else -1
 
     ranking_global = Guardians.query.order_by(desc(Guardians.score_atual)).all()
 
@@ -73,6 +72,7 @@ def rankings():
     ).all()
 
     active_season = GameSeason.query.filter_by(is_active=True).first()
+    assistant_payload = get_assistant_data(guardian, 'rankings')
 
     ranking_departamento = db.session.query(
         Guardians.departamento_nome, 
@@ -84,7 +84,8 @@ def rankings():
                            ranking_streak=ranking_streak,
                            ranking_departamento=ranking_departamento,
                            current_user_id=current_guardian_id,
-                           active_season=active_season
+                           active_season=active_season,
+                           assistant_data=assistant_payload
                            )
 
 ##ROTA DA PAGINA DE REGRAS
@@ -282,11 +283,13 @@ def central():
         password_config = None    
     
     all_activities.sort(key=lambda x: x['created_at'], reverse=True)
+    assistant_payload = get_assistant_data(guardian, 'central')
 
     return render_template(
         'guardians/page_central.html', 
         available_activities=all_activities,
-        password_config=password_config
+        password_config=password_config,
+        assistant_data=assistant_payload
     )
 
 ##ROTAS DE QUIZZES
@@ -311,7 +314,6 @@ def take_quiz(quiz_id):
 
     remaining_time = 0
 
-
     if quiz.time_limit_seconds and quiz.time_limit_seconds > 0:
         
         start_time = attempt.started_at
@@ -322,16 +324,16 @@ def take_quiz(quiz_id):
         now_time = datetime.now(timezone.utc)
         ts_start = start_time.timestamp()
         ts_now = now_time.timestamp()
-        
         elapsed_seconds = ts_now - ts_start
         raw_remaining = quiz.time_limit_seconds - elapsed_seconds
         remaining_time = int(max(0, raw_remaining))
-
+        assistant_payload = get_assistant_data(guardian, 'play_quiz')
 
     return render_template(
         'guardians/play_minigame_quiz.html', 
         quiz=quiz, 
-        remaining_time=remaining_time
+        remaining_time=remaining_time,
+        assistant_data=assistant_payload
     )
 
 # Esta rota corrige o erro 'BuildError' e permite o uso no Terminal/Cards
@@ -500,9 +502,9 @@ def submit_quiz():
 
         # --- 3.1 Atualização e Salvamento ---
         guardian.score_atual = (guardian.score_atual or 0) + final_score
-        update_user_streak(guardian) 
-        quiz_context = {'quiz': quiz, 'is_perfect_score': is_perfect_score}
-        level_up, novas_conquistas = atualizar_nivel_usuario(guardian, quiz_context=quiz_context)
+        update_user_streak(guardian)
+        guardian.stat_quiz_count += 1 
+        level_up, novas_conquistas = atualizar_nivel_usuario(guardian)
 
         # --- 4. SALVAMENTO NA TENTATIVA (ATTEMPT) ---
         attempt.completed_at = datetime.now(timezone.utc)
@@ -520,7 +522,6 @@ def submit_quiz():
         # Bônus Globais (Streak)
         attempt.streak_total_bonus = int(global_bonuses.get('streak_total_bonus', 0))
 
-        # (Futuramente, adicione colunas para 'conquista_bonus' e 'loja_bonus' aqui)
 
         # --- Cria o Histórico ---
         total_bonus_value = final_score - raw_score_questions
@@ -535,7 +536,7 @@ def submit_quiz():
         if level_up and guardian.nivel:
             flash(f"Parabéns! Você subiu para o nível {guardian.nivel.nome}!", 'info')
         for conquista_nome in novas_conquistas:
-            flash(f"Nova Conquista Desbloqueada: {conquista_nome}!", "success")
+            flash(f"Conquista de Quiz Desbloqueada!", "success")
         
         db.session.commit() # Salva tudo
 
@@ -642,6 +643,13 @@ def quiz_result(quiz_id):
     # Filtra zeros
     score_breakdown = [b for b in score_breakdown if b['value'] != 0 or not b['is_bonus']]
 
+    is_victory = accuracy_percentage >= 50
+    assist_context = {
+        'is_win': is_victory,
+        'score': attempt.final_score
+    }
+    assistant_payload = get_assistant_data(guardian, 'results', context_data=assist_context)
+
     results_data = {
         'game_type': 'quiz',
         'game_title': quiz.title,
@@ -667,7 +675,8 @@ def quiz_result(quiz_id):
         results_data=results_data,
         guardian=guardian,
         attempt=attempt,
-        show_confetti=show_confetti
+        show_confetti=show_confetti,
+        assistant_data=assistant_payload
     )
 
 @guardians_bp.route('/quiz/retake/<int:quiz_id>', methods=['POST'])
@@ -852,8 +861,10 @@ def check_patrol_guess():
                 desc += f" (Bônus GC: +{bonus_coins_val})"
 
         db.session.add(HistoricoAcao(guardian_id=guardian.id, descricao=desc, pontuacao=final_score))
-        
-        atualizar_nivel_usuario(guardian)
+        guardian.stat_patrol_count += 1
+        _, conquistas_ganhas = atualizar_nivel_usuario(guardian)
+        if conquistas_ganhas:
+            flash(f"Conquista de Patrulha Desbloqueada!", "success")
         
         try:
             update_mission_progress(guardian, MissionCodeEnum.PATROL_COUNT)
@@ -914,12 +925,14 @@ def play_termo(game_id):
                 attempt.completed_at = now_time
                 db.session.commit()
             return redirect(url_for('guardians_bp.termo_result', attempt_id=attempt.id))
-            
+
+    assistant_payload = get_assistant_data(guardian, 'play_termo')        
     return render_template(
         'guardians/play_minigame_termo.html', 
         game=game,
         remaining_time=remaining_time,
-        attempt_id=attempt.id
+        attempt_id=attempt.id,
+        assistant_data=assistant_payload
     )
 
 @guardians_bp.route('/termo/check_guess', methods=['POST'])
@@ -992,6 +1005,14 @@ def check_termo_guess():
     
     final_score = 0
     performance_bonuses = {'time_bonus': 0, 'perfection_bonus': 0}
+    is_perfect = False
+    duration_seconds = 0
+    base_points_raw = 0
+    val_spec = 0
+    val_shop = 0
+    val_insignia = 0
+    time_bonus = 0
+    perfection_bonus = 0
 
     if is_winner:
         game_over = True
@@ -1050,12 +1071,15 @@ def check_termo_guess():
 
         history_entry = HistoricoAcao(guardian_id=guardian.id, descricao=descricao, pontuacao=final_score)
         db.session.add(history_entry)
-
-        atualizar_nivel_usuario(guardian)
+        guardian.stat_minigame_count += 1
+        _, conquistas_ganhas = atualizar_nivel_usuario(guardian)
+        if conquistas_ganhas:
+            flash(f"Conquista de Minigame Desbloqueada!", "success")
 
     elif len(attempt.guesses) >= game.max_attempts:
         game_over = True 
         final_score = 0
+        duration_seconds = (datetime.now(timezone.utc) - attempt.started_at.replace(tzinfo=timezone.utc)).total_seconds()
 
     if game_over:
         attempt.completed_at = datetime.now(timezone.utc)
@@ -1139,6 +1163,13 @@ def termo_result(attempt_id):
     
     score_breakdown = [b for b in score_breakdown if b['value'] != 0 or not b['is_bonus']]
 
+    #LOGICA DO ASSISTENTE
+    assist_context = {
+        'is_win': attempt.is_won, 
+        'score': attempt.final_score
+    }
+    assistant_payload = get_assistant_data(guardian, 'results', context_data=assist_context)
+    #
     results_data = {
         'game_type': 'termo',
         'game_title': f"Código: *****", 
@@ -1164,7 +1195,8 @@ def termo_result(attempt_id):
         results_data=results_data,
         guardian=guardian,
         attempt=attempt,
-        show_confetti=show_confetti
+        show_confetti=show_confetti,
+        assistant_data=assistant_payload
     )
 
 # == ROTA PARA JOGO DO ANAGRAMA                  ==
@@ -1213,11 +1245,13 @@ def play_anagram(game_id):
             'correct': word.correct_word 
         })
         
+    assistant_payload = get_assistant_data(guardian, 'play_anagram')    
     return render_template(
         'guardians/play_minigame_anagram.html', 
         game=game, 
         words_data=words_data,
-        remaining_time=remaining_time 
+        remaining_time=remaining_time,
+        assistant_data=assistant_payload 
     )
 
 @guardians_bp.route('/anagrama/submit', methods=['POST'])
@@ -1291,7 +1325,10 @@ def submit_anagram():
     global_bonuses = score_data['breakdown']
     guardian.score_atual = (guardian.score_atual or 0) + final_score
     update_user_streak(guardian)
-    atualizar_nivel_usuario(guardian)
+    guardian.stat_minigame_count += 1
+    _, conquistas_ganhas = atualizar_nivel_usuario(guardian)
+    if conquistas_ganhas:
+        flash(f"Conquista de Minigame Desbloqueada!", "success")
 
     # --- 4. SALVAMENTO NO BANCO (ATTEMPT) ---
     attempt.completed_at = datetime.now(timezone.utc)
@@ -1341,7 +1378,6 @@ def anagram_result(attempt_id):
     if guardian.user_id != user_id:
         return redirect(url_for('guardians_bp.central'))
 
-    # Dados de tempo e precisão
     duration_seconds = None
     if attempt.completed_at and attempt.started_at:
         duration_seconds = (attempt.completed_at - attempt.started_at).total_seconds()
@@ -1354,7 +1390,6 @@ def anagram_result(attempt_id):
     base_points_raw = attempt.correct_answers * attempt.game.points_per_word
 
     # 2. Leitura Direta dos Bônus (Sem cálculos complexos)
-    # Usamos getattr/hasattr por segurança, ou acesso direto se tiver certeza da migration
     shop_val = attempt.shop_bonus or 0
     conquista_val = attempt.conquista_bonus or 0
     spec_val = attempt.streak_spec_bonus or 0 
@@ -1372,8 +1407,14 @@ def anagram_result(attempt_id):
         {'label': 'Ofensiva', 'value': streak_val, 'icon': 'bi-fire', 'is_bonus': True}
     ]
     
-    # Filtra zerados
     score_breakdown = [b for b in score_breakdown if b['value'] != 0 or not b['is_bonus']]
+
+    is_victory = accuracy_percentage >= 50
+    assist_context = {
+        'is_win': is_victory, 
+        'score': attempt.final_score
+    }
+    assistant_payload = get_assistant_data(guardian, 'results', context_data=assist_context)
 
     results_data = {
         'game_type': 'anagrama',
@@ -1400,7 +1441,8 @@ def anagram_result(attempt_id):
         results_data=results_data,
         guardian=guardian,
         attempt=attempt,
-        show_confetti=show_confetti
+        show_confetti=show_confetti,
+        assistant_data=assistant_payload
     )
 
 ## --- ROTA PARA PASSWORD GAME
@@ -1436,7 +1478,6 @@ def play_password_game():
         flash("Segredo está fechado hoje. Verifique a escala de operações.", "warning")
         return redirect(url_for('guardians_bp.central'))
 
-    # Se não existir, cria
     if not attempt:
         rules_ids = generate_rules_sequence()
         attempt = PasswordAttempt(
@@ -1467,21 +1508,22 @@ def play_password_game():
         start_time = attempt.started_at.replace(tzinfo=timezone.utc)
         elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
         
-        # --- CORREÇÃO DE USER EXPERIENCE ---
         if elapsed > config.time_limit_seconds:
-            attempt.started_at = datetime.now(timezone.utc) # Reseta o início
+            attempt.started_at = datetime.now(timezone.utc)
             db.session.commit()
-            elapsed = 0 # Zera o passado
+            elapsed = 0
             
         remaining_time = int(max(0, config.time_limit_seconds - elapsed))
 
+    assistant_payload = get_assistant_data(guardian, 'play_password')
     return render_template('guardians/play_minigame_password.html', 
                            guardian=guardian, 
                            attempt=attempt, 
                            rules=rules_data,
                            remaining_time=remaining_time,
                            has_timer=has_timer,
-                           config=config)
+                           config=config,
+                           assistant_data=assistant_payload)
 
 @guardians_bp.route('/password-game/submit/<int:attempt_id>', methods=['POST'])
 @login_required
@@ -1590,8 +1632,10 @@ def submit_password_game(attempt_id):
             desc += f" (Bônus: +{total_bonus_val})"
 
         db.session.add(HistoricoAcao(guardian_id=guardian.id, descricao=desc, pontuacao=final_score))
-        
-        atualizar_nivel_usuario(guardian)
+        guardian.stat_minigame_count += 1
+        _, conquistas_ganhas = atualizar_nivel_usuario(guardian)
+        if conquistas_ganhas:
+            flash(f"Conquista de Minigame Desbloqueada!", "success")
         
         try: 
             update_mission_progress(guardian, MissionCodeEnum.MINIGAME_COUNT)
@@ -1625,15 +1669,12 @@ def password_game_result(attempt_id):
     Exibe a página de resultado unificado para o Password Vault.
     """
     attempt = PasswordAttempt.query.get_or_404(attempt_id)
-    
-    # Segurança
     user_id = SessionManager.get("user_id")
     guardian = Guardians.query.filter_by(user_id=user_id).first()
     if attempt.guardian_id != guardian.id:
         flash("Esta tentativa não pertence a você.", "danger")
         return redirect(url_for('guardians_bp.central'))
 
-    # --- Montagem dos Dados ---
     duration_seconds = None
     if attempt.completed_at and attempt.started_at:
         duration_seconds = (attempt.completed_at - attempt.started_at).total_seconds()
@@ -1662,7 +1703,12 @@ def password_game_result(attempt_id):
     # Filtra zeros
     score_breakdown = [b for b in score_breakdown if b['value'] != 0 or not b['is_bonus']]
 
-    # Estrutura final para o template
+    assist_context = {
+        'is_win': attempt.is_won, 
+        'score': attempt.final_score
+    }
+    assistant_payload = get_assistant_data(guardian, 'results', context_data=assist_context)
+
     results_data = {
         'game_type': 'password_game',
         'game_title': 'Segredo',
@@ -1687,7 +1733,8 @@ def password_game_result(attempt_id):
         results_data=results_data,
         guardian=guardian,
         attempt=attempt,
-        show_confetti=attempt.is_won 
+        show_confetti=attempt.is_won,
+        assistant_data=assistant_payload 
     )
 
 @guardians_bp.route('/password-game/abandon/<int:attempt_id>', methods=['POST'])
@@ -1793,7 +1840,15 @@ def retake_minigame(game_type, game_id):
 @login_required
 def feedback_form():
     """ Rota para exibir o formulário de feedback. """
-    return render_template('guardians/page_report_bug.html')
+    
+    user_id = SessionManager.get("user_id")
+    guardian = Guardians.query.filter_by(user_id=user_id).first()
+    assistant_data = get_assistant_data(guardian, 'report_bug')
+
+    return render_template(
+        'guardians/page_report_bug.html', 
+        assistant_data=assistant_data
+    )
 
 
 @guardians_bp.route('/guardians/feedback', methods=['POST'])
@@ -1804,7 +1859,7 @@ def submit_feedback():
     guardian = Guardians.query.filter_by(user_id=user_id).first()
 
     # 1. Captura os dados do formulário
-    raw_type = request.form.get('report_type') # vem: 'bug', 'feedback' ou 'security'
+    raw_type = request.form.get('report_type')
     title = request.form.get('title')
     description_text = request.form.get('description')
     attachment_file = request.files.get('attachment')
@@ -1815,24 +1870,19 @@ def submit_feedback():
         return redirect(url_for('guardians_bp.feedback_form'))
 
     # 2. Mapeamento Inteligente (Compatibilidade com DB Enum)
-    # Seu banco só aceita 'BUG' ou 'SUGGESTION'.
-    
-    db_report_type = 'BUG' # Valor padrão
-    prefix_tag = ""       # Tag visual para ajudar o admin
+    db_report_type = 'BUG' 
+    prefix_tag = ""       
 
     if raw_type == 'feedback':
         db_report_type = 'SUGGESTION'
     elif raw_type == 'security':
-        # Truque: Salva como BUG, mas marca o texto para destaque
         db_report_type = 'BUG'
         prefix_tag = "[!!! VULNERABILIDADE !!!] "
     else:
-        # Default para 'bug' ou qualquer outro erro
         db_report_type = 'BUG'
 
     attachment_db_path = None 
 
-    # --- Lógica de Upload (Igual à anterior) ---
     if attachment_file and attachment_file.filename != '':
         if allowed_file_img(attachment_file.filename):
             try:
@@ -1855,12 +1905,11 @@ def submit_feedback():
             return redirect(url_for('guardians_bp.feedback_form'))
 
     try:
-        # 3. Montagem da Descrição Final
         final_description = f"{prefix_tag}[ASSUNTO: {title}]\n\n{description_text}"
 
         new_report = FeedbackReport(
             guardian_id=guardian.id,
-            report_type=db_report_type, # Agora garantimos que é BUG ou SUGGESTION
+            report_type=db_report_type,
             description=final_description,
             attachment_path=attachment_db_path
         )
@@ -1908,26 +1957,13 @@ def claim_weekly_reward():
         rarity = reward_data['breakdown']['rarity']
         
         # B. CÁLCULO DE MULTIPLICADORES (Itens de Loja e Insígnias)
-        # Recupera os valores brutos (ex: 85.0, 20.0)
         shop_bonus_val = _get_shop_bonus(guardian, 'GCOIN_BONUS_PCT')
         insignia_bonus_val = _get_insignia_bonus(guardian, 'GCOIN_BONUS_PCT')
-        
-        # === DEBUG VISUAL NO CONSOLE ===
-        print(f"\n[DEBUG CLAIM REWARD]")
-        print(f"Base: {raw_coins}")
-        print(f"Shop Bonus (Bruto): {shop_bonus_val}")     # Esperado: 85.0
-        print(f"Insignia Bonus (Bruto): {insignia_bonus_val}") # Esperado: 20.0 (Ignorando Global)
-        
-        # CORREÇÃO MATEMÁTICA AQUI:
-        # Somamos os bônus primeiro, DEPOIS dividimos por 100
         total_bonus_pct = shop_bonus_val + insignia_bonus_val
         multiplier = 1 + (total_bonus_pct / 100.0)
         
         final_coins = int(raw_coins * multiplier)
-        
-        print(f"Multiplier: {multiplier} (1 + {total_bonus_pct}/100)")
-        print(f"Final: {final_coins}")
-        print(f"--------------------\n")
+
         # ===============================
 
         bonus_value_gained = final_coins - raw_coins 
@@ -2011,7 +2047,10 @@ def loja():
 
     reroll_cost = calculate_reroll_cost(shop_state.reroll_count)
     max_slots = get_game_setting('ITEMS_MODULES_SET_AMOUNT', 4, int)
-    assistant_payload = get_assistant_data(guardian, 'loja')
+    if request.args.get('purchase') == 'success':
+        assistant_payload = get_assistant_data(guardian, 'shop_purchase')
+    else:
+        assistant_payload = get_assistant_data(guardian, 'loja')
 
     return render_template(
         'guardians/page_loja.html',
@@ -2151,6 +2190,10 @@ def comprar_item(item_id):
 
 
         db.session.commit()
+        guardian.stat_shop_count += 1 #conquista da loja é feita por itens comprados
+        _, conquistas_ganhas = atualizar_nivel_usuario(guardian)
+        if conquistas_ganhas:
+            flash(f"Conquista de Comerciante Desbloqueada!", "success")
         
         flash(msg, "success")
 
@@ -2158,7 +2201,7 @@ def comprar_item(item_id):
         db.session.rollback()
         flash(f"Erro ao processar compra: {e}", "danger")
 
-    return redirect(url_for('guardians_bp.loja'))
+    return redirect(url_for('guardians_bp.loja', purchase='success'))
 
 @guardians_bp.route('/loja/descartar/<int:item_id>', methods=['POST'])
 @login_required
@@ -2212,8 +2255,7 @@ def mark_tutorial_seen(tutorial_id):
         current_data[tutorial_id] = True
         
         guardian.tutorials_seen = current_data
-        
-        # db.session.flag_modified(guardian, "tutorials_seen") # Alternativa se o acima falhar
+
         db.session.commit()
         
         return jsonify({"status": "success", "id": tutorial_id})

@@ -227,7 +227,7 @@
             <form method="POST" class="edit-card">
                 
                 <div class="mb-5">
-                    <h3 class="section-title"><i class="bi bi-person-badge"></i> CODeNOME</h3>
+                    <h3 class="section-title"><i class="bi bi-person-badge"></i> CODENOME</h3>
                     
                     <div class="mb-4">
                         <label for="nickname" class="form-label">Escolha seu apelido.</label>
@@ -285,9 +285,12 @@
                                         <div class="badge-bonus text-warning small">
                                             +{{ insignia.bonus_value }}% 
                                             {% if 'QUIZ' in insignia.bonus_type %}Quiz
-                                            {% elif 'CODE' in insignia.bonus_type %}Hack
+                                            {% elif 'TERMO' in insignia.bonus_type %}Código
+                                            {% elif 'ANAGRAM' in insignia.bonus_type %}Decriptar
+                                            {% elif 'PW' in insignia.bonus_type %}Segredo
                                             {% elif 'PATROL' in insignia.bonus_type %}Patrulha
-                                            {% else %}Bônus{% endif %}
+                                            {% elif 'GCOIN' in insignia.bonus_type %}Moedas
+                                            {% else %}Global{% endif %}
                                         </div>
                                     {% endif %}
                                 </div>

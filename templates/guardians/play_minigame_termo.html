@@ -1,5 +1,5 @@
 {% extends "base_template.html" %}
-
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
 {% block title %}Decryption Protocol: {{ game.correct_word|length }} Bytes{% endblock %}
 
 {% block styles %}
@@ -245,7 +245,7 @@
 {% endblock %}
 
 {% block content %}
-
+{{ render_assistant(assistant_data) }}
 <div id="termo-game-container"
      data-game-id="{{ game.id }}"
      data-attempt-id="{{ attempt_id }}"
@@ -264,7 +264,7 @@
         </div>
         
         <div class="text-center">
-            <h4 class="m-0" style="color: #fff; letter-spacing: 2px;">TERMO</h4>
+            <h4 class="m-0" style="color: #fff; letter-spacing: 2px;">CÓDIGO</h4>
             <small style="color: var(--neon-grey);">PROTOCOLO_V.2.0</small>
         </div>
 
@@ -287,7 +287,7 @@
         <div class="input-wrapper">
             <input type="text" id="word-input" 
                    maxlength="{{ game.correct_word|length }}" 
-                   placeholder="INSIRA CÓDIGO DE {{ game.correct_word|length }} DÍGITOS" 
+                   placeholder="INSIRA CÓDIGO DE {{ game.correct_word|length }} LETRAS" 
                    autocomplete="off" autocorrect="off" spellcheck="false">
         </div>
 
@@ -317,8 +317,6 @@
     </div>
 
 </div>
-
-
 {% endblock %}
 
 {% block scripts %}

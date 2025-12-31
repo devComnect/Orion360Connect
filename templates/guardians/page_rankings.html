@@ -1,5 +1,5 @@
 {% extends "base_template.html" %}
-
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
 {% block title %}Rankings Globais{% endblock %}
 
 {% block styles %}
@@ -333,6 +333,7 @@
 {% endblock %}
 
 {% block content %}
+{{ render_assistant(assistant_data) }}
 {% import 'guardians/macros/render_trophy.html' as macros with context%}
 
 <div class="ranking-header">
@@ -354,7 +355,7 @@
 <div class="container mb-5">
 
     <ul class="nav nav-pills justify-content-center mb-5 tech-tabs" id="rankingTab" role="tablist">
-         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#individual"><i class="bi bi-person-fill"></i> GERAL</button></li>
+         <li class="global-rank-button nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#individual"><i class="bi bi-person-fill"></i> GERAL</button></li>
          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#streak"><i class="bi bi-fire"></i> VIGILANTE</button></li>
     </ul>
 

@@ -1,4 +1,5 @@
 {% extends "base_template.html" %}
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
 
 {% block title %}Resultado: {{ results_data.game_title }}{% endblock %}
 
@@ -235,6 +236,8 @@
 {% endblock %}
 
 {% block content %}
+{{ render_assistant(assistant_data) }}
+
 <div class="quiz-result-container">
     
     <div class="result-summary-card">

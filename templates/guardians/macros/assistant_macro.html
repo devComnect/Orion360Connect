@@ -2,7 +2,19 @@
     {% if assistant_data %}
     
     <style>
-.osi-container {
+        /* Estilo do botão voltar (mais discreto) */
+        .osi-btn-back {
+            border: none;
+            color: #555;
+            font-size: 0.8rem;
+            padding: 3px 8px;
+        }
+        .osi-btn-back:hover {
+            color: #fff;
+            background: transparent;
+        }
+
+        .osi-container {
             position: fixed;
             bottom: 20px;
             right: 20px;
@@ -25,7 +37,6 @@
         .osi-avatar-img {
             width: 80px; 
             height: 80px;
-            /* Drop Shadow dinâmico usando a cor do tema */
             filter: drop-shadow(0 0 8px {{ assistant_data.theme_color }});
         }
 
@@ -50,7 +61,6 @@
 
         .osi-header {
             font-size: 0.7rem;
-            /* Cor do Título dinâmica */
             color: {{ assistant_data.theme_color }}; 
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -82,76 +92,222 @@
             background: rgba(255, 255, 255, 0.05); 
         }
 
-        .cursor-blink::after { content: '|'; animation: blink 1s infinite; }
+        .osi-cursor-blink::after { content: '|'; animation: blink 1s infinite; }
+
         @keyframes blink { 50% { opacity: 0; } }
 
         @keyframes slideInOSI { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes fadeInOSI { to { opacity: 1; } }
         @keyframes blink { 50% { opacity: 0; } }
+        .osi-highlight {
+            position: relative;
+            z-index: 10005 !important;
+            box-shadow: 
+                0 0 0 5px #ff0000,
+                0 0 0 10px rgba(255, 0, 0, 0.3),
+                0 0 30px 15px rgba(255, 0, 0, 0.6),
+                inset 0 0 20px rgba(255, 100, 100, 0.4);
+            
+            transition: all 0.3s ease;
+            animation: red-pulse 1.5s infinite;
+            background-color: rgba(255, 240, 240, 0.1) !important;
+            border-radius: 1px;
+        }
+
+        @keyframes red-pulse {
+            0% { 
+                box-shadow: 
+                    0 0 0 4px #ff0000,
+                    0 0 0 8px rgba(255, 0, 0, 0.4),
+                    0 0 25px 12px rgba(255, 0, 0, 0.7),
+                    inset 0 0 15px rgba(255, 100, 100, 0.3);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 0 6px #ff0000,
+                    0 0 0 12px rgba(255, 0, 0, 0.6),
+                    0 0 40px 20px rgba(255, 50, 50, 0.9),
+                    inset 0 0 25px rgba(255, 150, 150, 0.6);
+                transform: scale(1.01);
+            }
+            100% { 
+                box-shadow: 
+                    0 0 0 4px #ff0000,
+                    0 0 0 8px rgba(255, 0, 0, 0.4),
+                    0 0 25px 12px rgba(255, 0, 0, 0.7),
+                    inset 0 0 15px rgba(255, 100, 100, 0.3);
+            }
+        }
+        .osi-highlight:hover {
+            box-shadow: 
+                0 0 0 6px #ff3333,
+                0 0 0 14px rgba(255, 0, 0, 0.5),
+                0 0 50px 25px rgba(255, 0, 0, 0.8),
+                inset 0 0 30px rgba(255, 150, 150, 0.7) !important;
+            transform: scale(1.02);
+}
     </style>
 
-    <div id="osi-widget" class="osi-container">
+<div id="osi-widget" class="osi-container">
         
         <div class="osi-bubble">
             <div class="osi-header">
-                {# Ícone muda dependendo se é tutorial ou lore #}
-                {% if assistant_data.is_tutorial %}
-                    <i class="bi bi-exclamation-circle-fill"></i> {{ assistant_data.title }}
-                {% else %}
-                    <i class="bi bi-broadcast"></i> {{ assistant_data.title }}
-                {% endif %}
+                <i class="bi bi-broadcast"></i> {{ assistant_data.title }}
             </div>
             
-            <div class="osi-content cursor-blink" id="osi-typewriter"></div>
+            <div class="osi-content osi-cursor-blink" id="osi-typewriter"></div>
 
-            <button class="osi-btn" onclick="closeOSI('{{ assistant_data.tutorial_id }}', {{ 'true' if assistant_data.is_tutorial else 'false' }})">
-                {% if assistant_data.is_tutorial %}Entendido{% else %}Fechar{% endif %}
-            </button>
+            <div class="d-flex justify-content-between align-items-center w-100">
+                
+                <button id="osi-back-btn" class="osi-btn osi-btn-back" style="opacity: 0; pointer-events: none;">
+                    <i class="bi bi-chevron-double-left"></i>
+                </button>
+
+                <button id="osi-action-btn" class="osi-btn">
+                    </button>
+            </div>
         </div>
 
         <div class="osi-avatar-wrapper" onclick="document.querySelector('.osi-bubble').classList.toggle('d-none')">
-            <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ assistant_data.avatar_seed }}" class="osi-avatar-img" alt="OSI">
+            <img src="https://api.dicebear.com/9.x/bottts/svg?{{ assistant_data.avatar_params | safe }}" class="osi-avatar-img" alt="OSI">
         </div>
     </div>
 
-<script>
+    <script>
         (function(){
-            const text = "{{ assistant_data.text }}";
+            const steps = {{ assistant_data.steps | tojson }}; 
+            const isTutorial = {{ 'true' if assistant_data.is_tutorial else 'false' }};
+            const tutorialId = "{{ assistant_data.tutorial_id }}";
             const shouldAutoDismiss = {{ 'true' if assistant_data.auto_dismiss else 'false' }};
-            const el = document.getElementById('osi-typewriter');
-            const widget = document.getElementById('osi-widget');
-            let i = 0;
+            
+            let currentStepIndex = 0;
+            let currentHighlight = null;
+            let typeInterval;
 
-            function type() {
-                if (i < text.length) {
-                    el.innerHTML += text.charAt(i);
-                    i++;
-                    setTimeout(type, 25);
+            const el = document.getElementById('osi-typewriter');
+            const btnNext = document.getElementById('osi-action-btn');
+            const btnBack = document.getElementById('osi-back-btn');
+            const widget = document.getElementById('osi-widget');
+            
+            // --- LÓGICA DE DIGITAÇÃO E HIGHLIGHT ---
+            function typeText(stepData) {
+                const text = stepData.text || stepData; 
+                const targetSelector = stepData.target;
+
+                // 1. Limpa destaque anterior
+                if (currentHighlight) {
+                    currentHighlight.classList.remove('osi-highlight');
+                    currentHighlight = null;
+                }
+
+                // 2. Aplica novo destaque
+                if (targetSelector) {
+                    const targetEl = document.querySelector(targetSelector);
+                    if (targetEl) {
+                        targetEl.classList.add('osi-highlight');
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        currentHighlight = targetEl;
+                    }
+                }
+
+                // 3. Efeito Typewriter
+                el.innerHTML = ""; 
+                el.classList.add('osi-cursor-blink');
+                let i = 0;
+                
+                if(typeInterval) clearInterval(typeInterval);
+
+                typeInterval = setInterval(() => {
+                    if (i < text.length) {
+                        el.innerHTML += text.charAt(i);
+                        i++;
+                    } else {
+                        clearInterval(typeInterval);
+                        el.classList.remove('osi-cursor-blink');
+                        
+                        // Auto Dismiss apenas no último passo
+                        if (shouldAutoDismiss && currentStepIndex === steps.length - 1) {
+                            startDismissTimer(text.length);
+                        }
+                    }
+                }, 20); 
+            }
+
+            // --- ATUALIZA ESTADO DOS BOTÕES ---
+            function updateButtonState() {
+                if (currentStepIndex < steps.length - 1) {
+                    
+                    if (currentStepIndex === 0 && isTutorial) {
+                        btnNext.innerHTML = "INICIAR TUTORIAL <i class='bi bi-play-fill'></i>";
+                        btnNext.classList.add('btn-start-highlight'); 
+                    } else {
+                        btnNext.innerHTML = "CONTINUAR <i class='bi bi-chevron-right'></i>";
+                        btnNext.classList.remove('btn-start-highlight');
+                    }
+                    
+                    btnNext.onclick = nextStep;
                 } else {
-                    el.classList.remove('cursor-blink');
-                    if (shouldAutoDismiss) { startDismissTimer(); }
+                    btnNext.innerHTML = isTutorial ? "ENTENDIDO" : "FECHAR";
+                    btnNext.classList.remove('btn-start-highlight');
+                    btnNext.onclick = finishAssistant;
+                }
+
+                if (currentStepIndex > 0) {
+                    btnBack.style.opacity = "1";
+                    btnBack.style.pointerEvents = "auto";
+                    btnBack.onclick = prevStep;
+                } else {
+                    btnBack.style.opacity = "0";
+                    btnBack.style.pointerEvents = "none";
                 }
             }
-            
-            function startDismissTimer() {
-                const readTime = 4000 + (text.length * 60);
+
+            // --- NAVEGAÇÃO ---
+            function nextStep() {
+                currentStepIndex++;
+                updateButtonState();
+                typeText(steps[currentStepIndex]);
+            }
+
+            function prevStep() {
+                if (currentStepIndex > 0) {
+                    currentStepIndex--;
+                    updateButtonState();
+                    typeText(steps[currentStepIndex]);
+                }
+            }
+
+            function finishAssistant() {
+                if (currentHighlight) {
+                    currentHighlight.classList.remove('osi-highlight');
+                }
+                
+                widget.style.transition = "opacity 0.5s, transform 0.5s";
+                widget.style.opacity = "0";
+                widget.style.transform = "translateY(20px)";
+                
+                if (isTutorial && tutorialId && tutorialId !== 'None') {
+                    fetch('/api/mark-tutorial-seen/' + tutorialId, { method: 'POST' }).catch(console.error);
+                }
+
+                setTimeout(() => widget.remove(), 500);
+            }
+
+            function startDismissTimer(len) {
+                const readTime = 3000 + (len * 50);
                 setTimeout(() => {
-                    if (document.body.contains(widget)) { window.closeOSI(null, false); }
+                    if (document.body.contains(widget)) finishAssistant();
                 }, readTime);
             }
 
-            setTimeout(type, 1200);
+            // --- INICIALIZAÇÃO ---
+            updateButtonState();
+            setTimeout(() => {
+                typeText(steps[0]);
+            }, 800);
 
-            window.closeOSI = function(tId, isTut) {
-                widget.style.transition = "opacity 0.8s ease, transform 0.8s ease";
-                widget.style.opacity = "0";
-                widget.style.transform = "translateY(30px)";
-                
-                if (isTut && tId && tId !== 'None') {
-                    fetch('/api/mark-tutorial-seen/' + tId, { method: 'POST' }).catch(e => console.error(e));
-                }
-                setTimeout(() => { if(widget) widget.remove(); }, 800);
-            }
+            window.closeOSI = finishAssistant;
+
         })();
     </script>
     {% endif %}

@@ -385,6 +385,12 @@ class Guardians(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
+    # --- NOVOS CONTADORES DE ESTATÍSTICAS (Adicionado para Conquistas) ---
+    stat_patrol_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    stat_minigame_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    stat_shop_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    stat_quiz_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+
     #Sistema de moedas
     guardian_coins = db.Column(db.Integer, nullable=False, default=0, server_default='0')
 
@@ -522,7 +528,7 @@ class Insignia(db.Model):
     
     achievement_code = db.Column(db.String(50), nullable=False, unique=True, index=True) 
 
-    conquistas = db.relationship("GuardianInsignia", back_populates="insignia")
+    conquistas = db.relationship("GuardianInsignia", back_populates="insignia", cascade="all, delete-orphan")
     
 class HistoricoAcao(db.Model):
     __tablename__ = 'historico_acoes'
@@ -540,7 +546,6 @@ class GuardianInsignia(db.Model):
     guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), primary_key=True)
     insignia_id = db.Column(db.Integer, db.ForeignKey('insignias.id'), primary_key=True)
     data_conquista = db.Column(db.DateTime, default=db.func.now())
-    
     
     # Relacionamentos com as classes principais
     guardian = db.relationship("Guardians", back_populates="insignias_conquistadas")

@@ -138,10 +138,12 @@ def generate_active_buffs_html(perfil, effective_streak_percent):
             ).all()
 
         for item in shop_bonuses:
+            if 'TOKEN' in item.bonus_type or item.category == 'Consumíveis':
+                continue
+
             val = int(item.bonus_value) if item.bonus_value == int(item.bonus_value) else item.bonus_value
             sulfixo = "%" if '_PCT' in item.bonus_type else ""
             style, icon, target = STAT_MAP.get(item.bonus_type, STAT_MAP['DEFAULT'])
-            
             item_icon = item.image_path if (item.image_path and 'bi-' in item.image_path) else icon
 
             rows.append(_create_row(
@@ -159,6 +161,7 @@ def generate_active_buffs_html(perfil, effective_streak_percent):
         return f'<div class="buff-panel">{"".join(rows)}</div>'
     
     return "<div class='p-3 text-center text-muted small font-tech'>NENHUM MODIFICADOR DE SISTEMA ATIVO.</div>"
+
 
 @guardians_bp.route('/meu-perfil', defaults={'perfil_id': None})
 @guardians_bp.route('/meu-perfil/<int:perfil_id>')

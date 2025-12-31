@@ -50,8 +50,7 @@
                 </div>
                 {% if is_own_profile %}
                 <div> 
-                    {# BOTÃO EDITAR: Agora usa a cor do tema #}
-                    <a href="{{ url_for('guardians_bp.edit_profile') }}" class="btn-outline-dark {{ theme_text_class }}">
+                    <a href="{{ url_for('guardians_bp.edit_profile') }}" class="profile-edit-button btn-outline-dark {{ theme_text_class }}">
                         <i class="bi bi-pencil-square"></i> EDITAR
                     </a>
                 </div>
@@ -118,16 +117,25 @@
             </div>
 
             <div class="xp-system">
+                {% set bar_width = progresso_percentual %}
+                {% set next_target_label = proximo_nivel.score_minimo if proximo_nivel else 'MAX' %}
+                {% if not spec and min_xp_required and min_xp_required > 0 %}
+                    {% set raw_pct = (perfil.score_atual / min_xp_required) * 100 %}
+                    {% set bar_width = raw_pct | round %}
+                    {% set next_target_label = min_xp_required %}
+                {% endif %}
+                {% if bar_width > 100 %}{% set bar_width = 100 %}{% endif %}
+
                 <div class="tech-progress">
                     <div class="tech-progress-bar" 
-                        style="width: {{ progresso_percentual }}%; 
+                         style="width: {{ bar_width }}%; 
                                 background: linear-gradient(90deg, {{ theme_color }}, #fff); 
                                 box-shadow: 0 0 10px {{ theme_color }};">
                     </div>
                 </div>
                 <div class="xp-numbers">
                     <span>XP ATUAL: {{ perfil.score_atual or 0 }}</span>
-                    <span>PRÓX: {{ proximo_nivel.score_minimo if proximo_nivel else 'MAX' }}</span>
+                    <span>PRÓX: {{ next_target_label }}</span>
                 </div>
             </div>
 
@@ -414,7 +422,7 @@
                 {% if is_own_profile %}
                 <div class="cyber-card">
                     <div class="cyber-header">
-                        <div class="cyber-title"><i class="bi bi-backpack2 text-neon-blue"></i> INVENTÁRIO</div>
+                        <div class="inventory-profile-card cyber-title"><i class="bi bi-backpack2 text-neon-blue"></i> INVENTÁRIO</div>
                     </div>
                     
                     <div class="p-2">
@@ -475,7 +483,7 @@
 
                         <hr class="border-secondary opacity-25 my-2">
 
-                        <h6 class="font-tech small text-muted text-uppercase ms-1 mb-2">
+                        <h6 class="active-modules-class font-tech small text-muted text-uppercase ms-1 mb-2">
                                     <i class="bi bi-battery-charging"></i> Módulos Ativos
                                 </h6>
                                 
