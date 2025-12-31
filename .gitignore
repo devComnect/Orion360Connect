@@ -24,6 +24,8 @@ celerybeat-schedule
 *.so
 
 # Logs e bancos de dados de desenvolvimento
+logs/
+logs/*.log
 *.log
 *.log.1
 *.log.2
