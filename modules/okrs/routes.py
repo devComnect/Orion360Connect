@@ -59,7 +59,6 @@ def reabertos_okrs():
             "message": str(e)
         }), 500
 
-    
 @okrs_bp.route('/tmaTmsOkrs', methods=['GET'])
 def tma_e_tms_okrs():
     try:
@@ -1158,8 +1157,6 @@ def tma_tms_quarter():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
-    
 @okrs_bp.route('/csatAcumulado', methods=['POST'])
 def csat_acumulado():
     try:
@@ -1326,7 +1323,6 @@ def tma_tms_acumulado():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 @okrs_bp.route('/fcrAcumulado', methods=['POST'])
 def fcr_acumulado():

@@ -5,7 +5,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   const metas = await fetchMetas();
   let chartSlaAcumulado;
 
-  // 🔹 Plugin de linhas pontilhadas das metas
   const horizontalLinePlugin = {
     id: 'horizontalLine',
     afterDraw: (chart) => {
@@ -41,7 +40,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   };
 
-  // 🔹 Busca metas do banco
   async function fetchMetas() {
     try {
       const res = await fetch('/okrs/getMetas');
@@ -51,7 +49,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
   }
 
-  // 🔹 Busca dados acumulados
+  // Busca dados acumulados
   async function fetchSlaAcumulado(dias = 365) {
     try {
       const res = await fetch('/okrs/slaOkrsAcumulado', {
@@ -418,10 +416,10 @@ document.addEventListener("DOMContentLoaded", async function () {
 document.addEventListener("DOMContentLoaded", async function () {
   Chart.register(window['chartjs-plugin-annotation']);
 
-  // 🔸 Busca metas atuais (incluindo FCR)
+  // Busca metas atuais (incluindo FCR)
   async function fetchMetas() {
     try {
-      const res = await fetch('/okrs/metasAtuais', { method: 'GET' });
+      const res = await fetch('/okrs/getMetas', { method: 'GET' });
       return res.ok ? await res.json() : {};
     } catch {
       return {};
