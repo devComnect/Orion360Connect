@@ -64,6 +64,7 @@
         </ul>
 
         <div class="tab-content pt-4" id="configTabContent">
+            
                     
             <div class="tab-pane fade show active" id="tab-geral" role="tabpanel">
                 <form method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-geral">
@@ -124,6 +125,7 @@
                     </div>
                 </form>
             </div>
+
             
             <div class="tab-pane fade" id="tab-specializations" role="tabpanel">
                 <h1 class="text-white mb-4"><i class="bi bi-stars me-2"></i> Gerenciar Especializações</h1>
@@ -253,6 +255,115 @@
                 </template>
             </div>
  
+        {% if specializations %}
+            {% for spec in specializations %}
+            <div class="modal fade" id="addLevelModal-{{ spec.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content bg-dark text-white">
+                            <form method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations" enctype="multipart/form-data">
+                                <input type="hidden" name="action" value="create_level_for_spec">
+                                <input type="hidden" name="spec_id" value="{{ spec.id }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Adicionar Nível a <span class="text-info">{{ spec.name }}</span></h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Adicionar Nível</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+            </div>
+            <div class="modal fade" id="editSpecializationModal-{{ spec.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content bg-dark text-white">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title">Editar Especialização: {{ spec.name }}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        
+                        <form id="form-edit-spec-{{ spec.id }}" method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations">
+                            <input type="hidden" name="action" value="edit_specialization">
+                            <input type="hidden" name="spec_id" value="{{ spec.id }}">
+                            
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Nome</label>
+                                    <input type="text" class="form-control" name="name" value="{{ spec.name }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Descrição</label>
+                                    <input type="text" class="form-control" name="description" value="{{ spec.description }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Cor do Caminho</label>
+                                    <input type="color" class="form-control form-control-color" name="color_hex" value="{{ spec.color_hex or '#0dcaf0' }}" title="Escolha uma cor">
+                                </div>
+                                <p class="small text-muted">O Código ({{ spec.spec_code }}) não pode ser alterado.</p>
+                            </div>
+                            </form>
+                        
+                        <div class="modal-footer d-flex justify-content-between">
+                            <form method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations" onsubmit="return confirm('ATENÇÃO: A exclusão é permanente...');">
+                                <input type="hidden" name="action" value="delete_specialization">
+                                <input type="hidden" name="spec_id" value="{{ spec.id }}">
+                                <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Excluir</button>
+                            </form>
+                            <div>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" form="form-edit-spec-{{ spec.id }}">Salvar Alterações</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>            
+            <div class="modal fade modal-lg" id="manageBonusesModal-{{ spec.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-scrollable">
+                            <div class="modal-content bg-dark text-white">
+                                <form method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations">
+                                    <input type="hidden" name="action" value="save_perk_levels">
+                                    <input type="hidden" name="spec_id" value="{{ spec.id }}">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title"><i class="bi bi-gem me-2"></i> Bônus para {{ spec.name }}</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        {% for level in spec.levels|sort(attribute='level_number') %}
+                                        <div class="level-bonus-group mb-4">
+                                            <h6 class="level-title">Nível {{ level.level_number }}: {{ level.nome }}</h6>
+                                            <div class="perks-container" id="perks-for-level-{{ level.id }}">
+                                                {% for bonus in spec.perks if bonus.level == level.level_number %}
+                                                <div class="perk-input-row">
+                                                    <input type="hidden" name="level_number[]" value="{{ level.level_number }}">
+                                                    <div class="flex-grow-1">
+                                                        <select name="perk_id[]" class="form-select perk-select">
+                                                            {% for perk in all_perks %}
+                                                            <option value="{{ perk.id }}" data-description="{{ perk.description_template.format(value='X') }}" {% if perk.id == bonus.perk_id %}selected{% endif %}>
+                                                                {{ perk.name }}
+                                                            </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                        <small class="perk-description text-muted"></small> 
+                                                    </div>
+                                                    <input type="number" step="0.01" name="bonus_value[]" class="form-control" value="{{ bonus.bonus_value }}">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger remove-perk-btn"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-success add-perk-btn mt-2" data-level-number="{{ level.level_number }}" data-target-container="#perks-for-level-{{ level.id }}">
+                                                <i class="bi bi-plus-lg"></i> Adicionar Bônus
+                                            </button>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-primary">Salvar Todos os Bônus</button>
             {% if specializations %}
                 {% for spec in specializations %}
                 <div class="modal fade" id="addLevelModal-{{ spec.id }}" tabindex="-1">
@@ -295,159 +406,65 @@
                                 </form>
                             </div>
                         </div>
-                </div>
+            </div>
 
-                <div class="modal fade" id="editSpecializationModal-{{ spec.id }}" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content bg-dark text-white">
-
-                            <div class="modal-header">
-                                <h5 class="modal-title">Editar Especialização: {{ spec.name }}</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                            </div>
-                            
-                            <form id="form-edit-spec-{{ spec.id }}" method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations">
-                                <input type="hidden" name="action" value="edit_specialization">
-                                <input type="hidden" name="spec_id" value="{{ spec.id }}">
-                                
-                                <div class="modal-body">
-                                    <div class="mb-3">
-                                        <label class="form-label">Nome</label>
-                                        <input type="text" class="form-control" name="name" value="{{ spec.name }}" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Descrição</label>
-                                        <input type="text" class="form-control" name="description" value="{{ spec.description }}" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Cor do Caminho</label>
-                                        <input type="color" class="form-control form-control-color" name="color_hex" value="{{ spec.color_hex or '#0dcaf0' }}" title="Escolha uma cor">
-                                    </div>
-                                    <p class="small text-muted">O Código ({{ spec.spec_code }}) não pode ser alterado.</p>
-                                </div>
-                                </form>
-                            
-                            <div class="modal-footer d-flex justify-content-between">
-                                <form method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations" onsubmit="return confirm('ATENÇÃO: A exclusão é permanente...');">
-                                    <input type="hidden" name="action" value="delete_specialization">
-                                    <input type="hidden" name="spec_id" value="{{ spec.id }}">
-                                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Excluir</button>
-                                </form>
-                                <div>
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary" form="form-edit-spec-{{ spec.id }}">Salvar Alterações</button>
-                                </div>
-                            </div>
-
+            {% endfor %}
+            {% for spec in specializations %}{% for level in spec.levels %}
+            <div class="modal fade" id="editLevelModal-{{ level.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content bg-dark text-white">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Editar Nível: {{ level.nome }}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
-                    </div>
-                </div>  
+                        <form id="form-edit-level-{{ level.id }}" method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations" enctype="multipart/form-data">
+                            <input type="hidden" name="action" value="edit_level_for_spec">
+                            <input type="hidden" name="nivel_id" value="{{ level.id }}">
+                            <input type="hidden" name="spec_id" value="{{ level.specialization_id }}"> {# Garante que o spec_id esteja disponível para redirecionamento #}
 
-                <div class="modal fade modal-lg" id="manageBonusesModal-{{ spec.id }}" tabindex="-1">
-                            <div class="modal-dialog modal-dialog-scrollable">
-                                <div class="modal-content bg-dark text-white">
-                                    <form method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations">
-                                        <input type="hidden" name="action" value="save_perk_levels">
-                                        <input type="hidden" name="spec_id" value="{{ spec.id }}">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title"><i class="bi bi-gem me-2"></i> Bônus para {{ spec.name }}</h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            {% for level in spec.levels|sort(attribute='level_number') %}
-                                            <div class="level-bonus-group mb-4">
-                                                <h6 class="level-title">Nível {{ level.level_number }}: {{ level.nome }}</h6>
-                                                <div class="perks-container" id="perks-for-level-{{ level.id }}">
-                                                    {% for bonus in spec.perks if bonus.level == level.level_number %}
-                                                    <div class="perk-input-row">
-                                                        <input type="hidden" name="level_number[]" value="{{ level.level_number }}">
-                                                        <div class="flex-grow-1">
-                                                            <select name="perk_id[]" class="form-select perk-select">
-                                                                {% for perk in all_perks %}
-                                                                <option value="{{ perk.id }}" data-description="{{ perk.description_template.format(value='X') }}" {% if perk.id == bonus.perk_id %}selected{% endif %}>
-                                                                    {{ perk.name }}
-                                                                </option>
-                                                                {% endfor %}
-                                                            </select>
-                                                            <small class="perk-description text-muted"></small> 
-                                                        </div>
-                                                        <input type="number" step="0.01" name="bonus_value[]" class="form-control" value="{{ bonus.bonus_value }}">
-                                                        <button type="button" class="btn btn-sm btn-outline-danger remove-perk-btn"><i class="bi bi-trash"></i></button>
-                                                    </div>
-                                                    {% endfor %}
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-success add-perk-btn mt-2" data-level-number="{{ level.level_number }}" data-target-container="#perks-for-level-{{ level.id }}">
-                                                    <i class="bi bi-plus-lg"></i> Adicionar Bônus
-                                                </button>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                            <button type="submit" class="btn btn-primary">Salvar Todos os Bônus</button>
-                                        </div>
-                                    </form>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="level-name-edit-{{ level.id }}" class="form-label">Nome do Nível</label>
+                                    <input type="text" class="form-control" name="nome" id="level-name-edit-{{ level.id }}" value="{{ level.nome }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="level-number-edit-{{ level.id }}" class="form-label">Número do Nível</label>
+                                    <input type="number" class="form-control" name="level_number" id="level-number-edit-{{ level.id }}" value="{{ level.level_number }}" min="1" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="level-score-min-edit-{{ level.id }}" class="form-label">Score Mínimo</label>
+                                    <input type="number" class="form-control" name="score_minimo" id="level-score-min-edit-{{ level.id }}" value="{{ level.score_minimo }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="level-avatar-edit-{{ level.id }}" class="form-label">Avatar do Nível</label>
+                                    {% if level.avatar_url %}
+                                        <p class="text-muted small">Avatar atual: <img src="{{ url_for('static', filename=level.avatar_url) }}" width="50" class="rounded-circle" alt="Avatar atual"></p>
+                                    {% else %}
+                                        <p class="text-muted small">Nenhum avatar carregado.</p>
+                                    {% endif %}
+                                    <input type="file" class="form-control" name="avatar_file" id="level-avatar-edit-{{ level.id }}" accept="image/*">
+                                    <small class="form-text text-muted">A imagem será redimensionada e cortada para 128x128px.</small>
                                 </div>
                             </div>
-                </div>
-
-                {% endfor %}
-                {% for spec in specializations %}{% for level in spec.levels %}
-                <div class="modal fade" id="editLevelModal-{{ level.id }}" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content bg-dark text-white">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Editar Nível: {{ level.nome }}</h5>
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                            </div>
-                            <form id="form-edit-level-{{ level.id }}" method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations" enctype="multipart/form-data">
-                                <input type="hidden" name="action" value="edit_level_for_spec">
-                                <input type="hidden" name="nivel_id" value="{{ level.id }}">
-                                <input type="hidden" name="spec_id" value="{{ level.specialization_id }}"> {# Garante que o spec_id esteja disponível para redirecionamento #}
-
-                                <div class="modal-body">
-                                    <div class="mb-3">
-                                        <label for="level-name-edit-{{ level.id }}" class="form-label">Nome do Nível</label>
-                                        <input type="text" class="form-control" name="nome" id="level-name-edit-{{ level.id }}" value="{{ level.nome }}" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="level-number-edit-{{ level.id }}" class="form-label">Número do Nível</label>
-                                        <input type="number" class="form-control" name="level_number" id="level-number-edit-{{ level.id }}" value="{{ level.level_number }}" min="1" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="level-score-min-edit-{{ level.id }}" class="form-label">Score Mínimo</label>
-                                        <input type="number" class="form-control" name="score_minimo" id="level-score-min-edit-{{ level.id }}" value="{{ level.score_minimo }}" required>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="level-avatar-edit-{{ level.id }}" class="form-label">Avatar do Nível</label>
-                                        {% if level.avatar_url %}
-                                            <p class="text-muted small">Avatar atual: <img src="{{ url_for('static', filename=level.avatar_url) }}" width="50" class="rounded-circle" alt="Avatar atual"></p>
-                                        {% else %}
-                                            <p class="text-muted small">Nenhum avatar carregado.</p>
-                                        {% endif %}
-                                        <input type="file" class="form-control" name="avatar_file" id="level-avatar-edit-{{ level.id }}" accept="image/*">
-                                        <small class="form-text text-muted">A imagem será redimensionada e cortada para 128x128px.</small>
-                                    </div>
-                                </div>
+                        </form>
+                        <div class="modal-footer d-flex justify-content-between">
+                            <form method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations" onsubmit="return confirm('ATENÇÃO: A exclusão é permanente e removerá este nível de todos os guardiões que o possuem. Deseja continuar?');">
+                                <input type="hidden" name="action" value="delete_level_for_spec">
+                                <input type="hidden" name="level_id" value="{{ level.id }}">
+                                <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Excluir Nível</button>
                             </form>
-                            <div class="modal-footer d-flex justify-content-between">
-                                <form method="POST" action="{{ url_for('admin_v2_bp.config_hub') }}#tab-specializations" onsubmit="return confirm('ATENÇÃO: A exclusão é permanente e removerá este nível de todos os guardiões que o possuem. Deseja continuar?');">
-                                    <input type="hidden" name="action" value="delete_level_for_spec">
-                                    <input type="hidden" name="level_id" value="{{ level.id }}">
-                                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Excluir Nível</button>
-                                </form>
-                                <div>
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary" form="form-edit-level-{{ level.id }}">Salvar Alterações</button>
-                                </div>
+                            <div>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" form="form-edit-level-{{ level.id }}">Salvar Alterações</button>
                             </div>
                         </div>
                     </div>
                 </div>
-                {% endfor %}{% endfor %}
-            {% endif %}
-             
+            </div>
+            {% endfor %}{% endfor %}
+        {% endif %}
+
             <div class="tab-pane fade" id="tab-seasons" role="tabpanel">
                 <div class="card bg-dark text-white shadow mb-4">
                     <div class="card-header"><h4>Criar Nova Temporada</h4></div>
@@ -586,7 +603,6 @@
                 </div>
             </div>
             {% endfor %}
-            
             <div class="tab-pane fade" id="tab-events" role="tabpanel">
                 <div class="card bg-dark text-white shadow">
                     <div class="card-header"><h4>Criar Novo Evento</h4></div>
@@ -651,7 +667,6 @@
                     </div>
                 </div>
             </div>
-           
             <div class="tab-pane fade" id="tab-missoes" role="tabpanel" aria-labelledby="tab-missoes-link">
                 <div class="row">
                     <div class="col-md-4">
@@ -788,7 +803,7 @@
                     </div>
                 </div>
             </div>
-           
+            
             <div class="tab-pane fade" id="tab-loja" role="tabpanel" aria-labelledby="tab-loja-link">
                 <div class="row">
                     <div class="col-md-4">
@@ -808,15 +823,6 @@
                                             <option value="Consumíveis">Consumíveis (Tokens)</option>
                                             <option value="Bônus Passivos">Bônus Passivos</option>
                                             <option value="Cosméticos">Cosméticos</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label">Raridade</label>
-                                        <select name="rarity" class="form-select">
-                                            <option value="COMMON">Comum</option>
-                                            <option value="RARE">Raro</option>
-                                            <option value="EPIC">Épico</option>
-                                            <option value="LEGENDARY">Lendário</option>
                                         </select>
                                     </div>
                                     <div class="row">
@@ -895,7 +901,6 @@
                                                         <div>
                                                             <strong class="d-block">{{ item.name }}</strong>
                                                             <small class="text-muted badge bg-dark border border-secondary">{{ item.category }}</small>
-                                                            <small class="text-muted badge bg-dark border border-secondary">{{ item.rarity }}</small>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -943,7 +948,6 @@
                                                         data-desc="{{ item.description }}"
                                                         data-cost="{{ item.cost }}"
                                                         data-cat="{{ item.category }}"
-                                                        data-rarity="{{ item.rarity }}"
                                                         data-img="{{ item.image_path }}"
                                                         data-btype="{{ item.bonus_type }}"
                                                         data-bval="{{ item.bonus_value }}"
@@ -1106,15 +1110,6 @@
                             <option value="Consumíveis">Consumíveis (Tokens)</option>
                             <option value="Bônus Passivos">Bônus Passivos</option>
                             <option value="Cosméticos">Cosméticos</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Raridade</label>
-                        <select name="rarity" id="edit-shop-rarity" class="form-select">
-                            <option value="COMMON">Comum</option>
-                            <option value="RARE">Rare</option>
-                            <option value="EPIC">Épico</option>
-                            <option value="LEGENDARY">Lendário</option>
                         </select>
                     </div>
 
@@ -1300,7 +1295,6 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.querySelector('#edit-shop-desc').value = d.desc;
             modal.querySelector('#edit-shop-cost').value = d.cost;
             modal.querySelector('#edit-shop-cat').value = d.cat;
-            modal.querySelector('#edit-shop-rarity').value = d.rarity;
             modal.querySelector('#edit-shop-img').value = d.img;
             modal.querySelector('#edit-shop-btype').value = d.btype;
             modal.querySelector('#edit-shop-bval').value = d.bval;
