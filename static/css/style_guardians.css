@@ -1,0 +1,1192 @@
+
+:root {
+    /* Define uma variável global para a cor do texto secundário no tema escuro */
+    --muted-text-dark-theme: #a9a9a9; /* Um cinza claro e legível */
+}
+
+/* Regra global para corrigir textos secundários em tema escuro */
+body.bg-dark .text-muted {
+    color: var(--muted-text-dark-theme) !important;
+}
+
+
+
+
+/* =================================================================== */
+/* == ESTILOS UNIFICADOS PARA O PERFIL DO GUARDIÃO                  == */
+/* =================================================================== */
+
+/* --- Variáveis de Customização --- */
+.gamified-profile-card {
+    --avatar-size: 400px;
+    --border-radius: 12px;
+    --card-padding: 30px;
+    --level-font-size: 20px;
+}
+
+/* --- Card Principal --- */
+.gamified-profile-card {
+    background-color: #2f2f37;
+    border-radius: var(--border-radius);
+    padding: var(--card-padding);
+    position: relative;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    min-height: 450px;
+}
+
+/* --- Avatar e Nível --- */
+.gamified-stats-box {
+    position: relative;
+    width: var(--avatar-size); 
+    height: var(--avatar-size);
+    margin: 0 auto;
+}
+
+.level-badge-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid var(--warning);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background-color: #333;
+    cursor: pointer; /* Muda o cursor para uma "mãozinha" */
+    transition: all 0.3s ease-in-out; /* Animação suave para todas as mudanças */
+    animation: glowing-avatar 3s infinite alternate ease-in-out; /* Animação de brilho constante */
+}
+
+.level-badge-img:hover {
+    /* Aumenta e levanta a imagem sutilmente */
+    transform: scale(1.05) translateY(-5px); 
+    
+    /* Aumenta o brilho e adiciona uma sombra de elevação */
+    box-shadow: 
+        0 0 20px rgba(13, 110, 253, 0.8), /* Brilho interno mais forte */
+        0 0 30px rgba(13, 110, 253, 0.6),  /* Brilho externo dourado */
+        0 8px 25px rgba(0, 0, 0, 0.5);    /* Sombra para dar profundidade */
+
+    /* Pausa a animação de pulso para dar foco total ao efeito de hover */
+    animation: none;
+}
+
+/* Definição da animação de brilho pulsante */
+@keyframes glowing-avatar {
+    0% {
+        box-shadow: 0 0 10px rgba(13, 110, 253, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 20px rgba(13, 110, 253, 0.7);
+    }
+}
+
+.level-indicator {
+    position: absolute;
+    top: calc(var(--level-font-size) / -2); 
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: pointer;
+    /* NOVO ESTILO: igual ao botão de patrulha */
+    background: linear-gradient(45deg, #0D6EFD) !important;
+    color: #fff; /* Texto escuro para contraste */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+
+    font-weight: bold;
+    padding: 3px 18px;
+    border-radius: 50px;
+    font-size: var(--level-font-size);
+    z-index: 10;
+    white-space: nowrap;
+    transition: all 0.3s ease-in-out; /* Transição suave para o hover */
+}
+
+.gamified-stats-box:hover .level-indicator {
+    /* Efeito de hover no INDICADOR DE NÍVEL */
+    transform: scale(1.1) translateX(-50%) translateY(-5px); /* Mantém a centralização e adiciona o 'lift' */
+}
+
+/* --- Barra de Experiência (EXP) --- */
+.gamified-xp-bar {
+    margin-top: 20px;
+    background-color: #2a2a2a;
+    border-radius: 16px;
+    padding: 15px 20px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.xp-bar-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.xp-info-box { display: flex; align-items: center; }
+.xp-info-box .icon { font-size: 1.5rem; color: #0d6efd; margin-right: 10px; }
+.xp-info-box .label { font-size: 0.7rem; text-transform: uppercase; color: #aaa; line-height: 1; }
+.xp-info-box .value { font-size: 1.2rem; font-weight: bold; color: #fff; line-height: 1; }
+
+/* A "calha" da barra de progresso */
+.progress.xp-progress {
+    height: 25px;
+    background-color: rgba(0, 0, 0, 0.4) !important;
+    border-radius: 50px;
+    padding: 3px;
+    border: 1px solid #555;
+}
+
+/* Estilo para o PREENCHIMENTO da barra, agora com especificidade máxima */
+.progress.xp-progress .progress-bar.progress-bar-striped {
+    border-radius: 50px;
+    font-weight: bold;
+}
+
+/* ============================================= */
+/* == ESTILOS PARA GALERIA DE CONQUISTAS == */
+/* ============================================= */
+
+/* Define o tamanho padrão para todas as imagens de insígnia */
+.insignia-img {
+    width: 300px;
+    height: 300px;
+    object-fit: cover; /* Garante que a imagem não fique distorcida */
+    border-radius: 5px; /* Opcional: deixa as bordas levemente arredondadas */
+}
+
+
+.admin-sidebar {
+    align-self: flex-start !important;
+}
+
+/* ============================================= */
+/* == ESTILO PARA BADGES DE NÍVEL EM LISTAS   == */
+/* ============================================= */
+
+.level-badge-preview {
+    width: 160px;                                  /* Define a largura */
+    height: 160px;                                 /* Define a altura */
+    border-radius: 50%;                           /* ESSA É A LINHA MÁGICA: Deixa a imagem redonda */
+    border: 3px solid var(--warning);             /* Adiciona a borda amarela, usando sua variável global */
+    object-fit: cover;                            /* Garante que a imagem não fique distorcida */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);   /* Adiciona uma sombra sutil para destacar */
+    background-color: #333;                       /* Cor de fundo caso a imagem não carregue */
+}
+
+/* ============================================= */
+/* == ESTILO PARA INSÍGNIAS EM SOBRE O PROGRAMA (CONQUISTAS)      == */
+/* ============================================= */
+
+.insignia-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;                         /* Deixa a imagem redonda */
+    border: 3px solid var(--info);              /* Adiciona a borda AZUL, como solicitado */
+    object-fit: cover;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    background-color: #444;                     /* Cor de fundo caso a imagem não carregue */
+    transition: all 0.2s ease-in-out;           /* Adiciona uma transição suave */
+}
+
+/* Efeito sutil ao passar o mouse */
+.insignia-preview:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 12px rgba(76, 201, 240, 0.3); /* Sombra com a cor da borda */
+}
+
+.insignia-card {
+    background-color: #212529 !important; /* Um tom de roxo/azul escuro */
+    border: 1px solid #4a4a5a;
+    transition: all 0.3s ease;
+}
+
+.insignia-card:hover {
+    border-color: var(--info); /* Borda ciano no hover */
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(13, 202, 240, 0.2);
+}
+
+.level-card {
+    background-color: transparent !important;
+    border: none;
+}
+
+/* ============================================= */
+/* == ESTILOS DA PÁGINA DE RANKING (VERSÃO CORRIGIDA) == */
+/* ============================================= */
+
+/* Estilo para os botões das abas (Por Pontos, Dias de Vigilante, etc.) */
+.nav-pills .nav-link {
+    background-color: #2a2a2a;
+    color: #ccc;
+    font-weight: bold;
+    border: 1px solid #444;
+    margin: 0 5px;
+    transition: all 0.2s ease-in-out;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #3a3a3a;
+    border-color: var(--accent); /* Borda azul no hover */
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--warning); /* Fundo dourado para a aba ativa */
+    color: #fff; /* Texto escuro para contraste */
+    border-color: var(--warning);
+}
+
+/* Tabela de Ranking com linhas divisórias */
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse; /* Remove o espaçamento entre as linhas */
+}
+
+.ranking-table th {
+    border-bottom: 2px solid var(--warning) !important;
+    padding-bottom: 1rem;
+}
+
+.ranking-table td {
+    vertical-align: middle !important;
+}
+
+.ranking-row td {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #3a3a3a; /* A NOVA LINHA DIVISÓRIA */
+}
+
+/* Remove a linha da última posição para um acabamento limpo */
+.ranking-row:last-child td {
+    border-bottom: none;
+}
+
+.ranking-row {
+    transition: background-color 0.2s ease-in-out;
+}
+
+.ranking-row:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    transform: none; /* Remove o efeito de scale que não faz mais sentido */
+}
+
+.ranking-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: 2px solid #555;
+    object-fit: cover;
+}
+
+.rank-position {
+    font-size: 1.5rem;
+    font-weight: bold;
+    min-width: 40px;
+    text-align: center;
+}
+
+.rank-medal.gold { color: #FFD700; }
+.rank-medal.silver { color: #C0C0C0; }
+.rank-medal.bronze { color: #CD7F32; }
+.rank-number { color: #aaa; }
+
+.current-user-highlight {
+    background-color: rgba(72, 149, 239, 0.2) !important;
+    border-left: 4px solid var(--accent);
+}
+
+/* ============================================= */
+/* == ESTILOS DA CENTRAL DE TREINAMENTOS      == */
+/* ============================================= */
+
+.phishing-guide-card {
+    background-color: #2a2a2a; /* Um cinza um pouco mais claro que o fundo do card principal */
+    border: 1px solid var(--accent);
+    border-radius: .5rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.phishing-guide-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(72, 149, 239, 0.2);
+}
+
+.phishing-guide-card .icon {
+    font-size: 2.5rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* ========================================================== */
+/* == CORREÇÃO FINAL DE LEGIBILIDADE PARA LABELS           == */
+/* ========================================================== */
+
+/* Garante que todos os labels dentro dos cards do admin sejam legíveis */
+.card.bg-dark .form-label {
+    color: #ced4da; /* Um cinza claro padrão do Bootstrap, excelente para labels */
+}
+
+/* ========================================================== */
+/* == ESTILOS PARA OS CONTADORES GAMIFICADOS DO PERFIL     == */
+/* ========================================================== */
+
+/* Estilo para os cards de estatísticas (Ranking, Conquistas, etc.) */
+.gamified-stat-card {
+    background: linear-gradient(145deg,#3f3f4b, #2c2c2c); /* Gradiente sutil */
+    border: 1px solid #555;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px; /* Garante altura mínima para alinhamento */
+}
+
+.gamified-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    border-color: var(--warning); /* Borda fica amarela no hover */
+}
+
+/* Ícone da estatística (Troféu, Medalha, Checkmark) */
+.gamified-stat-card .stat-icon {
+    font-size: 2.5rem;
+    color: #fff; /* Cor azul para destaque no ícone */
+    margin-bottom: 10px;
+}
+
+/* Rótulo da estatística (ex: "Ranking Atual") */
+.gamified-stat-card .stat-label {
+    font-size: 0.8rem;
+    color: #ccc;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+/* Valor da estatística (ex: "1º", "5") */
+.gamified-stat-card .stat-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+
+/* ========================================================== */
+/* == MELHORIA PARA OS BOTÕES DE EXPANSÃO (Conquistas, Hist.) == */
+/* ========================================================== */
+
+/* Vamos sobrescrever o estilo padrão para um mais alinhado com o tema */
+.collapsed-button {
+    background-color: var(--accent) !important;
+    border: none !important;
+    font-weight: bold;
+}
+
+.collapsed-button:hover {
+    background-color: var(--primary) !important;
+}
+
+/* ========================================================== */
+/* == ESTILOS PARA SEÇÕES ESTÁTICAS DO PERFIL (Conq./Hist.) == */
+/* ========================================================== */
+
+.profile-section-card {
+    background-color: #3f3f4b; /* Mesmo fundo da barra de EXP para consistência */
+    border-radius: var(--border-radius, 12px);
+    padding: 20px;
+    margin-top: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.profile-section-card .section-header {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #ffffff;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.profile-section-card .section-header .icon {
+    font-size: 1.8rem;
+    color: #fff; /* Cor azul dos ícones */
+    margin-right: 15px;
+}
+
+.profile-section-card .section-header h4 {
+    margin: 0;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* ========================================================== */
+/* == ESTILO PARA O CABEÇALHO DO PERFIL (NOME/DEPTO)         == */
+/* ========================================================== */
+
+/* O contêiner principal do cabeçalho */
+.profile-header {
+    background-color: #2f2f37; /* Fundo escuro sutil, igual às seções */
+    border-radius: 16px;
+    padding: 20px 25px;
+    margin-bottom: 10px;
+    display: flex; /* Usamos flex para alinhar o ícone e os textos */
+    align-items: center;
+    border: 1px solid #444;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    width: 67%; /* ou 70%, ajuste conforme sua necessidade */
+    margin: 0 auto 10px auto; /* centraliza */
+}
+
+/* Ícone do usuário à esquerda */
+.profile-header-icon {
+    font-size: 3rem; /* Tamanho do ícone */
+    color: #fff;
+    margin-right: 20px;
+}
+
+/* Container para o nome e departamento */
+.profile-header-text {
+    flex-grow: 1; /* Faz este container ocupar o espaço restante */
+    text-align: center;
+}
+
+/* Estilo para o NOME do usuário */
+.profile-header-name {
+    margin: 0;
+    font-size: 2.8rem; /* Um pouco maior para mais impacto */
+    font-weight: 900; /* Super bold */
+    line-height: 1.1;
+    letter-spacing: 1.5px; /* Leve espaçamento entre as letras */
+
+    background: linear-gradient(
+        45deg, 
+        #a9d6ff 10%,          /* Azul bem claro para o brilho */
+        var(--accent) 50%,    /* Sua cor de destaque azul no meio */
+        var(--primary) 90%    /* Seu azul primário mais escuro para a sombra */
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+
+
+
+}
+
+/* Estilo para o DEPARTAMENTO */
+.profile-header-department {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #ccc; /* Cinza claro, mais sutil */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Estilo para o APELIDO (nickname) do usuário */
+.profile-header-nickname {
+    margin: 5px 0 0 0;
+    font-size: 1.1rem;
+    font-weight: 400;
+    font-style: italic;
+    color: #ccc; /* Cinza claro, para diferenciar do nome principal */
+    opacity: 0.9;
+}
+
+/* ============================================= */
+/* == ESTILOS PARA A PÁGINA DE ANALYTICS      == */
+/* ============================================= */
+.analytics-card {
+    background: #2f2f37;
+    border-radius: 16px;
+    padding: 25px;
+    text-align: center;
+    border-top: 4px solid var(--accent);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+.analytics-card .card-icon {
+    font-size: 2.5rem;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+.analytics-card .card-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+}
+.analytics-card .card-label {
+    font-size: 0.8rem;
+    color: #aaa;
+    text-transform: uppercase;
+}
+
+/* ============================================= */
+/* == ESTILO PARA O MINI-CARD "DIAS DE VIGILANTE" == */
+/* ============================================= */
+
+.streak-mini-card {
+    background-color: #0d6efd; /* Fundo amarelo/laranja para contraste */
+    color: #ffffff; /* Texto escuro para legibilidade no fundo claro */
+    border-radius: 10px;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centraliza o conteúdo horizontalmente */
+    gap: 8px; /* Espaçamento entre os elementos */
+    font-weight: bold;
+    transition: transform 0.2s ease-in-out;
+    width: fit-content; /* Ajusta a largura ao conteúdo */
+    margin-left: auto;   /* Centraliza o card na coluna */
+    margin-right: auto;  /* Centraliza o card na coluna */
+    border: 2px solid var(--primary); /* Borda em azul mais escuro (var(--primary)) */
+}
+
+.streak-mini-card:hover {
+    transform: scale(1.05); /* Pequeno zoom no hover */
+}
+
+.streak-mini-card .streak-mini-icon {
+    font-size: 1.5rem; /* Ícone da chama um pouco menor */
+    color: #ffffff; /* AGORA: Ícone da chama branco */
+    animation: streak-mini-glow 1.5s ease-in-out infinite; /* Mantém a animação de brilho */
+}
+
+/* Redefinir a animação para a cor do novo card */
+@keyframes streak-mini-glow {
+    0%, 100% {
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.5), 0 0 12px rgba(255, 255, 255, 0.3); /* Brilho branco */
+    }
+    50% {
+        text-shadow: 0 0 4px rgba(255, 255, 255, 0.3), 0 0 6px rgba(255, 255, 255, 0.1); /* Brilho branco mais suave */
+    }
+}
+
+
+.streak-mini-card .streak-mini-value {
+    font-size: 1.6rem; /* Tamanho do número dos dias */
+    color: #ffffff; /* AGORA: Número dos dias branco */
+    line-height: 1; /* Alinhamento vertical */
+}
+
+.streak-mini-card .streak-mini-label {
+    font-size: 0.75rem; /* Tamanho do texto "Dias de Vigilante" */
+    color: #ffffff; /* AGORA: Rótulo "Dias de Vigilante" branco */
+    margin-left: 5px; /* Pequeno espaçamento para o rótulo */
+    line-height: 1;
+}
+
+/* Remove a animação original da chama se ela ainda existir */
+.streak-flame {
+    animation: none;
+}
+
+/* ============================================= */
+/* == ESTILO PARA O BÔNUS DE OFENSIVA         == */
+/* ============================================= */
+
+.streak-bonus-pill {
+    background-color: rgba(255, 255, 255, 0.2); /* Fundo branco semitransparente */
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 50px;
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.streak-bonus-pill .bi {
+    font-size: 0.8rem;
+}
+
+/* ========================================================== */
+/* == ESTILO PARA O CARD DE DESTAQUE (DIAS DE VIGILANTE)   == */
+/* ========================================================== */
+
+.feature-highlight-card {
+    background: linear-gradient(145deg, #2a2a2a, #1e1e1e);
+    border-left: 5px solid var(--accent); /* Borda azul de destaque à esquerda */
+    border-radius: var(--border-radius, 12px);
+    padding: 25px 30px;
+    margin-top: 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+.feature-highlight-card h2 {
+    display: flex;
+    align-items: center;
+}
+
+.feature-highlight-card .icon {
+    font-size: 2.2rem;
+    color: var(--accent);
+    margin-right: 15px;
+    text-shadow: 0 0 10px rgba(72, 149, 239, 0.5);
+}
+
+.feature-highlight-card .rules-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 15px;
+}
+
+.feature-highlight-card .rules-list li {
+    padding: 8px 0;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid #333;
+}
+
+.feature-highlight-card .rules-list li:first-child {
+    border-top: none;
+}
+
+.feature-highlight-card .rules-list .bi {
+    font-size: 1.2rem;
+    margin-right: 15px;
+}
+
+/* Estilo para a insígnia em destaque nos rankings */
+.featured-insignia-badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+/*     border: 1px solid rgba(255, 255, 255, 0.5); */
+    vertical-align: middle;
+    margin-left: 8px;
+    background-color: #555;
+}
+
+/* ============================================= */
+/* == ESTILO GAMIFICADO PARA A PAGINAÇÃO      == */
+/* ============================================= */
+
+/* Remove o foco padrão azul do bootstrap que não combina com o tema */
+.page-link:focus {
+    box-shadow: 0 0 0 0.25rem rgba(248, 150, 30, 0.5) !important; /* Sombra laranja/amarela */
+}
+
+.pagination .page-item {
+    margin: 0 4px; /* Adiciona um pequeno espaço entre os botões */
+}
+
+/* Estilo para os botões de página (números, setas) */
+.pagination .page-link {
+    background-color: #2a2a2a;      /* Fundo escuro, igual às seções do perfil */
+    border: 1px solid #444;       /* Borda sutil */
+    color: #ccc;                   /* Cor do texto padrão (cinza claro) */
+    border-radius: 8px;           /* Bordas arredondadas consistentes */
+    font-weight: bold;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Efeito ao passar o mouse em um botão de página */
+.pagination .page-link:hover {
+    background-color: #3a3a3a;      /* Fundo um pouco mais claro */
+    color: #ffffff;               /* Texto branco */
+    border-color: var(--accent);    /* Borda fica azul no hover */
+    transform: translateY(-2px);    /* Efeito de elevação */
+}
+
+/* Estilo para o botão da PÁGINA ATIVA */
+.pagination .page-item.active .page-link {
+    background-color: var(--warning); /* Fundo amarelo/dourado */
+    border-color: var(--warning);
+    color: #1b263b;               /* Texto escuro para bom contraste */
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5); /* Brilho dourado */
+    transform: translateY(-2px);
+}
+
+.pagination .page-item.active .page-link:hover {
+    background-color: var(--warning); /* Mantém as cores no hover */
+    color: #1b263b;
+}
+
+/* Estilo para os botões DESATIVADOS (ex: "Anterior" na primeira página) */
+.pagination .page-item.disabled .page-link {
+    background-color: #222;         /* Fundo bem escuro */
+    color: #555;                   /* Cor do texto bem apagada */
+    border-color: #333;
+    pointer-events: none;
+}
+
+.color-selector .form-check { display: flex; align-items: center; margin-bottom: 8px; }
+.color-swatch { display: inline-block; width: 20px; height: 20px; border-radius: 50%; margin-right: 10px; border: 1px solid #555; }
+
+/* ========================================================== */
+/* == ESTILOS PARA FORMULÁRIOS NO TEMA ESCURO (ADMIN, ETC.) == */
+/* ========================================================== */
+
+/* 1. Corrige a cor dos RÓTULOS (ex: "Nome do evento", "Pontos") */
+.card.bg-dark .form-label {
+    color: var(--muted-text-dark-theme);
+}
+
+/* 2. Corrige a cor do TEXTO DIGITADO e do FUNDO dos campos */
+body.bg-dark .form-control,
+body.bg-dark .form-select {
+    background-color: #2a2a2a;
+    color: #f1f1f1;
+    border: 1px solid #444;
+}
+
+/* 3. Garante que o campo continue escuro ao ser selecionado (foco) */
+body.bg-dark .form-control:focus,
+body.bg-dark .form-select:focus {
+    background-color: #3a3a3a;
+    color: #f1f1f1;
+    border-color: var(--accent); /* Usa a cor de destaque azul */
+    box-shadow: none;
+}
+
+/* 4. Corrige a cor do TEXTO DE EXEMPLO (placeholder, ex: "texto da resposta") */
+body.bg-dark .form-control::placeholder { /* Padrão */
+  color: var(--muted-text-dark-theme);
+  opacity: 0.7;
+}
+body.bg-dark .form-control::-webkit-input-placeholder { /* Chrome, Safari, etc. */
+  color: var(--muted-text-dark-theme);
+  opacity: 0.7;
+}
+body.bg-dark .form-control::-moz-placeholder { /* Firefox */
+  color: var(--muted-text-dark-theme);
+  opacity: 0.7;
+}
+
+/* ========================================================== */
+/* == ESTILOS (V2.0) PARA A NOVA INTERFACE DE QUIZ         == */
+/* ========================================================== */
+
+/* Bloqueio de cópia */
+.no-select { user-select: none; -webkit-user-select: none; }
+
+/* Contêiner principal do quiz */
+.quiz-container {
+    background: linear-gradient(145deg, #2f2f37, #2a2a2a); /* Fundo com gradiente sutil */
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    border-top: 4px solid var(--accent); /* Borda azul para destaque */
+}
+
+/* Título do Quiz */
+.quiz-title {
+    color: var(--accent); /* Cor azul de destaque */
+    font-weight: bold;
+}
+
+/* Esconde perguntas inativas */
+.quiz-question { display: none; }
+.quiz-question.active { display: block; animation: fadeIn 0.5s ease-in-out; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; translateY(0); }
+}
+
+/* Opções de resposta */
+.answer-option label {
+    display: block; background-color: #3f3f4b; border: 2px solid #555;
+    border-radius: 10px; padding: 15px; margin-bottom: 10px;
+    cursor: pointer; transition: all 0.2s ease-in-out; width: 100%;
+}
+.answer-option label:hover { background-color: #4a4a55; border-color: var(--accent); }
+.answer-option input[type="radio"] { display: none; }
+
+/* Feedback visual ao selecionar uma resposta */
+.answer-option input[type="radio"]:checked + label {
+    background-color: var(--accent); border-color: #fff; color: #fff;
+    box-shadow: 0 0 15px rgba(72, 149, 239, 0.5);
+    animation: pulse-select 0.5s ease;
+}
+@keyframes pulse-select {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* Navegação por Passos (Stepper) */
+#quiz-stepper {
+    gap: 10px;
+}
+.quiz-step-btn {
+    width: 30px; height: 30px; border-radius: 50%;
+    background-color: #444; color: #aaa; border: 2px solid #555;
+    font-weight: bold; font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.3s ease;
+}
+.quiz-step-btn.completed {
+    background-color: var(--success); /* Verde para respondida */
+    border-color: #1a9c5f; color: #fff;
+}
+.quiz-step-btn.current {
+    background-color: var(--warning); /* Dourado para atual */
+    border-color: #fff; color: #fff;
+    transform: scale(1.2);
+}
+.quiz-step-btn:not(.current):hover {
+    transform: scale(1.1);
+    border-color: var(--accent);
+}
+
+/* Botões de navegação */
+.quiz-navigation {
+    display: flex; justify-content: space-between; align-items: center; margin-top: 2rem;
+}
+
+/* Timer flutuante */
+.quiz-timer {
+    position: fixed;
+    top: 80px; /* Distância do topo */
+    right: 20px; /* Distância da direita */
+    background-color: #BB2D3B;
+    color: var(--warning); /* Cor dourada */
+    padding: 15px 25px;
+    border-radius: 50px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: 2px solid var(--warning);
+    z-index: 1050; /* Garante que fique sobre outros elementos */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+/* ============================================= */
+/* == ESTILOS PARA A PÁGINA DE RESULTADOS DO QUIZ (quiz_result.html) == */
+/* ============================================= */
+
+.quiz-result-container {
+    background-color: #2a2a2a;
+    border-radius: 15px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    border-top: 5px solid var(--warning);
+}
+
+.result-summary {
+    border: 2px dashed #444;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.result-summary .score-value {
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--warning);
+    line-height: 1;
+}
+
+.result-summary .score-label {
+    font-size: 1rem;
+    color: #ccc;
+    text-transform: uppercase;
+}
+
+.result-summary .bonus-pill {
+    background-color: var(--success);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 50px;
+}
+
+.question-review-item {
+    background-color: #3a3a3b;
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    border-left: 5px solid #555;
+}
+
+.question-review-item.correct {
+    border-left-color: var(--success);
+}
+
+.question-review-item.incorrect {
+    border-left-color: var(--danger);
+}
+
+.review-option {
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-top: 5px;
+    border: 1px solid transparent;
+}
+
+.review-option.correct-answer {
+    background-color: rgba(25, 135, 84, 0.2); /* Fundo verde transparente */
+    border-color: var(--success);
+}
+
+.review-option.wrong-choice {
+    background-color: rgba(220, 53, 69, 0.2); /* Fundo vermelho transparente */
+    text-decoration: line-through;
+}
+
+.quiz-disclaimer {
+    position: fixed; /* Fixo na janela do navegador */
+    bottom: 0;       /* Alinhado na base */
+    left: 0;
+    right: 0;
+    z-index: 1040;   /* Z-index alto para ficar sobre outros elementos */
+    margin-bottom: 0;/* Remove a margem padrão do alerta */
+    border-radius: 0;  /* Remove as bordas arredondadas para um visual de "barra" */
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+.result-summary-card {
+    background: linear-gradient(145deg, #2f2f37, #2a2a2a);
+    border-radius: 15px;
+    padding: 2rem;
+    border-top: 4px solid var(--accent);
+}
+
+.total-score-display {
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 50%;
+    width: 180px;
+    height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem auto;
+    border: 4px solid var(--warning);
+    box-shadow: 0 0 20px #3f51b5;
+}
+
+.total-score-display .score-value {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--warning); /* COR DOURADA PARA O TOTAL */
+    line-height: 1;
+}
+
+.total-score-display .score-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: #ccc;
+}
+
+.bonus-pill {
+    background-color: var(--success); /* COR VERDE PARA O BÔNUS */
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: bold;
+    padding: 5px 15px;
+    border-radius: 50px;
+    display: inline-block;
+}
+
+.completion-time-display {
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    display: inline-block; /* Faz o fundo se ajustar ao conteúdo */
+}
+/* ========================================================== */
+/* == ESTILOS (V2.1) PARA PATRULHA DIÁRIA FLUTUANTE E ANIMADA == */
+/* ========================================================== */
+
+/* Animação de brilho pulsante */
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 15px rgba(255, 193, 7, 0.4), 0 4px 15px rgba(0, 0, 0, 0.4); }
+    50% { box-shadow: 0 0 30px rgba(255, 193, 7, 0.8), 0 4px 15px rgba(0, 0, 0, 0.4); }
+}
+
+/* Animação de "pulo" de entrada */
+@keyframes bounce-in {
+    0% { transform: scale(0) translateY(100px); opacity: 0; }
+    60% { transform: scale(1.1) translateY(-10px); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Contêiner do botão */
+.daily-patrol-container {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1050;
+}
+
+/* Estilo base do botão flutuante */
+.patrol-btn-floating {
+    width: 70px;
+    height: 70px;
+    font-size: 2.2rem;
+    background: linear-gradient(45deg, var(--warning), #ffc107);
+    border: 3px solid #ffaa00;
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    /* Remove a cor de texto daqui para não afetar o ícone */
+}
+
+/* Aplica a animação de pulo e depois a de brilho */
+.patrol-btn-floating.patrol-active {
+    animation: bounce-in 0.8s ease-out forwards, 
+               pulse-glow 2s 1s infinite ease-in-out;
+}
+
+/* Efeito ao passar o mouse */
+.patrol-btn-floating:not(:disabled):hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.5);
+}
+
+/* Efeito de clique */
+.patrol-btn-floating.is-clicked {
+    transform: scale(0.9);
+    transition: transform 0.1s ease;
+}
+
+/* Estilo do botão desativado */
+.patrol-btn-floating:disabled {
+    background: #444;
+    border-color: #555;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+.patrol-btn-floating:disabled .bi {
+    color: #888 !important; /* Cor do ícone quando desativado */
+}
+
+.patrol-btn-floating .bi {
+    color: #ffffff !important; 
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); 
+}
+
+/* ========================================================== */
+/* == ESTILOS PARA COMPONENTES ASSOCIADOS                  == */
+/* ========================================================== */
+
+/* Estilo customizado para o Pop-up (Toast) no tema escuro */
+.toast {
+    background-color: #2f2f37;
+    color: #f1f1f1;
+    border: 1px solid #555;
+    border-radius: .5rem;
+}
+
+.toast-header {
+    background-color: #3f3f4b;
+    color: #f1f1f1;
+    border-bottom: 1px solid #555;
+}
+
+.toast-header .me-auto {
+    color: var(--warning); /* Título em dourado */
+}
+
+/* CSS de Suporte para Tooltip em Botão Desativado */
+.tooltip-wrapper {
+    display: inline-block;
+}
+
+.tooltip-wrapper .btn:disabled {
+    pointer-events: none;
+}
+/* ################# */
+
+/* ============================================= */
+/* == ESTILO PARA O CARD-LINK DO HUB DE QUIZZES == */
+/* ============================================= */
+
+.analytics-hub-link-card {
+    background-color: #2f2f37;
+    border: 1px solid #444;
+    transition: all 0.3s ease;
+}
+
+.analytics-hub-link-card:hover {
+    border-color: var(--warning);
+    background-color: #3a3a4b;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(255, 193, 7, 0.2);
+}
+
+.analytics-hub-link-card .card-title {
+    font-weight: bold;
+}
+
+/* ========================================================== */
+/* == ESTILO CUSTOMIZADO PARA ABAS DE NAVEGAÇÃO (.nav-tabs)  == */
+/* ========================================================== */
+
+/* Remove a borda inferior padrão das abas */
+.nav-tabs {
+    border-bottom: none;
+}
+
+/* Estilo para os botões/links das abas */
+.nav-tabs .nav-link {
+    background-color: #2a2a2a;
+    color: #ccc;
+    font-weight: bold;
+    border: 1px solid #444;
+    border-bottom: none; /* Remove a borda inferior para o efeito de "aba" */
+    margin: 0 2px;
+    border-radius: 0.5rem 0.5rem 0 0; /* Bordas arredondadas apenas no topo */
+    transition: all 0.2s ease-in-out;
+}
+
+/* Efeito ao passar o mouse */
+.nav-tabs .nav-link:hover {
+    background-color: #3a3a3a;
+    border-color: var(--accent);
+    color: #fff;
+}
+
+/* Estilo para a ABA ATIVA (clicada) */
+.nav-tabs .nav-link.active {
+    background-color: #212529; /* Cor de fundo do card, para parecer conectado */
+    color: var(--warning); /* Texto dourado */
+    border-color: #444;
+    border-bottom: 1px solid #212529; /* Esconde a borda inferior para conectar ao card */
+}
+
+/* Ajusta o card que contém o conteúdo das abas */
+.tab-content.card {
+    border-top-left-radius: 0; /* Remove o canto arredondado para encaixar na aba */
+}
+
+/* ============================================= */
+/* == ESTILO PARA O RODAPÉ FIXO COM SELO BETA   == */
+/* ============================================= */
+
+.app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #1a1a1a; /* Um preto um pouco mais suave que o fundo */
+    padding: 5px 0;
+    text-align: center;
+    z-index: 1000;
+    border-top: 1px solid #333;
+}
+
+.beta-badge {
+    display: inline-block;
+    background-color: var(--warning); /* Cor dourada do tema */
+    color: #fff; /* Texto escuro para contraste */
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 3px 10px;
+    border-radius: 50px; /* Formato de "pílula" */
+}

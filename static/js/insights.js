@@ -1,4 +1,3 @@
-// Script que me traz os chamados abertos
 document.addEventListener("DOMContentLoaded", function () {
     const botaoPeriodo = document.querySelectorAll(".filtro-btn");
     const campoTotalChamados = document.getElementById("chamados-abertos");
@@ -44,7 +43,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-// Script que traz os chamados finalizados pelo suporte-->
 document.addEventListener("DOMContentLoaded", function () {
     function carregarChamadosFinalizados(dias = 1) {
         fetch('/insights/ChamadosSuporte/finalizado', {
@@ -78,8 +76,7 @@ document.addEventListener("DOMContentLoaded", function () {
     carregarChamadosFinalizados(1);
 });
 
-// Atualização dinâmica dos chamados em aberto -->
-  let codigosEmAberto = [];
+let codigosEmAberto = [];
 
   document.addEventListener("DOMContentLoaded", function () {
     carregarChamadosEmAberto(1);
@@ -152,8 +149,6 @@ document.addEventListener("DOMContentLoaded", function () {
     modal.show();
   }
 
-
-//Script que traz o SLA expirados global-->
 let codigosAtendimento = [];
 let codigosResolucao = [];
 
@@ -202,7 +197,6 @@ async function carregarSlaGlobal(dias = 1) {
     const data = await res.json();
 
     if (data.status === "success") {
-      // Exibição com %
       document.getElementById("sla_atendimento_expirado").textContent = data.percentual_atendimento + "%";
       document.getElementById("sla_atendimento_prazo").textContent = data.percentual_prazo_atendimento + "%";
       document.getElementById("sla_resolucao_expirado").textContent = data.percentual_resolucao + "%";
@@ -215,7 +209,6 @@ async function carregarSlaGlobal(dias = 1) {
       if (metasRes.ok) {
         const metas = await metasRes.json();
 
-        // Atualiza ícones com lógica correta SLA (quanto maior, melhor)
         atualizarIconeSla("icone_prazo_atendimento", data.percentual_prazo_atendimento, metas.prazo_atendimento);
         atualizarIconeSla("icone_prazo_resolucao", data.percentual_prazo_resolucao, metas.prazo_resolucao);
       }
@@ -237,14 +230,12 @@ function atualizarIconeSla(idIcone, valorAtual, meta) {
   const icone = document.getElementById(idIcone);
   if (!icone) return;
 
-  // Limpa classes antigas
   icone.className = "";
 
-  // Conversão segura (apenas números)
   let valNum = parseFloat(String(valorAtual || "0").replace(",", ".").replace("%", "").trim());
   let metaNum = parseFloat(String(meta || "0").replace(",", ".").replace("%", "").trim());
 
-  const margem = 5; // margem de alerta amarelo
+  const margem = 5; 
 
   if (isNaN(valNum) || isNaN(metaNum)) {
     icone.className = "bi-dash-lg text-muted ms-2 fs-4";
@@ -252,13 +243,10 @@ function atualizarIconeSla(idIcone, valorAtual, meta) {
   }
 
   if (valNum >= metaNum) {
-    // Verde para cima: atingiu ou ultrapassou a meta
     icone.className = "bi bi-arrow-up-short text-success ms-2 fs-4";
   } else if (valNum >= (metaNum - margem)) {
-    // Amarelo para cima: próximo da meta
     icone.className = "bi bi-arrow-up-short text-warning ms-2 fs-4";
   } else {
-    // Vermelho para baixo: abaixo da meta
     icone.className = "bi bi-arrow-down-short text-danger ms-2 fs-4";
   }
 }
@@ -270,7 +258,6 @@ function mostrarIconesPadrao() {
   });
 }
 
-// Inicialização
 document.addEventListener("DOMContentLoaded", function () {
   carregarSlaGlobal(1);
 });
@@ -284,11 +271,7 @@ document.querySelectorAll(".filtro-btn").forEach(button => {
 
 
 
-
-// Bloco que traz a relação dos chamados abertos e resolvidos-->
-
 document.addEventListener("DOMContentLoaded", function () {
-  // Listener para botões de filtro
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const dias = parseInt(this.getAttribute('data-dias'));
@@ -296,24 +279,21 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Gráfico instância global para poder destruir ao atualizar
   let adminChartInstance = null;
 
-  // Função que busca e exibe os dados
   function carregarAbertosResolvidos(dias = 1) {
     console.log('Carregando abertos x resolvidos com dias =', dias);
 
     fetch('/insights/abertos_vs_admin_resolvido_periodo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dias: dias })  // agora usa o valor dinâmico corretamente
+      body: JSON.stringify({ dias: dias })  
     })
     .then(res => res.json())
     .then(data => {
       if (data.status === "success") {
         const ctx = document.getElementById('LinhaAbertosResolvidosAdminChart').getContext('2d');
 
-        // Destroi gráfico anterior se existir
         if (adminChartInstance) {
           adminChartInstance.destroy();
         }
@@ -353,7 +333,6 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         });
 
-        // Atualiza os totais
         document.getElementById("adminTotalAbertos").textContent = data.resumo.abertos;
         document.getElementById("adminTotalResolvidos").textContent = data.resumo.resolvidos;
         document.getElementById("adminDiferenca").textContent = data.resumo.diferenca;
@@ -364,11 +343,9 @@ document.addEventListener("DOMContentLoaded", function () {
     .catch(error => console.error("Erro de conexão:", error));
   }
 
-  // Carregamento inicial com 1 dia
   carregarAbertosResolvidos(1);
 });
 
-//Script que traz os dados de Abertos vs Status-->
     let statusChart = null;
 
     const coresStatusFixas = {
@@ -524,11 +501,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Inicia com 7 dias e conecta aos botões
     document.addEventListener('DOMContentLoaded', () => {
         const botoesFiltro = document.querySelectorAll('.filtro-btn');
 
-        // Clique nos botões de filtro
         botoesFiltro.forEach(botao => {
             botao.addEventListener('click', function () {
                 botoesFiltro.forEach(btn => btn.classList.remove('active'));
@@ -539,16 +514,13 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        // Carregamento inicial com 7 dias
         carregarDados(1);
 
-        // Atualiza o gráfico se redimensionar a tela
         window.addEventListener('resize', () => {
             if (statusChart) statusChart.update();
         });
     });
 
-//Script que traz os dados de Ticket por Canal-->
     function carregarTicketsPorCanal(dias = 1) {
         fetch('/insights/ticketsCanal', {
             method: 'POST',
@@ -613,31 +585,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Botões com a classe "filtro-btn" e atributo data-dias
         const botoesFiltro = document.querySelectorAll('.filtro-btn');
 
         botoesFiltro.forEach(botao => {
             botao.addEventListener('click', () => {
                 const dias = parseInt(botao.getAttribute('data-dias'), 10);
-                
-                // Remove classe "active" de todos os botões
                 botoesFiltro.forEach(btn => btn.classList.remove('active'));
-
-                // Adiciona classe "active" ao botão clicado
                 botao.classList.add('active');
-
-                // Atualiza o gráfico com o novo período
                 carregarTicketsPorCanal(dias);
             });
         });
-
-        // Carrega o gráfico inicialmente com 30 dias (ou o que desejar)
         carregarTicketsPorCanal(1);
     });
 
-// Script que traz os dados de Tickets Operador-->
 function carregarTicketsPorOperador(dias = 1) {
-    fetch('/admin/ChamadosSuporte/ticketsOperador', {
+    fetch('/insights/ChamadosSuporte/ticketsOperador', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dias: dias })
@@ -646,11 +608,9 @@ function carregarTicketsPorOperador(dias = 1) {
     .then(data => {
         if (data.status === "success") {
             const ctx = document.getElementById('OperadorAtendimentoChart').getContext('2d');
-
             if (window.operadorChartInstance) {
                 window.operadorChartInstance.destroy();
             }
-
             window.operadorChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -709,21 +669,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-//Script que me traz os SLAs filtrados por grupo-->
 document.addEventListener("DOMContentLoaded", () => {
-
     const modalElement = document.getElementById('modalChamadosGrupos');
     const listaChamados = document.getElementById('listaChamadosGrupos');
     const modalInstance = new bootstrap.Modal(modalElement);
-
     modalElement.addEventListener('shown.bs.modal', () => {
         const botaoFechar = modalElement.querySelector('button.btn-close');
         if (botaoFechar) botaoFechar.focus();
     });
-
     function criarSlaGrupoChart(ctx, label, naoExpirado, quaseEstourando, expirado, codigosCriticos, codigosExpirados) {
         const total = naoExpirado + quaseEstourando + expirado;
-
         return new Chart(ctx, {
             type: 'bar',
             data: {
@@ -770,10 +725,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         let codigos = [];
 
                         if (idx === 1 && codigosCriticos.length > 0) {
-                            codigos = codigosCriticos; // quase estourando
+                            codigos = codigosCriticos; 
                         } 
                         else if (idx === 2 && codigosExpirados.length > 0) {
-                            codigos = codigosExpirados; // expirado
+                            codigos = codigosExpirados; 
                         }
 
                         if (codigos.length > 0) {
@@ -801,14 +756,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Requisição SLA por grupo
     fetch('/dashboard/ChamadosSuporte/sla_andamento_grupos', { method: 'POST' })
         .then(res => res.json())
         .then(data => {
 
             if (data.status === "success") {
-
-                // Atendimento
                 criarSlaGrupoChart(
                     document.getElementById('slaGrupoChart').getContext('2d'),
                     'SLA - Atendimento',
@@ -816,10 +768,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     data.sla1_quase_estourando || 0,
                     data.sla1_expirado,
                     data.codigos_sla1_critico || [],
-                    data.codigos_sla1_expirado || []      // CORRIGIDO ✔
+                    data.codigos_sla1_expirado || []      
                 );
 
-                // Resolução
                 criarSlaGrupoChart(
                     document.getElementById('slaGrupoChart2').getContext('2d'),
                     'SLA - Resolução',
@@ -827,7 +778,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     data.sla2_quase_estourando || 0,
                     data.sla2_expirado,
                     data.codigos_sla2_critico || [],
-                    data.codigos_sla2_expirado || []      // CORRIGIDO ✔
+                    data.codigos_sla2_expirado || []      
                 );
 
             } else {
@@ -838,15 +789,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-// Script que me traz os SLAs filtrados por grupo Suporte
 document.addEventListener("DOMContentLoaded", () => {
-
     const modalElement = document.getElementById('modalChamadosExpirados');
     const listaChamados = document.getElementById('listaChamados');
     const modalInstance = new bootstrap.Modal(modalElement);
-
     function criarSlaChart(ctx, label, naoExpirado, quaseEstourando, expirado, codigosExpirados, codigosCriticos) {
-
         const total = naoExpirado + quaseEstourando + expirado;
 
         return new Chart(ctx, {
@@ -896,17 +843,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 },
 
-                // 👇 AQUI CONTROLA O CLIQUE PARA ABRIR O MODAL
                 onClick: (evt, elements) => {
                     if (elements.length > 0) {
                         const idx = elements[0].index;
                         let codigos = [];
 
                         if (idx === 1 && codigosCriticos.length > 0) { 
-                            codigos = codigosCriticos;     // quase estourando
+                            codigos = codigosCriticos;     
                         } 
                         else if (idx === 2 && codigosExpirados.length > 0) {  
-                            codigos = codigosExpirados;    // expirado
+                            codigos = codigosExpirados;    
                         }
 
                         if (codigos.length > 0) {
@@ -935,7 +881,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    //  REQUISIÇÃO PARA BUSCAR DADOS
     fetch('/dashboard/ChamadosSuporte/sla_andamento', { method: 'POST' })
         .then(res => res.json())
         .then(data => {
@@ -970,27 +915,18 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-//Script que traz a pesquisa de satisfação-->
   document.addEventListener("DOMContentLoaded", function () {
-    // Carrega o card com o valor padrão 30 dias
     atualizarCardPesquisaSatisfacao(1);
-
-    // Seleciona todos os botões de filtro
     document.querySelectorAll('.filtro-btn').forEach(btn => {
       btn.addEventListener('click', function() {
-        // Remove a classe active de todos os botões para estilização (opcional)
         document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-        // Adiciona classe active no botão clicado (opcional)
         this.classList.add('active');
-
-        // Pega o número de dias do data-attribute do botão clicado
         const dias = parseInt(this.getAttribute('data-dias'), 10);
         atualizarCardPesquisaSatisfacao(dias);
       });
     });
   });
 
-  // Tornar o CSAT clicável para abrir o modal
     const csatPercentualEl = document.getElementById("csat-percentual");
     csatPercentualEl.style.cursor = "pointer";
     csatPercentualEl.addEventListener("click", function () {
@@ -1009,13 +945,11 @@ document.addEventListener("DOMContentLoaded", () => {
         link.href = `https://comnect.desk.ms/?Ticket#ChamadosSuporte:${codigoChamado}`;
         link.target = "_blank";
         link.textContent = codigoChamado;
-        link.style.color = "#ff6384"; // cor para contraste
-
+        link.style.color = "#ff6384"; 
         li.appendChild(link);
         lista.appendChild(li);
       });
 
-      // Abrir modal via Bootstrap 5 JS API
       const modalElement = document.getElementById("modalComentariosPesquisa");
       const modal = new bootstrap.Modal(modalElement);
       modal.show();
@@ -1046,7 +980,6 @@ document.addEventListener("DOMContentLoaded", () => {
     csatPercentualEl.textContent = `${data.csat}%`;
     totalAvaliadoEl.textContent = data.total_respondidas;
 
-    // Guardar os códigos dos chamados para o modal
     comentariosPesquisa = data.referencia_chamados || [];
     } else {
         csatPercentualEl.textContent = '-';
@@ -1063,11 +996,9 @@ document.addEventListener("DOMContentLoaded", () => {
 }
 
 
-// Script que traz o TMA eo TMS -->
   document.addEventListener("DOMContentLoaded", function () {
   let diasSelecionados = 1;
   carregarTmaTms(diasSelecionados);
-
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
@@ -1088,11 +1019,10 @@ async function carregarTmaTms(dias) {
       document.getElementById("percentual-tma").innerText = data.mediana_tma;
       document.getElementById("percentual-tms").innerText = data.mediana_tms;
 
-      // Busca metas separadamente
       const metasRes = await fetch('/okrs/getMetas');
       const metas = await metasRes.json();
 
-      atualizarIconeTmaTms("icone_tma", data.mediana_tma, metas.tma, "baixo"); // Quanto menor, melhor
+      atualizarIconeTmaTms("icone_tma", data.mediana_tma, metas.tma, "baixo"); 
       atualizarIconeTmaTms("icone_tms", data.mediana_tms, metas.tms, "baixo");
     } else {
       console.error("Erro ao carregar TMA/TMS:", data.message);
@@ -1145,11 +1075,8 @@ function atualizarIconeTmaTms(idIcone, valorTexto, metaTexto, sentido = "baixo")
   }
 }
 
-// Script que traz os chamados de FCR com lógica de ícone
 let chamadosFcrCodigos = [];
-
 document.addEventListener("DOMContentLoaded", function () {
-  // Botões de filtro por período
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
@@ -1159,8 +1086,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // Carrega dados iniciais
-  atualizarFCR(1); // padrão 30 dias
+  atualizarFCR(1); 
 });
 
 async function atualizarFCR(dias, nomeOperador) {
@@ -1236,8 +1162,6 @@ function mostrarChamadosOperador(titulo, codigos) {
   modal.show();
 }
 
-
-//Script que retorna a relação de CES-->
 document.addEventListener("DOMContentLoaded", function () {
     const botoesFiltro = document.querySelectorAll(".filtro-btn");
     const campoNota = document.getElementById("ces-nota");
@@ -1259,22 +1183,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 campoNota.textContent = data.nota;
                 campoDescricao.textContent = data.descricao;
 
-                // Limpa classes de cor anteriores
                 campoDescricao.classList.remove("text-primary", "text-warning", "text-danger");
 
-                // Adiciona a classe conforme a descrição
                 switch (data.descricao) {
                     case 'Baixo esforço':
-                        campoDescricao.classList.add('text-primary'); // azul
+                        campoDescricao.classList.add('text-primary'); 
                         break;
                     case 'Esforço moderado':
-                        campoDescricao.classList.add('text-warning'); // amarelo
+                        campoDescricao.classList.add('text-warning'); 
                         break;
                     case 'Alto esforço':
-                        campoDescricao.classList.add('text-danger'); // vermelho
+                        campoDescricao.classList.add('text-danger'); 
                         break;
                     default:
-                        // sem estilo extra
                         break;
                 }
 
@@ -1306,20 +1227,13 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-//Script que retorna a relação de NPS-->
   document.addEventListener("DOMContentLoaded", function () {
-  // Carrega o card NPS com valor padrão 1 dia
   atualizarNps(1);
 
-  // Seleciona todos os botões de filtro
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
-      // Remove classe active de todos os botões
       document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-      // Adiciona classe active no botão clicado
       this.classList.add('active');
-
-      // Pega número de dias do atributo data-dias
       const dias = parseInt(this.getAttribute('data-dias'), 10);
       atualizarNps(dias);
     });
@@ -1343,12 +1257,10 @@ function atualizarNps(dias) {
     }
 
     if (data.status && data.status !== "Sem dados suficientes") {
-      // Atualiza texto
       npsNullEl.textContent = data.status;
       npsRetornoEl.textContent = data.nps + "%";
 
-      // Remove classes antigas e adiciona nova classe conforme status
-      npsNullEl.className = 'value';       // reseta classes
+      npsNullEl.className = 'value';       
       npsRetornoEl.className = 'value';
 
       switch (data.status) {
@@ -1369,7 +1281,6 @@ function atualizarNps(dias) {
           
           break;
         default:
-          // Sem estilo extra
           break;
       }
 
@@ -1392,7 +1303,6 @@ function atualizarNps(dias) {
 }
 
 
-// Script que me traz a relação de chamados reabertos-->
 let chamadosReabertosCodigos = [];
 
 async function fetchMetas() {
@@ -1406,16 +1316,14 @@ async function fetchMetas() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Atualiza ao clicar no botão de filtro de dias
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const dias = parseInt(this.getAttribute('data-dias'), 10);
-      const nomeOperador = "{{ nome }}"; // se quiser passar
+      const nomeOperador = "{{ nome }}"; 
       atualizarReabertos(dias, nomeOperador);
     });
   });
 
-  // Carregar dados iniciais
   atualizarReabertos(1, "{{ nome }}");
 });
 
@@ -1449,8 +1357,6 @@ async function atualizarReabertos(dias, nomeOperador) {
       }
 
       percentualSpan.textContent = percentual;
-
-      // Avalia com a meta
       if (metas.reabertos != null && total > 0) {
         const meta = metas.reabertos;
         if (percentualValor <= meta) {
@@ -1485,7 +1391,6 @@ async function atualizarReabertos(dias, nomeOperador) {
 }
 
 
-  // Essa função já serve para qualquer lista de chamados (FCR, Reabertos, etc.)
   function mostrarChamadosOperador(titulo, codigos) {
     const lista = document.getElementById("listaCodigos");
     const tituloModal = document.getElementById("modalCodigosLabel");
@@ -1520,12 +1425,8 @@ async function atualizarReabertos(dias, nomeOperador) {
     modal.show();
   }
 
-// Script que retorna as ligações atendidas-->
 document.addEventListener("DOMContentLoaded", function () {
-  // Chama automaticamente com filtro padrão = 1 ao renderizar
   atualizarLigacoes(1);
-
-  // Atualiza ao clicar nos botões de filtro de dias
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const dias = parseInt(this.getAttribute('data-dias'), 10);
@@ -1555,12 +1456,8 @@ function atualizarLigacoes(dias) {
 
 
 
-// Script que retorna as ligações não atendidas
 document.addEventListener("DOMContentLoaded", function () {
-  // Chama automaticamente com filtro padrão = hoje ao renderizar
   atualizarLigacoesPerdidas(1);
-
-  // Atualiza ao clicar nos botões de filtro de dias
   document.querySelectorAll('.filtro-btn').forEach(btn => {
     btn.addEventListener('click', function () {
       const dias = this.getAttribute('data-dias'); 
@@ -1569,7 +1466,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-// Script que traz as ligações perdidas
 function atualizarLigacoesPerdidas(filtro) {
   fetch('/insights/ligacoesPerdidas', {
     method: 'POST',
@@ -1590,20 +1486,17 @@ function atualizarLigacoesPerdidas(filtro) {
 }
 
 
-// Script que retorna as ligações efetuadas
 document.addEventListener("DOMContentLoaded", function () {
   const botoesPeriodo = document.querySelectorAll(".filtro-btn");
 
-  // Chamada inicial: somente hoje
   carregarChamadasEfetuadas(1);
 
-  // Clique nos botões de período
   botoesPeriodo.forEach(button => {
     button.addEventListener("click", function () {
       botoesPeriodo.forEach(btn => btn.classList.remove("active"));
       this.classList.add("active");
 
-      const dias = this.getAttribute("data-dias"); // pode ser "7", "15" etc.
+      const dias = this.getAttribute("data-dias"); 
       carregarChamadasEfetuadas(dias);
     });
   });
@@ -1630,13 +1523,9 @@ async function carregarChamadasEfetuadas(filtro) {
   }
 }
 
-//Bloco que traz a relação de chamadas transferidas-->
   document.addEventListener("DOMContentLoaded", function () {
-
-    // Chamada inicial para 7 dias (pode mudar para 1)
     atualizarChamadasTransferidas(1);
 
-    // Atualiza ao clicar no botão de filtro de dias
     document.querySelectorAll('.filtro-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
@@ -1671,13 +1560,9 @@ async function carregarChamadasEfetuadas(filtro) {
     });
   }
 
-//Bloco que traz a relação de tempo maximo e minimo-->
   document.addEventListener("DOMContentLoaded", function () {
-
-    // Chamada inicial para 1 dia
     atualizarTminTmax(1);
 
-    // Atualiza ao clicar no botão de filtro de dias
     document.querySelectorAll('.filtro-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
