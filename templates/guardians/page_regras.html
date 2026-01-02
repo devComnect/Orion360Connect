@@ -1,16 +1,10 @@
 {% extends "base_template.html" %}
 
-<<<<<<< HEAD
-{% block title %}Manual do Guardião{% endblock %}
-=======
 {% block title %}Protocolos do Guardião | Manual{% endblock %}
->>>>>>> origin/guardians
 
 {% block styles %}
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/program.css') }}">
-<<<<<<< HEAD
-=======
     
     <style>
         /* Estilos Específicos do Manual para Melhor Leitura */
@@ -85,18 +79,10 @@
             border: 1px solid #555;
         }
     </style>
->>>>>>> origin/guardians
 {% endblock %}
 
 {% block content %}
 
-<<<<<<< HEAD
-<div class="rules-hero">
-    <div class="container">
-        <h1 class="rules-title"><i class="bi bi-book-half"></i> MANUAL DO GUARDIÃO</h1>
-        <p class="rules-subtitle">
-            Diretrizes operacionais, mecânicas de gamificação e sistema de recompensas do Protocolo de Segurança da Comnect.
-=======
 <div class="rules-hero mb-5">
     <div class="container text-center py-5">
         <h1 class="rules-title display-4 font-tech text-white" style="text-shadow: 0 0 15px var(--neon-blue);">
@@ -104,28 +90,12 @@
         </h1>
         <p class="lead text-muted font-tech">
             // DOCUMENTAÇÃO OFICIAL v3.0 // ACESSO NIVEL 1 //
->>>>>>> origin/guardians
         </p>
     </div>
 </div>
 
 <div class="container">
     
-<<<<<<< HEAD
-    <div class="rules-card">
-        <h2 class="section-title"><i class="bi bi-terminal-fill text-white me-2"></i> OBJETIVO DO PROTOCOLO</h2>
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <p>
-                    Bem-vindo ao programa <strong>Guardiões da Comnect</strong>. Este sistema foi desenhado para transformar o aprendizado de cibersegurança em uma experiência contínua e recompensadora. 
-                </p>
-                <p>
-                    Seu objetivo é acumular <strong>XP (Experiência)</strong> para subir de nível, desbloquear privilégios e liderar o ranking da sua equipe. Ao fazer isso, você ajuda a proteger nossa empresa contra ameaças reais.
-                </p>
-            </div>
-            <div class="col-md-4 text-center">
-                <i class="bi bi-shield-lock-fill" style="font-size: 5rem; color: var(--neon-blue);"></i>
-=======
     <div class="manual-section">
         <h2 class="manual-title"><i class="bi bi-bullseye text-neon-blue"></i> DIRETRIZ PRIMÁRIA</h2>
         <p class="text-light">
@@ -159,209 +129,11 @@
                         <span class="small text-muted">Proteja a empresa contra ameaças reais.</span>
                     </div>
                 </div>
->>>>>>> origin/guardians
             </div>
         </div>
     </div>
 
     <div class="row">
-<<<<<<< HEAD
-        <div class="col-lg-6">
-            
-            <div class="rules-card">
-                <i class="bi bi-signpost-split-fill card-header-icon icon-path"></i>
-                <h3 class="section-title border-0 pb-0 mb-3">CAMINHOS DE ESPECIALIZAÇÃO</h3>
-                <p>Ao iniciar, você deve escolher uma classe ("Spec"). Cada uma oferece vantagens únicas (Perks):</p>
-                
-                <ul class="tech-list">
-                    <li>
-                        <i class="bi bi-bug-fill text-danger"></i>
-                        <div>
-                            <strong>RED TEAM (Hacker)</strong>
-                            <small class="d-block text-muted">Especialista em ofensiva. Ganha mais XP em minigames de quebra de código (Termo, Password).</small>
-                        </div>
-                    </li>
-                    <li>
-                        <i class="bi bi-shield-shaded text-info"></i>
-                        <div>
-                            <strong>BLUE TEAM (Defensor)</strong>
-                            <small class="d-block text-muted">Especialista em defesa. Ganha mais XP em Quizzes e tem bônus na Patrulha Diária.</small>
-                        </div>
-                    </li>
-                    <li>
-                        <i class="bi bi-eyeglasses text-secondary"></i>
-                        <div>
-                            <strong>GRAY TEAM (Gestor)</strong>
-                            <small class="d-block text-muted">Estrategista. Ganha bônus passivo por consistência (Streak) e Anagramas.</small>
-                        </div>
-                    </li>
-                </ul>
-                <div class="text-end mt-3">
-                    <a href="{{ url_for('guardians_bp.choose_specialization') }}" class="btn btn-sm btn-outline-info">Alterar Caminho</a>
-                </div>
-            </div>
-
-            <div class="rules-card">
-                <i class="bi bi-cart4 card-header-icon icon-loot"></i>
-                <h3 class="section-title border-0 pb-0 mb-3">ECONOMIA: LOJA & ITENS</h3>
-                <p>Além de XP, você ganha <strong>G-Coins</strong> ao completar Missões e subir de nível. Use-as na loja para comprar:</p>
-                <ul class="tech-list">
-                    <li>
-                        <i class="bi bi-box-seam text-warning"></i>
-                        <div>
-                            <strong>Buffs Temporários:</strong> Itens que aumentam seus ganhos de XP por um tempo limitado (ex: +20% XP em Quizzes por 3 dias).
-                        </div>
-                    </li>
-                    <li>
-                        <i class="bi bi-arrow-counterclockwise text-success"></i>
-                        <div>
-                            <strong>Tokens de Retake:</strong> Permitem refazer um Quiz ou Minigame onde você falhou ou teve nota baixa.
-                        </div>
-                    </li>
-                    <li>
-                        <i class="bi bi-palette text-danger"></i>
-                        <div>
-                            <strong>Cosméticos:</strong> Cores exclusivas para seu nome no Ranking e avatares especiais.
-                        </div>
-                    </li>
-                </ul>
-            </div>
-
-        </div>
-
-        <div class="col-lg-6">
-            
-            <div class="rules-card">
-                <i class="bi bi-joystick card-header-icon icon-game"></i>
-                <h3 class="section-title border-0 pb-0 mb-3">ATIVIDADES DO SISTEMA</h3>
-                <p>Ganhe XP participando das simulações diárias:</p>
-                
-                <div class="accordion accordion-flush bg-transparent" id="gamesAccordion">
-                    <div class="accordion-item bg-transparent border-secondary">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-transparent text-info" type="button" data-bs-toggle="collapse" data-bs-target="#flush-quiz">
-                                <i class="bi bi-question-circle-fill me-2"></i> QUIZZES
-                            </button>
-                        </h2>
-                        <div id="flush-quiz" class="accordion-collapse collapse" data-bs-parent="#gamesAccordion">
-                            <div class="accordion-body text-muted">
-                                Testes de conhecimento múltipla escolha. <br>
-                                <strong>Bônus:</strong> Velocidade (responder rápido) e Perfeição (acertar todas).
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item bg-transparent border-secondary">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-transparent text-danger" type="button" data-bs-toggle="collapse" data-bs-target="#flush-termo">
-                                <i class="bi bi-grid-3x3 me-2"></i> TERMO (CODEBREAKER)
-                            </button>
-                        </h2>
-                        <div id="flush-termo" class="accordion-collapse collapse" data-bs-parent="#gamesAccordion">
-                            <div class="accordion-body text-muted">
-                                Adivinhe a palavra secreta em 6 tentativas. Letras verdes estão certas, amarelas existem na palavra.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item bg-transparent border-secondary">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed bg-transparent text-success" type="button" data-bs-toggle="collapse" data-bs-target="#flush-patrol">
-                                <i class="bi bi-shield-check me-2"></i> PATRULHA DIÁRIA
-                            </button>
-                        </h2>
-                        <div id="flush-patrol" class="accordion-collapse collapse" data-bs-parent="#gamesAccordion">
-                            <div class="accordion-body text-muted">
-                                Check-in diário rápido. Mantém sua ofensiva viva e dá XP grátis. Requer resolver um mini-puzzle numérico.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="rules-card">
-                <i class="bi bi-list-check card-header-icon icon-xp"></i>
-                <h3 class="section-title border-0 pb-0 mb-3">MISSÕES & OFENSIVA</h3>
-                
-                <div class="mb-3">
-                    <h5 class="text-white"><i class="bi bi-fire text-danger"></i> OFENSIVA (STREAK)</h5>
-                    <p class="small text-muted">
-                        Acesse o portal diariamente. Cada dia consecutivo aumenta seu <strong>Multiplicador Global de XP</strong> em +1% (até o limite de 30%). Se faltar 2 dias úteis, o streak reseta!
-                    </p>
-                </div>
-                
-                <div>
-                    <h5 class="text-white"><i class="bi bi-clipboard-check text-warning"></i> PACOTES DE MISSÃO</h5>
-                    <p class="small text-muted">
-                        Você recebe um pacote com 3 missões (ex: "Jogue 2 quizzes"). Complete todas para desbloquear o baú de recompensa em G-Coins. Assim que resgatar, um novo pacote é gerado.
-                    </p>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <div class="rules-card">
-        <h2 class="section-title">PROGRESSÃO DE NÍVEL</h2>
-        <p>Subir de nível desbloqueia novos avatares e aumenta seu prestígio. Os requisitos de XP são progressivos.</p>
-        
-        <div class="table-responsive">
-            <table class="level-table">
-                <thead>
-                    <tr>
-                        <th>Nível</th>
-                        <th>Título</th>
-                        <th>XP Necessário</th>
-                        <th>Recompensa</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for nivel in niveis %}
-                    <tr>
-                        <td><span class="level-badge-mini">{{ nivel.level_number }}</span></td>
-                        <td class="text-white fw-bold">{{ nivel.nome }}</td>
-                        <td class="text-muted">{{ nivel.score_minimo }}</td>
-                        <td class="text-info"><i class="bi bi-gift-fill"></i> Avatar & Perks</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="rules-card">
-        <h2 class="section-title">INSÍGNIAS & MEDALHAS</h2>
-        <p>As insígnias são provas definitivas de sua habilidade. Algumas dão bônus permanentes de XP quando equipadas no perfil.</p>
-
-        {% for category_name, insignias in categorized_achievements.items() %}
-            {% if insignias %}
-            <div class="mt-4">
-                <h5 class="text-uppercase text-muted border-bottom border-dark pb-2 mb-3" style="font-size: 0.9rem;">{{ category_name }}</h5>
-                <div class="achievement-grid">
-                    {% for ins in insignias %}
-                    <div class="ach-item" data-bs-toggle="tooltip" title="{{ ins.descricao }}">
-                        <img src="{{ url_for('static', filename=ins.caminho_imagem) }}" class="ach-img" alt="{{ ins.nome }}">
-                        <div class="ach-name">{{ ins.nome }}</div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        {% endfor %}
-    </div>
-
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Ativa os tooltips do Bootstrap
-    document.addEventListener('DOMContentLoaded', function () {
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-    });
-</script>
-=======
         
         <div class="col-lg-6">
             <div class="manual-section green-border h-100">
@@ -566,5 +338,4 @@
     </div>
 
 </div>
->>>>>>> origin/guardians
 {% endblock %}

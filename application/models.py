@@ -469,8 +469,134 @@ class DeviceAccess(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
 
-## Comnect Guardians ##    
+## COMNECT GUARDIANS ##    
+
+class Guardians(db.Model):
+    __tablename__ = 'guardians'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    # --- NOVOS CONTADORES DE ESTATÍSTICAS (Adicionado para Conquistas) ---
+    stat_patrol_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    stat_minigame_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    stat_shop_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    stat_quiz_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+
+    #Sistema de moedas
+    guardian_coins = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+
+    ##Sistema de retake
+    retake_tokens = db.Column(db.Integer, nullable=False, default=1, server_default='1')
+    minigame_retake_tokens = db.Column(db.Integer, nullable=False, default=1, server_default='1')
+
+    ##Personalizar perfil
+    nickname = db.Column(db.String(100), nullable=True)
+    is_anonymous = db.Column(db.Boolean, default=False, nullable=False) # Para anonimato no perfil
+    avatar_seed = db.Column(db.String(100), default='GuardianDefault')
     
+    
+    #Adicao de cor no nome
+    name_color = db.Column(db.String(7), nullable=True) # Para armazenar um código HEX, ex: #FFD700
+
+    # Armazena o melhor troféu permanente: 1=Ouro, 2=Prata, 3=Bronze
+    trophy_tier = db.Column(db.Integer, nullable=True)
+
+    
+    # Chave estrangeira para classe user
+    user_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), unique=True, nullable=False)
+
+    # Informações pessoais
+    nome = db.Column(db.String(100)) 
+    email = db.Column(db.String(255), unique=True)
+    grupo = db.Column(db.String(100))  # Equivale a department_name
+    
+    # Permissao de admin
+    is_admin = db.Column(db.Boolean, default=False)
+
+    # Pontuação , ranking e anonimato
+    score_atual = db.Column(db.Integer, default=0)
+    opt_in_real_name_ranking = db.Column(db.Boolean, default=False)
+    is_anonymous = db.Column(db.Boolean, nullable=False, default=False)
+
+
+    # Dados do departamento (embutidos)
+    departamento_id = db.Column(db.Integer)  # Departments.department_id
+    departamento_nome = db.Column(db.String(100))  # Departments.department_name
+    departamento_score = db.Column(db.Integer, default=0)
+
+    # Últimas atividades
+    ultima_atividade = db.Column(db.DateTime)
+    last_spec_change_at = db.Column(db.DateTime, nullable=True)
+    tutorials_seen = db.Column(db.JSON, default=dict)
+    
+    #Add patrulha diaria
+    last_patrol_date = db.Column(db.Date, nullable=True)
+    
+    # Coluna para contar a sequência de quizzes com nota máxima.
+    perfect_quiz_streak = db.Column(db.Integer, nullable=False, default=0)
+    perfect_quiz_cumulative_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    perfect_minigame_cumulative_count = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    perfect_minigame_streak = db.Column(db.Integer, default=0)
+
+
+    # Controle de criação/atualização
+    criado_em = db.Column(db.DateTime, default=db.func.current_timestamp())
+    atualizado_em = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
+
+    #Relacionamento com a tabela de conquistas em destaque
+    featured_associations = db.relationship(
+        'GuardianFeatured',
+        back_populates='guardian',
+        cascade='all, delete-orphan' 
+    )
+    
+    # Adicione a chave estrangeira para o nível de segurança
+    nivel_id = db.Column(db.Integer, db.ForeignKey('niveis_seguranca.id'))
+    nivel = db.relationship("NivelSeguranca")
+
+    # Chave estrangeira para a nova tabela Specialization
+    specialization_id = db.Column(db.Integer, db.ForeignKey('specialization.id'), nullable=True)
+    specialization = db.relationship('Specialization')
+    
+    # Relacionamentos com as novas classes
+    historico_acoes = db.relationship("HistoricoAcao", back_populates="guardian", lazy='dynamic')
+    insignias_conquistadas = db.relationship("GuardianInsignia", back_populates="guardian", lazy='dynamic')
+    current_streak = db.Column(db.Integer, default=0)
+    last_streak_date = db.Column(db.Date, nullable=True)
+    quiz_attempts = db.relationship("QuizAttempt", back_populates="guardian", cascade="all, delete-orphan", lazy='dynamic')
+    weekly_quest_sets = db.relationship('WeeklyQuestSet', back_populates='guardian', cascade="all, delete-orphan", lazy='dynamic')
+
+    @property
+    def avatar_path(self):
+        """
+        Retorna o caminho do avatar de forma segura, com múltiplos fallbacks.
+        Garante que NUNCA retorne um valor nulo.
+        """
+        if self.nivel and self.nivel.avatar_url:
+            return self.nivel.avatar_url
+        
+        if self.specialization:
+            primeiro_nivel = NivelSeguranca.query.filter_by(
+                specialization_id=self.specialization_id,
+                level_number=1
+            ).first()
+            if primeiro_nivel and primeiro_nivel.avatar_url:
+                return primeiro_nivel.avatar_url
+                
+        return 'img/avatares/default.png'
+    
+
+class GuardianFeatured(db.Model):
+    __tablename__ = 'guardian_featured'
+    
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), primary_key=True)
+    insignia_id = db.Column(db.Integer, db.ForeignKey('insignias.id'), primary_key=True)
+    slot_index = db.Column(db.Integer, default=0) 
+    equipado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
+    insignia = db.relationship("Insignia")
+    guardian = db.relationship("Guardians")
+
 class NivelSeguranca(db.Model):
     __tablename__ = 'niveis_seguranca'
     id = db.Column(db.Integer, primary_key=True)
@@ -590,3 +716,357 @@ class UserAnswer(db.Model):
     attempt = db.relationship('QuizAttempt', back_populates='answers')
     question = db.relationship('Question')
     selected_option = db.relationship('AnswerOption')
+
+class Specialization(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False) 
+    spec_code = db.Column(db.String(50), unique=True, nullable=False) 
+    description = db.Column(db.String(255), nullable=False)
+    color_hex = db.Column(db.String(7), nullable=True, default='#0dcaf0') # Padrão azul 'info'
+    levels = db.relationship('NivelSeguranca', back_populates='specialization', cascade="all, delete-orphan")
+    perks = db.relationship('SpecializationPerkLevel', back_populates='specialization', cascade="all, delete-orphan")
+
+class Perk(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    perk_code = db.Column(db.String(50), unique=True, nullable=False) 
+    name = db.Column(db.String(100), nullable=False) 
+    description_template = db.Column(db.String(255)) 
+
+class SpecializationPerkLevel(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    specialization_id = db.Column(db.Integer, db.ForeignKey('specialization.id'), nullable=False)
+    perk_id = db.Column(db.Integer, db.ForeignKey('perk.id'), nullable=False)
+    level = db.Column(db.Integer, nullable=False, default=1)
+    bonus_value = db.Column(db.Float, nullable=False) 
+    
+    specialization = db.relationship('Specialization', back_populates='perks')
+    perk = db.relationship('Perk')
+    __table_args__ = (UniqueConstraint('specialization_id', 'perk_id', 'level', name='_spec_perk_level_uc'),)
+
+class GlobalGameSettings(db.Model):
+    __tablename__ = 'global_game_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    setting_key = db.Column(db.String(100), unique=True, nullable=False)
+    setting_value = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.String(255))
+    category = db.Column(db.String(50))
+
+    def __repr__(self):
+        return f'<Setting {self.setting_key}={self.setting_value}>'
+    
+class TermoGame(db.Model):
+    __tablename__ = 'termo_games'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    correct_word = db.Column(db.String(50), nullable=False) # A palavra a ser adivinhada
+    max_attempts = db.Column(db.Integer, nullable=False, default=6)
+    time_limit_seconds = db.Column(db.Integer, nullable=True) # Opcional
+    points_reward = db.Column(db.Integer, nullable=False, default=10)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    activation_date = db.Column(db.Date, nullable=True) 
+    duration_days = db.Column(db.Integer, nullable=False, default=1)
+    hint = db.Column(db.String(255), nullable=True)
+
+    attempts = db.relationship('TermoAttempt', back_populates='game', cascade="all, delete-orphan")
+
+class TermoAttempt(db.Model):
+    __tablename__ = 'termo_attempts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), nullable=False)
+    game_id = db.Column(db.Integer, db.ForeignKey('termo_games.id'), nullable=False)
+    
+    guesses = db.Column(db.JSON) 
+    is_won = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    started_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    score = db.Column(db.Integer, default=0, nullable=False)
+    base_points = db.Column(db.Integer, default=0, nullable=False)
+    final_score = db.Column(db.Integer, nullable=False, default=0)
+    time_bonus = db.Column(db.Integer, default=0, nullable=False)
+    perfection_bonus = db.Column(db.Integer, default=0, nullable=False)
+    conquista_bonus = db.Column(db.Integer, default=0)
+    streak_total_bonus = db.Column(db.Integer, default=0, nullable=False)
+    streak_base_bonus = db.Column(db.Integer, default=0, nullable=False)
+    streak_spec_bonus = db.Column(db.Integer, default=0, nullable=False)
+    shop_bonus = db.Column(db.Integer, default=0)
+    
+
+    guardian = db.relationship('Guardians')
+    game = db.relationship('TermoGame', back_populates='attempts')
+
+class AnagramGame(db.Model):
+    __tablename__ = 'anagram_games'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.String(255))
+    points_per_word = db.Column(db.Integer, nullable=False, default=5)
+    is_active = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    activation_date = db.Column(db.Date, nullable=True) 
+    duration_days = db.Column(db.Integer, nullable=False, default=7)
+    time_limit_seconds = db.Column(db.Integer, nullable=True)
+
+    words = db.relationship('AnagramWord', back_populates='game', cascade="all, delete-orphan")
+    attempts = db.relationship('AnagramAttempt', back_populates='game', cascade="all, delete-orphan")
+
+class AnagramWord(db.Model):
+    __tablename__ = 'anagram_words'
+    id = db.Column(db.Integer, primary_key=True)
+    correct_word = db.Column(db.String(100), nullable=False)
+    game_id = db.Column(db.Integer, db.ForeignKey('anagram_games.id'), nullable=False)
+    game = db.relationship('AnagramGame', back_populates='words')
+
+class AnagramAttempt(db.Model):
+    __tablename__ = 'anagram_attempts'
+    id = db.Column(db.Integer, primary_key=True)
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), nullable=False)
+    game_id = db.Column(db.Integer, db.ForeignKey('anagram_games.id'), nullable=False)
+    score = db.Column(db.Integer, nullable=False, default=0)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    started_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    correct_answers = db.Column(db.Integer, nullable=False, default=0)
+    final_score = db.Column(db.Integer, nullable=False, default=0)
+    time_bonus = db.Column(db.Integer, default=0, nullable=False)
+    perfection_bonus = db.Column(db.Integer, default=0, nullable=False)
+    conquista_bonus = db.Column(db.Integer, default=0)
+    streak_total_bonus = db.Column(db.Integer, default=0, nullable=False)
+    streak_base_bonus = db.Column(db.Integer, default=0, nullable=False)
+    streak_spec_bonus = db.Column(db.Integer, default=0, nullable=False)
+    shop_bonus = db.Column(db.Integer, default=0)
+
+    guardian = db.relationship('Guardians')
+    game = db.relationship('AnagramGame', back_populates='attempts')
+
+class FeedbackReport(db.Model):
+    __tablename__ = 'feedback_reports'
+    id = db.Column(db.Integer, primary_key=True)
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), nullable=False)
+    report_type = db.Column(db.Enum('BUG', 'SUGGESTION', name='feedback_type_enum'), nullable=False) # BUG ou SUGGESTION
+    description = db.Column(db.Text, nullable=False)
+    attachment_path = db.Column(db.String(255), nullable=True) # Caminho relativo do arquivo salvo
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_resolved = db.Column(db.Boolean, default=False) # Para controle do admin
+
+    guardian = db.relationship('Guardians')
+
+    def __repr__(self):
+        return f'<FeedbackReport {self.id} by Guardian {self.guardian_id} - {self.report_type}>'
+    
+class GameSeason(db.Model):
+    __tablename__ = 'game_seasons'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    start_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    end_date = db.Column(db.DateTime, nullable=False)
+    is_active = db.Column(db.Boolean, default=False, nullable=False) # Indica a temporada atual
+    rewards_description_html = db.Column(db.Text, nullable=True)
+
+    def __repr__(self):
+        return f'<GameSeason {self.name} (Ativa: {self.is_active})>'
+    
+class PasswordGameConfig(db.Model):
+    __tablename__ = 'password_game_config'
+    
+    id = db.Column(db.Integer, primary_key=True) # Será sempre 1
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Configurações de Dificuldade
+    time_limit_seconds = db.Column(db.Integer, default=120) # Ex: 2 minutos
+    base_reward_points = db.Column(db.Integer, default=300) # Pontos se vencer
+    
+    # Quantas regras sortear de cada tipo
+    rules_count_easy = db.Column(db.Integer, default=1)
+    rules_count_medium = db.Column(db.Integer, default=2)
+    rules_count_hard = db.Column(db.Integer, default=1)
+    rules_count_insane = db.Column(db.Integer, default=1)
+    active_days = db.Column(db.String(20), default="0,1,2,3,4,5,6")
+
+    def __repr__(self):
+        return f'<PasswordConfig {self.time_limit_seconds}s / {self.base_reward_points}pts>'
+
+class PasswordAttempt(db.Model):
+    __tablename__ = 'password_attempts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), nullable=False)
+    
+    # Armazena os IDs das regras que foram sorteadas (JSON)
+    rules_sequence = db.Column(db.JSON, nullable=False) 
+    
+    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    
+    is_won = db.Column(db.Boolean, default=False)
+    
+    # Pontuação e Bônus
+    base_points = db.Column(db.Integer, default=0) # O valor do Config no momento do jogo
+    score = db.Column(db.Integer, default=0)       # Base + Spec
+    final_score = db.Column(db.Integer, default=0) # Tudo somado
+    
+    # Detalhamento (para o histórico e resultado unificado)
+    time_bonus = db.Column(db.Integer, default=0)
+    perfection_bonus = db.Column(db.Integer, default=0, nullable=False)
+    spec_bonus = db.Column(db.Integer, default=0, nullable=False)
+    conquista_bonus = db.Column(db.Integer, default=0)
+    shop_bonus = db.Column(db.Integer, default=0)
+    streak_total_bonus = db.Column(db.Integer, default=0)
+    
+    guardian = db.relationship('Guardians', backref='password_attempts')
+
+class MissionCodeEnum(enum.Enum):
+    PATROL_COUNT = 'Fazer Patrulha'
+    QUIZ_COUNT = 'Completar Quizzes'
+    QUIZ_SCORE_SUM = 'Acumular Pontos em Quizzes'
+    QUIZ_PERFECT_COUNT = 'Quizzes Perfeitos'
+    MINIGAME_COUNT = 'Completar Minigames (Código/Decriptar/Segredo)'
+    STREAK_DAYS = 'Atingir Dias de Streak'
+    ANY_CHALLENGE_COUNT = 'Completar Qualquer Desafio'
+    ANY_PERFECT_COUNT = 'Qualquer Desafio Perfeito'
+    QUIZ_SPEEDRUN = 'Quiz Rápido (< 60s)'
+    MINIGAME_SPEEDRUN = 'Minigame Rápido (< 45s)'
+    SPEND_GC_UPGRADES = 'Gastar GC em Upgrades'
+    SPEND_GC_REROLL = 'Gastar GC em Reroll'
+
+class MissionDifficultyEnum(enum.Enum):
+    EASY = 'Fácil'
+    MEDIUM = 'Médio'
+    HARD = 'Difícil'
+
+class MissionTypeEnum(enum.Enum):
+    QUIZ = 'Quiz'
+    GAME = 'Minigame'
+    ACTION = 'Ação/Patrulha'
+    PASSIVE = 'Passiva/Streak'
+    ECONOMY = 'Economia/Loja'
+
+class MissionTemplate(db.Model):
+    __tablename__ = 'mission_templates'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description_template = db.Column(db.String(255), nullable=False) # Ex: "Complete {target} quizzes."
+    
+    mission_code = db.Column(db.Enum(MissionCodeEnum), nullable=False, index=True)
+    difficulty = db.Column(db.Enum(MissionDifficultyEnum), nullable=False, default=MissionDifficultyEnum.EASY)
+    mission_type = db.Column(db.Enum(MissionTypeEnum), nullable=False, default=MissionTypeEnum.ACTION)
+    xp_reward = db.Column(db.Integer, default=100)
+    
+    min_target = db.Column(db.Integer, nullable=False, default=1)
+    max_target = db.Column(db.Integer, nullable=False, default=5)
+    
+    is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    
+    active_missions = db.relationship('ActiveMission', back_populates='template')
+
+    def __repr__(self):
+        return f'<Template {self.title} [{self.difficulty.name}]>'
+
+class WeeklyQuestSet(db.Model):
+    __tablename__ = 'weekly_quest_sets'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), nullable=False, index=True)
+    
+    week_number = db.Column(db.Integer, nullable=False, index=True)
+    year = db.Column(db.Integer, nullable=False, index=True)
+    
+    bonus_reward_placeholder = db.Column(db.Integer, nullable=False, default=500)
+    coin_reward = db.Column(db.Integer, nullable=False, default=0, server_default='0')
+    
+    is_completed = db.Column(db.Boolean, default=False, nullable=False) 
+    is_claimed = db.Column(db.Boolean, default=False, nullable=False)   
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    guardian = db.relationship('Guardians', back_populates='weekly_quest_sets')
+    missions = db.relationship('ActiveMission', back_populates='quest_set', cascade="all, delete-orphan", lazy='dynamic')
+    
+    __table_args__ = (db.UniqueConstraint('guardian_id', 'week_number', 'year', name='_guardian_week_year_uc'),)
+
+    def __repr__(self):
+        return f'<WeeklyQuestSet Guardião {self.guardian_id} (Semana {self.week_number}/{self.year})>'
+
+class ActiveMission(db.Model):
+    __tablename__ = 'active_missions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    quest_set_id = db.Column(db.Integer, db.ForeignKey('weekly_quest_sets.id'), nullable=False, index=True)
+    
+    mission_template_id = db.Column(db.Integer, db.ForeignKey('mission_templates.id'), nullable=True) 
+    
+    title_generated = db.Column(db.String(255), nullable=False) 
+    mission_code = db.Column(db.Enum(MissionCodeEnum), nullable=False, index=True) 
+    
+    target_value = db.Column(db.Integer, nullable=False)    
+    current_progress = db.Column(db.Integer, nullable=False, default=0)
+    is_completed = db.Column(db.Boolean, default=False, nullable=False)
+    
+    quest_set = db.relationship('WeeklyQuestSet', back_populates='missions')
+    template = db.relationship('MissionTemplate', back_populates='active_missions')
+
+    def __repr__(self):
+        return f'<ActiveMission {self.id}: {self.current_progress}/{self.target_value}>'
+    
+class ShopItem(db.Model):
+    __tablename__ = 'shop_items'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False) # Ex: "Pacote de Tokens"
+    description = db.Column(db.String(255), nullable=True) # Ex: "Recupera 3 tokens de Quiz"
+    category = db.Column(db.String(50), nullable=False, default='Geral') # Ex: "Consumíveis", "Bônus", "Cosméticos"
+    cost = db.Column(db.Integer, nullable=False) # Preço em G-Coins
+    image_path = db.Column(db.String(255), nullable=True) # Caminho da imagem ou classe de ícone (bi-star)
+    bonus_type = db.Column(db.String(50), nullable=True) 
+    bonus_value = db.Column(db.Float, nullable=True)
+    duration_days = db.Column(db.Integer, nullable=True)
+    purchase_limit = db.Column(db.Integer, nullable=True) # Quantas vezes pode comprar? (None = Infinito)
+    is_active = db.Column(db.Boolean, default=True) # Para o admin esconder itens
+    rarity = db.Column(db.String(20), default='COMMON', nullable=False)
+
+    purchases = db.relationship('GuardianPurchase', back_populates='item')
+
+    def __repr__(self):
+        return f'<ShopItem {self.name} ({self.cost} GC)>'
+
+class GuardianPurchase(db.Model):
+    __tablename__ = 'guardian_purchases'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), nullable=False, index=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('shop_items.id'), nullable=False, index=True)
+    
+    purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
+    cost_at_purchase = db.Column(db.Integer, nullable=False) # Quanto pagou na época (para histórico)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    
+    guardian = db.relationship('Guardians', backref=db.backref('purchases', lazy='dynamic'))
+    item = db.relationship('ShopItem')
+
+    def __repr__(self):
+        return f'<Purchase {self.guardian_id} bought {self.item_id}>'
+    
+class GuardianShopState(db.Model):
+    __tablename__ = 'guardian_shop_states'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), unique=True, nullable=False)
+    current_items_ids = db.Column(db.JSON, nullable=False) 
+    reroll_count = db.Column(db.Integer, default=0)
+    last_refresh_date = db.Column(db.Date, nullable=False) 
+    
+    guardian = db.relationship('Guardians', backref=db.backref('shop_state', uselist=False))
+
+class AchievementCategory(db.Model):
+    __tablename__ = 'achievement_categories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True) 
+    order = db.Column(db.Integer, default=0, nullable=False)
+    icon = db.Column(db.String(100))
+    desc = db.Column(db.String(100))
+    
+    def __repr__(self):
+        return f"<Category {self.name} (Order: {self.order})>"

@@ -122,11 +122,6 @@
         }
         .preview-img { width: 50px; height: 50px; object-fit: contain;clip-path: circle(48% at center); }
         .preview-text { font-size: 0.9rem; color: var(--neon-green); }
-<<<<<<< HEAD
-    </style>
-{% endblock %}
-
-=======
         .avatar-option {
             width: 80px;
             height: 80px;
@@ -224,7 +219,6 @@
 {% endblock %}
 
 
->>>>>>> origin/guardians
 {% block content %}
 <div class="container mt-5 mb-5">
     <div class="row justify-content-center">
@@ -233,47 +227,15 @@
             <form method="POST" class="edit-card">
                 
                 <div class="mb-5">
-<<<<<<< HEAD
-                    <h3 class="section-title"><i class="bi bi-person-badge"></i> Identidade Digital</h3>
-                    
-                    <div class="mb-4">
-                        <label for="nickname" class="form-label">CODENAME (Apelido)</label>
-=======
                     <h3 class="section-title"><i class="bi bi-person-badge"></i> CODENOME</h3>
                     
                     <div class="mb-4">
                         <label for="nickname" class="form-label">Escolha seu apelido.</label>
->>>>>>> origin/guardians
                         <input type="text" class="cyber-input" id="nickname" name="nickname" 
                                value="{{ guardian.nickname or '' }}" placeholder="Digite seu codinome..." maxlength="20">
                         <div class="form-text text-muted small mt-1">Visível nos rankings e comunicações.</div>
                     </div>
 
-<<<<<<< HEAD
-                <div class="mb-5">
-                    <h3 class="section-title"><i class="bi bi-shield-check"></i> Equipamento Ativo</h3>
-                    
-                    <label class="form-label">INSÍGNIA DESTAQUE</label>
-                    <select name="featured_insignia_id" id="featured_insignia_id" class="cyber-select text-muted">
-                        <option value="" data-bonus="">-- Nenhuma --</option>
-                        {% for gi in minhas_insignias %}
-                            <option value="{{ gi.insignia.id }}" 
-                                    data-icon-url="{{ url_for('static', filename=gi.insignia.caminho_imagem) }}"
-                                    data-bonus="{{ gi.insignia.bonus_value if gi.insignia.bonus_value else '' }}"
-                                    data-type="{{ gi.insignia.bonus_type }}"
-                                    {% if guardian.featured_insignia_id == gi.insignia.id %}selected{% endif %}>
-                                {{ gi.insignia.nome }}
-                            </option>
-                        {% endfor %}
-                    </select>
-
-                    <div id="insignia-preview-container" class="insignia-preview-box" style="display: none;">
-                        <img id="insignia-preview-icon" src="" alt="Icon" class="preview-img">
-                        <div>
-                            <div id="insignia-preview-bonus" class="preview-text"></div>
-                            <small class="text-muted">Bônus Passivo Ativo</small>
-                        </div>
-=======
                     <div class="mb-5">
                         <h3 class="section-title"><i class="bi bi-robot"></i> Conexão</h3>
                         <p class="text-muted small">Selecione a representação visual do seu Guardião.</p>
@@ -345,7 +307,6 @@
                                 Você ainda não possui insígnias para equipar.
                             </div>
                         {% endif %}
->>>>>>> origin/guardians
                     </div>
                 </div>
 
@@ -365,43 +326,6 @@
 
 {% block scripts %}
 <script>
-<<<<<<< HEAD
-    document.addEventListener('DOMContentLoaded', function() {
-        const select = document.getElementById('featured_insignia_id');
-        const previewContainer = document.getElementById('insignia-preview-container');
-        const previewIcon = document.getElementById('insignia-preview-icon');
-        const previewBonus = document.getElementById('insignia-preview-bonus');
-
-        function updatePreview() {
-            const option = select.options[select.selectedIndex];
-            const url = option.dataset.iconUrl;
-            const bonusVal = option.dataset.bonus;
-            const bonusType = option.dataset.type;
-
-            if (url) {
-                previewIcon.src = url;
-                previewContainer.style.display = 'flex';
-                
-                if (bonusVal) {
-                    let desc = `+${bonusVal}% Bônus`;
-                    if(bonusType.includes('QUIZ')) desc += " em Quizzes";
-                    else if(bonusType.includes('CODE')) desc += " em Hacking";
-                    else if(bonusType.includes('PATROL')) desc += " em Patrulha";
-                    else if(bonusType.includes('STREAK')) desc += " em Ofensiva";
-                    
-                    previewBonus.textContent = desc;
-                    previewBonus.style.display = 'block';
-                } else {
-                    previewBonus.style.display = 'none';
-                }
-            } else {
-                previewContainer.style.display = 'none';
-            }
-        }
-
-        select.addEventListener('change', updatePreview);
-        updatePreview(); // Init
-=======
     // =======================================================
     // DEFINIÇÕES GLOBAIS (FORA DO DOMContentLoaded)
     // =======================================================
@@ -492,7 +416,6 @@
                 gridContainer.appendChild(img);
             });
         }
->>>>>>> origin/guardians
     });
 </script>
 {% endblock %}
