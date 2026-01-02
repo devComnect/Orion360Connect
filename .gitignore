@@ -1,11 +1,23 @@
+############################
+# ARQUIVO PRINCIPAL DA APP #
+############################
 app.py
-# Arquivos de Bytecode e otimizados do Python
+
+
+#################################
+# BYTECODE / CACHE DO PYTHON    #
+#################################
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
+.mypy_cache/
+.cache/
 
-# Diretórios de ambiente virtual
-# (Padrões comuns, adicione o seu se for diferente)
+
+############################
+# AMBIENTES VIRTUAIS       #
+############################
 venv/
 .venv/
 env/
@@ -13,42 +25,70 @@ env/
 ENV/
 .ENV/
 
-# Arquivos de dependências e pacotes
-dist/
-build/
-*.egg-info/
-*.egg
-pip-wheel-metadata/
-.pytest_cache/
-celerybeat-schedule
-*.so
 
-# Logs e bancos de dados de desenvolvimento
+############################
+# LOGS E DEBUG             #
+############################
 *.log
-*.log.1
-*.log.2
-*.log.3
-*.log.4
-*.log.5
+*.log.*
+logs/
+log/
+debug.log
+debug_log.txt
+
+
+############################
+# BANCO DE DADOS DEV       #
+############################
+*.sqlite
 *.sqlite3
 *.db
 
-# Arquivos de sistema operacional
-.DS_Store
-Thumbs.db
 
-# Arquivos de configuração de IDEs populares
+############################
+# BUILD / DIST             #
+############################
+build/
+dist/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+*.so
+
+
+############################
+# FLASK / WERKZEUG         #
+############################
+instance/
+.flaskenv
+
+
+############################
+# TESTES / COVERAGE        #
+############################
+.coverage
+htmlcov/
+
+
+############################
+# IDEs / EDITORES          #
+############################
 .idea/
 .vscode/
 *.sublime-project
 *.sublime-workspace
 
-# Arquivos de segredos e variáveis de ambiente
-# NUNCA versione estes arquivos!
+
+############################
+# SISTEMA OPERACIONAL      #
+############################
+.DS_Store
+Thumbs.db
+
+
+########################################
+# SEGREDOS / VARIÁVEIS DE AMBIENTE      #
+########################################
 .env
 *.env.*
 !*.env.example
-
-# Arquivos de cobertura de testes
-.coverage
-htmlcov/
