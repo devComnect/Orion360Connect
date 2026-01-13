@@ -1,0 +1,168 @@
+/* =========================================
+   MANUAL DO GUARDIÃO (REGRAS)
+   ========================================= */
+
+:root {
+    --bg-dark: #0b0c10;
+    --panel-bg: #1f2833;
+    --neon-blue: #0dcaf0;
+    --neon-green: #05d9e8;
+    --neon-purple: #d63384;
+    --text-main: #c5c6c7;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* HERO SECTION */
+.rules-hero {
+    text-align: center;
+    padding: 60px 20px;
+    background: radial-gradient(circle at center, #2c3e50 0%, #0b0c10 70%);
+    border-bottom: 2px solid var(--neon-blue);
+    margin-bottom: 40px;
+}
+
+.rules-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 3rem;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px rgba(13, 202, 240, 0.5);
+}
+
+.rules-subtitle {
+    font-size: 1.2rem;
+    color: var(--neon-blue);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* CARDS DE SEÇÃO */
+.rules-card {
+    background: var(--panel-bg);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 30px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+
+.rules-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    border-color: #45a29e;
+}
+
+.card-header-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: inline-block;
+}
+
+.section-title {
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+}
+
+/* ÍCONES TEMÁTICOS */
+.icon-xp { color: #ffc107; text-shadow: 0 0 10px rgba(255, 193, 7, 0.4); }
+.icon-path { color: var(--neon-blue); text-shadow: 0 0 10px rgba(13, 202, 240, 0.4); }
+.icon-game { color: var(--neon-purple); text-shadow: 0 0 10px rgba(214, 51, 132, 0.4); }
+.icon-loot { color: var(--neon-green); text-shadow: 0 0 10px rgba(5, 217, 232, 0.4); }
+
+/* LISTAS ESTILIZADAS */
+.tech-list {
+    list-style: none;
+    padding: 0;
+}
+
+.tech-list li {
+    background: rgba(0,0,0,0.2);
+    margin-bottom: 10px;
+    padding: 15px;
+    border-left: 3px solid #666;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.tech-list li:hover {
+    background: rgba(255,255,255,0.05);
+    border-left-color: var(--neon-blue);
+}
+
+.tech-list i {
+    font-size: 1.5rem;
+    margin-top: 2px;
+}
+
+/* TABELA DE NÍVEIS */
+.level-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 5px;
+}
+
+.level-table th {
+    text-align: left;
+    padding: 10px;
+    color: var(--neon-blue);
+    font-family: 'Share Tech Mono', monospace;
+    text-transform: uppercase;
+}
+
+.level-table td {
+    background: #15181e;
+    padding: 15px;
+    border: 1px solid #333;
+}
+
+.level-badge-mini {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #000;
+    border: 1px solid #666;
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    margin-right: 10px;
+}
+
+/* INSÍGNIAS GRID */
+.achievement-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.ach-item {
+    text-align: center;
+    background: rgba(0,0,0,0.3);
+    padding: 10px;
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+.ach-item:hover { transform: scale(1.05); background: rgba(255,255,255,0.05); }
+
+.ach-img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    clip-path: circle(48% at center);
+    margin-bottom: 5px;
+}
+
+.ach-name { font-size: 0.7rem; color: #aaa; line-height: 1.2; }

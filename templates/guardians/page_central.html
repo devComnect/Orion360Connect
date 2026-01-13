@@ -1,0 +1,463 @@
+{% extends "base_template.html" %}
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+{% block title %}Central de Operações{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #0dcaf0;  
+            --neon-red: #ff2a6d;  
+            --neon-green: #05d9e8; 
+            --neon-yellow: #fcee0a; 
+            --neon-grey: #ADB5BD;
+            --bg-dark: #0b0c10;
+            --panel-bg: #1f2833;
+            --border-color: #45a29e;
+        }
+
+        body { 
+            background-color: var(--bg-dark); 
+            font-family: 'Segoe UI', sans-serif;
+            background-image: radial-gradient(circle at 50% 50%, #1a1d24 0%, #0b0c10 100%);
+        }
+
+        .font-tech { font-family: 'Share Tech Mono', monospace; }
+
+        /* HEADER HUD STYLE */
+        .hud-header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .hud-header::after {
+            content: 'SYSTEM_READY';
+            position: absolute;
+            bottom: -10px;
+            right: 0;
+            background: var(--bg-dark);
+            padding-left: 10px;
+            color: var(--border-color);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        /* TERMINAL STYLE */
+        .terminal-box {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #333;
+            border-left: 4px solid var(--neon-blue);
+            border-radius: 4px;
+            padding: 20px;
+            font-family: 'Share Tech Mono', monospace;
+            box-shadow: 0 0 20px rgba(13, 202, 240, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .terminal-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+            animation: scanline 3s linear infinite;
+        }
+
+        .cmd-line {
+            display: flex;
+            align-items: center;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+
+        .prompt-user { color: var(--neon-green); margin-right: 8px; }
+        .prompt-path { color: var(--neon-blue); margin-right: 12px; }
+
+        .cmd-input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            width: 100%;
+            outline: none;
+            caret-color: var(--neon-blue);
+            text-transform: uppercase;
+        }
+
+        /* GRID LAYOUT */
+        .operations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        /* CARD DESIGN */
+        .op-card {
+            background: var(--panel-bg);
+            border: 1px solid #333;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+            clip-path: polygon(
+                20px 0, 100% 0, 
+                100% calc(100% - 20px), calc(100% - 20px) 100%, 
+                0 100%, 0 20px
+            );
+        }
+
+        .op-card:hover {
+            transform: translateY(-5px);
+            background: #26303e;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Cores de Borda por Tipo */
+        .op-card.type-blue:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(13, 202, 240, 0.2); }
+        .op-card.type-red:hover { border-color: var(--neon-red); box-shadow: 0 0 15px rgba(255, 42, 109, 0.2); }
+        .op-card.type-green:hover { border-color: var(--neon-green); box-shadow: 0 0 15px rgba(5, 217, 232, 0.2); }
+        .op-card.type-yellow:hover { border-color: var(--neon-yellow); box-shadow: 0 0 15px rgba(252, 238, 10, 0.2); }
+
+        .op-header {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .op-id {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+
+        .op-body {
+            padding: 20px;
+        }
+
+        .op-title {
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .op-desc {
+            color: #8892b0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            height: 42px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .op-meta {
+            display: flex;
+            gap: 15px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            color: #64ffda;
+        }
+        
+        .op-meta span { display: flex; align-items: center; gap: 5px; }
+
+        .op-footer {
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.2);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            text-align: right;
+            color: #8892b0;
+            transition: color 0.3s;
+        }
+
+        .op-card:hover .op-footer {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* --- FAB MANUAL (BOTÃO FLUTUANTE) --- */
+        .fab-manual {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            width: 60px;
+            height: 60px;
+            border-radius: 50px;
+            
+            background: rgba(11, 12, 16, 0.9);
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            text-decoration: none;
+            
+            box-shadow: 0 0 20px rgba(13, 202, 240, 0.2);
+            backdrop-filter: blur(5px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+        }
+
+        .fab-icon {
+            font-size: 1.8rem;
+            transition: transform 0.3s;
+            display: flex; 
+        }
+
+        .fab-text {
+            max-width: 0;
+            opacity: 0;
+            white-space: nowrap;
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-left: 0;
+            transition: all 0.4s ease;
+        }
+
+        /* Efeito Hover (Expandir) */
+        .fab-manual:hover {
+            width: 160px; 
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 30px rgba(13, 202, 240, 0.6);
+            transform: translateY(-5px);
+        }
+
+        .fab-manual:hover .fab-icon {
+            transform: rotate(-10deg) scale(1.1);
+        }
+
+        .fab-manual:hover .fab-text {
+            max-width: 100px;
+            opacity: 1;
+            margin-left: 10px;
+        }
+
+        .blink { animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes scanline { 0% { top: -10%; } 100% { top: 110%; } }
+
+        /* Cores de Texto Utilitárias */
+        .text-tech-blue { color: var(--neon-blue); }
+        .text-tech-red { color: var(--neon-red); }
+        .text-tech-green { color: var(--neon-green); }
+        .text-tech-yellow { color: var(--neon-yellow); }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+{{ render_assistant(assistant_data) }}
+<div class="container mt-4 mb-5">
+    
+    <div class="hud-header d-flex justify-content-between align-items-end">
+        <div>
+            <h2 class="font-tech text-white mb-0" style="letter-spacing: 2px;">CENTRAL DE OPERAÇÕES</h2>
+            <small class="text-muted">SELECIONE UM PROTOCOLO DE TREINAMENTO</small>
+        </div>
+        <div class="text-end d-none d-md-block">
+            <div class="font-tech text-tech-blue">ATIVIDADES DISPONÍVEIS: {{ available_activities|length + (1 if password_config else 0) }}</div>
+            <div class="font-tech text-muted" style="font-size: 0.8rem;">SERVER_TIME: <span id="serverTime">--:--:--</span> UTC</div>
+        </div>
+    </div>
+
+    <div class="terminal-box mb-5">
+        <div class="cmd-line">
+            <span class="prompt-user">guardian@net:</span>
+            <span class="prompt-path">~/command$</span>
+            <input type="text" id="cmdInput" class="cmd-input" placeholder="Aguardando comando..." autocomplete="off" autofocus>
+            <span class="blink">_</span>
+        </div>
+        <div id="terminalOutput" class="mt-2 font-tech" style="min-height: 20px; color: #8892b0; font-size: 0.9rem;"></div>
+    </div>
+
+    <div class="operations-grid">
+
+        {% for activity in available_activities %}
+            
+            {# Definição de Variáveis por Tipo #}
+            {% set type_class = 'type-blue' %}
+            {% set icon = 'bi-patch-question' %}
+            {% set prefix = 'UNK' %}
+            {% set text_color = 'text-tech-blue' %}
+            {% set url = '#' %}
+            {% set points = 0 %}
+            
+            {% if activity.type == 'quiz' %}
+                {% set type_class = 'type-blue' %}
+                {% set icon = 'bi bi-patch-question' %}
+                {% set prefix = 'QUIZ' %}
+                {% set text_color = 'text-tech-blue' %}
+                {% set points = activity.item.questions|sum(attribute='points') %}
+                {% set url = url_for('guardians_bp.start_quiz_get_method', quiz_id=activity.item.id) %}
+            
+            {% elif activity.type == 'termo' %}
+                {% set type_class = 'type-red' %}
+                {% set icon = 'bi-terminal' %}
+                {% set prefix = 'COD' %}
+                {% set text_color = 'text-tech-red' %}
+                {% set points = activity.item.points_reward %}
+                {% set url = url_for('guardians_bp.play_termo', game_id=activity.item.id) %}
+            
+            {% elif activity.type == 'anagram' %}
+                {% set type_class = 'type-green' %}
+                {% set icon = 'bi bi-database-fill-lock' %}
+                {% set prefix = 'DEC' %}
+                {% set text_color = 'text-tech-red' %}
+                {% set points = activity.item.words|length * activity.item.points_per_word %}
+                {% set url = url_for('guardians_bp.play_anagram', game_id=activity.item.id) %}
+            {% endif %}
+
+            {% set protocol_id = prefix ~ '-' ~ '%03d'|format(activity.item.id) %}
+
+            <div class="op-card {{ type_class }}" onclick="executeProtocol('{{ protocol_id }}', '{{ url }}')">
+                <div class="op-header">
+                    <i class="bi {{ icon }} fs-5 {{ text_color }}"></i>
+                    <span class="op-id {{ text_color }}">ID: {{ protocol_id }}</span>
+                </div>
+                <div class="op-body">
+                    <div class="op-title">{{ activity.title }}</div>
+                    <div class="op-desc">{{ activity.description }}</div>
+                    
+                    <div class="op-meta">
+                        <span><i class="bi bi-lightning-fill"></i> {{ points }} XP</span>
+                        {% if activity.expiry_text %}
+                            <span class="text-warning"><i class="bi bi-clock"></i> {{ activity.expiry_text }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="op-footer">
+                    > EXECUTE PROTOCOL
+                </div>
+            </div>
+
+        {% endfor %}
+
+        {% if password_config and password_config.is_active %}
+            {% set vault_url = url_for('guardians_bp.play_password_game') %}
+            <div class="op-card type-yellow" onclick="executeProtocol('SEC-001', '{{ vault_url }}')">
+                <div class="op-header">
+                    <i class="bi bi bi-safe-fill fs-5 text-tech-red"></i>
+                    <span class="op-id text-tech-red">ID: SEC-001</span>
+                </div>
+                <div class="op-body">
+                    <div class="op-title">COFRE DE SENHAS</div>
+                    <div class="op-desc">Protocolo de segurança máxima. Crie uma senha que atenda aos requisitos dinâmicos.</div>
+                    
+                    <div class="op-meta">
+                        <span class="text-tech-yellow"><i class="bi bi-lightning-fill"></i> {{ password_config.base_reward_points }} XP</span>
+                        <span class="text-danger"><i class="bi bi-exclamation-triangle"></i> Expira diariamente</span>
+                    </div>
+                </div>
+                <div class="op-footer">
+                    > EXECUTE PROTOCOL
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<a href="{{ url_for('guardians_bp.sobre_o_programa') }}" class="fab-manual" title="Acessar Manual de Regras">
+    <div class="fab-icon"><i class="bi bi-book-half"></i></div>
+    <div class="fab-text">MANUAL</div>
+</a>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Relógio UTC Simples
+    function updateTime() {
+        const now = new Date();
+        document.getElementById('serverTime').textContent = now.toISOString().split('T')[1].split('.')[0];
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // Lógica do Terminal
+    const cmdInput = document.getElementById('cmdInput');
+    const terminalOutput = document.getElementById('terminalOutput');
+    
+    // Mapeamento de Comandos (Gerado pelo Jinja)
+    const commandMap = {
+        'SEC-001': "{{ url_for('guardians_bp.play_password_game') }}",
+        {% for activity in available_activities %}
+            {% set prefix = 'UNK' %}
+            {% if activity.type == 'quiz' %}{% set prefix = 'QUIZ' %}
+            {% elif activity.type == 'termo' %}{% set prefix = 'COD' %}
+            {% elif activity.type == 'anagram' %}{% set prefix = 'DEC' %}
+            {% endif %}
+            '{{ prefix ~ "-" ~ "%03d"|format(activity.item.id) }}': 
+                {% if activity.type == 'quiz' %}"{{ url_for('guardians_bp.start_quiz_get_method', quiz_id=activity.item.id) }}"
+                {% elif activity.type == 'termo' %}"{{ url_for('guardians_bp.play_termo', game_id=activity.item.id) }}"
+                {% elif activity.type == 'anagram' %}"{{ url_for('guardians_bp.play_anagram', game_id=activity.item.id) }}"
+                {% endif %},
+        {% endfor %}
+    };
+
+    function executeProtocol(protocolId, directUrl) {
+        // Efeito Visual de Digitação Automática
+        cmdInput.value = '';
+        const command = "run " + protocolId;
+        let i = 0;
+        
+        // Bloqueia input enquanto digita
+        cmdInput.disabled = true;
+
+        const interval = setInterval(() => {
+            cmdInput.value += command.charAt(i);
+            i++;
+            if (i >= command.length) {
+                clearInterval(interval);
+                // Executa após digitar
+                setTimeout(() => {
+                    terminalOutput.innerHTML = `<span class="text-tech-green">>> INICIALIZANDO PROTOCOLO ${protocolId}... ACESSO CONCEDIDO.</span>`;
+                    setTimeout(() => {
+                        window.location.href = directUrl;
+                    }, 500);
+                }, 300);
+            }
+        }, 30);
+    }
+
+    // Escuta Enter no Terminal
+    cmdInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            const inputVal = this.value.trim().toUpperCase();
+            
+            if (inputVal === 'HELP' || inputVal === 'LIST') {
+                let msg = "PROTOCOLOS DISPONÍVEIS:<br>";
+                for (let key in commandMap) {
+                    msg += `- ${key}<br>`;
+                }
+                terminalOutput.innerHTML = msg;
+                this.value = '';
+            } 
+            else if (inputVal.startsWith('RUN ')) {
+                const protocol = inputVal.split(' ')[1];
+                if (commandMap[protocol]) {
+                    terminalOutput.innerHTML = `<span class="text-tech-green">>> EXECUTANDO ${protocol}...</span>`;
+                    setTimeout(() => { window.location.href = commandMap[protocol]; }, 500);
+                } else {
+                    terminalOutput.innerHTML = `<span class="text-danger">>> ERRO: PROTOCOLO '${protocol}' NÃO ENCONTRADO.</span>`;
+                }
+            } 
+            else {
+                terminalOutput.innerHTML = `<span class="text-warning">>> COMANDO INVÁLIDO. TENTE 'HELP' OU 'RUN [ID]'.</span>`;
+            }
+        }
+    });
+</script>
+{% endblock %}

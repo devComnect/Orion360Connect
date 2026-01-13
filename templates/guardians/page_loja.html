@@ -1,0 +1,531 @@
+{% extends "base_template.html" %}
+
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+
+{% block title %}Upgrades{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #0dcaf0;  
+            --neon-red: #ff2a6d;   
+            --neon-green: #05d9e8; 
+            --neon-gold: #fcee0a;  
+            --rarity-common: #adb5bd;    /* Cinza */
+            --rarity-rare: #0dcaf0;      /* Azul */
+            --rarity-epic: #d63384;      /* Roxo/Magenta */
+            --rarity-legendary: #ffc107; /* Dourado */
+            --bg-dark: #0b0c10;
+            --panel-bg: #1f2833;
+            --border-tech: #45a29e;
+        }
+
+        body { 
+            background-color: var(--bg-dark); 
+            font-family: 'Segoe UI', sans-serif;
+            background-image: radial-gradient(circle at 50% 0%, #1c2331 0%, #0b0c10 80%);
+        }
+
+        .font-tech { font-family: 'Share Tech Mono', monospace; }
+
+        .market-hud {
+            background: rgba(31, 40, 51, 0.9);
+            border-bottom: 2px solid var(--border-tech);
+            padding: 40px 0 30px 0;
+            margin-bottom: 50px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .market-hud::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(69, 162, 158, 0.05) 3px);
+            pointer-events: none;
+        }
+        
+        .hud-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center; 
+            gap: 30px;
+            align-items: center;
+        }
+        
+        @media (min-width: 992px) {
+            .hud-grid { justify-content: space-between; padding: 0 50px; }
+        }
+
+        .balance-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--neon-gold);
+            padding: 15px 30px;
+            border-radius: 4px;
+            position: relative;
+            box-shadow: 0 0 15px rgba(252, 238, 10, 0.15);
+            text-align: center;
+        }
+
+        .balance-amount { font-size: 2.5rem; color: var(--neon-gold); text-shadow: 0 0 10px rgba(252, 238, 10, 0.5); line-height: 1; }
+        .balance-label { color: #fff; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; opacity: 0.8; }
+
+        /* REROLL MODULE */
+        .reroll-module {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px dashed #666;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            max-width: 250px;
+        }
+
+        .btn-reroll {
+            background: transparent;
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            font-family: 'Share Tech Mono', monospace;
+            padding: 8px 16px;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        .btn-reroll:hover {
+            background: var(--neon-green);
+            color: #000;
+            box-shadow: 0 0 15px var(--neon-green);
+        }
+
+        .reroll-cost {
+            font-size: 0.8rem;
+            color: #ccc;
+            margin-top: 5px;
+        }
+
+        .resource-pill {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: #c5c6c7;
+            margin: 0 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* --- CARDS DA LOJA --- */
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .market-card {
+            background: var(--panel-bg);
+            border: 1px solid #333;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+        }
+
+        .market-card:hover { transform: translateY(-8px); background: #26303e; box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
+
+        /* RARIDADE (Borda e Glow) */
+        .rarity-COMMON    { --card-color: var(--rarity-common); }
+        .rarity-RARE      { --card-color: var(--rarity-rare); }
+        .rarity-EPIC      { --card-color: var(--rarity-epic); }
+        .rarity-LEGENDARY { --card-color: var(--rarity-legendary); }
+
+        .market-card {
+            border-color: rgba(255,255,255,0.1);
+        }
+        
+        .market-card:hover {
+            border-color: var(--card-color);
+            box-shadow: 0 0 20px rgba(var(--card-color), 0.2); 
+            box-shadow: 0 0 15px var(--card-color); 
+        }
+
+        .card-header-strip {
+            height: 4px;
+            width: 100%;
+            background: var(--card-color);
+            box-shadow: 0 0 10px var(--card-color);
+        }
+        
+        .rarity-badge {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border: 1px solid var(--card-color);
+            color: var(--card-color);
+            border-radius: 3px;
+            margin-right: 5px;
+        }
+
+        .card-body-tech { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
+
+        .item-icon-wrapper {
+            height: 60px; width: 60px; margin: 0 auto 20px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; background: rgba(0,0,0,0.3); border: 1px solid #333;
+            color: var(--card-color); font-size: 1.8rem;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        /* BARRA DE INVENTÁRIO REFORMULADA */
+        .active-inventory-bar {
+            background: var(--panel-bg);
+            border: 1px solid #333;
+            padding: 15px 25px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap; 
+            gap: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .active-inventory-bar.slots-full {
+            border-color: var(--neon-gold);
+            box-shadow: 0 0 15px rgba(252, 238, 10, 0.1);
+        }
+
+        .slots-container {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        /* O SLOT INDIVIDUAL */
+        .slot-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid;
+            min-width: 160px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        /* Slot Preenchido (Item Ativo) */
+        .slot-item.filled {
+            background: rgba(13, 202, 240, 0.05);
+            border-color: var(--neon-blue);
+            color: #fff;
+        }
+        
+        .slot-item.filled:hover {
+            background: rgba(13, 202, 240, 0.15);
+            box-shadow: 0 0 10px rgba(13, 202, 240, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Slot Vazio */
+        .slot-item.empty {
+            background: rgba(0,0,0,0.2);
+            border-color: #444;
+            border-style: dashed;
+            color: #666;
+            opacity: 0.7;
+        }
+
+        /* Ícones dentro do slot */
+        .slot-icon {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .slot-item.filled .slot-icon { color: var(--neon-blue); }
+        .slot-item.empty .slot-icon { color: #555; }
+
+        /* Textos do slot */
+        .slot-info { display: flex; flex-direction: column; line-height: 1.1; }
+        .slot-name { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
+        .slot-status { font-size: 0.65rem; color: var(--neon-blue); letter-spacing: 1px; }
+
+        /* Ajuste visual quando cheio */
+        .slots-full .slot-item.filled {
+            border-color: var(--neon-gold); /* Muda de azul para dourado */
+        }
+        .slots-full .slot-item.filled .slot-icon,
+        .slots-full .slot-item.filled .slot-status {
+            color: var(--neon-gold);
+        }
+
+        .item-title { color: #fff; font-size: 1.1rem; font-weight: bold; text-align: center; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .item-desc { color: #8b949e; font-size: 0.85rem; text-align: center; margin-bottom: 20px; line-height: 1.5; flex-grow: 1; }
+
+        .item-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 0.75rem; color: #64ffda; }
+        .meta-box { background: rgba(0,0,0,0.2); padding: 5px; text-align: center; border-radius: 4px; }
+
+        .card-footer-tech { padding: 15px 25px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between; }
+        .item-price { font-family: 'Share Tech Mono', monospace; font-size: 1.2rem; color: var(--neon-gold); font-weight: bold; }
+
+        .btn-buy-tech { background: transparent; border: 1px solid var(--neon-gold); color: var(--neon-gold); padding: 5px 15px; font-family: 'Share Tech Mono', monospace; text-transform: uppercase; font-weight: bold; transition: all 0.2s; cursor: pointer; }
+        .btn-buy-tech:hover { background: var(--neon-gold); color: #000; box-shadow: 0 0 15px var(--neon-gold); }
+        .btn-disabled { border-color: #444; color: #666; cursor: not-allowed; }
+        .btn-disabled:hover { background: transparent; color: #666; box-shadow: none; }
+
+        /* INVENTÁRIO */
+        .active-inventory-bar { background: var(--panel-bg); border: 1px solid #333; padding: 15px 20px; margin-bottom: 40px; border-radius: 4px; display: flex; align-items: center; gap: 15px; overflow-x: auto; }
+        .buff-chip { background: rgba(13, 202, 240, 0.1); border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 5px 12px; border-radius: 4px; font-size: 0.8rem; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+        /* botão de remover item */
+        .btn-slot-discard {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: var(--panel-bg);
+            border: 1px solid #666;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 10;
+            padding: 0;
+            font-size: 14px;
+        }
+
+        .btn-slot-discard:hover {
+            background-color: var(--neon-red); /* Vermelho Neon */
+            border-color: var(--neon-red);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 42, 109, 0.5);
+            transform: scale(1.1);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+{{ render_assistant(assistant_data) }}
+<div class="market-hud font-tech">
+    <div class="container">
+        
+        <div class="text-center mb-4">
+            <h2 class="text-white mb-1" style="letter-spacing: 4px; text-shadow: 0 0 10px rgba(255,255,255,0.3);">UPGRADES</h2>
+            <p class="text-muted" style="font-size: 0.9rem;">// ROTAÇÃO DIÁRIA DE SUPRIMENTOS //</p>
+        </div>
+        
+        <div class="hud-grid">
+            <div class="balance-card">
+                <div class="balance-label">Saldo Disponível</div>
+                <div class="balance-amount">
+                    <i class="bi bi-currency-bitcoin"></i> {{ guardian.guardian_coins }}
+                </div>
+            </div>
+
+            <div class="d-flex flex-column align-items-center gap-2">
+                <div class="resource-pill">
+                    <i class="bi bi-bootstrap-reboot text-warning"></i> 
+                    <span>Quiz Tokens: <strong class="text-white">{{ guardian.retake_tokens }}</strong></span>
+                </div>
+                <div class="resource-pill">
+                    <i class="bi bi-controller text-warning"></i> 
+                    <span>Minigame Tokens: <strong class="text-white">{{ guardian.minigame_retake_tokens }}</strong></span>
+                </div>
+            </div>
+
+            <div class="reroll-module">
+                <form action="{{ url_for('guardians_bp.reroll_shop') }}" method="POST">
+                    <button type="submit" class="btn-reroll" onclick="return confirm('Gastar {{ reroll_cost }} GC para atualizar upgrades?');">
+                        <i class="bi bi-arrow-repeat"></i> Atualizar Upgrades
+                    </button>
+                    <div class="reroll-cost">
+                        Custo: <span class="text-warning">{{ reroll_cost }} GC</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+
+    {% set occupied = active_modules|length %}
+    {% set is_full = occupied >= max_slots %}
+
+    <div class="active-inventory-bar font-tech {{ 'slots-full' if is_full else '' }}">
+        
+        <div class="d-flex align-items-center me-3">
+            <span class="text-muted text-uppercase small me-2">
+                <i class="bi bi-cpu"></i> MÓDULOS:
+            </span>
+            <span class="badge {{ 'bg-warning text-dark' if is_full else 'bg-dark border border-secondary text-muted' }}">
+                {{ occupied }}/{{ max_slots }}
+            </span>
+        </div>
+        
+        <div class="slots-container d-flex gap-3">
+            
+            {# 1. Renderiza os itens que o jogador possui #}
+            {% for item in active_modules %}
+                <div class="slot-item filled" title="{{ item.description }}">
+                    
+                    <form action="{{ url_for('guardians_bp.descartar_item', item_id=item.id) }}" method="POST" class="d-inline">
+                        <button type="submit" class="btn-slot-discard" 
+                                onclick="return confirm('ATENÇÃO: Descartar o módulo \'{{ item.name }}\'?\n\nIsso destruirá o item permanentemente e você precisará comprá-lo novamente se quiser usá-lo.\n\nDeseja liberar este slot?');"
+                                title="Descartar Módulo">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </form>
+
+                    <div class="slot-icon">
+                        {% if item.image_path and item.image_path.startswith('bi-') %}
+                            <i class="{{ item.image_path }}"></i>
+                        {% else %}
+                            <i class="bi bi-box-seam"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="slot-info">
+                        <span class="slot-name">{{ item.name }}</span>
+                        <span class="slot-status">ATIVO</span>
+                    </div>
+                </div>
+            {% endfor %}
+
+            {# 2. Renderiza os slots vazios restantes #}
+            {% for i in range(max_slots - occupied) %}
+                <div class="slot-item empty">
+                    <div class="slot-icon">
+                        <i class="bi bi-plus-lg"></i>
+                    </div>
+                    <div class="slot-info">
+                        <span class="slot-name text-muted">VAZIO</span>
+                    </div>
+                </div>
+            {% endfor %}
+            
+        </div>
+    </div>
+
+    <div class="market-grid">
+        {% for item in items %}
+            
+            {% set count = purchase_counts.get(item.id, 0) %}
+            
+            {# --- LÓGICA DE VALIDAÇÃO --- #}
+            {% set is_consumable = item.category == 'Consumíveis' %}
+            {% set is_sold_out = item.purchase_limit and count >= item.purchase_limit %}
+            {% set can_afford = guardian.guardian_coins >= item.cost %}
+            
+            {# Bloqueia se já tem (count > 0) e não é consumível (ex: Passivos/Cosméticos) #}
+            {% set already_active = (count > 0) and (not is_consumable) %}
+            
+            {% set rarity_class = 'rarity-' + (item.rarity if item.rarity else 'COMMON') %}
+            
+            <div class="market-card {{ rarity_class }}">
+                <div class="card-header-strip"></div>
+                
+                <div class="card-body-tech">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        {% set r_code = item.rarity if item.rarity else 'COMMON' %}
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="rarity-badge badge-{{ r_code }}">
+                                <span class="rarity-dot"></span>
+                                
+                                {% if r_code == 'COMMON' %}
+                                    COMUM
+                                {% elif r_code == 'RARE' %}
+                                    RARO
+                                {% elif r_code == 'EPIC' %}
+                                    ÉPICO
+                                {% elif r_code == 'LEGENDARY' %}
+                                    LENDÁRIO
+                                {% else %}
+                                    {{ r_code }}
+                                {% endif %}
+                                
+                            </span>
+                        </div>           
+                            <span class="badge bg-dark border border-secondary text-muted" style="font-size: 0.65rem;">
+                                {{ item.category|upper }}
+                            </span>
+                    </div>
+
+                    <div class="item-icon-wrapper">
+                        {% if item.image_path and item.image_path.startswith('bi-') %}
+                            <i class="{{ item.image_path }}"></i>
+                        {% elif item.image_path %}
+                            <img src="{{ url_for('static', filename=item.image_path) }}" style="max-width: 60%; max-height: 60%;">
+                        {% else %}
+                            <i class="bi bi-box-seam"></i>
+                        {% endif %}
+                    </div>
+
+                    <div class="item-title font-tech">{{ item.name }}</div>
+                    <div class="item-desc">{{ item.description }}</div>
+
+                    <div class="item-meta-grid font-tech">
+                        <div class="meta-box">
+                            {% if item.duration_days %}
+                                <i class="bi bi-hourglass-split"></i> {{ item.duration_days }}D
+                            {% else %}
+                                <i class="bi bi-infinity"></i> PERM
+                            {% endif %}
+                        </div>
+                        <div class="meta-box">
+                            {% if item.purchase_limit %}
+                                ESTOQUE: {{ item.purchase_limit - count }}/{{ item.purchase_limit }}
+                            {% else %}
+                                ESTOQUE: ∞
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer-tech">
+                    <div class="item-price">{{ item.cost }} GC</div>
+                    
+                    {% if already_active %}
+                        <button class="btn-buy-tech btn-disabled" disabled style="color: var(--neon-blue); border-color: var(--neon-blue);">
+                            <i class="bi bi-check-circle-fill"></i> ATIVO
+                        </button>
+                    {% elif is_sold_out %}
+                        <button class="btn-buy-tech btn-disabled" disabled>ESGOTADO</button>
+                    {% elif not can_afford %}
+                        <button class="btn-buy-tech btn-disabled" disabled title="Saldo Insuficiente">SEM MOEDAS</button>
+                    {% else %}
+                        <form action="{{ url_for('guardians_bp.comprar_item', item_id=item.id) }}" method="POST">
+                            <button type="submit" class="btn-buy-tech" onclick="return confirm('Adquirir {{ item.name }}?');">
+                                COMPRAR <i class="bi bi-cart-plus"></i>
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <h3 class="font-tech text-muted">SUPPLY_CHAIN_ERROR</h3>
+                <p class="text-muted">Não foi possível recuperar os suprimentos diários.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('guardians_bp.meu_perfil') }}" class="btn btn-outline-secondary font-tech border-secondary text-muted" style="border-style: dashed;">
+            &lt; RETORNAR AO PERFIL
+        </a>
+    </div>
+
+</div>
+{% endblock %}

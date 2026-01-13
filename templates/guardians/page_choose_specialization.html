@@ -1,0 +1,160 @@
+{% extends "base_template.html" %}
+
+{% block title %}Protocolo de Inicialização{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/choose_spec.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div id="boot-terminal">
+    <div id="terminal-content"></div>
+    <div class="terminal-cursor"></div>
+</div>
+
+<div class="container-fluid mt-4 mb-5 p-lg-4 main-content" id="main-interface">
+    
+    <div class="lore-header">
+        <h1 class="lore-title">PROTOCOLOS DE ORIGEM</h1>
+        <p class="lore-text">
+            Após a Grande Ruptura, a infraestrutura de defesa da humanidade evoluiu. 
+            Do caos digital, três facções emergiram para controlar a Grade. 
+            Como Mentor Humano, você deve escolher qual protocolo guiará seu Guardião autônomo.
+        </p>
+    </div>
+
+    <div class="row justify-content-center g-4">
+        
+        {% for spec in specializations_data %}
+            {# Define classe de tema baseado na cor ou ID #}
+            {% set theme_class = 'grey-theme' %}
+            {% if 'vermelho' in spec.name|lower or 'hacker' in spec.name|lower %}{% set theme_class = 'red-theme' %}
+            {% elif 'azul' in spec.name|lower or 'defensor' in spec.name|lower %}{% set theme_class = 'blue-theme' %}
+            {% endif %}
+
+            <div class="col-lg-4 col-md-6 d-flex align-items-stretch">
+                <form method="POST" class="w-100 h-100">
+                    <input type="hidden" name="specialization_id" value="{{ spec.id }}">
+
+                    <div class="spec-card {{ theme_class }}">
+                        
+                        <div class="spec-card-header">
+                            <img src="{{ url_for('static', filename=spec.main_avatar) }}" class="spec-avatar">
+                            <h2 class="spec-name">{{ spec.name }}</h2>
+                            <p class="spec-desc">{{ spec.description }}</p>
+                        </div>
+
+                        <div class="spec-card-body">
+                            <div class="level-selector">
+                                {% for level in spec.levels %}
+                                    <div class="level-node {% if loop.first %}active{% endif %}" 
+                                         data-target="perk-{{ spec.id }}-{{ loop.index0 }}"
+                                         title="{{ level.level_name }}">
+                                        {{ level.level_number }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="perk-details">
+                                {% for level in spec.levels %}
+                                    <div id="perk-{{ spec.id }}-{{ loop.index0 }}" class="perk-item {% if loop.first %}active{% endif %}">
+                                        <h5 class="perk-title">{{ level.level_name }} ({{ level.score_minimo }} XP)</h5>
+                                        <ul class="list-unstyled mt-2">
+                                            {% if level.perks %}
+                                                {% for perk in level.perks %}
+                                                    <li class="perk-text"><i class="bi bi-caret-right-fill"></i> {{ perk.description }}</li>
+                                                {% endfor %}
+                                            {% else %}
+                                                <li class="perk-text text-muted">Bônus de atributos padrão.</li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-select">
+                            INICIAR PROTOCOLO
+                        </button>
+
+                    </div>
+                </form>
+            </div>
+        {% endfor %}
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- 1. SEQUÊNCIA DE BOOT ---
+    const terminal = document.getElementById('boot-terminal');
+    const content = document.getElementById('terminal-content');
+    const mainInterface = document.getElementById('main-interface');
+    
+    // Mensagens de Log (Lore)
+    const logs = [
+        "[SEQUÊNCIA DE INICIALIZAÇÃO]: Inicializando Núcleo da Grade...",
+        "[STATUS DE CONEXÃO]: Conexão com o Mentor disponível.",
+        "[AUTENTICAÇÃO]: Identificação verificada.",
+        "[INFO]: Você irá guiar uma unidade autônoma.",
+        "[AVISO]: Ciclo 1 ativo. Guardiões superiores serão arquivados.",
+        "> Carregando Protocolos de Facção...",
+        "[PRONTO]: Selecione sua Ordem."
+    ];
+
+    let lineIndex = 0;
+
+    function typeLine() {
+        if (lineIndex < logs.length) {
+            const div = document.createElement('div');
+            div.className = 'terminal-line';
+            div.textContent = logs[lineIndex];
+            content.appendChild(div);
+            lineIndex++;
+            // Tempo aleatório entre linhas para parecer processamento real
+            setTimeout(typeLine, Math.random() * 300 + 100);
+        } else {
+            // Fim do boot
+            setTimeout(() => {
+                terminal.style.animation = "fadeOutTerminal 1s forwards";
+                setTimeout(() => {
+                    terminal.style.display = 'none';
+                    mainInterface.style.opacity = '1';
+                }, 1000);
+            }, 800);
+        }
+    }
+
+    // Inicia o boot (apenas se não tiver visto antes na sessão, opcional)
+    // Por enquanto, roda sempre para efeito.
+    setTimeout(typeLine, 500);
+
+
+    // --- 2. INTERATIVIDADE DOS NÍVEIS ---
+    const nodes = document.querySelectorAll('.level-node');
+    
+    nodes.forEach(node => {
+        node.addEventListener('mouseenter', function() { // ou 'click'
+            const targetId = this.dataset.target;
+            const parentCard = this.closest('.spec-card');
+            
+            // Remove active dos irmãos
+            parentCard.querySelectorAll('.level-node').forEach(n => n.classList.remove('active'));
+            parentCard.querySelectorAll('.perk-item').forEach(p => p.classList.remove('active'));
+            
+            // Ativa o atual
+            this.classList.add('active');
+            document.getElementById(targetId).classList.add('active');
+        });
+    });
+
+});
+</script>
+{% endblock %}

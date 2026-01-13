@@ -1,0 +1,421 @@
+{% extends "base_template.html" %}
+{% block title %}Configuração de Perfil{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/profile.css') }}">
+    <style>
+        body { background-color: #0b0d10; }
+        
+        .edit-card {
+            background: #16191f;
+            border: 1px solid #30363d;
+            border-top: 3px solid var(--neon-blue);
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .section-title {
+            font-family: 'Share Tech Mono', monospace;
+            color: var(--neon-blue);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+
+        .form-label {
+            color: #8b949e;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .cyber-input, .cyber-select {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #30363d;
+            color: #fff;
+            border-radius: 4px;
+            padding: 12px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .cyber-input:focus, .cyber-select:focus {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--neon-blue);
+            outline: none;
+            box-shadow: 0 0 10px rgba(13, 202, 240, 0.2);
+        }
+
+        /* Seletor de Cores */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .color-option {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        
+        .color-option:hover { transform: scale(1.1); }
+        
+        .color-radio:checked + .color-option {
+            border-color: #fff;
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        .color-radio:checked + .color-option::after {
+            content: '✔';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #000; /* Contraste */
+            font-size: 0.8rem;
+        }
+
+        .btn-save {
+            background: var(--neon-blue);
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+        .btn-save:hover {
+            background: #3dd5f3;
+            box-shadow: 0 0 20px rgba(13, 202, 240, 0.4);
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: #8b949e;
+            border: 1px solid #30363d;
+            padding: 12px 30px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .btn-cancel:hover { color: #fff; border-color: #fff; }
+
+        /* Preview Insígnia */
+        .insignia-preview-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .preview-img { width: 50px; height: 50px; object-fit: contain;clip-path: circle(48% at center); }
+        .preview-text { font-size: 0.9rem; color: var(--neon-green); }
+        .avatar-option {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 5px;
+            background: #1a1a1a;
+        }
+        .avatar-option:hover {
+            border-color: #0dcaf0;
+            transform: scale(1.1);
+        }
+        .avatar-option.selected {
+            border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+            background: #2a2a2a;
+        }
+        /* Grid Layout */
+        .badges-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        /* Card da Insígnia */
+        .badge-option-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .badge-option-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .badge-img-wrapper img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            filter: grayscale(0.6); /* Desbotado quando não selecionado */
+            transition: filter 0.3s;
+        }
+
+        .badge-name {
+            font-size: 0.85rem;
+            color: #8b949e;
+            line-height: 1.2;
+        }
+
+        /* ESTADO: SELECIONADO */
+        .badge-option-card.selected {
+            border-color: var(--neon-blue, #0dcaf0);
+            background: rgba(13, 202, 240, 0.05);
+            box-shadow: 0 0 15px rgba(13, 202, 240, 0.2);
+        }
+
+        .badge-option-card.selected .badge-img-wrapper img {
+            filter: grayscale(0) drop-shadow(0 0 5px rgba(255,255,255,0.5));
+        }
+
+        .badge-option-card.selected .badge-name {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* Check Icon */
+        .selection-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: var(--neon-blue, #0dcaf0);
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .badge-option-card.selected .selection-indicator {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            
+            <form method="POST" class="edit-card">
+                
+                <div class="mb-5">
+                    <h3 class="section-title"><i class="bi bi-person-badge"></i> CODENOME</h3>
+                    
+                    <div class="mb-4">
+                        <label for="nickname" class="form-label">Escolha seu apelido.</label>
+                        <input type="text" class="cyber-input" id="nickname" name="nickname" 
+                               value="{{ guardian.nickname or '' }}" placeholder="Digite seu codinome..." maxlength="20">
+                        <div class="form-text text-muted small mt-1">Visível nos rankings e comunicações.</div>
+                    </div>
+
+                    <div class="mb-5">
+                        <h3 class="section-title"><i class="bi bi-robot"></i> Conexão</h3>
+                        <p class="text-muted small">Selecione a representação visual do seu Guardião.</p>
+                        
+                        <input type="hidden" name="avatar_seed" id="avatar_seed_input" value="{{ guardian.avatar_seed or 'GuardianDefault' }}">
+                        
+                        <div class="avatar-grid-container">
+                            <div id="avatar-grid" class="d-flex flex-wrap justify-content-center gap-5"></div>
+                        </div>
+                    </div>
+
+                <div class="mb-5">
+                    <h3 class="section-title"><i class="bi bi-shield-check"></i> Equipamento Ativo</h3>
+                    <p class="text-muted small mb-4">
+                        Selecione até <span class="text-neon-blue fw-bold">{{ badge_limit }}</span> insígnias para exibir no seu perfil.
+                        (<span id="selected-count">0</span>/{{ badge_limit }})
+                    </p>
+
+                    <div id="hidden-inputs-container">
+                        {% for i in range(badge_limit) %}
+                            <input type="hidden" name="featured_insignia_{{ i }}" id="hidden_input_{{ i }}" value="">
+                        {% endfor %}
+                    </div>
+
+                    <div class="badges-selection-grid">
+                        {% for item in minhas_insignias %}
+                            {% set insignia = item.insignia %}
+                            
+                            {% set is_equipped = false %}
+                            {% for assoc in guardian.featured_associations %}
+                                {% if assoc.insignia_id == insignia.id %}
+                                    {% set is_equipped = true %}
+                                {% endif %}
+                            {% endfor %}
+
+                            <div class="badge-option-card {{ 'selected' if is_equipped else '' }}" 
+                                data-id="{{ insignia.id }}"
+                                onclick="toggleBadgeSelection(this)">
+                                
+                                <div class="badge-img-wrapper">
+                                    <img src="{{ url_for('static', filename=insignia.caminho_imagem) }}" class="rounded-circle" alt="{{ insignia.nome }}">
+                                </div>
+                                
+                                <div class="badge-info">
+                                    <div class="badge-name">{{ insignia.nome }}</div>
+                                    {% if insignia.bonus_value %}
+                                        <div class="badge-bonus text-warning small">
+                                            +{{ insignia.bonus_value }}% 
+                                            {% if 'QUIZ' in insignia.bonus_type %}Quiz
+                                            {% elif 'TERMO' in insignia.bonus_type %}Código
+                                            {% elif 'ANAGRAM' in insignia.bonus_type %}Decriptar
+                                            {% elif 'PW' in insignia.bonus_type %}Segredo
+                                            {% elif 'PATROL' in insignia.bonus_type %}Patrulha
+                                            {% elif 'GCOIN' in insignia.bonus_type %}Moedas
+                                            {% else %}Global{% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="selection-indicator">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        {% if not minhas_insignias %}
+                            <div class="col-12 text-center text-muted py-4">
+                                <i class="bi bi-slash-circle mb-2" style="font-size: 2rem;"></i><br>
+                                Você ainda não possui insígnias para equipar.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary">
+                    <a href="{{ url_for('guardians_bp.meu_perfil') }}" class="btn-cancel">CANCELAR</a>
+                    <button type="submit" class="btn-save">
+                        <i class="bi bi-save"></i> SALVAR DADOS
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // =======================================================
+    // DEFINIÇÕES GLOBAIS (FORA DO DOMContentLoaded)
+    // =======================================================
+    
+    const LIMIT = {{ badge_limit|default(3) }}; 
+    
+    let selectedIds = [];
+
+    window.toggleBadgeSelection = function(card) {
+        if (!card) return;
+
+        const id = card.dataset.id;
+        
+        if (selectedIds.includes(id)) {
+            selectedIds = selectedIds.filter(itemId => itemId !== id);
+            card.classList.remove('selected');
+        } else {
+
+            if (selectedIds.length >= LIMIT) {
+                alert(`Limite máximo de ${LIMIT} conquistas atingido! Desmarque uma para trocar.`);
+                return;
+            }
+            selectedIds.push(id);
+            card.classList.add('selected');
+        }
+
+        window.updateHiddenInputs();
+    };
+
+    window.updateHiddenInputs = function() {
+        const counterEl = document.getElementById('selected-count');
+        if(counterEl) counterEl.innerText = selectedIds.length;
+
+        for (let i = 0; i < LIMIT; i++) {
+            const input = document.getElementById(`hidden_input_${i}`);
+            if(input) input.value = "";
+        }
+
+        selectedIds.forEach((id, index) => {
+            if (index < LIMIT) {
+                const input = document.getElementById(`hidden_input_${index}`);
+                if(input) input.value = id;
+            }
+        });
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        const preSelected = document.querySelectorAll('.badge-option-card.selected');
+        preSelected.forEach(card => {
+            if(card.dataset.id) {
+                selectedIds.push(card.dataset.id);
+            }
+        });
+        window.updateHiddenInputs(); 
+
+        const seeds = [
+            "GuardianAlpha", "CyberPunk1", "NetRunner", "Glitch01", 
+            "NeonSamurai", "DataMiner", "FireWall", "ZeroCool", 
+            "MatrixNeo", "Trinity", "Morpheus", "AgentSmith",
+            "ByteBeat", "PixelDust", "VectorViper"
+        ];
+        
+        const gridContainer = document.getElementById('avatar-grid');
+        const hiddenInput = document.getElementById('avatar_seed_input');
+
+        if (gridContainer && hiddenInput) {
+            const currentSeed = hiddenInput.value;
+
+            seeds.forEach(seed => {
+                const img = document.createElement('img');
+                img.src = `https://api.dicebear.com/9.x/bottts/svg?seed=${seed}`;
+                img.classList.add('avatar-option');
+                img.dataset.seed = seed;
+                img.alt = `Avatar ${seed}`; 
+                
+                if (seed === currentSeed) {
+                    img.classList.add('selected');
+                }
+
+                img.addEventListener('click', function() {
+                    const allOptions = gridContainer.querySelectorAll('.avatar-option');
+                    allOptions.forEach(el => el.classList.remove('selected'));
+                    this.classList.add('selected');
+                    hiddenInput.value = this.dataset.seed;
+                });
+
+                gridContainer.appendChild(img);
+            });
+        }
+    });
+</script>
+{% endblock %}

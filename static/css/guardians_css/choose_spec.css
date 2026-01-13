@@ -1,0 +1,214 @@
+:root {
+    --bg-dark: #0b0d10;
+    --neon-blue: #0dcaf0;
+    --neon-red: #dc3545;
+    --neon-grey: #adb5bd;
+    --font-hacker: 'Share Tech Mono', monospace;
+}
+
+body {
+    background-color: var(--bg-dark);
+    font-family: var(--font-hacker);
+    color: #e0e0e0;
+    overflow-x: hidden;
+}
+
+/* --- TERMINAL DE BOOT (Overlay) --- */
+#boot-terminal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: #000;
+    z-index: 9999;
+    padding: 40px;
+    font-size: 1.2rem;
+    color: var(--neon-green);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.terminal-line {
+    opacity: 0;
+    animation: typeLine 0.1s forwards;
+    margin-bottom: 5px;
+    border-right: 2px solid transparent; /* Cursor */
+}
+
+.terminal-cursor {
+    display: inline-block;
+    width: 10px; height: 1.2rem;
+    background-color: var(--neon-green);
+    animation: blink 1s infinite;
+}
+
+@keyframes typeLine { to { opacity: 1; } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes fadeOutTerminal { to { opacity: 0; visibility: hidden; } }
+
+/* --- CONTEÚDO PRINCIPAL (Cards) --- */
+.main-content {
+    opacity: 0; /* Começa oculto, aparece após o boot */
+    transition: opacity 1s ease;
+}
+
+.lore-header {
+    text-align: center;
+    margin-bottom: 50px;
+    padding-top: 40px;
+}
+
+.lore-title {
+    font-size: 3rem;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px rgba(255,255,255,0.2);
+}
+
+.lore-text {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 1.1rem;
+    color: #8b949e;
+    line-height: 1.6;
+}
+
+/* Cards das Ordens */
+.spec-card {
+    background: rgba(22, 25, 31, 0.8);
+    border: 1px solid #30363d;
+    border-top: 3px solid var(--spec-color); /* Cor dinâmica */
+    border-radius: 8px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.spec-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px var(--spec-color-dim);
+}
+
+/* Header do Card */
+.spec-card-header {
+    padding: 30px;
+    text-align: center;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.02), transparent);
+    border-bottom: 1px solid #30363d;
+}
+
+.spec-avatar {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    border: 2px solid var(--spec-color);
+    padding: 5px;
+    box-shadow: 0 0 15px var(--spec-color-dim);
+    margin-bottom: 15px;
+}
+
+.spec-name {
+    font-size: 1.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+}
+
+.spec-desc {
+    font-size: 0.95rem;
+    color: #a0a0a0;
+    min-height: 60px;
+}
+
+/* Timeline de Níveis */
+.spec-card-body {
+    flex-grow: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.level-selector {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+/* Linha conectora */
+.level-selector::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: 2px;
+    background: #30363d;
+    z-index: 0;
+}
+
+.level-node {
+    width: 35px; height: 35px;
+    background: #16191f;
+    border: 2px solid #30363d;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    z-index: 1;
+    transition: all 0.2s;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.level-node:hover { border-color: var(--spec-color); color: #fff; }
+
+.level-node.active {
+    background: var(--spec-color);
+    border-color: var(--spec-color);
+    color: #000;
+    box-shadow: 0 0 10px var(--spec-color);
+}
+
+/* Detalhes dos Perks */
+.perk-details {
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    padding: 15px;
+    flex-grow: 1;
+    min-height: 150px;
+}
+
+.perk-item {
+    display: none; /* Oculto por padrão */
+    animation: fadeIn 0.3s ease;
+}
+.perk-item.active { display: block; }
+
+.perk-title { color: var(--spec-color); font-size: 1.1rem; margin-bottom: 5px; }
+.perk-text { font-size: 0.9rem; color: #ccc; }
+
+/* Botão Selecionar */
+.btn-select {
+    width: 100%;
+    padding: 15px;
+    background: transparent;
+    border: 1px solid var(--spec-color);
+    color: var(--spec-color);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: 0.3s;
+    margin-top: auto;
+}
+
+.btn-select:hover {
+    background: var(--spec-color);
+    color: #000;
+    box-shadow: 0 0 20px var(--spec-color-dim);
+}
+
+/* Helper de Cor Opaca */
+.blue-theme { --spec-color: #0dcaf0; --spec-color-dim: rgba(13, 202, 240, 0.3); }
+.red-theme { --spec-color: #dc3545; --spec-color-dim: rgba(220, 53, 69, 0.3); }
+.grey-theme { --spec-color: #adb5bd; --spec-color-dim: rgba(173, 181, 189, 0.3); }
