@@ -58,3 +58,21 @@ def guardian_admin_required(f):
         return redirect(url_for('home_bp.render_performance'))
 
     return decorated_function
+
+def externo_required(f):
+    """
+    Protege rotas exclusivas de usuários externos.
+    Bloqueia acesso de usuários internos.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('is_authenticated'):
+            flash('Você precisa estar logado.', 'warning')
+            return redirect(url_for('login.login'))
+        
+        if not session.get('is_externo'):
+            flash('Área restrita.', 'danger')
+            return redirect(url_for('guardians_bp.central'))
+        
+        return f(*args, **kwargs)
+    return decorated_function

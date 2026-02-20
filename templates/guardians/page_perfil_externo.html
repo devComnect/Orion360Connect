@@ -1,0 +1,544 @@
+{% extends "base_template.html" %}
+
+{% block title %}Meu Perfil{% endblock %}
+
+{% block styles %}
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --neon-blue: #0dcaf0;
+        --neon-green: #05d9e8;
+        --bg-dark: #0b0c10;
+        --panel-bg: #1f2833;
+        --border-color: #45a29e;
+    }
+
+    body { background-color: var(--bg-dark); font-family: 'Segoe UI', sans-serif; }
+    .font-tech { font-family: 'Share Tech Mono', monospace; }
+
+    .hud-header {
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    .hud-header::after {
+        content: 'PROFILE_ACTIVE';
+        position: absolute;
+        bottom: -10px; right: 0;
+        background: var(--bg-dark);
+        padding-left: 10px;
+        color: var(--border-color);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.8rem;
+    }
+
+    /* AVATAR */
+    .avatar-frame {
+        width: 110px; height: 110px;
+        border-radius: 50%;
+        border: 3px solid var(--neon-blue);
+        box-shadow: 0 0 20px rgba(13, 202, 240, 0.3);
+        overflow: hidden;
+        margin: 0 auto 1rem;
+        background: #111;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    /* STAT CARDS */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--panel-bg);
+        border: 1px solid #2a2d35;
+        border-radius: 8px;
+        padding: 20px 15px;
+        text-align: center;
+        transition: all 0.2s ease;
+        clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+    }
+    .stat-card:hover { background: #26303e; transform: translateY(-3px); }
+
+    .stat-value {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--neon-blue);
+        line-height: 1;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+
+    /* HISTÓRICO */
+    .history-panel {
+        background: var(--panel-bg);
+        border: 1px solid #2a2d35;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .history-header {
+        padding: 12px 20px;
+        border-bottom: 1px solid #2a2d35;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+        color: var(--neon-blue);
+        text-transform: uppercase;
+    }
+    .history-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+        transition: background 0.2s;
+    }
+    .history-item:hover { background: rgba(255,255,255,0.03); }
+    .history-item:last-child { border-bottom: none; }
+    .history-quiz-name { color: #fff; font-size: 0.9rem; }
+    .history-date { color: #6c757d; font-size: 0.75rem; font-family: 'Share Tech Mono', monospace; }
+    .history-score { font-family: 'Share Tech Mono', monospace; color: var(--neon-blue); font-weight: bold; }
+
+    /* ACCURACY BAR */
+    .accuracy-wrap { background: #2a2d35; border-radius: 999px; height: 6px; overflow: hidden; margin-top: 6px; }
+    .accuracy-fill { height: 100%; background: var(--neon-blue); border-radius: 999px; transition: width 1.2s ease; }
+
+    /* MENSAGEM MOTIVACIONAL */
+    .motivation-card {
+        background: linear-gradient(135deg, rgba(13, 202, 240, 0.05), rgba(0,0,0,0));
+        border: 1px solid rgba(13, 202, 240, 0.2);
+        border-left: 4px solid var(--neon-blue);
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 2rem;
+        font-family: 'Share Tech Mono', monospace;
+    }
+    .motivation-prefix { font-size: 0.75rem; color: #6c757d; letter-spacing: 2px; margin-bottom: 4px; }
+    .motivation-text { color: #fff; font-size: 0.95rem; line-height: 1.5; }
+
+    /* GRÁFICO */
+    .chart-panel {
+        background: var(--panel-bg);
+        border: 1px solid #2a2d35;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    .chart-header {
+        padding: 12px 20px;
+        border-bottom: 1px solid #2a2d35;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+        color: var(--neon-blue);
+        text-transform: uppercase;
+    }
+    .chart-body {
+        padding: 20px;
+        /* scroll horizontal quando houver muitas barras */
+        overflow-x: auto;
+    }
+    .chart-body canvas {
+        min-width: 300px; /* mínimo */
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5" style="max-width: 860px;">
+
+    <div class="hud-header d-flex justify-content-between align-items-end">
+        <div>
+            <h2 class="font-tech text-white mb-0" style="letter-spacing: 2px;">MEU PERFIL</h2>
+            <small class="text-muted">RELATÓRIO DE DESEMPENHO INDIVIDUAL</small>
+        </div>
+    </div>
+
+    {# --- CABEÇALHO DO PERFIL --- #}
+    <div class="text-center mb-4">
+        <div class="avatar-frame">
+            <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ avatar_seed }}"
+                alt="Avatar" style="width:100%; height:100%; object-fit:cover;">
+        </div>
+        <h3 class="text-white fw-bold mb-0">{{ user.name or user.username }}</h3>
+        <small class="font-tech text-muted">ID: EXT-{{ '%04d'|format(user.id) }}</small>
+        <div class="mt-2">
+            <button class="btn btn-sm btn-outline-secondary font-tech"
+                    data-bs-toggle="modal" data-bs-target="#editPerfilModal">
+                <i class="bi bi-pencil-square me-1"></i> EDITAR PERFIL
+            </button>
+        </div>
+    </div>
+
+    {# --- GRID DE ESTATÍSTICAS --- #}
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-value text-warning">
+                {% if ranking_pos != 'N/A' %}#{{ ranking_pos }}{% else %}—{% endif %}
+            </div>
+            <div class="stat-label">Ranking</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_score }}</div>
+            <div class="stat-label">Pontos Totais</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ quizzes_completed }}</div>
+            <div class="stat-label">Quizzes Feitos</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ accuracy }}%</div>
+            <div class="stat-label">Precisão Geral</div>
+            <div class="accuracy-wrap mt-2">
+                <div class="accuracy-fill" id="acc-bar" style="width: 0%;" data-target="{{ accuracy }}"></div>
+            </div>
+        </div>
+    </div>
+
+    {# --- MENSAGEM MOTIVACIONAL --- #}
+    {% if quizzes_completed > 0 %}
+    <div class="motivation-card">
+        <div class="motivation-prefix">>> ANÁLISE DO SISTEMA</div>
+        <div class="motivation-text">
+            {% if ranking_pos == 1 %}
+                <i class="bi bi-trophy-fill text-warning me-2"></i>
+                Você está no <strong class="text-warning">topo do ranking</strong>! Mantenha o ritmo e defenda sua posição.
+            {% elif ranking_pos != 'N/A' and ranking_pos <= 3 %}
+                <i class="bi bi-graph-up-arrow text-info me-2"></i>
+                Você está no <strong class="text-info">Top 3</strong>! O primeiro lugar está ao alcance — continue completando os desafios.
+            {% elif ranking_pos != 'N/A' and ranking_pos <= 10 %}
+                <i class="bi bi-lightning-fill text-warning me-2"></i>
+                Bom desempenho! Você está entre os <strong class="text-warning">Top 10</strong>. Mais um quiz pode te levar ao pódio.
+            {% elif accuracy >= 80 %}
+                <i class="bi bi-bullseye text-success me-2"></i>
+                Sua <strong class="text-success">precisão de {{ accuracy }}%</strong> é excelente! Foque em completar mais quizzes para subir no ranking.
+            {% elif accuracy >= 50 %}
+                <i class="bi bi-arrow-up-circle text-info me-2"></i>
+                Você está no caminho certo. Revise os conteúdos e tente melhorar sua precisão de <strong>{{ accuracy }}%</strong>.
+            {% else %}
+                <i class="bi bi-shield-exclamation text-danger me-2"></i>
+                Não desista! Cada tentativa é um aprendizado. Sua próxima pontuação pode mudar tudo.
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {# --- GRÁFICO DE DESEMPENHO --- #}
+    {% if historico and historico|length > 0 %}
+    <div class="chart-panel">
+        <div class="chart-header">
+            <i class="bi bi-bar-chart-line me-2"></i>EVOLUÇÃO DE PONTUAÇÃO
+            <span class="text-muted ms-2" style="font-size:0.75rem;">
+                ({{ historico|length }} registro{{ 's' if historico|length > 1 else '' }})
+            </span>
+        </div>
+        <div class="chart-body">
+            {# Largura dinâmica: 60px por barra, mínimo 300px #}
+            {% set chart_width = [historico|length * 60, 300] | max %}
+            <canvas id="performanceChart" 
+                    height="140"
+                    style="width: {{ chart_width }}px;"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+    {# --- HISTÓRICO DE QUIZZES --- #}
+    <div class="history-panel">
+        <div class="history-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-terminal me-2"></i>LOG DE ATIVIDADES</span>
+            {% if historico|length > 0 %}
+            <span class="text-muted" style="font-size:0.75rem;">
+                {{ historico|length }} entrada{{ 's' if historico|length > 1 else '' }}
+            </span>
+            {% endif %}
+        </div>
+
+        {% if historico and historico|length > 0 %}
+            <div id="history-list">
+                {% for entry in historico %}
+                <div class="history-item {% if loop.index > 10 %}history-hidden{% endif %}"
+                    {% if loop.index > 10 %}style="display:none;"{% endif %}>
+                    <div>
+                        <div class="history-quiz-name">
+                            {{ entry.quiz_title if entry.quiz_title else 'Quiz removido' }}
+                        </div>
+                        <div class="history-date">
+                            {% if entry.completed_at %}
+                                {{ entry.completed_at.strftime('%d/%m/%Y às %H:%M') }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="history-score">
+                        {{ entry.final_score if entry.final_score is not none else 0 }} XP
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if historico|length > 10 %}
+            <div class="text-center py-3 border-top border-dark" id="load-more-wrap">
+                <button id="load-more-btn" 
+                        class="btn btn-sm btn-outline-secondary font-tech"
+                        onclick="loadMoreHistory()">
+                    <i class="bi bi-chevron-down me-1"></i>
+                    VER MAIS 
+                    <span class="text-muted">({{ historico|length - 10 }} restantes)</span>
+                </button>
+            </div>
+            {% endif %}
+
+        {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-2 d-block mb-2 opacity-50"></i>
+                <small class="font-tech">Nenhuma atividade registrada ainda.</small>
+            </div>
+        {% endif %}
+    </div>
+    {# ===== MODAL DE EDIÇÃO DE PERFIL ===== #}
+    <div class="modal fade" id="editPerfilModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="background:#16191f; border:1px solid #30363d; border-top: 3px solid var(--neon-blue);">
+
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title font-tech text-info">
+                        <i class="bi bi-person-badge me-2"></i>EDITAR PERFIL
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form method="POST" action="{{ url_for('guardians_bp.edit_perfil_externo') }}">
+
+                    <div class="modal-body p-4">
+
+                        {# --- NOME --- #}
+                        <div class="mb-4">
+                            <label class="form-label text-muted small text-uppercase font-tech">
+                                <i class="bi bi-person me-1"></i> Nome de Exibição
+                            </label>
+                            <input type="text"
+                                name="display_name"
+                                class="form-control bg-dark text-white border-secondary"
+                                value="{{ user.name or '' }}"
+                                maxlength="50"
+                                placeholder="Como você quer ser chamado?">
+                            <div class="form-text text-muted small">Visível no ranking e no perfil.</div>
+                        </div>
+
+                        {# --- AVATAR --- #}
+                        <div class="mb-2">
+                            <label class="form-label text-muted small text-uppercase font-tech">
+                                <i class="bi bi-robot me-1"></i> Avatar
+                            </label>
+                            <p class="text-muted small mb-3">Clique para escolher sua representação visual.</p>
+                        </div>
+
+                        <input type="hidden" name="avatar_seed" id="ext_avatar_seed_input"
+                            value="{{ user.avatar_seed or 'GuardianDefault' }}">
+
+                        <div id="ext-avatar-grid"
+                            class="d-flex flex-wrap justify-content-center gap-3 mb-2"
+                            style="max-height: 280px; overflow-y: auto; padding: 10px;
+                                    background: rgba(0,0,0,0.2); border-radius: 8px;
+                                    border: 1px solid #2a2d35;">
+                            {# Preenchido pelo JS #}
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer border-secondary d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-secondary btn-sm font-tech"
+                                data-bs-dismiss="modal">CANCELAR</button>
+                        <button type="submit" class="btn btn-info btn-sm font-tech fw-bold">
+                            <i class="bi bi-save me-1"></i> SALVAR
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- Barra de precisão ---
+    const bar = document.getElementById('acc-bar');
+    if (bar) {
+        setTimeout(() => { bar.style.width = (bar.dataset.target || '0') + '%'; }, 300);
+    }
+
+    // --- Gráfico ---
+    const ctx = document.getElementById('performanceChart');
+    if (!ctx) return;
+
+    // Dados do Jinja em ordem cronológica
+    const rawLabels = [
+        {% for entry in historico | reverse %}
+            {{ (entry.quiz_title or 'Quiz') | tojson }},
+        {% endfor %}
+    ];
+
+    const rawScores = [
+        {% for entry in historico | reverse %}
+            {{ entry.final_score if entry.final_score is not none else 0 }},
+        {% endfor %}
+    ];
+
+    // Trunca labels longas para o eixo X
+    const labels = rawLabels.map(l => l.length > 18 ? l.substring(0, 16) + '…' : l);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Pontuação (XP)',
+                data: rawScores,
+                backgroundColor: 'rgba(13, 202, 240, 0.15)',
+                borderColor: '#0dcaf0',
+                borderWidth: 2,
+                borderRadius: 4,
+                hoverBackgroundColor: 'rgba(13, 202, 240, 0.35)',
+            }]
+        },
+        options: {
+            responsive: false, // false para respeitar largura dinâmica
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1f2833',
+                    borderColor: '#0dcaf0',
+                    borderWidth: 1,
+                    titleColor: '#0dcaf0',
+                    bodyColor: '#fff',
+                    titleFont: { family: 'Share Tech Mono' },
+                    callbacks: {
+                        // Tooltip mostra o título completo
+                        title: items => rawLabels[items[0].dataIndex] || '',
+                        label: item => `${item.parsed.y} XP`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#6c757d',
+                        font: { family: 'Share Tech Mono', size: 10 },
+                        maxRotation: 35,
+                        minRotation: 0
+                    },
+                    grid: { color: 'rgba(255,255,255,0.04)' }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#6c757d',
+                        font: { family: 'Share Tech Mono', size: 10 }
+                    },
+                    grid: { color: 'rgba(255,255,255,0.04)' }
+                }
+            }
+        }
+    });
+});
+
+// --- Load more do histórico ---
+let shown = 10;
+function loadMoreHistory() {
+    const hidden = document.querySelectorAll('.history-hidden');
+    let revealed = 0;
+
+    hidden.forEach(el => {
+        if (revealed < 10) {
+            el.style.display = 'flex';
+            el.classList.remove('history-hidden');
+            revealed++;
+        }
+    });
+
+    shown += revealed;
+
+    // Atualiza o contador do botão
+    const remaining = document.querySelectorAll('.history-hidden').length;
+    const btn = document.getElementById('load-more-btn');
+    const wrap = document.getElementById('load-more-wrap');
+
+    if (remaining === 0) {
+        wrap.style.display = 'none';
+    } else {
+        btn.innerHTML = `<i class="bi bi-chevron-down me-1"></i> VER MAIS <span class="text-muted">(${remaining} restantes)</span>`;
+    }
+
+
+};
+
+// --- Grid de avatares do modal externo ---
+const seeds = [
+    "GuardianAlpha", "CyberPunk1", "NetRunner", "Glitch01",
+    "NeonSamurai", "DataMiner", "FireWall", "ZeroCool",
+    "MatrixNeo", "Trinity", "Morpheus", "AgentSmith",
+    "ByteBeat", "PixelDust", "VectorViper"
+];
+
+const extGrid = document.getElementById('ext-avatar-grid');
+const extInput = document.getElementById('ext_avatar_seed_input');
+
+if (extGrid && extInput) {
+    const currentSeed = extInput.value;
+
+    seeds.forEach(seed => {
+        const img = document.createElement('img');
+        img.src = `https://api.dicebear.com/9.x/bottts/svg?seed=${seed}`;
+        img.alt = seed;
+        img.dataset.seed = seed;
+        img.style.cssText = `
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            border: 2px solid ${seed === currentSeed ? '#0dcaf0' : '#333'};
+            cursor: pointer;
+            padding: 4px;
+            background: #1a1a1a;
+            transition: all 0.2s ease;
+            box-shadow: ${seed === currentSeed ? '0 0 12px rgba(13,202,240,0.4)' : 'none'};
+        `;
+
+        img.addEventListener('click', () => {
+            extGrid.querySelectorAll('img').forEach(el => {
+                el.style.borderColor = '#333';
+                el.style.boxShadow = 'none';
+            });
+            img.style.borderColor = '#0dcaf0';
+            img.style.boxShadow = '0 0 12px rgba(13,202,240,0.4)';
+            extInput.value = seed;
+        });
+
+        img.addEventListener('mouseenter', () => {
+            if (extInput.value !== seed) img.style.borderColor = '#555';
+        });
+        img.addEventListener('mouseleave', () => {
+            if (extInput.value !== seed) img.style.borderColor = '#333';
+        });
+
+        extGrid.appendChild(img);
+    });
+};
+
+</script>
+{% endblock %}

@@ -1,0 +1,324 @@
+{% extends "base_template.html" %}
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+{% block title %}Decryption Protocol: {{ game.correct_word|length }} Bytes{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --term-bg: #121418;
+            --term-card: #1b1e24;
+            --neon-blue: #0dcaf0;
+            --neon-green: #198754;
+            --neon-yellow: #ffc107;
+            --neon-red: #dc3545;
+            --neon-grey: #495057;
+            --text-main: #e0e0e0;
+        }
+
+        body {
+            background-color: var(--term-bg);
+            font-family: 'Share Tech Mono', monospace; /* Fonte Hacker Global */
+            overflow-x: hidden;
+        }
+
+        /* CONTAINER PRINCIPAL */
+        #termo-game-container {
+            max-width: 600px;
+            margin: 20px auto;
+            display: flex;
+            flex-direction: column;
+            height: 90vh; /* Ocupa altura quase total */
+        }
+
+        /* HEADER DO JOGO */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: var(--term-card);
+            border: 1px solid #30363d;
+            border-bottom: 2px solid var(--neon-blue);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px rgba(13, 202, 240, 0.1);
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--neon-grey);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--neon-blue);
+            text-shadow: 0 0 5px rgba(13, 202, 240, 0.5);
+        }
+
+        /* ÁREA DO TABULEIRO (GRID) */
+        .game-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Centraliza verticalmente */
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #game-board {
+            display: grid;
+            gap: 8px;
+            padding: 10px;
+            /* Grid dinâmico definido via JS, mas garantindo max-width */
+            max-width: 100%; 
+        }
+
+        .letter-row {
+            display: grid;
+            gap: 8px;
+        }
+
+        .letter-box {
+            width: 55px;
+            height: 55px;
+            border: 2px solid var(--neon-grey);
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fff;
+            text-transform: uppercase;
+            background: rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        /* Estados das Letras */
+        .letter-box.filled {
+            border-color: #fff;
+            box-shadow: 0 0 5px rgba(255,255,255,0.2);
+        }
+
+        .letter-box.correct {
+            background-color: var(--neon-green) !important;
+            border-color: var(--neon-green) !important;
+            box-shadow: 0 0 15px rgba(25, 135, 84, 0.4);
+        }
+
+        .letter-box.present {
+            background-color: var(--neon-yellow) !important;
+            border-color: var(--neon-yellow) !important;
+            color: #000 !important;
+            box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
+        }
+
+        .letter-box.absent {
+            background-color: #212529 !important;
+            border-color: #212529 !important;
+            opacity: 0.5;
+        }
+
+        /* Animações */
+        @keyframes flipIn {
+            0% { transform: rotateX(0); }
+            50% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0); }
+        }
+        .letter-box.flip {
+            animation: flipIn 0.6s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-5px); }
+            40% { transform: translateX(5px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+        }
+        .letter-row.shake {
+            animation: shake 0.4s;
+        }
+
+        /* CONTROLES (INPUT E BOTÕES) */
+        .game-controls {
+            background: var(--term-card);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        /* Estilo Console Input */
+        #word-input {
+            width: 100%;
+            background: #000;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 15px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-align: center;
+            border-radius: 4px;
+            outline: none;
+            box-shadow: inset 0 0 10px rgba(13, 202, 240, 0.2);
+        }
+        
+        #word-input:focus {
+            box-shadow: 0 0 15px rgba(13, 202, 240, 0.3), inset 0 0 10px rgba(13, 202, 240, 0.2);
+        }
+
+        #word-input::placeholder {
+            color: rgba(13, 202, 240, 0.3);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        /* Botões Estilizados */
+        .cyber-btn {
+            padding: 10px 20px;
+            font-family: 'Share Tech Mono', monospace;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+
+        .btn-enter {
+            flex-grow: 2;
+            background: var(--neon-blue);
+            color: #000;
+            border: none;
+            box-shadow: 0 0 10px rgba(13, 202, 240, 0.3);
+        }
+        .btn-enter:hover { background: #3dd5f3; transform: translateY(-2px); }
+
+        .btn-hint {
+            background: transparent;
+            color: var(--neon-yellow);
+            border: 1px solid var(--neon-yellow);
+        }
+        .btn-hint:hover { background: rgba(255, 193, 7, 0.1); box-shadow: 0 0 10px rgba(255, 193, 7, 0.3); }
+
+        .btn-exit {
+            background: transparent;
+            color: var(--neon-red);
+            border: 1px solid var(--neon-red);
+        }
+        .btn-exit:hover { background: rgba(220, 53, 69, 0.1); box-shadow: 0 0 10px rgba(220, 53, 69, 0.3); }
+
+        /* MENSAGENS DO SISTEMA */
+        #bot-message {
+            min-height: 25px;
+            text-align: center;
+            color: var(--neon-grey);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+{{ render_assistant(assistant_data) }}
+<div id="termo-game-container"
+     data-game-id="{{ game.id }}"
+     data-attempt-id="{{ attempt_id }}"
+     data-word-length="{{ game.correct_word|length }}"
+     data-max-attempts="{{ game.max_attempts }}"
+     data-points-reward="{{ game.points_reward }}">
+    
+    <header class="game-header">
+        <div class="stat-box">
+            <span class="stat-label">Timer</span>
+            {% if remaining_time %}
+                <span id="timer-countdown" class="stat-value">{{ remaining_time|int }}</span>
+            {% else %}
+                <span class="stat-value">--:--</span>
+            {% endif %}
+        </div>
+        
+        <div class="text-center">
+            <h4 class="m-0" style="color: #fff; letter-spacing: 2px;">CÓDIGO</h4>
+            <small style="color: var(--neon-grey);">PROTOCOLO_V.2.0</small>
+        </div>
+
+        <div class="stat-box">
+            <span class="stat-label">Recompensa</span>
+            <div class="stat-value">
+                <span id="score-display-value">{{ game.points_reward }}</span>
+                <span style="font-size: 0.7em; margin-left: 2px;">XP</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="game-body">
+        <div id="game-board">
+            </div>
+        <div id="bot-message">Aguardando input de comando...</div>
+    </main>
+
+    <footer class="game-controls">
+        <div class="input-wrapper">
+            <input type="text" id="word-input" 
+                   maxlength="{{ game.correct_word|length }}" 
+                   placeholder="INSIRA CÓDIGO DE {{ game.correct_word|length }} LETRAS" 
+                   autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+
+        <div class="actions-row">
+            <button id="hint-btn" class="cyber-btn btn-hint" data-hint="{{ game.hint if game.hint else 'Sem dicas disponíveis no servidor.' }}">
+                <i class="bi bi-lightbulb"></i> DICA
+            </button>
+            
+            <button id="submit-btn" class="cyber-btn btn-enter">
+                <i class="bi bi-terminal"></i> EXECUTAR (ENTER)
+            </button>
+            
+            <button id="exit-game-btn" class="cyber-btn btn-exit">
+                <i class="bi bi-x-lg"></i> ABORTAR
+            </button>
+        </div>
+    </footer>
+
+    <div class="alert alert-warning d-flex align-items-center border-warning bg-opacity-10 mt-3 mb-4" role="alert" style="background-color: rgba(255, 193, 7, 0.05); border-left: 4px solid #ffc107;">
+        <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
+        <div>
+            <strong class="text-uppercase font-tech" style="letter-spacing: 1px;">Protocolo de Segurança Ativo</strong>
+            <div class="small text-muted">
+                Não saia da página ou feche o navegador. A desconexão resultará em <strong>falha imediata</strong> e pontuação zero.
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/termo_game.js') }}"></script>
+{% endblock %}

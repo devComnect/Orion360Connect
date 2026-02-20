@@ -1,0 +1,264 @@
+{% extends "base_template.html" %}
+
+{% block title %}Ranking Externo - Comnect Guardians{% endblock %}
+
+{% block styles %}
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --neon-blue: #0dcaf0;
+        --neon-gold: #ffd700;
+        --neon-silver: #e0e0e0;
+        --neon-bronze: #cd7f32;
+        --bg-dark: #0b0c10;
+        --panel-bg: #1f2833;
+        --border-tech: #45a29e;
+    }
+
+    body { 
+        background-color: var(--bg-dark); 
+        font-family: 'Segoe UI', sans-serif;
+        background-image: radial-gradient(circle at 50% 0%, #1a2634 0%, #0b0c10 70%);
+        color: #fff;
+        min-height: 100vh;
+    }
+
+    .font-tech { font-family: 'Share Tech Mono', monospace; }
+
+    /* --- HEADER --- */
+    .ranking-header {
+        text-align: center;
+        padding: 50px 0 30px;
+    }
+
+    .ranking-title {
+        font-family: 'Share Tech Mono', monospace;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        color: #fff;
+        text-shadow: 0 0 20px rgba(13, 202, 240, 0.4);
+        font-size: 2.5rem;
+        margin-bottom: 5px;
+    }
+
+    /* --- PODIUM (TOP 3) --- */
+    .podium-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        margin-bottom: 50px;
+        padding-top: 20px;
+        gap: 20px;
+    }
+
+    .podium-card {
+        background: var(--panel-bg);
+        border: 1px solid #333;
+        width: 220px;
+        text-align: center;
+        padding: 20px;
+        position: relative;
+        clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%, 0 15%);
+        transition: transform 0.3s;
+    }
+    
+    .podium-card:hover { transform: translateY(-10px); }
+
+    .podium-1 { height: 280px; order: 2; border-top: 4px solid var(--neon-gold); z-index: 2; }
+    .podium-2 { height: 240px; order: 1; border-top: 4px solid var(--neon-silver); }
+    .podium-3 { height: 220px; order: 3; border-top: 4px solid var(--neon-bronze); }
+
+    .podium-avatar-wrapper {
+        position: relative;
+        width: 80px; height: 80px;
+        margin: 0 auto 15px;
+    }
+    
+    .podium-1 .podium-avatar-wrapper { width: 100px; height: 100px; }
+
+    .podium-avatar {
+        width: 100%; height: 100%;
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+        background: #0b0c10;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    .crown-icon {
+        position: absolute;
+        top: -25px; left: 50%;
+        transform: translateX(-50%);
+        font-size: 2rem;
+        color: var(--neon-gold);
+        text-shadow: 0 0 10px var(--neon-gold);
+    }
+
+    .podium-rank {
+        font-size: 3rem;
+        font-weight: bold;
+        font-family: 'Share Tech Mono', monospace;
+        opacity: 0.15;
+        position: absolute;
+        bottom: 0; right: 10px;
+        line-height: 1;
+    }
+
+    .podium-name {
+        font-weight: bold;
+        color: #fff;
+        margin-bottom: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .podium-score {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 1.2rem;
+        color: var(--neon-blue);
+    }
+
+    /* --- LISTA GERAL --- */
+    .ranking-list-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .rank-row {
+        display: flex;
+        align-items: center;
+        background: rgba(31, 40, 51, 0.6);
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 15px 20px;
+        transition: all 0.2s;
+        margin-bottom: 5px;
+    }
+
+    .rank-row:hover { 
+        background: rgba(31, 40, 51, 0.9); 
+        transform: translateX(5px);
+        border-left: 4px solid var(--neon-blue);
+    }
+
+    .rank-num {
+        width: 50px;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 1.2rem;
+        color: #8892b0;
+        text-align: center;
+    }
+
+    .rank-user-info {
+        flex-grow: 1;
+        margin-left: 20px;
+    }
+
+    .rank-user-name {
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .rank-stats-small {
+        font-size: 0.75rem;
+        color: #8892b0;
+        font-family: 'Share Tech Mono', monospace;
+    }
+
+    .rank-total-score {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 1.2rem;
+        color: var(--neon-blue);
+        text-align: right;
+        min-width: 100px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ranking-header">
+    <div class="container">
+        <h1 class="ranking-title">Hall da Fama</h1>
+        <p class="text-muted font-tech">ACESSO EXTERNO // RESULTADOS GERAIS</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    {% if ranking %}
+        
+        {# --- PODIUM (Exibe se houver pelo menos 3 participantes) --- #}
+        {% if ranking|length >= 3 %}
+        <div class="podium-container d-none d-md-flex">
+            
+            {# 2º Lugar #}
+            {% set p2 = ranking[1] %}
+            <div class="podium-card podium-2">
+                <div class="podium-avatar-wrapper">
+                    <div class="podium-avatar">
+                        <i class="bi bi-person-circle text-muted" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+                <div class="podium-name">{{ p2.name }}</div>
+                <div class="podium-score">{{ p2.total_score }} XP</div>
+                <div class="podium-rank">2</div>
+            </div>
+
+            {# 1º Lugar #}
+            {% set p1 = ranking[0] %}
+            <div class="podium-card podium-1">
+                <div class="podium-avatar-wrapper">
+                    <i class="bi bi-crown-fill crown-icon"></i>
+                    <div class="podium-avatar" style="border: 2px solid var(--neon-gold);">
+                        <i class="bi bi-person-circle text-warning" style="font-size: 3.5rem;"></i>
+                    </div>
+                </div>
+                <div class="podium-name text-warning">{{ p1.name }}</div>
+                <div class="podium-score">{{ p1.total_score }} XP</div>
+                <div class="podium-rank">1</div>
+            </div>
+
+            {# 3º Lugar #}
+            {% set p3 = ranking[2] %}
+            <div class="podium-card podium-3">
+                <div class="podium-avatar-wrapper">
+                    <div class="podium-avatar">
+                        <i class="bi bi-person-circle text-muted" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+                <div class="podium-name">{{ p3.name }}</div>
+                <div class="podium-score">{{ p3.total_score }} XP</div>
+                <div class="podium-rank">3</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# --- LISTA GERAL --- #}
+        <div class="ranking-list-container">
+            {% for entry in ranking %}
+                {# No Desktop, oculta os 3 primeiros que já estão no pódio. No Mobile, mostra todos. #}
+                <div class="rank-row {% if ranking|length >= 3 and loop.index <= 3 %}d-md-none{% endif %}">
+                    <div class="rank-num">#{{ loop.index }}</div>
+                    
+                    <div class="rank-user-info">
+                        <td>
+                            <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ entry.avatar_seed or 'GuardianDefault' }}"
+                                style="width:28px; height:28px; border-radius:50%; margin-right:8px; vertical-align:middle;">
+                            <span class="fw-bold">{{ entry.name }}</span>
+                        </td>
+                        <div class="rank-stats-small">
+                            {{ entry.quizzes_completed }} QUIZZES FINALIZADOS
+                        </div>
+                    </div>
+
+                    <div class="rank-total-score">
+                        {{ entry.total_score }} <small>XP</small>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <div class="text-center py-5">
+            <h4 class="text-muted font-tech">// NENHUMA ATIVIDADE REGISTRADA //</h4>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

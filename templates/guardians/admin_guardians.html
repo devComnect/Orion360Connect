@@ -1,0 +1,398 @@
+{% extends "base_template.html" %}
+{% from "guardians/macros/macro_externos.html" import render_gestao_externos %}
+
+
+
+{% block title %}Gerenciar Guardiões{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/admin.css') }}">
+    <style>
+        .guardian-table-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #495057; }
+        .spec-icon-admin { font-size: 1.1rem; margin-right: 0.3rem; vertical-align: middle; }
+        .trophy-icon-admin { font-size: 1.1rem; margin-right: 0.3rem; vertical-align: middle; }
+        .trophy-gold { color: #ffc107; }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+<div class="admin-container d-flex">
+    
+    <nav class="admin-sidebar bg-dark text-white">
+        <h5 class="text-info p-3 border-bottom border-secondary"><i class="bi bi-gear-fill me-2"></i> Menu de Navegação</h5>
+        <div class="list-group list-group-flush">
+            <a href="{{ url_for('admin_v2_bp.guardian_hub') }}" class="list-group-item list-group-item-action bg-dark text-white active">
+                <i class="bi bi-people-fill me-2"></i> Gerenciar Guardiões
+            </a>
+            <a href="{{ url_for('admin_v2_bp.feedback_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-chat-left-text-fill me-2"></i> Gerenciar Feedback
+            </a>
+            <a href="{{ url_for('admin_v2_bp.config_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-sliders me-2"></i> Configurações do Portal
+            </a>
+            <a href="{{ url_for('admin_v2_bp.content_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-pencil-square me-2"></i> Gerenciar Conteúdo
+            </a>
+            <a href="{{ url_for('admin_v2_bp.analytics_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-graph-up me-2"></i> Análises
+            </a>
+            <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-bs-toggle="modal" data-bs-target="#modalExternos">
+                <i class="bi bi-person-fill-gear me-2"></i> Gestão de Externos
+            </a>
+        </div>
+    </nav>
+
+<main class="admin-main-content p-4">
+        <h1 class="text-white mb-4"><i class="bi bi-people-fill me-2"></i> Gerenciar Guardiões</h1>
+
+        <div class="card bg-dark text-white shadow">
+            <div class="card-header"><h4>Lista de Guardiões ({{ guardians|length }})</h4></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th></th><th>Guardião</th><th>Caminho (Nível)</th>
+                                <th class="text-center">Score</th><th class="text-center">Streak</th><th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if guardians %}
+                                {% for g in guardians %}
+                                <tr>
+                                    <td>
+                                        {% if g.avatar_seed %}
+                                            <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ g.avatar_seed }}" alt="Avatar" class="guardian-table-avatar">
+                                        {% else %}
+                                            <div class="guardian-table-avatar d-flex align-items-center justify-content-center bg-dark border border-secondary">
+                                                <i class="bi bi-person-circle text-muted" style="font-size: 1.5rem;"></i>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if g.trophy_tier == 1 %}<i class="bi bi-trophy-fill trophy-icon-admin trophy-gold"></i>{% endif %}
+                                        <strong {% if g.name_color %} style="color: {{ g.name_color }};" {% endif %}>{{ g.nome }}</strong>
+                                        <small class="d-block text-muted">{{ g.nickname or 'Sem nickname' }}</small>
+                                    </td>
+                                    <td>
+                                        {% set spec = g.specialization %}
+                                        {% if spec %}
+                                            {% set spec_icon = 'bi-question-circle' %}{% set spec_color = '#fff' %}
+                                            {% set spec_color = spec.color_hex or spec_color %}
+                                            {% if spec.spec_code.lower() == 'vermelho' %}{% set spec_icon = 'bi-bullseye' %}
+                                            {% elif spec.spec_code.lower() == 'azul' %}{% set spec_icon = 'bi-shield-shaded' %}
+                                            {% elif spec.spec_code.lower() == 'cinza' %}{% set spec_icon = 'bi-lock-fill' %}{% endif %}
+                                            <i class="bi {{ spec_icon }} spec-icon-admin" style="color: {{ spec_color }};" title="{{ spec.name }}"></i>
+                                            <strong>{{ g.nivel.nome if g.nivel else 'N/A' }}</strong> (Nv. {{ g.nivel.level_number if g.nivel else 0 }})
+                                        {% else %}
+                                            <span class="text-muted small">Sem Caminho</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ g.score_atual or 0 }}</td>
+                                    <td class="text-center">{{ g.current_streak or 0 }}</td>
+                                    <td class="text-end">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Ações
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#lancarPontuacaoModal-{{ g.id }}"><i class="bi bi-plus-slash-minus me-2"></i>Lançar Pontuação</a></li>
+                                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#lancarConquistaModal-{{ g.id }}"><i class="bi bi-award-fill me-2"></i>Lançar Conquista</a></li>
+                                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#removerConquistaModal-{{ g.id }}"><i class="bi bi-award me-2"></i>Remover Conquista</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li><a class="dropdown-item" href="{{ url_for('guardians_bp.meu_perfil', perfil_id=g.id) }}" target="_blank"><i class="bi bi-person-circle me-2"></i>Ver Perfil</a></li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    {# BOTÃO EDITAR ADICIONADO AQUI #}
+                                                    <a class="dropdown-item" href="#" 
+                                                        data-bs-toggle="modal" data-bs-target="#editModalPerfil"
+                                                        data-perfil-id="{{ g.id }}"
+                                                        data-perfil-nome="{{ g.nome }}"
+                                                        data-perfil-score="{{ g.score_atual or 0 }}"
+                                                        data-perfil-moedas="{{ g.guardian_coins or 0 }}"
+                                                        data-perfil-streak="{{ g.current_streak or 0 }}"
+                                                        data-perfil-depto="{{ g.departamento_nome or '' }}"
+                                                        data-perfil-is-admin="{{ g.is_admin }}"
+                                                        data-perfil-opt-in="{{ g.opt_in_real_name_ranking }}"
+                                                        data-perfil-spec-id="{{ g.specialization_id or '' }}"
+                                                        data-perfil-tokens="{{ g.retake_tokens or 0 }}"
+                                                        data-perfil-minigame-tokens="{{ g.minigame_retake_tokens or 0 }}"
+                                                        data-perfil-nickname="{{ g.nickname or '' }}"
+                                                        data-perfil-is-anonymous="{{ g.is_anonymous }}"
+                                                        data-perfil-perfect-cumulative="{{ g.perfect_quiz_cumulative_count or 0 }}">
+                                                        <i class="bi bi-pencil-square me-2"></i>Editar Perfil
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form method="POST" action="{{ url_for('admin_v2_bp.reset_history') }}" onsubmit="return confirm('Tem certeza que deseja ZERAR o histórico de {{ g.nome }}?');">
+                                                        <input type="hidden" name="guardian_id" value="{{ g.id }}">
+                                                        <button type="submit" class="dropdown-item text-danger"><i class="bi bi-trash-fill me-2"></i>Zerar Histórico</button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="6" class="text-center text-muted">Nenhum guardião encontrado.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+{# --- Modais Específicos por Guardião --- #}
+{% for g in guardians %}
+    <div class="modal fade" id="lancarPontuacaoModal-{{ g.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <form method="POST" action="{{ url_for('admin_v2_bp.launch_score') }}">
+                    <input type="hidden" name="guardian_id" value="{{ g.id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Lançar Pontuação para {{ g.nome }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label">Selecione o Evento:</label>
+                        <select name="evento_id" class="form-select mb-3" required>
+                            {% for evento in eventos %}<option value="{{ evento.id }}">{{ evento.nome }} ({{ evento.pontuacao }} pts)</option>{% endfor %}
+                        </select>
+                        <label class="form-label">Observação (Opcional):</label>
+                        <input type="text" name="nota_admin" class="form-control" placeholder="Ex: Reportou phishing...">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Lançar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="lancarConquistaModal-{{ g.id }}" tabindex="-1">
+         <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <form method="POST" action="{{ url_for('admin_v2_bp.launch_achievement') }}">
+                    <input type="hidden" name="guardian_id" value="{{ g.id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Lançar Conquista para {{ g.nome }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-2">
+                            <label class="form-label">Selecione as Conquistas:</label>
+                            <small class="text-muted d-block mb-2">Marque todas que deseja conceder.</small>
+                        </div>
+
+                        <div class="card bg-secondary border-0 p-2" style="max-height: 300px; overflow-y: auto;">
+                            {% if insignias %}
+                                {% for conquista in insignias %}
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" 
+                                            name="insignia_ids" 
+                                            value="{{ conquista.id }}" 
+                                            id="chk_{{ g.id }}_{{ conquista.id }}">
+                                        
+                                        <label class="form-check-label text-white" for="chk_{{ g.id }}_{{ conquista.id }}">
+                                            <strong>{{ conquista.nome }} -- {{ conquista.achievement_code }}</strong>
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted py-3">
+                                    <i class="bi bi-exclamation-circle"></i> Nenhuma conquista cadastrada.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Conceder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="removerConquistaModal-{{ g.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <form method="POST" action="{{ url_for('admin_v2_bp.remove_achievement') }}">
+                    <input type="hidden" name="guardian_id" value="{{ g.id }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Remover Conquista de {{ g.nome }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label">Selecione a Conquista a Remover:</label>
+                        <select name="insignia_ids" class="form-select" required>
+                            {# Lógica simplificada: Assume que grouped_insignias existe no contexto #}
+                            {% if grouped_insignias and grouped_insignias[g.id] %}
+                                <option value="" disabled selected>Selecione uma conquista...</option>
+                                {% for gi in grouped_insignias[g.id] %}
+                                    <option value="{{ gi.insignia_id }}">{{ gi.insignia.nome }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="" disabled selected>Este guardião não possui conquistas.</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Remover</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+<div class="modal fade" id="editModalPerfil" tabindex="-1" aria-labelledby="editModalPerfilLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark text-white">
+            <form method="POST" action="{{ url_for('admin_v2_bp.edit_guardian_submit') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title text-white" id="editModalPerfilLabel">Editar Perfil: <span id="edit-perfil-nome-display"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="perfil_id" id="edit-perfil-id">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h5>Dados Principais</h5>
+                            <div class="mb-3">
+                                <label for="edit-score_atual" class="form-label">Score Atual</label>
+                                <input type="number" class="form-control" id="edit-score_atual" name="score_atual">
+                            </div>
+                            
+                            {# --- NOVO: Campo de Moedas --- #}
+                            <div class="mb-3">
+                                <label for="edit-moedas" class="form-label text-warning"><i class="bi bi-coin"></i> G-Coins (Moedas)</label>
+                                <input type="number" class="form-control" id="edit-moedas" name="moedas" min="0">
+                            </div>
+                            {# ---------------------------- #}
+
+                            <div class="mb-3">
+                                <label for="edit-current_streak" class="form-label">Ofensiva (Dias)</label>
+                                <input type="number" class="form-control" id="edit-current_streak" name="current_streak">
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit-nickname" class="form-label">Nickname</label>
+                                <input type="text" class="form-control" id="edit-nickname" name="nickname">
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit-departamento" class="form-label">Departamento</label>
+                                <input type="text" class="form-control" id="edit-departamento" name="departamento">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h5>Configurações de Jogo</h5>
+                            <div class="mb-3">
+                                <label for="edit-specialization_id" class="form-label">Caminho (Especialização)</label>
+                                <select class="form-select" id="edit-specialization_id" name="specialization_id">
+                                    <option value="">Sem Caminho</option>
+                                    {% for spec in specializations %}
+                                        <option value="{{ spec.id }}">{{ spec.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit-retake_tokens" class="form-label">Tokens de Quiz</label>
+                                <input type="number" class="form-control" id="edit-retake_tokens" name="retake_tokens">
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit-minigame_retake_tokens" class="form-label">Tokens de Minigame</label>
+                                <input type="number" class="form-control" id="edit-minigame_retake_tokens" name="minigame_retake_tokens">
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit-perfect_quiz_cumulative_count" class="form-label">Quizzes Perfeitos (Total)</label>
+                                <input type="number" class="form-control" id="edit-perfect_quiz_cumulative_count" name="perfect_quiz_cumulative_count">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+                    <h5 class="h6 mb-3 text-white">Permissões e Privacidade</h5>
+                    <div class="d-flex justify-content-around">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="edit-is_admin" name="is_admin">
+                            <label class="form-check-label" for="edit-is_admin">É Administrador</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="edit-opt_in_ranking" name="opt_in_ranking">
+                            <label class="form-check-label" for="edit-opt_in_ranking">Exibir nome real</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="edit-is_anonymous" name="is_anonymous">
+                            <label class="form-check-label" for="edit-is_anonymous">É Anônimo</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{{ render_gestao_externos(externos, quizzes) }}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var editModalPerfil = document.getElementById('editModalPerfil');
+    if (editModalPerfil) {
+        editModalPerfil.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            
+            // Extrai dados dos atributos data-*
+            var dataset = button.dataset;
+
+            // Preenche os campos do modal
+            var modal = this;
+            
+            // Texto do título
+            var nomeDisplay = modal.querySelector('#edit-perfil-nome-display');
+            if(nomeDisplay) nomeDisplay.textContent = dataset.perfilNome;
+
+            // Inputs Hidden e Numéricos
+            modal.querySelector('#edit-perfil-id').value = dataset.perfilId;
+            modal.querySelector('#edit-score_atual').value = dataset.perfilScore;
+            
+            // --- Preencher Moedas ---
+            var inputMoedas = modal.querySelector('#edit-moedas');
+            if(inputMoedas) inputMoedas.value = dataset.perfilMoedas;
+
+            modal.querySelector('#edit-current_streak').value = dataset.perfilStreak;
+            modal.querySelector('#edit-retake_tokens').value = dataset.perfilTokens;
+            modal.querySelector('#edit-minigame_retake_tokens').value = dataset.perfilMinigameTokens;
+            modal.querySelector('#edit-perfect_quiz_cumulative_count').value = dataset.perfilPerfectCumulative;
+
+            // Inputs de Texto
+            modal.querySelector('#edit-nickname').value = dataset.perfilNickname;
+            modal.querySelector('#edit-departamento').value = dataset.perfilDepto;
+
+            // Select (Dropdown) - Especialização
+            var selectSpec = modal.querySelector('#edit-specialization_id');
+            if(selectSpec) selectSpec.value = dataset.perfilSpecId;
+
+            // Checkboxes (converter string 'True'/'False' para boolean)
+            modal.querySelector('#edit-is_admin').checked = (dataset.perfilIsAdmin === 'True');
+            modal.querySelector('#edit-opt_in_ranking').checked = (dataset.perfilOptIn === 'True');
+            modal.querySelector('#edit-is_anonymous').checked = (dataset.perfilIsAnonymous === 'True');
+        });
+    }
+});
+</script>
+{% endblock %}

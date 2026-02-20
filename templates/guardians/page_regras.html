@@ -1,0 +1,341 @@
+{% extends "base_template.html" %}
+
+{% block title %}Protocolos do Guardião | Manual{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/program.css') }}">
+    
+    <style>
+        /* Estilos Específicos do Manual para Melhor Leitura */
+        .manual-section {
+            background: rgba(10, 10, 15, 0.85);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        .manual-section::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--neon-blue);
+        }
+        .manual-section.red-border::before { background: var(--neon-red); }
+        .manual-section.yellow-border::before { background: var(--neon-yellow); }
+        .manual-section.green-border::before { background: var(--neon-green); }
+
+        .manual-title {
+            font-family: 'Share Tech Mono', monospace;
+            color: #fff;
+            text-transform: uppercase;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .sub-header {
+            font-family: 'Share Tech Mono', monospace;
+            color: #aaa;
+            font-size: 1.1rem;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 5px;
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+
+        .tech-list li {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 2px solid #555;
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 0 4px 4px 0;
+        }
+        .tech-list li:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: var(--neon-blue);
+        }
+
+        .icon-box {
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            background: #1a1a20;
+            border-radius: 50%;
+            margin-right: 15px;
+            font-size: 1.2rem;
+        }
+
+        .shortcut-key {
+            background: #333;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            border: 1px solid #555;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+<div class="rules-hero mb-5">
+    <div class="container text-center py-5">
+        <h1 class="rules-title display-4 font-tech text-white" style="text-shadow: 0 0 15px var(--neon-blue);">
+            <i class="bi bi-journal-code"></i> PROTOCOLOS DO GUARDIÃO
+        </h1>
+        <p class="lead text-muted font-tech">
+            // DOCUMENTAÇÃO OFICIAL v3.0 // ACESSO NIVEL 1 //
+        </p>
+    </div>
+</div>
+
+<div class="container">
+    
+    <div class="manual-section">
+        <h2 class="manual-title"><i class="bi bi-bullseye text-neon-blue"></i> DIRETRIZ PRIMÁRIA</h2>
+        <p class="text-light">
+            O programa <strong>Guardiões da Comnect</strong> transforma o aprendizado de segurança digital em uma operação tática contínua.
+            Seu objetivo é acumular <strong>XP (Experiência)</strong> para subir de patente, liderar os rankings e desbloquear recursos avançados.
+        </p>
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="icon-box text-warning"><i class="bi bi-trophy-fill"></i></div>
+                    <div>
+                        <strong class="text-white d-block">Rankings</strong>
+                        <span class="small text-muted">Dispute por XP (Global) ou Consistência (Vigilante).</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="icon-box text-info"><i class="bi bi-graph-up-arrow"></i></div>
+                    <div>
+                        <strong class="text-white d-block">Evolução</strong>
+                        <span class="small text-muted">Suba de nível para ganhar Títulos e Avatares.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="icon-box text-danger"><i class="bi bi-shield-check"></i></div>
+                    <div>
+                        <strong class="text-white d-block">Impacto Real</strong>
+                        <span class="small text-muted">Proteja a empresa contra ameaças reais.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        
+        <div class="col-lg-6">
+            <div class="manual-section green-border h-100">
+                <h3 class="manual-title"><i class="bi bi-signpost-split text-neon-green"></i> CAMINHOS (SPECS)</h3>
+                <p class="small text-muted mb-4">
+                    Ao atingir o nível necessário, você deve escolher uma classe. Cada uma oferece vantagens passivas (Perks) que mudam sua estratégia de ganho de XP.
+                </p>
+
+                <ul class="list-unstyled tech-list">
+                    <li class="d-flex">
+                        <i class="bi bi-shield-shaded fs-3 text-info me-3"></i>
+                        <div>
+                            <strong class="text-info">CAMINHO AZUL (DEFENSOR)</strong>
+                            <p class="small text-muted mb-0">
+                                Focado em estabilidade.
+                            </p>
+                        </div>
+                    </li>
+                    <li class="d-flex">
+                        <i class="bi bi-bug-fill fs-3 text-danger me-3"></i>
+                        <div>
+                            <strong class="text-danger">CAMINHO VERMELHO (ATACANTE)</strong>
+                            <p class="small text-muted mb-0">
+                                Focado em ação.
+                            </p>
+                        </div>
+                    </li>
+                    <li class="d-flex">
+                        <i class="bi bi-eyeglasses fs-3 text-secondary me-3"></i>
+                        <div>
+                            <strong class="text-white">CAMINHO CINZA (GESTOR)</strong>
+                            <p class="small text-muted mb-0">
+                                Focado em economia e consistência.
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="alert alert-dark border-secondary mt-3 d-flex align-items-center">
+                    <i class="bi bi-info-circle me-3"></i>
+                    <small>Você pode trocar de Caminho, mas existe um período de resfriamento (Cooldown) e um mínimo de XP necessário.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="manual-section red-border h-100">
+                <h3 class="manual-title"><i class="bi bi-joystick text-neon-red"></i> DESAFIOS</h3>
+                
+                <div class="mb-4">
+                    <div class="sub-header text-neon-blue">QUIZZES (Múltipla Escolha)</div>
+                    <p class="small text-muted">
+                        Responda perguntas de segurança. O tempo conta.
+                        <br><strong>Bônus:</strong> <span class="text-success">Perfeição</span> (Acertar todas) e <span class="text-warning">Velocidade</span> (Responder rápido).
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <div class="sub-header text-neon-red">CÓDIGO</div>
+                    <p class="small text-muted">
+                        Descubra a senha de X letras em N tentativas.
+                        <br>Verde = Certo. Amarelo = Lugar errado. Cinza = Errado.
+                        <br><strong>Atenção:</strong> Errar todas as tentativas resulta em 0 XP.
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <div class="sub-header text-neon-yellow">SEGREDO</div>
+                    <p class="small text-muted">
+                        Construa uma senha que atenda a múltiplas regras dinâmicas simultaneamente.
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="sub-header text-neon-green">DECRIPTAR</div>
+                    <p class="small text-muted">
+                        Reorganize as letras para formar termos técnicos antes que o tempo acabe.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="manual-section yellow-border mt-4">
+        <h2 class="manual-title"><i class="bi bi-cart4 text-neon-yellow"></i> MERCADO NEGRO (LOJA)</h2>
+        <p class="text-light">
+            As <strong>G-Coins</strong> são a moeda da Grid. Use-as para comprar vantagens estratégicas.
+            A loja possui um estoque rotativo que muda a cada 24h.
+        </p>
+
+        <div class="row mt-4">
+            <div class="col-md-3 text-center mb-3">
+                <i class="bi bi-box-seam display-4 text-white mb-2"></i>
+                <h5 class="font-tech text-white">Módulos (Buffs)</h5>
+                <p class="small text-muted">Itens passivos que aumentam XP em atividades específicas (ex: +20% em Quizzes).</p>
+            </div>
+            <div class="col-md-3 text-center mb-3">
+                <i class="bi bi-arrow-counterclockwise display-4 text-info mb-2"></i>
+                <h5 class="font-tech text-info">Retakes</h5>
+                <p class="small text-muted">Permitem refazer ("Retake") um Quiz ou Minigame onde você falhou.</p>
+            </div>
+            <div class="col-md-3 text-center mb-3">
+                <i class="bi bi-arrow-repeat display-4 text-warning mb-2"></i>
+                <h5 class="font-tech text-warning">Reroll</h5>
+                <p class="small text-muted">Não gostou da loja de hoje? Pague uma taxa para atualizar o estoque instantaneamente.</p>
+            </div>
+            <div class="col-md-3 text-center mb-3">
+                <i class="bi bi-palette display-4 text-danger mb-2"></i>
+                <h5 class="font-tech text-danger">Cosméticos</h5>
+                <p class="small text-muted">Em breve...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="manual-section">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="manual-title mb-0"><i class="bi bi-list-check"></i> ROTINA OPERACIONAL</h2>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 border-end border-secondary">
+                        <h4 class="font-tech text-white mb-3">MISSÕES SEMANAIS</h4>
+                        <p class="text-muted small">
+                            Você recebe pacotes de missões (ex: "Jogue 3 Quizzes", "Vença o Decriptar em pouco tempo").
+                        </p>
+                        <ul class="text-muted small">
+                            <li>Complete o pacote para ganhar um <strong>Baú de G-Coins</strong>.</li>
+                            <li>Resgate a recompensa para gerar um novo pacote de missões imediatamente.</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6 ps-md-4">
+                        <h4 class="font-tech text-danger mb-3"><i class="bi bi-fire"></i> OFENSIVA (Vigilante)</h4>
+                        <p class="text-muted small">
+                            Acesse a plataforma diariamente para manter seu fogo aceso.
+                        </p>
+                        <ul class="text-muted small">
+                            <li><strong>Patrulha Diária:</strong> É obrigatória para manter a streak (ou qualquer outra atividade válida).</li>
+                            <li><strong>Bônus Acumulativo:</strong> Cada dia aumenta seu multiplicador de XP global em +1% (até o teto da sua classe).</li>
+                            <li><strong>Perda:</strong> Faltar 1 dia apaga o fogo e zera o bônus.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="manual-section purple-border">
+        <h2 class="manual-title"><i class="bi bi-award-fill" style="color: #d63384;"></i> CONQUISTAS & INSÍGNIAS</h2>
+        <p class="text-light">
+            As insígnias são provas definitivas de sua habilidade. Elas são desbloqueadas ao atingir marcos específicos (ex: Vencer 50 Quizzes, Completar 7 dias de Streak).
+        </p>
+        <div class="row align-items-center mt-4">
+            <div class="col-md-8">
+                <ul class="tech-list list-unstyled">
+                    <li class="d-flex align-items-start">
+                        <i class="bi bi-pin-angle-fill text-warning me-3 mt-1"></i>
+                        <div>
+                            <strong class="text-white">SISTEMA DE DESTAQUE (EQUIPAR)</strong>
+                            <p class="small text-muted mb-0">
+                                Você pode "equipar" até <strong>3 Insígnias</strong> no seu perfil. Elas aparecem ao lado do seu nome nos Rankings e no topo do seu card de jogador.
+                            </p>
+                        </div>
+                    </li>
+                    <li class="d-flex align-items-start">
+                        <i class="bi bi-lightning-charge-fill text-info me-3 mt-1"></i>
+                        <div>
+                            <strong class="text-white">BÔNUS PASSIVOS</strong>
+                            <p class="small text-muted mb-0">
+                                O verdadeiro poder das insígnias. Quando equipadas (destacadas), elas concedem <strong>Bônus Permanentes de XP</strong> em atividades específicas.
+                                <br><em class="text-secondary">Exemplo: A insígnia "Codebreaker Elite" pode dar +5% de XP em minigames.</em>
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="p-3 rounded bg-black d-inline-block" style="border: 1px dashed #555;">
+                    <div class="d-flex gap-3 justify-content-center">
+                        <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:50px;height:50px;border:1px solid #444;">
+                            <i class="bi bi-trophy text-muted"></i>
+                        </div>
+                        <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:50px;height:50px;border:1px solid #444;">
+                            <i class="bi bi-trophy text-muted"></i>
+                        </div>
+                        <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center" style="width:50px;height:50px;border:1px solid #444;">
+                            <i class="bi bi-trophy text-muted"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5 mb-5">
+        <a href="{{ url_for('guardians_bp.central') }}" class="btn btn-lg btn-outline-light font-tech px-5" style="border-style: dashed; opacity: 0.7;">
+            <i class="bi bi-arrow-return-left me-2"></i> RETORNAR À CENTRAL
+        </a>
+    </div>
+
+</div>
+{% endblock %}

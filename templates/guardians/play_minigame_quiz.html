@@ -1,0 +1,265 @@
+{% extends "base_template.html" %}
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+
+{% block title %}Avaliação: {{ quiz.title }}{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/take_quiz.css') }}">
+    <style>
+        body {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        body { background-color: #121418; overflow-x: hidden; }
+        .hud-close-btn { background: none; border: none; padding: 0; cursor: pointer; }
+    </style>
+{% endblock %}
+
+{% block content %}
+{{ render_assistant(assistant_data) }}
+<div id="quiz-game-container" data-timer="{{ remaining_time if remaining_time else 0 }}">
+
+    <header class="hud-header">
+        <div class="hud-box">
+            <span class="hud-label">TIMER</span>
+            <div id="timer-display" class="hud-value-mono">--:--</div>
+        </div>
+
+        <div class="hud-box flex-grow-1 text-center">
+            <span class="hud-label">PROGRESSO DA AVALIAÇÃO</span>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <button type="button" id="abort-btn" class="hud-close-btn" title="Abortar Missão">
+            <i class="bi bi-x-lg" style="font-size: 1.5rem; color: #fff; transition: 0.2s;"></i>
+        </button>
+    </header>
+
+    <main class="quiz-main-area">
+        <form action="{{ url_for('guardians_bp.submit_quiz_externo' if is_externo else 'guardians_bp.submit_quiz') }}" method="POST" id="quiz-form">
+            <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+            <input type="hidden" name="timer_expired" id="timer_expired_input" value="false">
+            
+            <input type="hidden" name="abandoned" id="abandoned_input" value="false">
+
+            <div class="card-container">
+                
+                {% for question in quiz.questions %}
+                <div class="question-step" id="step-{{ loop.index0 }}" data-index="{{ loop.index0 }}">
+                    
+                    <div class="question-meta">
+                        <span class="q-id">QUESTÃO {{ "%02d" % loop.index }}</span>
+                        <span class="q-xp">{{ question.points }} XP</span>
+                    </div>
+
+                    <h2 class="question-title">{{ question.question_text }}</h2>
+
+                    <div class="options-scroll-area">
+                        {% for option in question.options %}
+                        <label class="cyber-option">
+                            <input type="checkbox" 
+                                name="question_{{ question.id }}" 
+                                value="{{ option.id }}" 
+                                class="option-input visually-hidden">
+                            
+                            <div class="option-visual">
+                                <div class="opt-marker" style="border-radius: 2px;"></div>
+                                <span class="opt-text">{{ option.option_text }}</span>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                </div>
+                {% endfor %}
+
+                <div class="card-actions">
+                    <button type="button" id="prev-btn" class="cyber-btn btn-nav" style="visibility: hidden;">
+                        <i class="bi bi-caret-left-fill"></i> VOLTAR
+                    </button>
+                    
+                    <button type="button" id="next-btn" class="cyber-btn btn-action">
+                        PRÓXIMA <i class="bi bi-caret-right-fill"></i>
+                    </button>
+
+                    <button type="button" id="submit-btn" class="cyber-btn btn-finish" style="display: none;">
+                        FINALIZAR <i class="bi bi-check-lg"></i>
+                    </button>
+                </div>
+
+            </div>
+            <div class="alert alert-warning d-flex align-items-center border-warning bg-opacity-10 mt-3 mb-4" role="alert" style="background-color: rgba(255, 193, 7, 0.05); border-left: 4px solid #ffc107;">
+    <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
+    <div>
+        <strong class="text-uppercase font-tech" style="letter-spacing: 1px;">Protocolo de Segurança Ativo</strong>
+        <div class="small text-muted">
+            Não saia da página ou feche o navegador. A desconexão resultará em <strong>falha imediata</strong> e pontuação zero.
+        </div>
+    </div>
+</div>
+        </form>
+        
+    </main>
+
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- SETUP ---
+    document.addEventListener('copy', e => e.preventDefault());
+    document.addEventListener('cut', e => e.preventDefault());
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+        // Bloqueia Ctrl+C, Ctrl+X, Ctrl+A, Ctrl+U, F12, PrintScreen
+        const blocked = (e.ctrlKey && ['c','x','a','u','s'].includes(e.key.toLowerCase())) || 
+                        e.key === 'F12' || 
+                        e.key === 'PrintScreen';
+        if (blocked) e.preventDefault();
+    }); 
+    // --- SETUP ---
+    const container = document.getElementById('quiz-game-container');
+    const form = document.getElementById('quiz-form');
+    const steps = document.querySelectorAll('.question-step');
+    const totalSteps = steps.length;
+    
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const abortBtn = document.getElementById('abort-btn'); 
+    const progressBar = document.getElementById('progress-bar');
+    const timerDisplay = document.getElementById('timer-display');
+    const abandonedInput = document.getElementById('abandoned_input');
+    
+    let currentIndex = 0;
+    
+    // --- TIMER ---
+    let timeRemaining = parseFloat(container.dataset.timer);
+    if (timeRemaining > 0) {
+        const timerInterval = setInterval(() => {
+            timeRemaining--;
+            const m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+            const s = Math.floor(timeRemaining % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${m}:${s}`;
+
+            if (timeRemaining < 30) timerDisplay.style.color = '#dc3545'; 
+
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('timer_expired_input').value = 'true';
+                form.submit();
+            }
+        }, 1000);
+    } else {
+        timerDisplay.innerHTML = "LIVRE";
+    }
+
+    // --- NAVEGAÇÃO ---
+    function showStep(index) {
+        steps.forEach(step => {
+            step.style.display = 'none';
+            step.classList.remove('active');
+        });
+
+        const currentStep = steps[index];
+        currentStep.style.display = 'block';
+        setTimeout(() => currentStep.classList.add('active'), 10);
+
+        prevBtn.style.visibility = index === 0 ? 'hidden' : 'visible';
+        
+        if (index === totalSteps - 1) {
+            nextBtn.style.display = 'none';
+            submitBtn.style.display = 'inline-flex';
+        } else {
+            nextBtn.style.display = 'inline-flex';
+            submitBtn.style.display = 'none';
+        }
+
+        const progress = ((index + 1) / totalSteps) * 100;
+        progressBar.style.width = `${progress}%`;
+    }
+
+    // --- INTERAÇÃO VISUAL ---
+    const inputs = document.querySelectorAll('.option-input');
+    inputs.forEach(input => {
+        input.parentElement.addEventListener('click', function(e) {
+            setTimeout(() => {
+                if (input.checked) {
+                    this.querySelector('.option-visual').classList.add('selected');
+                } else {
+                    this.querySelector('.option-visual').classList.remove('selected');
+                }
+            }, 10);
+        });
+        
+        input.addEventListener('change', function() {
+            const visual = this.parentElement.querySelector('.option-visual');
+            if (this.checked) visual.classList.add('selected');
+            else visual.classList.remove('selected');
+        });
+    });
+
+    // --- EVENTOS DE CONTROLE ---
+    function isCurrentValid() {
+        const currentStep = steps[currentIndex];
+        return !!currentStep.querySelector('input:checked');
+    }
+
+    nextBtn.addEventListener('click', () => {
+        if (!isCurrentValid()) {
+            const card = document.querySelector('.card-container');
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 400);
+            return; 
+        }
+        if (currentIndex < totalSteps - 1) {
+            currentIndex++;
+            showStep(currentIndex);
+        }
+    });
+
+    prevBtn.addEventListener('click', () => {
+        if (currentIndex > 0) {
+            currentIndex--;
+            showStep(currentIndex);
+        }
+    });
+
+    submitBtn.addEventListener('click', () => {
+        if (!isCurrentValid()) {
+            alert("Responda a última questão.");
+            return;
+        }
+        form.submit();
+    });
+
+    // --- ALTERAÇÃO 3: Lógica de Abortar Missão ---
+    abortBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if(confirm("ATENÇÃO: Deseja abortar o protocolo?\n\nIsso encerrará a tentativa atual e sua pontuação será calculada apenas com o que foi respondido até agora (Tentativa zerada/incompleta).")) {
+            abandonedInput.value = 'true';
+            document.querySelectorAll('input[required]').forEach(input => input.removeAttribute('required'));
+            form.submit();
+        }
+    });
+
+    // Hover effect no botão de fechar (JS extra para cor do icone)
+    abortBtn.addEventListener('mouseenter', () => {
+        abortBtn.querySelector('i').style.color = '#dc3545'; 
+    });
+    abortBtn.addEventListener('mouseleave', () => {
+        abortBtn.querySelector('i').style.color = '#fff';
+    });
+
+    showStep(0);
+});
+</script>
+{% endblock %}

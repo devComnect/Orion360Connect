@@ -34,6 +34,11 @@ def login():
             session['is_portal_admin'] = user.is_admin
             session['is_nivel2'] = int(user.is_nivel2 or 0)    # garante int, trata None como 0
 
+            #REDIRECIONA PARA CENTRAL EXTERNA
+            session['is_externo'] = bool(user.is_externo)
+            if user.is_externo:
+                return redirect(url_for('guardians_bp.central_externa'))
+
 
 
             # Vincula ou cria perfil Guardian

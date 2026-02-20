@@ -1,0 +1,131 @@
+{% extends "base_template.html" %}
+
+{% import 'guardians/macros/admin_macros.html' as macros %}
+
+{% block title %}Dashboard Administrativo{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h1 class="text-center mb-4 text-white">Interface Administrativa</h1>
+    <div class="row">
+        <div class="col-lg-3 admin-sidebar">
+            <div class="card bg-dark text-white shadow">
+                <div class="card-header">
+                    <i class="bi bi-speedometer2 me-2"></i> Menu de Navegação
+                </div>
+                <div class="list-group list-group-flush" id="admin-nav" role="tablist">
+                    <a href="{{ url_for('guardians_bp.analytics') }}" class="list-group-item list-group-item-action bg-dark text-white">Analytics & Relatórios</a>
+                    <a href="#panel-events" class="list-group-item list-group-item-action bg-dark text-white" data-bs-toggle="list" role="tab">Gerenciar Eventos</a>
+                    <a href="#panel-insignias" class="list-group-item list-group-item-action bg-dark text-white" data-bs-toggle="list" role="tab">Gerenciar Conquistas</a>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="tab-content">
+                
+                <div class="tab-pane fade show active" id="panel-overview" role="tabpanel">
+                    <p class="text-white">Bem-vindo ao painel de controle!</p>
+                    {{- macros.render_gestao_perfis(colaboradores) -}}
+                </div>
+
+                <div class="tab-pane fade" id="panel-events" role="tabpanel">
+                    {{- macros.render_gestao_eventos(eventos) -}}
+                </div>
+
+                <div class="tab-pane fade" id="panel-insignias" role="tabpanel">
+                    {{- macros.render_gestao_insignias(insignias, colaboradores) -}}
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ macros.render_modais(
+    specializations=specializations, 
+    niveis=niveis, 
+    eventos=eventos, 
+    insignias=insignias, 
+    colaboradores=colaboradores,
+    termo_games=termo_games,
+    anagram_games=anagram_games
+) }}
+
+{{ macros.render_quiz_assets() }}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Ativa a funcionalidade de abas do Bootstrap para o menu lateral
+        var triggerTabList = [].slice.call(document.querySelectorAll('#admin-nav a[data-bs-toggle="list"]'));
+        triggerTabList.forEach(function (triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl);
+            triggerEl.addEventListener('click', function (event) {
+                event.preventDefault();
+                tabTrigger.show();
+            });
+        });
+
+        // Opcional: faz a aba correta ser ativada se a URL tiver uma âncora
+        // Ex: /admin#panel-quizzes já abrirá na aba de quizzes
+        var hash = window.location.hash;
+        if (hash) {
+            var triggerEl = document.querySelector('a[href="' + hash + '"]');
+            if (triggerEl) {
+                var tabTrigger = new bootstrap.Tab(triggerEl);
+                tabTrigger.show();
+            }
+        }
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editPerfilModal = document.getElementById('editModalPerfil');
+    if (editPerfilModal) {
+        editPerfilModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            
+            // Pega todos os dados do botão
+            const data = {};
+            for (const attr of button.attributes) {
+                if (attr.name.startsWith('data-perfil-')) {
+                    const key = attr.name.replace('data-perfil-', '');
+                    data[key] = attr.value;
+                }
+            }
+
+            // Preenche o formulário
+            editPerfilModal.querySelector('#perfil-nome').textContent = data.nome;
+            editPerfilModal.querySelector('#edit-perfil-id').value = data.id;
+            editPerfilModal.querySelector('#edit-score-atualizado').value = data.score;
+            editPerfilModal.querySelector('#edit-streak').value = data.streak;
+            editPerfilModal.querySelector('#edit-departamento').value = data.depto;
+            editPerfilModal.querySelector('#edit-is-admin').checked = data['is-admin'] === 'True';
+            editPerfilModal.querySelector('#edit-opt-in-ranking').checked = data['opt-in'] === 'True';
+            
+            // Preenche os NOVOS campos
+            editPerfilModal.querySelector('#edit-specialization').value = data['spec-id'];
+            editPerfilModal.querySelector('#edit-tokens').value = data.tokens;
+            editPerfilModal.querySelector('#edit-nickname').value = data.nickname;
+            editPerfilModal.querySelector('#edit-is-anonymous').checked = data['is-anonymous'] === 'True';
+            editPerfilModal.querySelector('#edit-perfect-cumulative').value = data['perfect-cumulative'];
+            editPerfilModal.querySelector('#edit-featured-insignia').value = data['featured-insignia-id'];
+            editPerfilModal.querySelector('#edit-name-color').value = data['name-color'];
+        });
+    }
+});
+</script>
+
+
+{% endblock %}
+

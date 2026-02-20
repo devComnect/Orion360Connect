@@ -1,0 +1,339 @@
+{# templates/guardians/macros/_admin_quiz_macro.html #}
+
+{% macro render_gestao_quizzes(quizzes, colaboradores) %}
+<div class="card shadow-sm bg-dark text-white border-secondary">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-patch-question-fill me-2"></i> Gestão de Quizzes</span>
+        <div>
+            <button class="btn btn-sm btn-success me-2" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                <i class="bi bi-filetype-csv"></i> Importar CSV
+            </button>
+            <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCreateQuiz">
+                <i class="bi bi-plus-lg"></i> Novo Quiz
+            </button>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        
+        <div class="collapse mb-4" id="collapseCreateQuiz">
+            <div class="card card-body bg-secondary bg-opacity-10 border-secondary">
+                <h6 class="text-info mb-3">Criar Novo Quiz Manual</h6>
+                <form action="{{ url_for('admin_v2_bp.content_hub') }}#tab-quizzes" method="POST">
+                    <input type="hidden" name="action" value="criar_quiz">
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Título</label>
+                            <input type="text" name="title" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">Categoria</label>
+                            <select name="category" class="form-select form-select-sm">
+                                <option value="COMUM">Comum</option>
+                                <option value="ESPECIAL">Especial</option>
+                                <option value="HARDCORE">Hardcore</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">Tempo (s)</label>
+                            <input type="number" name="time_limit_seconds" class="form-control form-control-sm" placeholder="Opcional">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small text-muted">Descrição</label>
+                            <textarea name="description" class="form-control form-control-sm" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small text-muted">Data Ativação</label>
+                            <input type="date" name="activation_date" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small text-muted">Duração (Dias)</label>
+                            <input type="number" name="duration_days" class="form-control form-control-sm" value="7" required>
+                        </div>
+                    </div>
+
+                    <hr class="border-secondary">
+                    
+                    <h6 class="text-info mb-2">Perguntas</h6>
+                    <div id="questions-container-create"></div>
+                    
+                    <button type="button" id="add-question-btn-create" class="btn btn-sm btn-outline-info mt-2">
+                        <i class="bi bi-plus-circle"></i> Adicionar Pergunta
+                    </button>
+
+                    <hr class="border-secondary">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">Salvar Quiz Completo</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="btn-group mb-3 w-100" role="group" id="quiz-filters">
+            <button type="button" class="btn btn-outline-secondary active" data-filter="all">Todos</button>
+            <button type="button" class="btn btn-outline-success" data-filter="active">Ativos</button>
+            <button type="button" class="btn btn-outline-info" data-filter="scheduled">Agendados</button>
+            <button type="button" class="btn btn-outline-danger" data-filter="expired">Expirados</button>
+        </div>
+
+        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+            <table class="table table-dark table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Título</th>
+                        <th>Datas</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="quizTableBody">
+                    {% for quiz in quizzes %}
+                        {# Lógica de Status no Template #}
+                        {% set today = date_today %} 
+                        {% set end_date = quiz.activation_date + timedelta_obj(days=quiz.duration_days) %}
+                        {% set status_class = 'active' %}
+                        {% set badge_html = '<span class="badge bg-success">Ativo</span>' %}
+
+                        {% if quiz.activation_date > today %}
+                            {% set status_class = 'scheduled' %}
+                            {% set badge_html = '<span class="badge bg-info text-dark">Agendado</span>' %}
+                        {% elif end_date < today %}
+                            {% set status_class = 'expired' %}
+                            {% set badge_html = '<span class="badge bg-secondary">Expirado</span>' %}
+                        {% endif %}
+
+                        <tr class="quiz-row" data-status="{{ status_class }}">
+                            <td>
+                                {{ badge_html | safe }}
+                                <div class="small text-muted mt-1">{{ quiz.category.value }}</div>
+                            </td>
+                            <td>
+                                <strong>{{ quiz.title }}</strong><br>
+                                <small class="text-muted text-truncate" style="max-width: 250px; display:inline-block;">
+                                    {{ quiz.description or 'Sem descrição' }}
+                                </small>
+                            </td>
+                            <td>
+                                <small>Início: {{ quiz.activation_date.strftime('%d/%m/%Y') }}</small><br>
+                                <small>Fim: {{ end_date.strftime('%d/%m/%Y') }}</small>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin_v2_bp.view_quiz', quiz_id=quiz.id) }}" target="_blank" class="btn btn-sm btn-outline-light" title="Visualizar Quiz">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#editQuizModal-{{ quiz.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#resetAttemptModal-{{ quiz.id }}" title="Resetar Tentativa">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                    <form action="{{ url_for('admin_v2_bp.content_hub') }}#tab-quizzes" method="POST" class="d-inline" onsubmit="return confirm('Excluir este quiz?');">
+                                        <input type="hidden" name="action" value="excluir_quiz">
+                                        <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="text-center text-muted">Nenhum quiz encontrado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# --- 4. MODAIS E TEMPLATES (Embutidos aqui para isolar escopo) --- #}
+
+<div class="modal fade" id="importCsvModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white">
+            <form action="{{ url_for('admin_v2_bp.content_hub') }}#tab-quizzes" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="import_quizzes_csv">
+                <div class="modal-header"><h5 class="modal-title">Importar Quizzes (CSV)</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <p class="small">Layout: Titulo, Descricao, Data(YYYY-MM-DD), Duracao, Tempo, Categoria, Pergunta, Pontos, Opções(A|1;B|0)</p>
+                    <input type="file" name="csv_file" class="form-control" accept=".csv" required>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-success">Importar</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for quiz in quizzes %}
+    <div class="modal fade" id="editQuizModal-{{ quiz.id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-white">
+                <form action="{{ url_for('admin_v2_bp.content_hub') }}#tab-quizzes" method="POST">
+                    <input type="hidden" name="action" value="editar_quiz">
+                    <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+                    <div class="modal-header"><h5 class="modal-title">Editar: {{ quiz.title }}</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div class="mb-2"><label>Título</label><input type="text" name="title" class="form-control" value="{{ quiz.title }}"></div>
+                        <div class="mb-2"><label>Descrição</label><textarea name="description" class="form-control">{{ quiz.description }}</textarea></div>
+                        <div class="row">
+                            <div class="col-6"><label>Data</label><input type="date" name="activation_date" class="form-control" value="{{ quiz.activation_date }}"></div>
+                            <div class="col-6"><label>Duração</label><input type="number" name="duration_days" class="form-control" value="{{ quiz.duration_days }}"></div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6"><label>Tempo (s)</label><input type="number" name="time_limit_seconds" class="form-control" value="{{ quiz.time_limit_seconds or '' }}"></div>
+                            <div class="col-6"><label>Categoria</label>
+                                <select name="category" class="form-select">
+                                    <option value="COMUM" {% if quiz.category.name == 'COMUM' %}selected{% endif %}>Comum</option>
+                                    <option value="ESPECIAL" {% if quiz.category.name == 'ESPECIAL' %}selected{% endif %}>Especial</option>
+                                    <option value="HARDCORE" {% if quiz.category.name == 'HARDCORE' %}selected{% endif %}>Hardcore</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer"><button type="submit" class="btn btn-primary">Salvar</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="resetAttemptModal-{{ quiz.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-white">
+                <form action="{{ url_for('admin_v2_bp.content_hub') }}#tab-quizzes" method="POST">
+                    <input type="hidden" name="action" value="reset_quiz_attempt">
+                    <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+                    <div class="modal-header"><h5 class="modal-title text-warning">Resetar Tentativa</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <label>Usuário:</label>
+                        <select name="guardian_id" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            {% for g in colaboradores %}
+                                <option value="{{ g.id }}">{{ g.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="modal-footer"><button type="submit" class="btn btn-warning">Resetar</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+<div id="js-templates-quiz" style="display: none;">
+    <div class="question-block card card-body bg-dark border-secondary mb-3 p-3">
+        <div class="d-flex justify-content-between mb-2">
+            <h6 class="text-white">Pergunta <span class="q-num">1</span></h6>
+            <button type="button" class="btn-close btn-close-white remove-question-btn"></button>
+        </div>
+        <div class="row g-2 mb-2">
+            <div class="col-9">
+                <input type="text" name="questions[INDEX][question_text]" class="form-control form-control-sm" placeholder="Texto da pergunta" required>
+            </div>
+            <div class="col-3">
+                <input type="number" name="questions[INDEX][points]" class="form-control form-control-sm" value="10" placeholder="Pts" required>
+            </div>
+        </div>
+        <div class="options-container"></div>
+        <button type="button" class="btn btn-xs btn-outline-secondary add-option-btn mt-2" style="font-size: 0.8rem;">+ Opção</button>
+    </div>
+
+    <div class="input-group input-group-sm mb-1 option-block">
+        <div class="input-group-text bg-secondary border-secondary">
+            <input class="form-check-input mt-0" type="checkbox" name="questions[Q_INDEX][options][O_INDEX][is_correct]" value="true">
+        </div>
+        <input type="text" name="questions[Q_INDEX][options][O_INDEX][option_text]" class="form-control bg-dark text-white border-secondary" placeholder="Resposta" required>
+        <button type="button" class="btn btn-outline-danger remove-option-btn">X</button>
+    </div>
+</div>
+
+<script>
+    // Encapsulamento para evitar variáveis globais
+    (function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // --- FILTROS DA TABELA ---
+            const filterButtons = document.querySelectorAll('#quiz-filters button');
+            const rows = document.querySelectorAll('.quiz-row');
+
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const filter = btn.dataset.filter;
+                    rows.forEach(row => {
+                        row.style.display = (filter === 'all' || row.dataset.status === filter) ? '' : 'none';
+                    });
+                });
+            });
+
+            // --- CONSTRUTOR DE PERGUNTAS ---
+            const container = document.getElementById('questions-container-create');
+            const addBtn = document.getElementById('add-question-btn-create');
+            const templates = document.getElementById('js-templates-quiz');
+            
+            if (addBtn && container && templates) {
+                const qTemplate = templates.querySelector('.question-block');
+                const oTemplate = templates.querySelector('.option-block');
+                
+                // Função para adicionar nova pergunta
+                const addNewQuestion = () => {
+                    // Calcula o índice baseado nos filhos atuais para evitar colisão
+                    let currentCount = container.children.length;
+                    
+                    const clone = qTemplate.cloneNode(true);
+                    
+                    // Atualiza HTML com o índice correto
+                    clone.innerHTML = clone.innerHTML.replace(/INDEX/g, currentCount);
+                    clone.querySelector('.q-num').textContent = currentCount + 1;
+                    clone.dataset.qIndex = currentCount;
+                    
+                    // Botão Remover Pergunta
+                    clone.querySelector('.remove-question-btn').addEventListener('click', () => {
+                        clone.remove();
+                        updateQuestionNumbers(); // Reordena números visuais
+                    });
+
+                    // Botão Adicionar Opção
+                    const optContainer = clone.querySelector('.options-container');
+                    const addOptBtn = clone.querySelector('.add-option-btn');
+                    
+                    addOptBtn.addEventListener('click', () => {
+                        addOptionToQuestion(optContainer, oTemplate, currentCount);
+                    });
+
+                    // Adiciona 2 opções iniciais
+                    addOptionToQuestion(optContainer, oTemplate, currentCount);
+                    addOptionToQuestion(optContainer, oTemplate, currentCount);
+
+                    container.appendChild(clone);
+                };
+
+                const addOptionToQuestion = (container, template, qIdx) => {
+                    const optClone = template.cloneNode(true);
+                    let oCount = container.children.length;
+                    
+                    let html = optClone.innerHTML.replace(/Q_INDEX/g, qIdx);
+                    html = html.replace(/O_INDEX/g, oCount);
+                    optClone.innerHTML = html;
+                    
+                    optClone.querySelector('.remove-option-btn').addEventListener('click', () => optClone.remove());
+                    container.appendChild(optClone);
+                };
+
+                // Helper para atualizar números visuais (Questão 1, 2, 3...)
+                const updateQuestionNumbers = () => {
+                    Array.from(container.children).forEach((child, index) => {
+                        child.querySelector('.q-num').textContent = index + 1;
+                    });
+                };
+
+                // Listener do botão principal
+                addBtn.addEventListener('click', addNewQuestion);
+
+                // Inicia com 1 pergunta APENAS se estiver vazio
+                if (container.children.length === 0) {
+                    addNewQuestion();
+                }
+            }
+        });
+    })();
+</script>
+{% endmacro %}

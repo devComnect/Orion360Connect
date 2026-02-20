@@ -1,0 +1,339 @@
+{% extends "base_template.html" %}
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+{% block title %}Reportar Anomalia{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-red: #ff2a6d;  
+            --neon-blue: #0dcaf0; 
+            --neon-yellow: #fcee0a;
+            --bg-dark: #0b0c10;
+            --panel-bg: #1f2833;
+            --border-tech: #45a29e;
+        }
+
+        body { 
+            background-color: var(--bg-dark); 
+            font-family: 'Segoe UI', sans-serif;
+            background-image: repeating-linear-gradient(
+                0deg,
+                rgba(0,0,0,0.95),
+                rgba(0,0,0,0.95) 2px,
+                rgba(0,20,0,0.02) 3px
+            );
+        }
+
+        .font-tech { font-family: 'Share Tech Mono', monospace; }
+
+        /* HEADER */
+        .report-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-top: 40px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 20px;
+        }
+
+        .report-title {
+            color: var(--neon-red);
+            font-size: 2.5rem;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px rgba(255, 42, 109, 0.3);
+            text-transform: uppercase;
+        }
+
+        /* FORM CONTAINER */
+        .diagnostic-panel {
+            background: rgba(31, 40, 51, 0.8);
+            border: 1px solid var(--border-tech);
+            border-left: 4px solid var(--neon-red); 
+            border-radius: 4px;
+            padding: 40px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            max-width: 800px;
+            margin: 0 auto 50px auto;
+            position: relative;
+            transition: border-color 0.3s;
+        }
+
+        /* Efeito de canto tecnológico */
+        .diagnostic-panel::after {
+            content: '';
+            position: absolute;
+            top: -1px; right: -1px;
+            width: 20px; height: 20px;
+            border-top: 2px solid var(--border-tech);
+            border-right: 2px solid var(--border-tech);
+        }
+
+        /* SELETORES DE TIPO (RADIO BUTTONS CUSTOM) */
+        .type-selector-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .type-option {
+            display: none;
+        }
+
+        .type-label {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #444;
+            padding: 10px 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #888;
+            font-family: 'Share Tech Mono', monospace;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .type-label:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+
+        /* Estados Ativos */
+        #type-bug:checked + .type-label {
+            border-color: var(--neon-red);
+            color: var(--neon-red);
+            box-shadow: 0 0 15px rgba(255, 42, 109, 0.2);
+            background: rgba(255, 42, 109, 0.05);
+        }
+
+        #type-feedback:checked + .type-label {
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(13, 202, 240, 0.2);
+            background: rgba(13, 202, 240, 0.05);
+        }
+
+        #type-security:checked + .type-label {
+            border-color: var(--neon-yellow);
+            color: var(--neon-yellow);
+            box-shadow: 0 0 15px rgba(252, 238, 10, 0.2);
+            background: rgba(252, 238, 10, 0.05);
+        }
+
+        /* INPUTS ESTILO TERMINAL */
+        .tech-form-group {
+            margin-bottom: 25px;
+        }
+
+        .tech-label {
+            display: block;
+            color: var(--border-tech);
+            font-family: 'Share Tech Mono', monospace;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .tech-input, .tech-textarea {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #333;
+            border-bottom: 2px solid #555;
+            color: #fff;
+            padding: 12px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            transition: all 0.3s;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .tech-input:focus, .tech-textarea:focus {
+            outline: none;
+            border-bottom-color: var(--neon-blue);
+            background: rgba(13, 202, 240, 0.05);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        /* UPLOAD AREA */
+        .upload-area {
+            border: 2px dashed #444;
+            padding: 20px;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: var(--neon-blue);
+            background: rgba(255,255,255,0.02);
+        }
+
+        .upload-input {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* BOTÃO DE ENVIO */
+        .btn-submit-report {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--neon-red);
+            color: var(--neon-red);
+            padding: 15px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-submit-report:hover {
+            background: var(--neon-red);
+            color: #000;
+            box-shadow: 0 0 20px rgba(255, 42, 109, 0.4);
+        }
+
+        /* Script para mudar a cor do painel baseado na seleção */
+        .panel-bug-active { border-left-color: var(--neon-red); }
+        .panel-feedback-active { border-left-color: var(--neon-blue); }
+        .panel-security-active { border-left-color: var(--neon-yellow); }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+{{ render_assistant(assistant_data) }}
+<div class="container">
+
+    <div class="report-header font-tech">
+        <h1 class="report-title"><i class="bi bi-bug-fill"></i> DIAGNÓSTICO DO SISTEMA</h1>
+        <p class="text-muted">REPORTAR_ANOMALIA // ENVIAR_FEEDBACK // VULNERABILIDADE_SCAN</p>
+    </div>
+
+    <form action="#" method="POST" enctype="multipart/form-data" id="diagnosticForm">
+        
+        <div class="diagnostic-panel" id="mainPanel">
+            
+            <div class="tech-form-group text-center">
+                <label class="tech-label mb-3">SELECIONE O TIPO DE PROTOCOLO:</label>
+                <div class="type-selector-group">
+                    
+                    <input type="radio" name="report_type" id="type-bug" value="bug" class="type-option" checked onchange="updatePanelColor('bug')">
+                    <label for="type-bug" class="type-label">
+                        <i class="bi bi-bug-fill"></i> ERRO / BUG
+                    </label>
+
+                    <input type="radio" name="report_type" id="type-feedback" value="feedback" class="type-option" onchange="updatePanelColor('feedback')">
+                    <label for="type-feedback" class="type-label">
+                        <i class="bi bi-lightbulb-fill"></i> SUGESTÃO
+                    </label>
+
+                    <input type="radio" name="report_type" id="type-security" value="security" class="type-option" onchange="updatePanelColor('security')">
+                    <label for="type-security" class="type-label">
+                        <i class="bi bi-shield-lock-fill"></i> VULNERABILIDADE
+                    </label>
+                </div>
+            </div>
+
+            <div class="tech-form-group">
+                <label for="title" class="tech-label">> ASSUNTO / TÍTULO</label>
+                <input type="text" name="title" id="title" class="tech-input" placeholder="Ex: Erro ao tentar abrir o terminal..." required>
+            </div>
+
+            <div class="tech-form-group">
+                <label for="description" class="tech-label">> DESCRIÇÃO DETALHADA</label>
+                <textarea name="description" id="description" rows="6" class="tech-textarea" placeholder="Descreva o que aconteceu, passos para reproduzir ou sua ideia..." required></textarea>
+            </div>
+
+            <div class="tech-form-group">
+                <label class="tech-label">> EVIDÊNCIA VISUAL</label>
+                <div class="upload-area" id="dropArea">
+                    <input type="file" name="attachment" id="screenshot" class="upload-input" accept="image/*" onchange="updateFileName(this)">
+                    <div class="text-muted font-tech">
+                        <i class="bi bi-cloud-upload fs-3 d-block mb-2"></i>
+                        <span id="fileNameDisplay">CLIQUE OU ARRASTE A IMAGEM AQUI</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit-report" id="submitBtn">
+                <i class="bi bi-send-fill me-2"></i> ENVIAR RELATÓRIO
+            </button>
+
+        </div>
+    </form>
+
+    <div class="text-center mt-4 mb-5">
+        <a href="{{ url_for('guardians_bp.meu_perfil') }}" class="text-muted text-decoration-none font-tech small">
+            &lt; CANCELAR OPERAÇÃO E VOLTAR
+        </a>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 1. Lógica para mudar a cor do painel e botão baseado no tipo
+    function updatePanelColor(type) {
+        const panel = document.getElementById('mainPanel');
+        const btn = document.getElementById('submitBtn');
+        const root = document.documentElement;
+        
+        // Reseta classes
+        panel.className = 'diagnostic-panel'; 
+        
+        // Cores (precisam bater com o CSS :root)
+        const colors = {
+            'bug': '#ff2a6d',      // Neon Red
+            'feedback': '#0dcaf0', // Neon Blue
+            'security': '#fcee0a'  // Neon Yellow
+        };
+
+        const color = colors[type];
+
+        // Atualiza a borda esquerda do painel
+        panel.style.borderLeftColor = color;
+        
+        // Atualiza o botão
+        btn.style.borderColor = color;
+        btn.style.color = color;
+        
+        // Efeito de hover no botão (precisa ser via CSS dinâmico ou inline style trick)
+        btn.onmouseover = function() { 
+            this.style.backgroundColor = color; 
+            this.style.color = '#000'; 
+            this.style.boxShadow = `0 0 20px ${color}66`; // 66 = alpha transparency
+        };
+        btn.onmouseout = function() { 
+            this.style.backgroundColor = 'transparent'; 
+            this.style.color = color; 
+            this.style.boxShadow = 'none';
+        };
+    }
+
+    // 2. Mostrar nome do arquivo no upload
+    function updateFileName(input) {
+        const display = document.getElementById('fileNameDisplay');
+        if (input.files && input.files.length > 0) {
+            display.innerHTML = `<span class="text-white"><i class="bi bi-file-earmark-image"></i> ${input.files[0].name}</span>`;
+            display.parentElement.parentElement.style.borderColor = '#fff';
+        } else {
+            display.innerText = "CLIQUE OU ARRASTE A IMAGEM AQUI";
+        }
+    }
+
+    // Inicializa estado
+    document.addEventListener('DOMContentLoaded', () => {
+        updatePanelColor('bug'); // Default
+    });
+</script>
+{% endblock %}

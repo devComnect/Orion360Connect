@@ -1,0 +1,238 @@
+/* ========================================================== */
+/* == ESTILOS PARA FORMULÁRIOS NO TEMA ESCURO (ADMIN, ETC.) == */
+/* ========================================================== */
+
+/* 1. Corrige a cor dos RÓTULOS (ex: "Nome do evento", "Pontos") */
+.card.bg-dark .form-label {
+    color: var(--muted-text-dark-theme);
+}
+
+/* 2. Corrige a cor do TEXTO DIGITADO e do FUNDO dos campos */
+body.bg-dark .form-control,
+body.bg-dark .form-select {
+    background-color: #2a2a2a;
+    color: #f1f1f1;
+    border: 1px solid #444;
+}
+
+/* 3. Garante que o campo continue escuro ao ser selecionado (foco) */
+body.bg-dark .form-control:focus,
+body.bg-dark .form-select:focus {
+    background-color: #3a3a3a;
+    color: #f1f1f1;
+    border-color: var(--accent); /* Usa a cor de destaque azul */
+    box-shadow: none;
+}
+
+/* 4. Corrige a cor do TEXTO DE EXEMPLO (placeholder, ex: "texto da resposta") */
+body.bg-dark .form-control::placeholder { /* Padrão */
+  color: var(--muted-text-dark-theme);
+  opacity: 0.7;
+}
+body.bg-dark .form-control::-webkit-input-placeholder { /* Chrome, Safari, etc. */
+  color: var(--muted-text-dark-theme);
+  opacity: 0.7;
+}
+body.bg-dark .form-control::-moz-placeholder { /* Firefox */
+  color: var(--muted-text-dark-theme);
+  opacity: 0.7;
+}
+
+
+/* Estilos para o novo modal de gerenciamento de bônus */
+.level-bonus-group {
+    padding: 1rem;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    border: 1px solid #444;
+}
+
+.level-bonus-group .level-title {
+    color: var(--bs-info);
+    border-bottom: 1px solid #444;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.perk-input-row {
+    display: flex; /* Mudei para flex para mais controle */
+    gap: 10px;
+    align-items: flex-start; /* Alinha pelo topo */
+    margin-bottom: 10px;
+}
+.perk-input-row .form-select { flex-basis: 50%; }
+.perk-input-row .form-control { flex-basis: 30%; }
+.perk-input-row .remove-perk-btn { flex-shrink: 0; }
+.perk-description {
+    font-size: 0.8rem;
+    padding-left: 5px;
+}
+.perk-input-row .perk-label {
+    flex-basis: 60%; /* Ocupa 60% do espaço */
+    font-weight: 500;
+}
+
+.bonus-pill-spec {
+    background: linear-gradient(45deg, #0d6efd, #0a58ca) !important; /* Gradiente azul */
+    color: #fff;
+    font-weight: bold;
+    padding: 7px 18px;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 10px rgba(13, 110, 253, 0.5); /* Sombra azul */
+    margin-bottom: 8px; /* Adiciona um espaço abaixo */
+}
+
+.spec-row-main td {
+    /* Torna a linha principal da spec um pouco maior */
+    padding-top: 1.25rem !important;
+    padding-bottom: 1.25rem !important;
+    border-top: 2px solid #555; /* Borda grossa acima de cada nova spec */
+    font-size: 1.1rem;
+}
+.spec-row-main:first-child td {
+    border-top: none; /* Remove borda da primeira linha */
+}
+
+.level-row-header td {
+    border-top: 1px dashed #495057; /* Linha tracejada acima do cabeçalho de nível */
+    padding-bottom: 0 !important;
+}
+
+.level-row-item td, .level-row-add td {
+    font-size: 0.9rem;
+    color: #adb5bd;
+    border-top: none; /* Remove bordas desnecessárias */
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+.level-row-add td {
+    padding-bottom: 1.5rem; /* Espaço extra após o botão "Adicionar Nível" */
+}
+.level-row-item strong {
+    color: #fff;
+}
+
+.level-container {
+    background-color: rgba(0,0,0,0.2);
+    padding: 1.5rem;
+    border-left: 3px solid var(--bs-info);
+    margin: 0 1rem;
+}
+
+/* Botão flutuante de Adicionar (+) */
+.fab-add {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 60px;
+    height: 60px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    font-size: 1.8rem;
+    z-index: 1050;
+}
+
+/* Estilo para a nova linha de resumo de status do perfil no admin */
+.profile-stats-summary {
+    display: flex;       /* Alinha os itens em uma linha */
+    flex-wrap: wrap;     /* Permite que os itens quebrem para a linha de baixo em telas menores */
+    gap: 1.5rem;         /* Cria um espaçamento consistente entre cada item (horizontal e vertical) */
+    font-size: 0.85rem;  /* Deixa o texto pequeno e sutil */
+    color: #adb5bd;      /* Um cinza claro para o texto */
+    margin-top: 5px;     /* Pequeno espaço abaixo do nome do usuário */
+}
+
+/* Garante que o ícone e o texto dentro de cada item fiquem alinhados */
+.profile-stats-summary span {
+    display: flex;
+    align-items: center;
+}
+
+/* Estilo para os ícones */
+.profile-stats-summary i {
+    color: var(--bs-info); /* Usa a cor azul do seu tema para destacar os ícones */
+}
+
+
+/* Página de gerenciar especializacoes */
+
+[id^="manageBonusesModal-"] .modal-body {
+    /* Define uma altura máxima para o corpo do modal */
+    /* Ajuste '60vh' (60% da altura da viewport) conforme necessário */
+    max-height: 60vh; 
+    
+    /* Adiciona a barra de rolagem vertical APENAS se necessário */
+    overflow-y: auto; 
+}
+
+/* --- Melhora Visual: Ajustes no Layout Interno do Modal --- */
+
+.level-bonus-group {
+    border: 1px solid #495057; /* Linha divisória sutil */
+    border-radius: 8px;
+    padding: 1.5rem;
+    background-color: rgba(0,0,0,0.1); /* Fundo levemente diferente */
+}
+
+.level-title {
+    color: var(--bs-info); /* Cor de destaque para o título do nível */
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #495057;
+    padding-bottom: 0.5rem;
+}
+
+.perk-input-row {
+    display: flex;
+    align-items: center; /* Alinha verticalmente */
+    gap: 0.75rem;      /* Espaço entre os elementos */
+    margin-bottom: 0.75rem; /* Espaço abaixo de cada linha de perk */
+}
+
+.perk-input-row .form-select,
+.perk-input-row .form-control {
+    /* Faz os inputs ocuparem menos espaço vertical */
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.perk-input-row .form-control[type="number"] {
+    max-width: 100px; /* Limita a largura do input de valor */
+}
+
+.perk-description {
+    font-size: 0.8rem; /* Descrição menor */
+    margin-top: 0.1rem;
+    display: block; /* Garante que fique abaixo do select */
+}
+
+.add-perk-btn {
+    /* Alinha o botão "+" à direita */
+    display: block;
+    margin-left: auto; 
+}
+
+/* === Layout Principal do Admin === */
+.admin-container {
+    display: flex;
+    /* Define a altura mínima para preencher a tela (ajuste 70px se seu header tiver altura diferente) */
+    min-height: calc(100vh - 70px); 
+}
+
+.admin-sidebar {
+    /* Largura fixa para o menu lateral */
+    width: 280px; 
+    flex-shrink: 0; /* Impede que o menu encolha */
+    border-right: 1px solid #495057;
+}
+
+.admin-main-content {
+    /* <<-- ESTA É A REGRA FALTANTE -->> */
+    /* Faz o conteúdo principal ocupar todo o espaço restante */
+    flex-grow: 1;
+    /* Garante que ele possa encolher se a tela for muito pequena */
+    width: 100%; 
+}

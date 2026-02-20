@@ -1,0 +1,113 @@
+{% macro render_gestao_externos(externos, quizzes) %}
+
+{# ===== MODAL PRINCIPAL ===== #}
+<div class="modal fade" id="modalExternos" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-fill-gear me-2 text-info"></i>Gestão de Usuários Externos
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+                {# --- SEÇÃO 1: RESET DE TEMPORADA --- #}
+                <div class="card bg-secondary bg-opacity-10 border-secondary mb-4">
+                    <div class="card-body">
+                        <h6 class="text-warning mb-1">
+                            <i class="bi bi-arrow-counterclockwise me-2"></i>Reset de Temporada
+                        </h6>
+                        <p class="text-muted small mb-3">
+                            Apaga <strong>todas</strong> as tentativas de quiz de todos os externos
+                            e zera suas pontuações. Use ao final de cada temporada.
+                        </p>
+                        <button class="btn btn-warning btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalConfirmReset">
+                            <i class="bi bi-exclamation-triangle me-1"></i> Resetar Temporada
+                        </button>
+                    </div>
+                </div>
+
+                {# --- SEÇÃO 2: RESET DE TENTATIVA INDIVIDUAL --- #}
+                <div class="card bg-secondary bg-opacity-10 border-secondary">
+                    <div class="card-body">
+                        <h6 class="text-info mb-1">
+                            <i class="bi bi-person-x me-2"></i>Resetar Tentativa Individual
+                        </h6>
+                        <p class="text-muted small mb-3">
+                            Remove a tentativa de um quiz específico para um usuário externo,
+                            permitindo que ele refaça.
+                        </p>
+
+                        <form method="POST"
+                              action="{{ url_for('admin_v2_bp.reset_quiz_externo') }}"
+                              onsubmit="return confirm('Confirma o reset desta tentativa?')">
+
+                            <div class="row g-2">
+                                <div class="col-md-5">
+                                    <label class="form-label small text-muted">Usuário Externo</label>
+                                    <select name="user_id" class="form-select form-select-sm bg-dark text-white border-secondary" required>
+                                        <option value="">Selecione...</option>
+                                        {% for user in externos %}
+                                        <option value="{{ user.id }}">{{ user.name or user.username }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label small text-muted">Quiz</label>
+                                    <select name="quiz_id" class="form-select form-select-sm bg-dark text-white border-secondary" required>
+                                        <option value="">Selecione...</option>
+                                        {% for quiz in quizzes %}
+                                        <option value="{{ quiz.id }}">{{ quiz.title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-info btn-sm w-100">
+                                        <i class="bi bi-arrow-clockwise"></i> Reset
+                                    </button>
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ===== MODAL DE CONFIRMAÇÃO DO RESET DE TEMPORADA ===== #}
+<div class="modal fade" id="modalConfirmReset" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-white border-warning">
+            <div class="modal-header border-warning">
+                <h5 class="modal-title text-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar Reset de Temporada
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Esta ação irá:</p>
+                <ul>
+                    <li>Apagar <strong>todas</strong> as tentativas de quiz dos externos</li>
+                    <li>Zerar a pontuação de <strong>{{ externos|length }}</strong> usuário(s)</li>
+                </ul>
+                <p class="text-danger fw-bold mb-0">Esta ação é irreversível.</p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('admin_v2_bp.reset_temporada_externa') }}">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-trash me-1"></i> Confirmar Reset
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endmacro %}

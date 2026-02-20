@@ -1,0 +1,48 @@
+/* ============================================= */
+/* == ESTILOS PARA A PÁGINA DE ANALYTICS      == */
+/* ============================================= */
+.analytics-card {
+    background: #2f2f37;
+    border-radius: 16px;
+    padding: 25px;
+    text-align: center;
+    border-top: 4px solid var(--accent);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+.analytics-card .card-icon {
+    font-size: 2.5rem;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+.analytics-card .card-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+}
+.analytics-card .card-label {
+    font-size: 0.8rem;
+    color: #aaa;
+    text-transform: uppercase;
+}
+
+/* ============================================= */
+/* == ESTILO PARA O CARD-LINK DO HUB DE QUIZZES == */
+/* ============================================= */
+
+.analytics-hub-link-card {
+    background-color: #2f2f37;
+    border: 1px solid #444;
+    transition: all 0.3s ease;
+}
+
+.analytics-hub-link-card:hover {
+    border-color: var(--warning);
+    background-color: #3a3a4b;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(255, 193, 7, 0.2);
+}
+
+.analytics-hub-link-card .card-title {
+    font-weight: bold;
+}

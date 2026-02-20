@@ -1,0 +1,424 @@
+{% extends "base_template.html" %}
+{% from "guardians/macros/macro_externos.html" import render_gestao_externos %}
+
+{% block title %}Admin V2 - Análises{% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/admin.css') }}">
+    <style>
+        .widget-card { border-left: 5px solid #0dcaf0; }
+        .widget-card.danger { border-left-color: #dc3545; }
+        .widget-card h3 { font-size: 2.5rem; font-weight: 700; }
+        .guardian-report-card { background-color: #2c3034; }
+    </style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ super() }}
+{% endblock %}
+
+{% block content %}
+<div class="admin-container d-flex">
+
+    <nav class="admin-sidebar bg-dark text-white">
+        <h5 class="text-info p-3 border-bottom border-secondary"><i class="bi bi-gear-fill me-2"></i> Menu de Navegação</h5>
+        <div class="list-group list-group-flush">
+            <a href="{{ url_for('admin_v2_bp.guardian_hub') }}" class="list-group-item list-group-item-action bg-dark text-white active">
+                <i class="bi bi-people-fill me-2"></i> Gerenciar Guardiões
+            </a>
+            <a href="{{ url_for('admin_v2_bp.feedback_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-chat-left-text-fill me-2"></i> Gerenciar Feedback
+            </a>
+            <a href="{{ url_for('admin_v2_bp.config_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-sliders me-2"></i> Configurações do Portal
+            </a>
+            <a href="{{ url_for('admin_v2_bp.content_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-pencil-square me-2"></i> Gerenciar Conteúdo
+            </a>
+            <a href="{{ url_for('admin_v2_bp.analytics_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-graph-up me-2"></i> Análises
+            </a>
+            <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-bs-toggle="modal" data-bs-target="#modalExternos">
+                <i class="bi bi-person-fill-gear me-2"></i> Gestão de Externos
+            </a>
+        </div>
+    </nav>
+
+    <main class="admin-main-content p-4">
+        <h1 class="text-white mb-4"><i class="bi bi-graph-up me-2"></i> Hub de Análises</h1>
+
+        <ul class="nav nav-tabs nav-pills nav-fill mb-4" id="analyticsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-white {% if not selected_guardian_id %}active{% endif %}" id="tab-geral-link" data-bs-toggle="tab" data-bs-target="#tab-geral-pane" type="button" role="tab" aria-controls="tab-geral-pane" aria-selected="true">
+                    <i class="bi bi-speedometer2 me-1"></i> Visão Geral
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-white" id="tab-quiz-link" data-bs-toggle="tab" data-bs-target="#tab-quiz-pane" type="button" role="tab" aria-controls="tab-quiz-pane" aria-selected="false">
+                    <i class="bi bi-patch-question-fill me-1"></i> Análise por Quiz
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-white {% if selected_guardian_id %}active{% endif %}" id="tab-guardian-link" data-bs-toggle="tab" data-bs-target="#tab-guardian-pane" type="button" role="tab" aria-controls="tab-guardian-pane" aria-selected="false">
+                    <i class="bi bi-person-video3 me-1"></i> Análise por Guardião
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="analyticsTabsContent">
+
+            <div class="tab-pane fade {% if not selected_guardian_id %}show active{% endif %}" id="tab-geral-pane" role="tabpanel" aria-labelledby="tab-geral-link" tabindex="0">
+                
+                <h4 class="text-info mb-3">Métricas Gerais</h4>
+                <div class="row g-4">
+                    <div class="col-md-3"><div class="card bg-dark text-white shadow widget-card"><div class="card-body text-center"><h3 class="text-info">{{ active_guardians }}</h3><span class="text-muted">Guardiões Ativos (30d)</span></div></div></div>
+                    <div class="col-md-3"><div class="card bg-dark text-white shadow widget-card"><div class="card-body text-center"><h3 class="text-info">{{ avg_score }}</h3><span class="text-muted">Média de Score</span></div></div></div>
+                    <div class="col-md-3"><div class="card bg-dark text-white shadow widget-card"><div class="card-body text-center"><h3 class="text-info">{{ total_quizzes }}</h3><span class="text-muted">Total de Quizzes Feitos</span></div></div></div>
+                    <div class="col-md-3"><div class="card bg-dark text-white shadow widget-card"><div class="card-body text-center"><h3 class="text-info">{{ total_reports }}</h3><span class="text-muted">Reportes de Phishing</span></div></div></div>
+                </div>
+
+                <h4 class="text-danger mt-5 mb-3">Análise de Risco (Phishing)</h4>
+                <div class="row g-4">
+                    <div class="col-md-4"><div class="card bg-dark text-white shadow widget-card danger"><div class="card-body text-center"><h3 class="text-danger">{{ total_clicks_phishing }}</h3><span class="text-muted">Total de Cliques</span></div></div></div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark text-white shadow h-100">
+                            <div class="card-header">Top 5 Usuários Vulneráveis</div>
+                            <ul class="list-group list-group-flush">
+                                {% for user in vulnerable_users %}
+                                <li class="list-group-item bg-dark text-white d-flex justify-content-between">{{ user.nome }} <span class="badge bg-danger">{{ user.click_count }} cliques</span></li>
+                                {% else %}
+                                <li class="list-group-item bg-dark text-white text-muted text-center">Nenhum clique registrado.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark text-white shadow h-100">
+                            <div class="card-header">Top 3 Deptos Vulneráveis</div>
+                            <ul class="list-group list-group-flush">
+                                {% for dept in vulnerable_depts %}
+                                <li class="list-group-item bg-dark text-white d-flex justify-content-between">{{ dept.departamento_nome }} <span class="badge bg-danger">{{ dept.click_count }} cliques</span></li>
+                                {% else %}
+                                <li class="list-group-item bg-dark text-white text-muted text-center">Nenhum clique registrado.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h4 class="text-info mb-3"><i class="bi bi-speedometer2"></i> Índice de Habilidade dos Guardiões (GSI)</h4>
+                        </div>
+
+                        <div class="col-md-7 mb-4">
+                            <div class="card bg-dark text-white border-secondary h-100 shadow">
+                                <div class="card-header bg-transparent border-secondary">
+                                    <h6 class="m-0">Distribuição de Habilidade (0-1000)</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="gsiChart" style="max-height: 300px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-5 mb-4">
+                            <div class="card bg-dark text-white border-secondary h-100 shadow">
+                                <div class="card-header bg-transparent border-secondary d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0">Top 5 Guardiões (GSI)</h6>
+                                    <span class="badge bg-info text-dark">Elite</span>
+                                </div>
+                                <div class="card-body p-0">
+                                    <table class="table table-dark table-hover mb-0 align-middle">
+                                        <thead class="text-muted small text-uppercase">
+                                            <tr>
+                                                <th class="ps-4">Guardião</th>
+                                                <th>GSI</th>
+                                                <th>Engajamento</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for g in gsi_top5 %}
+                                            <tr>
+                                                <td class="ps-4 fw-bold text-white">{{ g.name }}</td>
+                                                <td>
+                                                    <span class="badge bg-gradient" 
+                                                        style="background: linear-gradient(90deg, #0dcaf0, #0d6efd); width: 50px;">
+                                                        {{ g.gsi }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-info">{{ g.rate }}</td>
+                                                <td><small class="text-muted">{{ g.active }}</small></td>
+                                            </tr>
+                                            {% else %}
+                                            <tr><td colspan="4" class="text-center text-muted py-3">Dados insuficientes.</td></tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+
+            <div class="tab-pane fade" id="tab-quiz-pane" role="tabpanel" aria-labelledby="tab-quiz-link" tabindex="0">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3"><div class="card bg-dark text-white shadow widget-card"><div class="card-body text-center"><h3 class="text-info">{{ general_avg_score|round(1) }}%</h3><span class="text-muted">Média Geral Acertos</span></div></div></div>
+                    <div class="col-md-3"><div class="card bg-dark text-white shadow widget-card"><div class="card-body text-center"><h3 class="text-info">{{ general_avg_time|round(0) }}s</h3><span class="text-muted">Tempo Médio Geral</span></div></div></div>
+                    <div class="col-md-3"><div class="card bg-dark text-white shadow widget-card danger"><div class="card-body text-center" style="font-size: 1.1rem; padding-top: 2.1rem; padding-bottom: 2.1rem;"><strong>{{ quiz_mais_dificil }}</strong><br><span class="text-muted">Quiz Mais Difícil</span></div></div></div>
+                    <div class="col-md-3"><div class="card bg-dark text-white shadow widget-card"><div class="card-body text-center" style="font-size: 1.1rem; padding-top: 2.1rem; padding-bottom: 2.1rem;"><strong>{{ quiz_mais_facil }}</strong><br><span class="text-muted">Quiz Mais Fácil</span></div></div></div>
+                </div>
+
+                <div class="card bg-dark text-white shadow">
+                    <div class="card-header"><h4>Desempenho por Quiz</h4></div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Quiz</th><th>Status</th><th>Questões</th>
+                                        <th class="text-center">Tentativas</th>
+                                        <th class="text-center">Média Acertos</th>
+                                        <th class="text-center">Tempo Médio</th>
+                                        <th classclass="text-end">Ações</th> </tr>
+                                </thead>
+                                <tbody>
+                                    {% for info in quizzes_info %}
+                                    <tr>
+                                        <td><strong>{{ info.quiz.title }}</strong><br><small class="text-muted">Criado em: {{ info.quiz.created_at.strftime('%d/%m/%Y') }}</small></td>
+                                        <td>{% if date.today() <= info.end_date %}<span class="badge bg-success">Ativo</span>{% else %}<span class="badge bg-secondary">Encerrado</span>{% endif %}</td>
+                                        <td class="text-center">{{ info.question_count }}</td>
+                                        <td class="text-center">{{ info.total_attempts }}</td>
+                                        <td class="text-center {% if info.avg_score_percent < 50 %}text-danger{% elif info.avg_score_percent > 85 %}text-success{% else %}text-warning{% endif %}">
+                                            {{ '%0.1f'|format(info.avg_score_percent) }}%
+                                        </td>
+                                        <td class="text-center">{{ '%0.0f'|format(info.avg_time) }}s</td>
+                                        <td class="text-end">
+                                            {% if info.total_attempts > 0 %}
+                                            <a href="{{ url_for('admin_v2_bp.quiz_analysis', quiz_id=info.quiz.id) }}" class="btn btn-sm btn-outline-info">
+                                                <i class="bi bi-bar-chart-line-fill"></i> Analisar
+                                            </a>
+                                            {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>Analisar</button>
+                                            {% endif %}
+                                        </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade {% if selected_guardian_id %}show active{% endif %}" id="tab-guardian-pane" role="tabpanel" aria-labelledby="tab-guardian-link" tabindex="0">
+                
+                <div class="card bg-dark text-white shadow mb-4">
+                    <div class="card-body">
+                        <form method="GET" action="{{ url_for('admin_v2_bp.analytics_hub') }}" class="row g-3 align-items-end">
+                            <div class="col-md-9">
+                                <label for="guardian_id" class="form-label">Selecione um Guardião para Análise</label>
+                                <select id="guardian_id" name="guardian_id" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    {% for g in all_guardians %}
+                                    <option value="{{ g.id }}" {% if g.id == selected_guardian_id %}selected{% endif %}>{{ g.nome }} ({{ g.nickname or 'N/A' }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Carregar Relatório</button>
+                            </div>
+                            <input type="hidden" name="tab" value="guardian">
+                        </form>
+                    </div>
+                </div>
+
+                {% if selected_user_data %}
+                {% set u = selected_user_data %}
+                <div class="guardian-report-card p-4 rounded shadow-lg">
+                    <h2 class="text-info mb-3">{{ u.perfil.nome }}</h2>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <h5 class="text-muted border-bottom pb-2">Desempenho (Quizzes)</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">Tentativas: <strong>{{ u.total_quizzes }}</strong></li>
+                                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">Quizzes 100%: <strong>{{ u.perfect_quizzes_count }}</strong></li>
+                                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">Média Acertos: <strong>{{ '%0.1f'|format(u.media_geral_acertos) }}%</strong></li>
+                                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">Tempo Médio: <strong>{{ u.user_avg_time }}s</strong></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="text-muted border-bottom pb-2">Adesão (Plataforma)</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">Score Atual: <strong>{{ u.perfil.score_atual }}</strong></li>
+                                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">Streak Atual: <strong>{{ u.perfil.current_streak or 0 }} dias</strong></li>
+                                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">Patrulhas: <strong>{{ u.patrol_count }}</strong></li>
+                                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">Minigames: <strong>{{ u.total_minigames }}</strong></li>
+                                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">Conquistas: <strong>{{ u.user_achievements|length }}</strong></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="text-muted border-bottom pb-2">Histórico Recente (>20)</h5>
+                            <ul class="list-group list-group-flush" style="font-size: 0.85rem; max-height: 250px; overflow-y: auto;">
+                                {% for h in u.user_history %}
+                                <li class="list-group-item bg-transparent text-white border-secondary">{{ h.data_evento.strftime('%d/%m') }}: {{ h.descricao }} 
+                                    {% if h.pontuacao > 0 %}<span class="text-success">(+{{ h.pontuacao }}pts)</span>
+                                    {% elif h.pontuacao < 0 %}<span class="text-danger">({{ h.pontuacao }}pts)</span>
+                                    {% endif %}
+                                </li>
+                                {% else %}
+                                <li class="list-group-item bg-transparent text-white text-muted">Nenhuma atividade registrada.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="guardian-report-card p-4 rounded shadow-lg">
+                    <div class="row g-4">
+                        </div> <div class="row g-4 mt-3">
+                        <div class="col-md-12">
+                            <h5 class="text-muted border-bottom pb-2">Desempenho Detalhado por Quiz</h5>
+                            <div class="card bg-dark text-white shadow" style="border-color: #495057;">
+                                <div class="card-body p-0">
+                                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                        <table class="table table-dark table-hover align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Quiz</th>
+                                                    <th class="text-center">Resultado (Score / Possível)</th>
+                                                    <th class="text-center" style="width: 30%;">Desempenho</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% if not u.quiz_performance %}
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted">Nenhuma tentativa de quiz registrada.</td>
+                                                </tr>
+                                                {% endif %}
+                                                
+                                                {% for perf in u.quiz_performance %}
+                                                <tr>
+                                                    <td><strong>{{ perf.title }}</strong></td>
+                                                    <td class="text-center">
+                                                        <strong>{{ perf.score_earned }}</strong> / {{ perf.score_possible }} pts
+                                                    </td>
+                                                    <td>
+                                                        {% set color = 'success' %}
+                                                        {% if perf.percent < 40 %}{% set color = 'danger' %}
+                                                        {% elif perf.percent < 70 %}{% set color = 'warning' %}
+                                                        {% endif %}
+                                                        
+                                                        <div class="progress" style="height: 20px; background-color: #495057;">
+                                                            <div class="progress-bar bg-{{ color }}" 
+                                                                 role="progressbar" 
+                                                                 style="width: {{ perf.percent }}%;" 
+                                                                 aria-valuenow="{{ perf.percent }}" 
+                                                                 aria-valuemin="0" 
+                                                                 aria-valuemax="100">
+                                                                {{ '%.0f'|format(perf.percent) }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% elif selected_guardian_id %}
+                <div class="alert alert-danger">Guardião não encontrado.</div>
+                {% else %}
+                <div class="alert alert-info bg-dark text-white border-info text-center">
+                    <i class="bi bi-search h3"></i>
+                    <p class="mb-0">Selecione um guardião no menu acima para ver seu relatório detalhado.</p>
+                </div>
+                {% endif %}
+            </div>
+
+        </div> </main>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        // Dados vindos do Python (Jinja)
+        const labels = {{ gsi_dist.keys()|list|tojson }};
+        const dataValues = {{ gsi_dist.values()|list|tojson }};
+        
+        // Se o 'guardian_id' estiver na URL, ativa a aba 'guardian'
+        if (urlParams.has('guardian_id')) {
+            const tabTrigger = new bootstrap.Tab(document.querySelector('#tab-guardian-link'));
+            tabTrigger.show();
+        }
+        else if (urlParams.get('tab') === 'quiz') {
+            const tabTrigger = new bootstrap.Tab(document.querySelector('#tab-quiz-link'));
+            tabTrigger.show();
+        }
+
+        // Adiciona um evento ao formulário para manter a aba ativa
+        const guardianForm = document.querySelector('#tab-guardian-pane form');
+        if (guardianForm) {
+            guardianForm.addEventListener('submit', function() {
+                // Anexa um campo 'tab' para que saibamos qual aba reabrir
+                // (Isso foi removido pois o 'guardian_id' já faz esse controle)
+                // A lógica de JS acima já cuida disso.
+            });
+        }
+        const gsiCanvas = document.getElementById('gsiChart');
+        if (!gsiCanvas) return;
+        const ctx = gsiCanvas.getContext('2d');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Guardiões',
+                    data: dataValues,
+                    backgroundColor: [
+                        'rgba(220, 53, 69, 0.6)',  // <500 (Red)
+                        'rgba(255, 193, 7, 0.6)',  // 500-750 (Yellow)
+                        'rgba(13, 202, 240, 0.6)', // 750-900 (Cyan)
+                        'rgba(25, 135, 84, 0.8)'   // 900+ (Green)
+                    ],
+                    borderColor: [
+                        '#dc3545', '#ffc107', '#0dcaf0', '#198754'
+                    ],
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyFont: { family: "'Share Tech Mono', monospace" }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#8b949e' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#e0e0e0', font: { family: "'Share Tech Mono', monospace" } }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{{ render_gestao_externos(externos, quizzes) }}
+
+{% endblock %}

@@ -1,0 +1,352 @@
+{% extends "base_template.html" %}
+{% from "guardians/macros/macro_externos.html" import render_gestao_externos %}
+
+{% block title %}Admin V2 - Feedback{% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/admin.css') }}">
+    <style>
+        .feedback-card {
+            border-left: 5px solid #0dcaf0; /* Cor padrão */
+            transition: all 0.3s ease;
+        }
+        .feedback-card.is-resolved {
+            border-left-color: #28a745; /* Verde para resolvido */
+            opacity: 0.7;
+        }
+        .feedback-card.is-resolved .card-body {
+            background-color: #2c3034;
+        }
+        .feedback-card.is-bug {
+            border-left-color: #fd7e14; /* Laranja para bug */
+        }
+        .feedback-card.is-suggestion {
+            border-left-color: #0d6efd; /* Azul para sugestão */
+        }
+        .feedback-attachment img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .description-truncated {
+            /* Propriedades para truncar em 3 linhas */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* <<< DEFINE O LIMITE DE 3 LINHAS */
+            -webkit-box-orient: vertical;
+            display: -webkit-box;
+        }
+
+        .description-full p {
+            white-space: normal;
+            word-wrap: break-word; /* Garante quebra de palavras longas */
+            margin-bottom: 0; /* Remove margem extra do <p> */
+        }
+
+        a[data-bs-toggle="collapse"].collapsed .text-when-expanded {
+            display: none;
+        }
+        a[data-bs-toggle="collapse"]:not(.collapsed) .text-when-collapsed {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container d-flex">
+
+    <nav class="admin-sidebar bg-dark text-white">
+        <h5 class="text-info p-3 border-bottom border-secondary"><i class="bi bi-gear-fill me-2"></i> Menu de Navegação</h5>
+        <div class="list-group list-group-flush">
+            <a href="{{ url_for('admin_v2_bp.guardian_hub') }}" class="list-group-item list-group-item-action bg-dark text-white active">
+                <i class="bi bi-people-fill me-2"></i> Gerenciar Guardiões
+            </a>
+            <a href="{{ url_for('admin_v2_bp.feedback_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-chat-left-text-fill me-2"></i> Gerenciar Feedback
+            </a>
+            <a href="{{ url_for('admin_v2_bp.config_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-sliders me-2"></i> Configurações do Portal
+            </a>
+            <a href="{{ url_for('admin_v2_bp.content_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-pencil-square me-2"></i> Gerenciar Conteúdo
+            </a>
+            <a href="{{ url_for('admin_v2_bp.analytics_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-graph-up me-2"></i> Análises
+            </a>
+            <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-bs-toggle="modal" data-bs-target="#modalExternos">
+                <i class="bi bi-person-fill-gear me-2"></i> Gestão de Externos
+            </a>
+        </div>
+    </nav>
+
+    <main class="admin-main-content p-4">
+        <h1 class="text-white mb-4"><i class="bi bi-chat-left-text-fill me-2"></i> Gerenciar Feedback</h1>
+
+        <div class="card bg-dark text-white shadow mb-4 border-secondary">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('admin_v2_bp.feedback_hub') }}" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="filter_status" class="form-label text-muted small text-uppercase">Status</label>
+                        <select id="filter_status" name="filter_status" class="form-select bg-dark text-white border-secondary">
+                            <option value="all" {% if current_filters.filter_status == 'all' %}selected{% endif %}>Todos</option>
+                            <option value="unresolved" {% if current_filters.filter_status == 'unresolved' %}selected{% endif %}>Não Resolvidos</option>
+                            <option value="resolved" {% if current_filters.filter_status == 'resolved' %}selected{% endif %}>Resolvidos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filter_type" class="form-label text-muted small text-uppercase">Tipo</label>
+                        <select id="filter_type" name="filter_type" class="form-select bg-dark text-white border-secondary">
+                            <option value="all" {% if current_filters.filter_type == 'all' %}selected{% endif %}>Todos</option>
+                            <option value="BUG" {% if current_filters.filter_type == 'BUG' %}selected{% endif %}>Bug</option>
+                            <option value="SUGGESTION" {% if current_filters.filter_type == 'SUGGESTION' %}selected{% endif %}>Sugestão</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filter_guardian" class="form-label text-muted small text-uppercase">Guardião</label>
+                        <input type="text" id="filter_guardian" name="filter_guardian" class="form-control bg-dark text-white border-secondary" placeholder="Nome ou Nickname" value="{{ current_filters.filter_guardian }}">
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter"></i> Filtrar Resultados</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <h5 class="text-white mb-3">
+            Exibindo <span class="badge bg-secondary">{{ reports|length }}</span> tickets
+        </h5>
+        
+        {% if not reports %}
+            <div class="alert alert-info bg-dark text-info border-info text-center py-5">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                Nenhum feedback encontrado com os filtros atuais.
+            </div>
+        {% else %}
+        
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle border-secondary">
+                <thead>
+                    <tr class="text-muted small text-uppercase">
+                        <th scope="col">ID</th>
+                        <th scope="col">Data</th>
+                        <th scope="col">Guardião</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Resumo</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td><span class="text-muted">#{{ report.id }}</span></td>
+                        <td>{{ report.created_at.strftime('%d/%m %H:%M') }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-circle me-2 text-secondary"></i>
+                                {{ report.guardian.nome }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if report.report_type == 'BUG' %}
+                                <span class="badge bg-danger bg-opacity-25 text-danger border border-danger"><i class="bi bi-bug-fill me-1"></i> BUG</span>
+                            {% else %}
+                                <span class="badge bg-info bg-opacity-25 text-info border border-info"><i class="bi bi-lightbulb-fill me-1"></i> SUGGESTÃO</span>
+                            {% endif %}
+                        </td>
+                        <td style="max-width: 300px;">
+                            <div class="text-truncate text-muted">
+                                {{ report.description | striptags }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if report.is_resolved %}
+                                <span class="badge bg-success"><i class="bi bi-check-lg"></i> Resolvido</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Pendente</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-light me-1" data-bs-toggle="modal" data-bs-target="#viewReportModal-{{ report.id }}" title="Ver Detalhes">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteFeedbackModal-{{ report.id }}" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+    </main>
+
+    {% for report in reports %}
+
+        <div class="modal fade" id="viewReportModal-{{ report.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content bg-dark text-white border-secondary shadow-lg">
+                    
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title">
+                            <span class="text-muted me-2">Ticket #{{ report.id }}</span> 
+                            Detalhes do Feedback
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="row mb-4 g-3">
+                            <div class="col-md-6">
+                                <div class="p-3 bg-black bg-opacity-25 rounded border border-secondary h-100">
+                                    <small class="text-muted d-block text-uppercase mb-1">Autor</small>
+                                    <strong class="fs-5">{{ report.guardian.nome }}</strong>
+                                    <div class="text-muted small">{{ report.guardian.departamento_nome or 'Sem Depto' }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-black bg-opacity-25 rounded border border-secondary h-100">
+                                    <small class="text-muted d-block text-uppercase mb-1">Status & Tipo</small>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        {% if report.report_type == 'BUG' %}
+                                            <span class="badge bg-danger"><i class="bi bi-bug-fill me-1"></i> Bug</span>
+                                        {% else %}
+                                            <span class="badge bg-info text-dark"><i class="bi bi-lightbulb-fill me-1"></i> Sugestão</span>
+                                        {% endif %}
+                                        
+                                        {% if report.is_resolved %}
+                                            <span class="badge bg-success"><i class="bi bi-check-lg me-1"></i> Resolvido</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Pendente</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="text-uppercase text-muted border-bottom border-secondary pb-2 mb-3">Descrição Completa</h6>
+                            <div class="p-3 bg-secondary bg-opacity-10 rounded text-break font-monospace text-light" style="white-space: pre-wrap;">{{ report.description }}</div>
+                        </div>
+
+                        {% if report.attachment_path %}
+                        <div class="mb-4">
+                            <h6 class="text-uppercase text-muted border-bottom border-secondary pb-2 mb-3">
+                                <i class="bi bi-paperclip me-2"></i>Evidência Anexada
+                            </h6>
+                            <div class="text-center bg-black rounded p-2 border border-dark">
+                                <a href="{{ url_for('static', filename=report.attachment_path) }}" target="_blank">
+                                    <img src="{{ url_for('static', filename=report.attachment_path) }}" 
+                                        alt="Print do Report" 
+                                        class="img-fluid rounded border border-secondary" 
+                                        style="max-height: 400px; object-fit: contain;">
+                                </a>
+                                <div class="mt-2 text-muted small"><i class="bi bi-zoom-in"></i> Clique na imagem para ampliar em nova aba</div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-dark border-secondary d-flex align-items-center text-muted p-2">
+                            <i class="bi bi-image-alt me-3 fs-5"></i>
+                            <div>Nenhum print ou anexo foi enviado com este reporte.</div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                    
+                    <div class="modal-footer border-secondary justify-content-between">
+                        <button type="button" class="btn btn-outline-danger" data-bs-target="#deleteFeedbackModal-{{ report.id }}" data-bs-toggle="modal">
+                            <i class="bi bi-trash me-1"></i> Excluir Ticket
+                        </button>
+                        
+                        <form method="POST" action="{{ url_for('admin_v2_bp.feedback_hub', **current_filters) }}">
+                            <input type="hidden" name="action" value="toggle_resolved">
+                            <input type="hidden" name="report_id" value="{{ report.id }}">
+                            
+                            {% if report.is_resolved %}
+                                <button type="submit" class="btn btn-warning text-dark">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reabrir Ticket
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Marcar como Resolvido
+                                </button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="deleteFeedbackModal-{{ report.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content bg-dark text-white border-danger shadow-lg">
+                    <form method="POST" action="{{ url_for('admin_v2_bp.feedback_hub', **current_filters) }}">
+                        <input type="hidden" name="action" value="delete_feedback">
+                        <input type="hidden" name="report_id" value="{{ report.id }}">
+                        
+                        <div class="modal-header border-danger text-danger">
+                            <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirmar Exclusão</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        
+                        <div class="modal-body text-center">
+                            <p class="mb-3 fs-5">Você está prestes a excluir o ticket <strong>#{{ report.id }}</strong>.</p>
+                            <div class="alert alert-danger bg-danger bg-opacity-10 border-danger text-danger small text-start">
+                                <i class="bi bi-info-circle-fill me-2"></i> Esta ação é irreversível e removerá todos os dados e imagens anexadas do servidor.
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer border-top-0 justify-content-center">
+                            <button type="button" class="btn btn-secondary px-4" data-bs-toggle="modal" data-bs-target="#viewReportModal-{{ report.id }}">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-danger px-4">
+                                Excluir Permanentemente
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    {% endfor %}
+{{ render_gestao_externos(externos, quizzes) }}
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }} <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Seleciona TODOS os collapses de descrição na página
+    var allCollapses = document.querySelectorAll('.description-full.collapse');
+    
+    allCollapses.forEach(function(collapseEl) {
+        
+        // Quando o Bootstrap COMEÇA a MOSTRAR o collapse
+        collapseEl.addEventListener('show.bs.collapse', function () {
+            // Pega o ID do truncado (ex: 'desc-truncated-9')
+            const truncatedId = collapseEl.id.replace('desc-full-', 'desc-truncated-');
+            const truncatedEl = document.getElementById(truncatedId);
+            if (truncatedEl) {
+                // Esconde a versão truncada
+                truncatedEl.style.display = 'none';
+            }
+        });
+        
+        // Quando o Bootstrap COMEÇA a ESCONDER o collapse
+        collapseEl.addEventListener('hide.bs.collapse', function () {
+            // Pega o ID do truncado
+            const truncatedId = collapseEl.id.replace('desc-full-', 'desc-truncated-');
+            const truncatedEl = document.getElementById(truncatedId);
+            if (truncatedEl) {
+                // Mostra a versão truncada novamente
+                truncatedEl.style.display = 'block';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

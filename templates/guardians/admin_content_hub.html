@@ -1,0 +1,142 @@
+{% extends "base_template.html" %}
+{% import 'guardians/macros/admin_macros.html' as macros with context %}
+{% import 'guardians/macros/_admin_quiz_macro.html' as quiz_macros with context %}
+{% from "guardians/macros/macro_externos.html" import render_gestao_externos %}
+
+{% block title %}Gerenciar Conteúdo{% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/admin.css') }}">
+    <style>
+        /* Estilos copiados (tabela, ícones, etc) */
+        .guardian-table-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #495057; }
+        .spec-icon-admin { font-size: 1.1rem; margin-right: 0.3rem; vertical-align: middle; }
+        .trophy-icon-admin { font-size: 1.1rem; margin-right: 0.3rem; vertical-align: middle; }
+        .trophy-gold { color: #ffc107; }
+        .trophy-silver { color: #ced4da; }
+        .trophy-bronze { color: #cd7f32; }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="admin-container d-flex">
+    
+    <nav class="admin-sidebar bg-dark text-white">
+        <h5 class="text-info p-3 border-bottom border-secondary"><i class="bi bi-gear-fill me-2"></i> Menu de Navegação</h5>
+        <div class="list-group list-group-flush">
+            <a href="{{ url_for('admin_v2_bp.guardian_hub') }}" class="list-group-item list-group-item-action bg-dark text-white active">
+                <i class="bi bi-people-fill me-2"></i> Gerenciar Guardiões
+            </a>
+            <a href="{{ url_for('admin_v2_bp.feedback_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-chat-left-text-fill me-2"></i> Gerenciar Feedback
+            </a>
+            <a href="{{ url_for('admin_v2_bp.config_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-sliders me-2"></i> Configurações do Portal
+            </a>
+            <a href="{{ url_for('admin_v2_bp.content_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-pencil-square me-2"></i> Gerenciar Conteúdo
+            </a>
+            <a href="{{ url_for('admin_v2_bp.analytics_hub') }}" class="list-group-item list-group-item-action bg-dark text-white">
+                <i class="bi bi-graph-up me-2"></i> Análises
+            </a>
+            <a href="#" class="list-group-item list-group-item-action bg-dark text-white" data-bs-toggle="modal" data-bs-target="#modalExternos">
+                <i class="bi bi-person-fill-gear me-2"></i> Gestão de Externos
+            </a>
+        </div>
+    </nav>
+
+    <main class="admin-main-content p-4">
+        <h1 class="text-white mb-4"><i class="bi bi-pencil-square me-2"></i> Gerenciar Conteúdo</h1>
+
+        <ul class="nav nav-tabs" id="contentTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-quizzes-tab" data-bs-toggle="tab" data-bs-target="#tab-quizzes" type="button" role="tab">Quizzes</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-termo-tab" data-bs-toggle="tab" data-bs-target="#tab-termo" type="button" role="tab">Termo</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-anagram-tab" data-bs-toggle="tab" data-bs-target="#tab-anagram" type="button" role="tab">Anagrama</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-password-link" data-bs-toggle="tab" data-bs-target="#tab-password" type="button" role="tab">
+                    <i class="bi bi-shield-lock me-1"></i> Password Vault
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-insignias-tab" data-bs-toggle="tab" data-bs-target="#tab-insignias" type="button" role="tab">Conquistas</button>
+            </li>
+
+        </ul>
+
+        <div class="tab-content pt-4" id="contentTabContent">
+            
+            <div class="tab-pane fade show active" id="tab-quizzes" role="tabpanel">
+                {{- quiz_macros.render_gestao_quizzes(quizzes, colaboradores) -}}
+            </div>
+
+            <div class="tab-pane fade" id="tab-termo" role="tabpanel">
+                {{- macros.render_gestao_termo(termo_games) -}}
+            </div>
+
+            <div class="tab-pane fade" id="tab-anagram" role="tabpanel">
+                {{- macros.render_gestao_anagrama(anagram_games) -}}
+            </div>
+
+            <div class="tab-pane fade" id="tab-password" role="tabpanel">
+                {{- macros.render_gestao_password(password_config, password_rules) -}}
+            </div>
+
+            <div class="tab-pane fade" id="tab-insignias" role="tabpanel">
+                {{- macros.render_gestao_insignias(insignias, colaboradores) -}}
+            </div>
+
+
+        </div> </main>
+</div>
+{{ render_gestao_externos(externos, quizzes) }}
+
+{{ macros.render_anagram_word_modals(anagram_games) }}
+
+{{ macros.render_modais(
+    specializations=specializations,
+    niveis=niveis,
+    eventos=eventos, 
+    insignias=insignias, 
+    colaboradores=colaboradores,
+    termo_games=termo_games,
+    anagram_games=anagram_games
+) }}
+
+
+
+
+{% endblock %}
+
+
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const hash = window.location.hash;
+    if (hash) {
+        const tabButton = document.querySelector('button[data-bs-toggle="tab"][data-bs-target="' + hash + '"]');
+        if (tabButton) {
+            const tab = new bootstrap.Tab(tabButton);
+            tab.show();
+        }
+    }
+    const allTabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    allTabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function(event) {
+            history.pushState(null, null, event.target.dataset.bsTarget);
+        });
+    });
+
+});
+</script>
+
+{{ super() }} {{ macros.render_quiz_assets() }}
+
+{% endblock %}

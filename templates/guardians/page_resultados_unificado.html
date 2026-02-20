@@ -1,0 +1,441 @@
+{% extends "base_template.html" %}
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+
+{% block title %}Resultado: {{ results_data.game_title }}{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* PALETA OFICIAL DAS 3 ORDENS */
+            --neon-blue: #0dcaf0;  /* Defensor / Sucesso / Bônus */
+            --neon-red: #dc3545;   /* Hacker / Falha / Destaque Agressivo */
+            --neon-grey: #adb5bd;  /* Gestor / Neutro / Estrutura */
+            
+            --bg-dark: #121418;
+            --card-bg: #1b1e24;
+        }
+
+        body { background-color: var(--bg-dark); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .console-font { font-family: 'Share Tech Mono', monospace; }
+
+        .quiz-result-container {
+            max-width: 800px;
+            margin: 40px auto;
+            animation: fadeInScale 0.6s ease-out;
+        }
+
+        .result-summary-card {
+            background-color: var(--card-bg);
+            border: 1px solid #30363d;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Linha de brilho no topo */
+        .result-summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            /* Perfeito = Azul Brilhante, Sucesso = Azul, Falha = Vermelho */
+            background: {% if results_data.is_perfect %}#fff{% elif results_data.is_winner %}var(--neon-blue){% else %}var(--neon-red){% endif %};
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .quiz-main-title {
+            font-family: 'Share Tech Mono', monospace;
+            text-transform: uppercase;
+            font-size: 3rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(255,255,255,0.3);
+            margin-bottom: 5px;
+        }
+        
+        .quiz-subtitle {
+            color: var(--neon-grey);
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        /* ORBE DE PONTUAÇÃO */
+        .score-orb {
+            width: 180px; height: 180px;
+            margin: 0 auto 30px auto; /* Reduzi a margem inferior para caber o botão */
+            border-radius: 50%;
+            background: rgba(0,0,0,0.3);
+            border: 5px solid;
+            /* Cor do Orbe segue o resultado */
+            border-color: {% if results_data.is_perfect %}#fff{% elif results_data.is_winner %}var(--neon-blue){% else %}var(--neon-red){% endif %};
+            box-shadow: 0 0 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .score-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--neon-grey);
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 4.5rem;
+            font-weight: bold;
+            color: #fff;
+            line-height: 1;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        /* BOTÃO DE DETALHES (NOVO) */
+        .btn-toggle-details {
+            background: transparent;
+            border: 1px dashed #495057;
+            color: var(--neon-grey);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 8px 20px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-toggle-details:hover {
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+            box-shadow: 0 0 10px rgba(13, 202, 240, 0.2);
+            background-color: rgba(13, 202, 240, 0.05);
+        }
+
+        /* GRID DE DETALHES */
+        .score-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            padding-bottom: 10px; /* Espaço interno */
+        }
+
+        .detail-card {
+            background-color: rgba(255,255,255,0.03);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            /* Animação roda quando o display vira block */
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUpFade 0.5s forwards;
+        }
+        
+        /* Delays de animação */
+        .detail-card:nth-child(1) { animation-delay: 0.1s; }
+        .detail-card:nth-child(2) { animation-delay: 0.2s; }
+        .detail-card:nth-child(3) { animation-delay: 0.3s; }
+        .detail-card:nth-child(4) { animation-delay: 0.4s; }
+        .detail-card:nth-child(5) { animation-delay: 0.5s; }
+
+        .detail-card:hover {
+            transform: translateY(-5px);
+            background-color: rgba(255,255,255,0.05);
+            border-color: var(--neon-blue);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .detail-icon { font-size: 1.5rem; margin-bottom: 5px; display: block; }
+        .detail-label { font-size: 0.75rem; text-transform: uppercase; color: var(--neon-grey); display: block; }
+        .detail-value { font-family: 'Share Tech Mono', monospace; font-size: 1.2rem; font-weight: bold; color: #fff; }
+
+        /* Cores específicas dos itens */
+        /* Bônus = Azul, Base = Branco */
+        .bonus-item .detail-value { color: var(--neon-blue); }
+        .base-item .detail-value { color: #fff; }
+        .bonus-item .detail-icon { color: var(--neon-blue) !important; }
+        .base-item .detail-icon { color: var(--neon-grey) !important; }
+
+        /* PROGRESSO */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background-color: #30363d;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--neon-blue); /* Azul padrão */
+            width: 0%;
+            transition: width 1.5s ease-out;
+        }
+        
+        /* BOTÕES */
+        .action-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+
+        /* Botão de Retake (Atenção/Vermelho) */
+        .btn-retake { 
+            background-color: transparent; 
+            border: 2px solid var(--neon-red); 
+            color: var(--neon-red); 
+        }
+        .btn-retake:hover { 
+            background-color: var(--neon-red); 
+            color: #fff; 
+            box-shadow: 0 0 15px rgba(220, 53, 69, 0.4);
+        }
+
+        /* Botão Principal (Azul) */
+        .btn-primary-custom { 
+            background-color: var(--neon-blue); 
+            color: #000; 
+            box-shadow: 0 0 15px rgba(13, 202, 240, 0.3); 
+        }
+        .btn-primary-custom:hover { 
+            background-color: #3dd5f3; 
+            transform: translateY(-2px); 
+        }
+        
+        /* Botão Secundário (Cinza) */
+        .btn-outline-custom { 
+            background: transparent; 
+            border: 1px solid #30363d; 
+            color: var(--neon-grey); 
+        }
+        .btn-outline-custom:hover { 
+            border-color: #fff; 
+            color: #fff; 
+        }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideUpFade { to { opacity: 1; transform: translateY(0); } }
+    </style>
+{% endblock %}
+
+{% block content %}
+{{ render_assistant(assistant_data) }}
+
+<div class="quiz-result-container">
+    
+    <div class="result-summary-card">
+        
+        <div class="text-center">
+            <h1 class="quiz-main-title">
+                {% if results_data.is_perfect %}PERFEITO!
+                {% elif results_data.is_winner %}SUCESSO!
+                {% else %}FALHA{% endif %}
+            </h1>
+            <p class="quiz-subtitle">Seu desempenho em <strong class="text-white">"{{ results_data.game_title }}"</strong></p>
+        </div>
+
+        <div class="score-orb">
+            <span class="score-label">TOTAL XP</span>
+            <span class="score-value" id="animated-score" data-target="{{ results_data.final_score }}">0</span>
+        </div>
+
+        <div class="text-center">
+            <button id="toggle-details-btn" class="btn-toggle-details">
+                <i class="bi bi-chevron-down me-2"></i><span>Ver Detalhes do Bônus</span>
+            </button>
+        </div>
+
+        <div id="breakdown-wrapper" style="display: none; margin-bottom: 40px;">
+            <div class="score-details-grid">
+                {% for bonus in results_data.score_breakdown %}
+                    {% if bonus.value != 0 or not bonus.is_bonus %}
+                    <div class="detail-card {% if bonus.is_bonus %}bonus-item{% else %}base-item{% endif %}">
+                        <i class="bi {{ bonus.icon | default('bi-star-fill') }} detail-icon"></i>
+                        <span class="detail-label">{{ bonus.label }}</span>
+                        <span class="detail-value">{% if bonus.is_bonus %}+{% endif %}{{ bonus.value }} XP</span>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="text-center mt-2">
+                <small style="color: #495057;">*Valores calculados com base em itens e especializações.</small>
+            </div>
+        </div>
+
+        <div class="text-center mb-4">
+            <div class="d-flex justify-content-center gap-4 mb-2" style="color: var(--neon-grey);">
+                <span><i class="bi bi-bullseye"></i> Acertos: <strong>{{ results_data.accuracy_info.correct }}/{{ results_data.accuracy_info.total }}</strong></span>
+                
+                {% if results_data.duration_seconds %}
+                <span><i class="bi bi-clock"></i> Tempo: <strong id="formatted-time" data-seconds="{{ results_data.duration_seconds }}">--:--</strong></span>
+                {% endif %}
+            </div>
+            
+            {% if results_data.accuracy_info.total > 0 %}
+            <div class="progress-container">
+                <div class="progress-fill" id="accuracy-bar" data-width="{{ results_data.accuracy_info.percentage }}%"></div>
+            </div>
+            <small class="mt-1 d-block" style="color: var(--neon-grey);">{{ results_data.accuracy_info.percentage }}% de Precisão</small>
+            {% endif %}
+        </div>
+
+        <div class="mt-5">
+            
+            {# --- LÓGICA DE DECISÃO: MOSTRAR BOTÃO DE RETAKE? --- #}
+            {% set show_retake = False %}
+            {% set g_type = results_data.game_type | lower %}
+
+            {% if g_type == 'password_game' %}
+                {# Para Password: Só mostra se a pontuação base for 0 (Falha/Timeout) #}
+                {% if results_data.base_score == 0 %}
+                    {% set show_retake = True %}
+                {% endif %}
+            {% else %}
+                {# Para Quiz/Anagrama/Termo: Mostra se não for perfeito #}
+                {% if not results_data.is_perfect %}
+                    {% set show_retake = True %}
+                {% endif %}
+            {% endif %}
+
+
+            {# --- RENDERIZAÇÃO DOS BOTÕES --- #}
+            {% if show_retake and guardian %}
+                
+                {# CASO 1: É UM QUIZ #}
+                {% if g_type == 'quiz' %}
+                    {% if guardian.retake_tokens > 0 %}
+                        <form action="{{ url_for('guardians_bp.retake_quiz', quiz_id=results_data.quiz_id) }}" method="POST">
+                            <button type="submit" class="action-btn btn-retake">
+                                <i class="bi bi-arrow-counterclockwise me-2"></i> Tentar Novamente ({{ guardian.retake_tokens }} Tokens)
+                            </button>
+                        </form>
+                    {% else %}
+                        <button class="action-btn btn-outline-custom opacity-50" disabled style="cursor: not-allowed;">
+                            <i class="bi bi-slash-circle me-2"></i> Sem Tokens de Quiz
+                        </button>
+                    {% endif %}
+
+                {# CASO 2: É UM MINIGAME (Anagrama, Termo, Password, Password Game) #}
+                {% elif g_type in ['anagrama', 'termo', 'password', 'password_game'] %}
+                    {% if guardian.minigame_retake_tokens > 0 %}
+                        <form action="{{ url_for('guardians_bp.retake_minigame', game_type=g_type, game_id=results_data.source_id) }}" method="POST">
+                            <button type="submit" class="action-btn btn-retake">
+                                <i class="bi bi-controller me-2"></i> Rejogar Minigame ({{ guardian.minigame_retake_tokens }} Tokens)
+                            </button>
+                        </form>
+                    {% else %}
+                        <button class="action-btn btn-outline-custom opacity-50" disabled style="cursor: not-allowed;">
+                            <i class="bi bi-slash-circle me-2"></i> Sem Tokens de Minigame
+                        </button>
+                    {% endif %}
+                {% endif %}
+
+            {% endif %}
+
+            <a href="{{ url_for('guardians_bp.rankings') }}" class="action-btn btn-primary-custom d-block text-center text-decoration-none">
+                <i class="bi bi-graph-up me-2"></i> Ver Rankings
+            </a>
+            <a href="{{ url_for('guardians_bp.central') }}" class="action-btn btn-outline-custom d-block text-center text-decoration-none">
+                <i class="bi bi-house-door me-2"></i> Voltar para Central
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // --- NOVO: LÓGICA DE TOGGLE DETALHES ---
+        const toggleBtn = document.getElementById('toggle-details-btn');
+        const wrapper = document.getElementById('breakdown-wrapper');
+        const icon = toggleBtn.querySelector('i');
+        const span = toggleBtn.querySelector('span');
+
+        toggleBtn.addEventListener('click', function() {
+            if (wrapper.style.display === 'none') {
+                // Mostrar
+                wrapper.style.display = 'block';
+                span.textContent = 'Ocultar Detalhes';
+                icon.className = 'bi bi-chevron-up me-2';
+            } else {
+                // Ocultar
+                wrapper.style.display = 'none';
+                span.textContent = 'Ver Detalhes do Bônus';
+                icon.className = 'bi bi-chevron-down me-2';
+            }
+        });
+
+        // 1. Formatação de Tempo (MM:SS)
+        const timeEl = document.getElementById('formatted-time');
+        if (timeEl) {
+            const totalSeconds = parseFloat(timeEl.dataset.seconds);
+            if (!isNaN(totalSeconds)) {
+                const mins = Math.floor(totalSeconds / 60);
+                const secs = Math.floor(totalSeconds % 60);
+                const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}s`;
+                timeEl.textContent = formatted;
+            }
+        }
+
+        // 2. Animação da Barra de Progresso
+        const bar = document.getElementById('accuracy-bar');
+        if (bar) {
+            setTimeout(() => { bar.style.width = bar.dataset.width; }, 300);
+        }
+
+        // 3. Animação do Contador de Score
+        const scoreEl = document.getElementById('animated-score');
+        const targetScore = parseInt(scoreEl.dataset.target);
+        
+        if (targetScore > 0) {
+            let current = 0;
+            const duration = 1500;
+            const step = Math.max(1, targetScore / (duration / 16));
+            
+            function updateCounter() {
+                current += step;
+                if (current < targetScore) {
+                    scoreEl.textContent = Math.round(current);
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    scoreEl.textContent = targetScore;
+                    if ({{ results_data.is_winner|tojson }}) triggerConfetti();
+                }
+            }
+            setTimeout(updateCounter, 500);
+        } else {
+            scoreEl.textContent = 0;
+        }
+
+        function triggerConfetti() {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#0dcaf0', '#ced4da', '#dc3545']
+            });
+        }
+    });
+</script>
+{% endblock %}

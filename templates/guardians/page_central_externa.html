@@ -1,0 +1,234 @@
+{% extends "base_template.html" %}
+
+{% block title %}Central de Operações{% endblock %}
+
+{% block styles %}
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #0dcaf0;
+            --neon-red: #ff2a6d;
+            --neon-green: #05d9e8;
+            --neon-yellow: #fcee0a;
+            --neon-grey: #ADB5BD;
+            --bg-dark: #0b0c10;
+            --panel-bg: #1f2833;
+            --border-color: #45a29e;
+        }
+
+        body { 
+            background-color: var(--bg-dark); 
+            font-family: 'Segoe UI', sans-serif;
+            background-image: radial-gradient(circle at 50% 50%, #1a1d24 0%, #0b0c10 100%);
+        }
+
+        .font-tech { font-family: 'Share Tech Mono', monospace; }
+
+        .hud-header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .hud-header::after {
+            content: 'SYSTEM_READY';
+            position: absolute;
+            bottom: -10px;
+            right: 0;
+            background: var(--bg-dark);
+            padding-left: 10px;
+            color: var(--border-color);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .terminal-box {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #333;
+            border-left: 4px solid var(--neon-blue);
+            border-radius: 4px;
+            padding: 20px;
+            font-family: 'Share Tech Mono', monospace;
+            box-shadow: 0 0 20px rgba(13, 202, 240, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .terminal-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+            animation: scanline 3s linear infinite;
+        }
+
+        .cmd-line { display: flex; align-items: center; color: #fff; font-size: 1.1rem; }
+        .prompt-user { color: var(--neon-green); margin-right: 8px; }
+        .prompt-path { color: var(--neon-blue); margin-right: 12px; }
+        .cmd-input {
+            background: transparent; border: none; color: #fff;
+            width: 100%; outline: none; caret-color: var(--neon-blue);
+            text-transform: uppercase;
+        }
+
+        .operations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .op-card {
+            background: var(--panel-bg);
+            border: 1px solid #333;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            overflow: hidden;
+            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+        }
+        .op-card:hover { transform: translateY(-5px); background: #26303e; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .op-card.type-blue:hover { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(13, 202, 240, 0.2); }
+
+        .op-header { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .op-id { font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; letter-spacing: 1px; opacity: 0.7; }
+        .op-body { padding: 20px; }
+        .op-title { color: #fff; font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+        .op-desc { color: #8892b0; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; height: 42px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .op-meta { display: flex; gap: 15px; font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; color: #64ffda; }
+        .op-meta span { display: flex; align-items: center; gap: 5px; }
+        .op-footer { padding: 10px 20px; background: rgba(0,0,0,0.2); font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; text-align: right; color: #8892b0; transition: color 0.3s; }
+        .op-card:hover .op-footer { color: #fff; background: rgba(255,255,255,0.05); }
+
+        .text-tech-blue { color: var(--neon-blue); }
+        .blink { animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes scanline { 0% { top: -10%; } 100% { top: 110%; } }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+
+    <div class="hud-header d-flex justify-content-between align-items-end">
+        <div>
+            <h2 class="font-tech text-white mb-0" style="letter-spacing: 2px;">CENTRAL DE OPERAÇÕES</h2>
+            <small class="text-muted">SELECIONE UM PROTOCOLO DE TREINAMENTO</small>
+        </div>
+        <div class="text-end d-none d-md-block">
+            <div class="font-tech text-tech-blue">ATIVIDADES DISPONÍVEIS: {{ available_activities|length }}</div>
+            <div class="font-tech text-muted" style="font-size: 0.8rem;">SERVER_TIME: <span id="serverTime">--:--:--</span> UTC</div>
+        </div>
+    </div>
+
+    <div class="terminal-box mb-5">
+        <div class="cmd-line">
+            <span class="prompt-user">guardian@net:</span>
+            <span class="prompt-path">~/command$</span>
+            <input type="text" id="cmdInput" class="cmd-input" placeholder="Aguardando comando..." autocomplete="off" autofocus>
+            <span class="blink">_</span>
+        </div>
+        <div id="terminalOutput" class="mt-2 font-tech" style="min-height: 20px; color: #8892b0; font-size: 0.9rem;"></div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="operations-grid">
+        {% for activity in available_activities %}
+            {% set protocol_id = 'QUIZ-' ~ '%03d'|format(activity.item.id) %}
+            {% set url = url_for('guardians_bp.start_quiz_externo', quiz_id=activity.item.id) %}
+            {% set points = activity.item.questions|sum(attribute='points') %}
+
+            <div class="op-card type-blue" onclick="executeProtocol('{{ protocol_id }}', '{{ url }}')">
+                <div class="op-header">
+                    <i class="bi bi-patch-question fs-5 text-tech-blue"></i>
+                    <span class="op-id text-tech-blue">ID: {{ protocol_id }}</span>
+                </div>
+                <div class="op-body">
+                    <div class="op-title">{{ activity.title }}</div>
+                    <div class="op-desc">{{ activity.description }}</div>
+                    <div class="op-meta">
+                        <span><i class="bi bi-lightning-fill"></i> {{ points }} XP</span>
+                        {% if activity.expiry_text %}
+                            <span class="text-warning"><i class="bi bi-clock"></i> {{ activity.expiry_text }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="op-footer">> EXECUTE PROTOCOL</div>
+            </div>
+        {% else %}
+            <div class="text-center py-5 col-12">
+                <i class="bi bi-check2-all fs-1 text-success"></i>
+                <h4 class="text-white mt-3">Nenhum desafio disponível no momento.</h4>
+                <p class="text-muted">Volte em breve para novos quizzes.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateTime() {
+        const now = new Date();
+        document.getElementById('serverTime').textContent = now.toISOString().split('T')[1].split('.')[0];
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    const cmdInput = document.getElementById('cmdInput');
+    const terminalOutput = document.getElementById('terminalOutput');
+
+    const commandMap = {
+        {% for activity in available_activities %}
+            'QUIZ-{{ "%03d"|format(activity.item.id) }}': "{{ url_for('guardians_bp.start_quiz_externo', quiz_id=activity.item.id) }}",
+        {% endfor %}
+    };
+
+    function executeProtocol(protocolId, directUrl) {
+        cmdInput.value = '';
+        const command = "run " + protocolId;
+        let i = 0;
+        cmdInput.disabled = true;
+        const interval = setInterval(() => {
+            cmdInput.value += command.charAt(i);
+            i++;
+            if (i >= command.length) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    terminalOutput.innerHTML = `<span class="text-tech-green">>> INICIALIZANDO PROTOCOLO ${protocolId}... ACESSO CONCEDIDO.</span>`;
+                    setTimeout(() => { window.location.href = directUrl; }, 500);
+                }, 300);
+            }
+        }, 30);
+    }
+
+    cmdInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const inputVal = this.value.trim().toUpperCase();
+            if (inputVal === 'HELP' || inputVal === 'LIST') {
+                let msg = "PROTOCOLOS DISPONÍVEIS:<br>";
+                for (let key in commandMap) { msg += `- ${key}<br>`; }
+                terminalOutput.innerHTML = msg;
+                this.value = '';
+            } else if (inputVal.startsWith('RUN ')) {
+                const protocol = inputVal.split(' ')[1];
+                if (commandMap[protocol]) {
+                    terminalOutput.innerHTML = `<span style="color:var(--neon-green)">>> EXECUTANDO ${protocol}...</span>`;
+                    setTimeout(() => { window.location.href = commandMap[protocol]; }, 500);
+                } else {
+                    terminalOutput.innerHTML = `<span class="text-danger">>> ERRO: PROTOCOLO '${protocol}' NÃO ENCONTRADO.</span>`;
+                }
+            } else {
+                terminalOutput.innerHTML = `<span class="text-warning">>> COMANDO INVÁLIDO. TENTE 'HELP' OU 'RUN [ID]'.</span>`;
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -35,10 +35,10 @@ from sqlalchemy import func
 
 with app.app_context():
     registros = importar_performance_operador(
-        operador_id=2018,
-        nome_operador="Henrique",
+        operador_id=2012,
+        nome_operador="Matheus",
         data_inicio=date(2025, 12, 20),
-        data_fim=date(2025, 12, 23)
+        data_fim=date(2026, 1, 2)
     )
     print(f"Total registros importados: {registros}")
 

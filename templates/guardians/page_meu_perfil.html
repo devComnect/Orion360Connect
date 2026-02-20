@@ -1,0 +1,781 @@
+{% extends "base_template.html" %}
+{% from "guardians/macros/assistant_macro.html" import render_assistant %} 
+
+{% block title %}Perfil // {{ perfil.nickname or perfil.nome }}{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+{% import 'guardians/macros/render_trophy.html' as macros with context%}
+{{ render_assistant(assistant_data) }}
+
+{% set spec = perfil.specialization %}
+
+{% set theme_color = '#ffffff' %}     
+{% set theme_text_class = 'text-white' %}  
+{% set spec_seal_img = None %}                 
+
+{% if spec %}
+    {% set sorted_levels = spec.levels | sort(attribute='level_number') %}
+    {% if sorted_levels and sorted_levels|length > 0 %}
+        {% set spec_seal_img = sorted_levels[0].avatar_url %}
+    {% endif %}
+
+    {% set s_code = spec.spec_code.lower() %}
+
+    {% if 'vermelho' in s_code or 'hacker' in s_code %}
+        {% set theme_color = 'var(--neon-red)' %}
+        {% set theme_text_class = 'text-neon-red' %}
+        
+    {% elif 'azul' in s_code or 'defensor' in s_code %}
+        {# Agora o Azul tem sua regra específica #}
+        {% set theme_color = 'var(--neon-blue)' %}
+        {% set theme_text_class = 'text-neon-blue' %}
+        
+    {% elif 'cinza' in s_code or 'gestor' in s_code %}
+        {% set theme_color = 'var(--neon-grey)' %}
+        {% set theme_text_class = 'text-neon-grey' %} 
+    {% endif %}
+{% endif %}
+
+<div class="profile-page-wrapper">
+
+    <section class="profile-hero text-center" style="border-bottom-color: {{ theme_color }};">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-start position-absolute top-0 start-0 w-100 p-3 z-3 mt-4">
+                <div class="team-badge font-tech text-muted small text-truncate" style="max-width: 200px;">
+                    <i class="bi bi-people-fill"></i> EQUIPE: {{ perfil.departamento_nome or 'S/ EQUIPE' }}
+                </div>
+                {% if is_own_profile %}
+                <div> 
+                    <a href="{{ url_for('guardians_bp.edit_profile') }}" class="profile-edit-button btn-outline-dark {{ theme_text_class }}">
+                        <i class="bi bi-pencil-square"></i> EDITAR
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="avatar-frame mb-3 mt-4" style="border-color: {{ theme_color }};">
+                {% if perfil.avatar_seed %}
+                    <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ perfil.avatar_seed }}" alt="User Avatar" class="avatar-img">
+                {% else %}
+                    <div class="avatar-img d-flex align-items-center justify-content-center bg-dark">
+                        <i class="bi bi-person-circle text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                {% endif %}
+                <div class="level-badge" data-bs-toggle="tooltip" title="Nível Atual" style="border-color: {{ theme_color }}; color: {{ theme_color }};">
+                    LVL.{{ nivel_atual.level_number if nivel_atual else '0' }}
+                </div>
+
+            </div>
+
+            <h2 class="text-white text-uppercase fw-bold mb-0 d-flex align-items-center justify-content-center flex-wrap gap-2">
+    
+                <div class="d-flex align-items-center">
+                    {{ macros.render_trophy(perfil.trophy_tier) }} 
+                    <span class="ms-2">{{ perfil.nickname or perfil.nome }}</span>
+                </div>
+
+                {% if perfil.featured_associations %}
+                    <div class="d-inline-flex align-items-center ms-2 bg-dark bg-opacity-25 rounded px-2 py-1" style="border: 1px solid rgba(255,255,255,0.1);">
+                        
+                        {% for assoc in perfil.featured_associations | sort(attribute='slot_index') %}
+                            
+                            {% if assoc.insignia %}
+                                <img src="{{ url_for('static', filename=assoc.insignia.caminho_imagem) }}" 
+                                    class="featured-insignia-badge mx-1" 
+                                    width="26" 
+                                    height="26"
+                                    data-bs-toggle="tooltip" 
+                                    data-bs-placement="top"
+                                    title="{{ assoc.insignia.nome }}"
+                                    alt="{{ assoc.insignia.nome }}"
+                                    style="transition: transform 0.2s;">
+                            {% endif %}
+
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+            </h2>
+            
+            {# LINHA DE ESPECIALIZAÇÃO COM SELO #}
+            <div class="{{ theme_text_class }} font-tech mb-2 d-flex justify-content-center align-items-center gap-2">
+                {% if spec %}
+                    {% if spec_seal_img %}
+                        {# O filtro drop-shadow garante que o ícone brilhe na cor certa #}
+                        <img src="{{ url_for('static', filename=spec_seal_img) }}" 
+                            alt="Selo" 
+                            style="width: 24px; height: 24px; filter: drop-shadow(0 0 3px {{ theme_color }});">
+                    {% endif %}
+                    // ESPECIALIZAÇÃO: {{ spec.name|upper }} //
+                {% else %}
+                    // GUARDIÃO SEM ESPECIALIZAÇÃO //
+                {% endif %}
+            </div>
+
+            <div class="xp-system">
+                {% set bar_width = progresso_percentual %}
+                {% set next_target_label = proximo_nivel.score_minimo if proximo_nivel else 'MAX' %}
+                {% if not spec and min_xp_required and min_xp_required > 0 %}
+                    {% set raw_pct = (perfil.score_atual / min_xp_required) * 100 %}
+                    {% set bar_width = raw_pct | round %}
+                    {% set next_target_label = min_xp_required %}
+                {% endif %}
+                {% if bar_width > 100 %}{% set bar_width = 100 %}{% endif %}
+
+                <div class="tech-progress">
+                    <div class="tech-progress-bar" 
+                         style="width: {{ bar_width }}%; 
+                                background: linear-gradient(90deg, {{ theme_color }}, #fff); 
+                                box-shadow: 0 0 10px {{ theme_color }};">
+                    </div>
+                </div>
+                <div class="xp-numbers">
+                    <span>XP ATUAL: {{ perfil.score_atual or 0 }}</span>
+                    <span>PRÓX: {{ next_target_label }}</span>
+                </div>
+            </div>
+
+            <div class="week-tracker" data-bs-toggle="tooltip" title="Atividade Semanal">
+                {% for day in week_days_data %}
+                    <div class="day-bit 
+                        {% if day.status == 'completed' %}active{% endif %}
+                        {% if day.status == 'lost' %}missed{% endif %}"
+                         title="{{ day.day_name }}">
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if active_perks_html and active_perks_html != "<div class='p-2 text-center text-muted small'>Nenhum modificador ativo.</div>" %}
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-cyber-status font-tech px-4 py-2" 
+                            type="button"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#statusWindowModal">
+                        <i class="bi bi-cpu text-warning me-2"></i> Modificadores
+                        <span class="ms-2 badge bg-dark border border-secondary text-muted" style="font-size: 0.6rem;">+</span>
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <div class="container mt-4 mb-5">
+        {% if is_own_profile %}
+        <div class="row mb-4">
+            <div class="col-12">
+
+                {# CASO 2: BLOQUEIO POR TEMPO (Cooldown) #}
+                {% if spec_is_locked_time %}
+                    <div class="protocol-widget widget-locked" data-bs-toggle="tooltip" title="Protocolo recém alterado. Aguarde estabilização.">
+                        <div class="widget-icon">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="widget-content">
+                            <div class="widget-title text-uppercase">>> {{ spec.name }} ATIVO</div>
+                            <div class="widget-desc">
+                                <span class="text-neon-red">● SISTEMA EM RESFRIAMENTO</span> // Estabilidade em: {{ spec_days_remaining }} dias.
+                            </div>
+                        </div>
+                        <div class="widget-status-text">
+                            AGUARDE
+                        </div>
+                    </div>
+
+                {# CASO 3: BLOQUEIO POR XP (Nível Insuficiente) #}
+                {% elif spec_is_locked_xp %}
+                    <div class="protocol-widget widget-locked" style="border-color: #ffc107; opacity: 0.8;" data-bs-toggle="tooltip" title="Experiência insuficiente para recalibragem.">
+                        <div class="widget-icon text-warning">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                        </div>
+                        <div class="widget-content">
+                            <div class="widget-title text-uppercase">>> ESCOLHA DE ESPECIALIZAÇÃO </div>
+                            <div class="widget-desc">
+                                <span class="text-warning">● ENERGIA INSUFICIENTE</span> // Requer {{ min_xp_required }} XP. (Atual: {{ user_xp }})
+                            </div>
+                        </div>
+                        <div class="widget-status-text text-warning">
+                            BLOQUEADO
+                        </div>
+                    </div>
+
+                {# CASO 4: PRONTO PARA TROCAR #}
+                {% else %}
+                    <a href="{{ url_for('guardians_bp.choose_specialization') }}" class="protocol-widget widget-ready text-decoration-none" style="border-color: {{ theme_color }};">
+                        <div class="widget-icon">
+                            <i class="{{ theme_text_class }} bi bi-sliders"></i>
+                        </div>
+                        <div class="widget-content">
+                            <div class="widget-title text-uppercase {{ theme_text_class }}">PROTOCOLO {{ spec.name }} ESTÁVEL</div>
+                            <div class="widget-desc">
+                                <span class="text-neon-green">● PRONTO PARA RECALIBRAGEM</span> // Você pode alterar seu caminho agora.
+                            </div>
+                        </div>
+                        <div class="widget-action {{ theme_text_class }}">
+                            ALTERAR <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                    </a>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="cyber-card mb-4">
+            <div class="d-flex justify-content-around align-items-center flex-wrap">
+                <div class="stat-box flex-fill">
+                    <div class="stat-value text-warning">{{ ranking_atual }}º</div>
+                    <div class="stat-label">Ranking Global</div>
+                </div>
+                <div class="stat-box flex-fill">
+                    <div class="stat-value">{{ numero_conquistas }}</div>
+                    <div class="stat-label">Conquistas</div>
+                </div>
+                <div class="stat-box flex-fill">
+                    <div class="stat-value">{{ quizzes_respondidos_count }}</div>
+                    <div class="stat-label">Quizzes</div>
+                </div>
+                <div class="stat-box flex-fill">
+                   <div class="stat-value">{{ minigames_count }}</div>
+                   <div class="stat-label">Minigames</div>
+                </div>
+                <div class="stat-box flex-fill">
+                    <div class="stat-value">{{ patrols_completed_count }}</div>
+                    <div class="stat-label">Patrulhas</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                
+                <div class="cyber-card">
+                    <div class="cyber-header">
+                        <div class="cyber-title"><i class="bi bi-list-task text-neon-blue"></i>MISSÕES ATIVAS (RESGATE RECOMPENSAS) </div>
+                        {% if quest_set %}
+                        <span class="badge bg-dark border border-secondary">{{ quest_set.completed_missions_count }}/{{ quest_set.total_missions_count }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="p-3">
+                        {% if is_own_profile and quest_set %}
+                            {% for mission in active_missions|sort(attribute='id') %}
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between font-tech small mb-1">
+                                    <span>{{ mission.description_display }}</span>
+                                    <span class="{{ 'text-neon-green' if mission.is_completed else 'text-muted' }}">
+                                        {{ mission.current_progress }}/{{ mission.target_value }}
+                                    </span>
+                                </div>
+                                <div class="progress" style="height: 4px; background: #333;">
+                                    <div class="progress-bar {{ 'bg-success' if mission.is_completed else 'bg-info' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ (mission.current_progress / mission.target_value * 100) if mission.target_value > 0 else 0 }}%;">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            {% if quest_set.is_completed and not quest_set.is_claimed %}
+                                <form action="{{ url_for('guardians_bp.claim_weekly_reward') }}" method="POST" class="mt-3">
+                                    <button type="submit" class="btn btn-cyber w-100 border-warning text-warning">
+                                        <i class="bi bi-box-seam"></i> RESGATAR RECOMPENSA
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted text-center py-3">Sem dados de missão disponíveis.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="cyber-card">
+                    <div class="cyber-header">
+                        <div class="cyber-title"><i class="bi bi-terminal text-neon-blue"></i> LOG DO SISTEMA (HISTÓRICO)</div>
+                    </div>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <ul class="terminal-list">
+                            {% for acao in historico %}
+                            <li class="terminal-item">
+                                <div>
+                                    <span class="term-date">[{{ acao.data_evento.strftime('%d/%m') }}]</span>
+                                    {{ acao.descricao }}
+                                </div>
+                                {% if acao.pontuacao != 0 %}
+                                <span class="fw-bold {{ 'text-neon-green' if acao.pontuacao > 0 else 'text-neon-red' }}">
+                                    {{ '+' if acao.pontuacao > 0 }}{{ acao.pontuacao }}
+                                </span>
+                                {% endif %}
+                            </li>
+                            {% else %}
+                            <li class="terminal-item text-muted">Nenhum log encontrado.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="cyber-card">
+                    <div class="cyber-header d-flex justify-content-between align-items-center">
+                        <div class="cyber-title">
+                            <i class="bi bi-trophy-fill text-neon-blue me-2"></i>GALERIA DE CONQUISTAS
+                        </div>
+                        <span class="badge bg-dark border border-secondary text-muted">
+                            {{ perfil.insignias|length }} Total
+                        </span>
+                    </div>
+
+                    <div class="p-3">
+                        {% if perfil.featured_associations %}
+                            <div class="featured-showcase mb-4 p-3 rounded position-relative" 
+                                style="background: rgba(0, 0, 0, 0.3); border: 1px dashed rgba(255, 255, 255, 0.1);">
+                                
+                                <h6 class="text-center text-neon-blue font-tech mb-3" style="letter-spacing: 2px; font-size: 0.8rem;">
+                                    <i class="bi bi-star-fill me-1"></i> EM DESTAQUE
+                                </h6>
+
+                                <div class="d-flex justify-content-center flex-wrap gap-3">
+                                    {% for assoc in perfil.featured_associations | sort(attribute='slot_index') %}
+                                        {% if assoc.insignia %}
+                                            <div class="text-center position-relative group-hover-effect">
+                                                <img src="{{ url_for('static', filename=assoc.insignia.caminho_imagem) }}" 
+                                                    class="featured-insignia-badge drop-shadow" 
+                                                    width="54" 
+                                                    height="54"
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-placement="top"
+                                                    title="Destaque: {{ assoc.insignia.nome }}"
+                                                    alt="{{ assoc.insignia.nome }}"
+                                                    style="transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.27); cursor: pointer;">
+                                                
+                                                <div class="mt-1 rounded-pill bg-neon-blue" style="height: 2px; width: 30px; margin: 0 auto; opacity: 0.5; box-shadow: 0 0 5px cyan;"></div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-center my-4">
+                                <div class="flex-grow-1" style="height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);"></div>
+                                <div class="px-2 text-muted small font-tech"><i class="bi bi-grid-3x3-gap"></i> COLEÇÃO COMPLETA</div>
+                                <div class="flex-grow-1" style="height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);"></div>
+                            </div>
+                        {% endif %}
+
+                        {% if categorized_achievements_list %}
+                            {% for group in categorized_achievements_list %}
+                                <div class="mb-4 achievement-group">
+                                    <h6 class="text-uppercase text-muted font-tech small border-bottom border-dark pb-1 mb-3 d-flex justify-content-between">
+                                        <span>{{ group.category }}</span>
+                                    </h6>
+                                    
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for insignia in group.insignias %}
+                                            <div class="position-relative achievement-item" style="width: 48px; height: 48px;">
+                                                <img src="{{ url_for('static', filename=insignia.caminho_imagem) }}" 
+                                                    class="img-fluid drop-shadow rounded-circle"
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-placement="bottom"
+                                                    title="{{ insignia.nome }}: {{ insignia.descricao }}"
+                                                    style="opacity: 0.9; transition: all 0.2s; object-fit: cover;">
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5 text-muted opacity-50">
+                                <i class="bi bi-lock fs-1 d-block mb-2"></i>
+                                <p>Nenhuma conquista desbloqueada ainda.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-lg-4">
+                
+                {% if is_own_profile %}
+                <div class="cyber-card">
+                    <div class="cyber-header">
+                        <div class="cyber-title"><i class="bi bi-shield-lock text-neon-blue"></i> PATRULHA DIÁRIA</div>
+                    </div>
+                    
+                    {% if not patrol_completed_today %}
+                        <div class="patrol-card-static patrol-status-ready" id="btn-trigger-patrol" data-bs-toggle="modal" data-bs-target="#patrolGameModal">
+                            <i class="bi bi-unlock-fill display-4 text-neon-red"></i>
+                            <h5 class="mt-2 text-white font-tech">QUEBRA DE CÓDIGO</h5>
+                            <p class="small text-neon-red mb-0">PENDENTE // CLIQUE PARA INICIAR</p>
+                        </div>
+                    {% else %}
+                        <div class="patrol-card-static patrol-status-done">
+                            <i class="bi bi-shield-check display-4 text-neon-green"></i>
+                            <h5 class="mt-2 text-white font-tech">PROTEGIDO</h5>
+                            <p class="small text-muted mb-0">SISTEMA SEGURO ATÉ 00:00</p>
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if is_own_profile %}
+                <div class="cyber-card">
+                    <div class="cyber-header">
+                        <div class="inventory-profile-card cyber-title"><i class="bi bi-backpack2 text-neon-blue"></i> INVENTÁRIO</div>
+                    </div>
+                    
+                    <div class="p-2">
+                        
+                        <h6 class="font-tech small text-muted text-uppercase ms-1 mb-2 mt-1">
+                            <i class="bi bi-wallet2"></i> Carteira
+                        </h6>
+                        <div class="inventory-grid mb-3" style="grid-template-columns: 1fr;"> <div class="inventory-slot resource-slot" style="border-color: #ffd700 !important; background: linear-gradient(90deg, rgba(255, 215, 0, 0.05), rgba(0,0,0,0));">
+                                <div class="d-flex align-items-center justify-content-between px-3">
+                                    <div class="text-start">
+                                        <div class="inventory-label text-warning" style="font-size: 0.8rem;">SALDO ATUAL</div>
+                                        <div class="inventory-count text-white" style="font-size: 1.5rem;">
+                                            {{ perfil.guardian_coins or 0 }} <span class="fs-6 text-muted">GC</span>
+                                        </div>
+                                    </div>
+                                    <div class="inventory-icon" style="color: #ffd700; font-size: 2rem;">
+                                        <i class="bi bi-currency-bitcoin"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-secondary opacity-25 my-2">
+
+                        <h6 class="font-tech small text-muted text-uppercase ms-1 mb-2">
+                            <i class="bi bi-cpu"></i> Tokens de Sistema
+                        </h6>
+                        <div class="inventory-grid mb-3">
+                            
+                            <div class="inventory-slot resource-slot">
+                                <div class="inventory-icon text-neon-blue"><i class="bi bi-bootstrap-reboot"></i></div>
+                                <div class="inventory-count">{{ perfil.retake_tokens or 0 }}</div>
+                                <div class="inventory-label">Quiz Tokens</div>
+                                
+                                <div class="crafting-progress" data-bs-toggle="tooltip" title="Próximo em {{ quizzes_remaining }} quizzes perfeitos">
+                                    {% set quiz_pct = 0 %}
+                                    {% if quizzes_needed_for_token > 0 %}
+                                        {% set quiz_pct = ((quizzes_needed_for_token - quizzes_remaining) / quizzes_needed_for_token) * 100 %}
+                                    {% endif %}
+                                    <div class="crafting-bar" style="width: {{ quiz_pct }}%; background: var(--neon-blue);"></div>
+                                </div>
+                            </div>
+
+                            <div class="inventory-slot resource-slot">
+                                <div class="inventory-icon text-danger"><i class="bi bi-controller"></i></div>
+                                <div class="inventory-count">{{ perfil.minigame_retake_tokens or 0 }}</div>
+                                <div class="inventory-label">Game Tokens</div>
+                                
+                                <div class="crafting-progress" data-bs-toggle="tooltip" title="Próximo em {{ minigames_remaining }} jogos perfeitos">
+                                    {% set game_pct = 0 %}
+                                    {% if minigames_needed_for_token > 0 %}
+                                        {% set game_pct = ((minigames_needed_for_token - minigames_remaining) / minigames_needed_for_token) * 100 %}
+                                    {% endif %}
+                                    <div class="crafting-bar" style="width: {{ game_pct }}%; background: var(--neon-red);"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-secondary opacity-25 my-2">
+
+                        <h6 class="active-modules-class font-tech small text-muted text-uppercase ms-1 mb-2">
+                                    <i class="bi bi-battery-charging"></i> Módulos Ativos
+                                </h6>
+                                
+                                <div class="inventory-grid">
+                                    {% set ns = namespace(has_visible_items=false) %}
+
+                                    {% if inventory_bag %}
+                                        {% for item_id, item_data in inventory_bag.items() %}
+                                            
+                                            {# --- FILTRO DE VISUALIZAÇÃO --- #}
+                                            {% if 'Token' not in item_data.name %}
+                                            
+                                                {% set ns.has_visible_items = true %}
+
+                                                {# --- NOVA LÓGICA DE RARIDADE --- #}
+                                                {# Tenta pegar a raridade do item, se não existir, assume COMUM #}
+                                                {% set r_code = item_data.rarity if item_data.rarity else 'COMMON' %}
+                                                
+                                                {# Aplica a classe baseada na raridade: rarity-RARE, rarity-EPIC, etc. #}
+                                                <div class="inventory-slot rarity-{{ r_code }}" 
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-html="true"
+                                                    title="<strong class='text-uppercase' style='color: var(--rarity-{{ r_code|lower }})'>{{ item_data.name }}</strong><br><small>{{ item_data.description }}</small>">
+                                                    
+                                                    <div class="inventory-icon">
+                                                        {% if 'bi-' in item_data.icon %}
+                                                            <i class="bi {{ item_data.icon }}"></i>
+                                                        {% else %}
+                                                            <img src="{{ url_for('static', filename=item_data.icon) }}" style="width: 24px; height: 24px;">
+                                                        {% endif %}
+                                                    </div>
+
+                                                    <div class="inventory-count">x{{ item_data.count }}</div>
+                                                    <div class="inventory-label text-truncate px-1">{{ item_data.name }}</div>
+                                                    
+                                                    {# Opcional: Mostra a raridade pequena no lugar do bonus ou mantem o bonus #}
+                                                    <div class="inventory-bonus-text" style="opacity: 0.8;">
+                                                        {{ item_data.bonus_display }}
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+
+                                    {# --- SLOT VAZIO (Placeholder) --- #}
+                                    {% if not inventory_bag or not ns.has_visible_items %}
+                                        <div class="inventory-slot resource-slot opacity-50 border-dashed" style="grid-column: span 2; border-style: dashed !important;">
+                                            <div class="py-2">
+                                                <i class="bi bi-inbox fs-4 text-muted"></i>
+                                                <div class="inventory-label mt-1 text-muted">Nenhum Módulo</div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                        
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="patrolGameModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border border-info" style="box-shadow: 0 0 20px rgba(69, 243, 255, 0.2);">
+            <div class="modal-header border-secondary bg-black">
+                <h5 class="modal-title text-neon-blue font-tech"><i class="bi bi-terminal-fill"></i> // PATRULHA DIÁRIA v1.0</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-dark text-white p-4">
+                
+                <div class="alert border-secondary p-2 mb-3 font-tech small">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-info-circle text-info fs-4 me-3"></i>
+                        <strong class="text-uppercase">>> DESCUBRA O PIN DE 4 DÍGITOS.</strong>
+                    </div>
+                    <ul class="list-unstyled mb-0 lh-lg" style="margin-left: 3.5rem;">
+                        <li><i class="bi bi-square-fill text-success me-2"></i> <strong>Verde:</strong> Posição correta (Único).</li>
+                        <li><i class="bi bi-square-fill me-2" style="color: #20c997;"></i> <strong>Verde-Água:</strong> Posição correta (Repetido).</li>
+                        <li><i class="bi bi-square-fill text-info me-2"></i> <strong>Azul:</strong> Lugar errado (Repetido).</li>
+                        <li><i class="bi bi-square-fill text-warning me-2"></i> <strong>Amarelo:</strong> Lugar errado (Único).</li>
+                        <li><i class="bi bi-square-fill text-secondary me-2 opacity-25"></i> <strong>Cinza:</strong> Inexistente.</li>
+                    </ul>
+                </div>
+
+                <div id="codebreaker-history" class="mb-3 border border-secondary p-3 rounded" 
+                     style="height: 250px; overflow-y: auto; background: #000; font-family: monospace;">
+                     <div class="text-center text-muted mt-5 opacity-50">
+                        INICIALIZANDO SISTEMA...<br>AGUARDANDO INPUT DO USUÁRIO...
+                     </div>
+                </div>
+
+                <div class="row g-2 justify-content-center">
+                    <div class="col-8">
+                        <input type="text" id="patrol-input" class="form-control form-control-lg bg-dark text-white border-secondary text-center font-tech fw-bold letter-spacing-lg" 
+                               maxlength="4" placeholder="_ _ _ _" autocomplete="off" style="letter-spacing: 10px; font-size: 1.5rem;">
+                    </div>
+                    <div class="col-4">
+                        <button id="submit-patrol-guess" class="btn btn-info w-100 h-100 font-tech fw-bold">
+                            ENTER <i class="bi bi-arrow-return-left"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-2 font-tech small text-muted">
+                    <span>STATUS: <span id="game-status-text">ATIVO</span></span>
+                    <span>TENTATIVAS: <span id="patrol-attempts-count" class="text-white">0</span>/10</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="statusWindowModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content cyber-modal-content">
+            
+            <div class="modal-header border-0 pb-0">
+                <div class="w-100 d-flex justify-content-between align-items-center border-bottom border-secondary pb-2">
+                    <h5 class="modal-title font-tech text-neon-blue text-uppercase" style="letter-spacing: 2px;">
+                        <i class="bi bi-bar-chart-steps me-2"></i> MODIFICADORES ATIVOS
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+
+            <div class="modal-body p-0 pt-2">
+                <div class="status-screen-bg">
+                    {{ active_perks_html|safe }}
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 pt-0 justify-content-between font-tech" style="font-size: 0.7rem; color: #666;">
+                <span>SYS_ID: {{ perfil.id }}</span>
+                <span>STATUS: ONLINE</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Inicializar Tooltips e Popovers do Bootstrap 5
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl); });
+
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) { return new bootstrap.Popover(popoverTriggerEl); });
+
+    // --- LÓGICA DO JOGO DA PATRULHA ---
+    // (Mantida a lógica original, mas adaptada para o novo botão estático em vez do FAB)
+    
+    const patrolTriggerBtn = document.getElementById('btn-trigger-patrol'); // Novo botão
+    const patrolModalEl = document.getElementById('patrolGameModal');
+    const patrolInput = document.getElementById('patrol-input');
+    const submitGuessBtn = document.getElementById('submit-patrol-guess');
+    const historyContainer = document.getElementById('codebreaker-history');
+    const attemptsCounter = document.getElementById('patrol-attempts-count');
+
+    if (patrolTriggerBtn && patrolModalEl) {
+        const patrolModal = new bootstrap.Modal(patrolModalEl);
+
+        // Ao clicar no card da patrulha
+        patrolTriggerBtn.addEventListener('click', async function() {
+            // Limpa UI
+            historyContainer.innerHTML = ''; 
+            patrolInput.value = '';
+            patrolInput.disabled = false;
+            submitGuessBtn.disabled = false;
+
+            try {
+                const response = await fetch("{{ url_for('guardians_bp.start_patrol_game') }}", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.status === 'resume') {
+                        attemptsCounter.textContent = data.attempts;
+                        if (data.history && data.history.length > 0) {
+                            data.history.forEach(item => renderFeedback(item.guess, item.feedback));
+                        }
+                    } else {
+                        attemptsCounter.textContent = '0';
+                        historyContainer.innerHTML = '<div class="text-center text-muted mt-5 small">SISTEMA PRONTO. INSIRA O CÓDIGO.</div>';
+                    }
+                    // O Modal abre via data-bs-target, só focamos o input
+                    setTimeout(() => patrolInput.focus(), 500);
+                } else {
+                    alert(data.message); // Tratamento de erro básico
+                }
+            } catch (e) {
+                console.error("Erro rede:", e);
+                historyContainer.innerHTML = '<div class="text-danger text-center">ERRO DE CONEXÃO</div>';
+            }
+        });
+
+        // Enviar Palpite
+        async function submitGuess() {
+            const guess = patrolInput.value;
+            if (guess.length !== 4 || isNaN(guess)) {
+                patrolInput.classList.add('is-invalid'); // Visual feedback
+                setTimeout(() => patrolInput.classList.remove('is-invalid'), 1000);
+                return;
+            }
+
+            submitGuessBtn.disabled = true;
+
+            try {
+                const response = await fetch("{{ url_for('guardians_bp.check_patrol_guess') }}", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ guess: guess })
+                });
+                const data = await response.json();
+
+                // Limpa mensagem de "Inicializando" se houver
+                if(document.querySelector('#codebreaker-history .text-center')) {
+                    document.querySelector('#codebreaker-history .text-center').remove();
+                }
+
+                if (data.status === 'playing' || data.status === 'win' || data.status === 'lose') {
+                    renderFeedback(data.guess, data.feedback);
+                    attemptsCounter.textContent = data.attempts;
+                    patrolInput.value = '';
+                    patrolInput.focus();
+                }
+
+                if (data.status === 'win') {
+                    historyContainer.innerHTML += `<div class="mt-3 p-2 bg-success text-white text-center fw-bold border border-light"><i class="bi bi-check-circle"></i> ACESSO LIBERADO!<br>+${data.total_score} XP</div>`;
+                    patrolInput.disabled = true;
+                    submitGuessBtn.disabled = true;
+                    // Recarregar página após 2s para atualizar stats
+                    setTimeout(() => window.location.reload(), 2000);
+
+                } else if (data.status === 'lose') {
+                    historyContainer.innerHTML += `<div class="mt-3 p-2 bg-danger text-white text-center fw-bold"><i class="bi bi-x-circle"></i> BLOQUEADO.<br>Código: ${data.secret}</div>`;
+                    patrolInput.disabled = true;
+                    submitGuessBtn.disabled = true;
+                } else {
+                    submitGuessBtn.disabled = false;
+                }
+
+            } catch (e) {
+                console.error(e);
+                submitGuessBtn.disabled = false;
+            }
+        }
+
+        submitGuessBtn.addEventListener('click', submitGuess);
+        patrolInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') submitGuess();
+        });
+
+        function renderFeedback(guess, feedback) {
+            let html = `<div class="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom border-dark bg-secondary bg-opacity-10">
+                <span class="fs-5 font-monospace text-white fw-bold ps-3" style="letter-spacing: 5px;">${guess}</span>
+                <div class="pe-3">`;
+            
+            feedback.forEach(f => {
+                if (f === 'correct') {
+                    // VERDE PURO: Certo e Único
+                    html += '<i class="bi bi-check-square-fill text-success mx-1" title="Correto (Único)"></i>'; 
+                } 
+                else if (f === 'correct_multi') {
+                    // TEAL (VERDE ÁGUA): Certo e Múltiplo <--- NOVO VISUAL
+                    // Usamos 'bi-check-all' para dar ideia de múltiplo ou cor #20c997 (teal do bootstrap)
+                    html += '<i class="bi bi-check-square-fill mx-1" style="color: #20c997;" title="Correto e Repetido na senha"></i>'; 
+                }
+                else if (f === 'multi') {
+                    // AZUL: Lugar Errado e Múltiplo
+                    html += '<i class="bi bi-layers-fill text-info mx-1" title="Lugar Errado e Repetido"></i>'; 
+                }
+                else if (f === 'present') {
+                    // AMARELO: Lugar Errado e Único
+                    html += '<i class="bi bi-dash-square-fill text-warning mx-1" title="Lugar Errado"></i>'; 
+                } 
+                else {
+                    html += '<i class="bi bi-x-square-fill text-secondary mx-1 opacity-25"></i>'; 
+                }
+            });
+            
+            html += `</div></div>`;
+            historyContainer.insertAdjacentHTML('afterbegin', html);
+        }
+    }
+});
+</script>
+{% endblock %}

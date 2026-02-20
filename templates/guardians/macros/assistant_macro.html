@@ -1,0 +1,314 @@
+{% macro render_assistant(assistant_data) %}
+    {% if assistant_data %}
+    
+    <style>
+        /* Estilo do botão voltar (mais discreto) */
+        .osi-btn-back {
+            border: none;
+            color: #555;
+            font-size: 0.8rem;
+            padding: 3px 8px;
+        }
+        .osi-btn-back:hover {
+            color: #fff;
+            background: transparent;
+        }
+
+        .osi-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            pointer-events: none;
+            animation: slideInOSI 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.27);
+        }
+
+        .osi-avatar-wrapper {
+            position: relative;
+            pointer-events: auto;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .osi-avatar-wrapper:hover { transform: scale(1.05); }
+
+        .osi-avatar-img {
+            width: 80px; 
+            height: 80px;
+            filter: drop-shadow(0 0 8px {{ assistant_data.theme_color }});
+        }
+
+        .osi-bubble {
+            background: rgba(15, 15, 20, 0.95);
+            border: 1px solid {{ assistant_data.theme_color }};
+            border-left: 3px solid {{ assistant_data.theme_color }};
+            border-radius: 6px 6px 0 6px;
+            padding: 15px;
+            width: 300px;
+            color: #e0e0e0
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            animation: fadeInOSI 0.5s 0.6s forwards;
+            margin-bottom: 20px;
+        }
+
+        .osi-header {
+            font-size: 0.7rem;
+            color: {{ assistant_data.theme_color }}; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            padding-bottom: 4px;
+        }
+
+        .osi-content { min-height: 40px; line-height: 1.4; margin-bottom: 10px; }
+        
+        .osi-btn {
+            align-self: flex-end;
+            background: transparent;
+            border: 1px solid #444;
+            color: #888;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .osi-btn:hover { 
+            border-color: {{ assistant_data.theme_color }}; 
+            color: {{ assistant_data.theme_color }}; 
+            background: rgba(255, 255, 255, 0.05); 
+        }
+
+        .osi-cursor-blink::after { content: '|'; animation: blink 1s infinite; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        @keyframes slideInOSI { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeInOSI { to { opacity: 1; } }
+        @keyframes blink { 50% { opacity: 0; } }
+        .osi-highlight {
+            position: relative;
+            z-index: 10005 !important;
+            box-shadow: 
+                0 0 0 5px #ff0000,
+                0 0 0 10px rgba(255, 0, 0, 0.3),
+                0 0 30px 15px rgba(255, 0, 0, 0.6),
+                inset 0 0 20px rgba(255, 100, 100, 0.4);
+            
+            transition: all 0.3s ease;
+            animation: red-pulse 1.5s infinite;
+            background-color: rgba(255, 240, 240, 0.1) !important;
+            border-radius: 1px;
+        }
+
+        @keyframes red-pulse {
+            0% { 
+                box-shadow: 
+                    0 0 0 4px #ff0000,
+                    0 0 0 8px rgba(255, 0, 0, 0.4),
+                    0 0 25px 12px rgba(255, 0, 0, 0.7),
+                    inset 0 0 15px rgba(255, 100, 100, 0.3);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 0 6px #ff0000,
+                    0 0 0 12px rgba(255, 0, 0, 0.6),
+                    0 0 40px 20px rgba(255, 50, 50, 0.9),
+                    inset 0 0 25px rgba(255, 150, 150, 0.6);
+                transform: scale(1.01);
+            }
+            100% { 
+                box-shadow: 
+                    0 0 0 4px #ff0000,
+                    0 0 0 8px rgba(255, 0, 0, 0.4),
+                    0 0 25px 12px rgba(255, 0, 0, 0.7),
+                    inset 0 0 15px rgba(255, 100, 100, 0.3);
+            }
+        }
+        .osi-highlight:hover {
+            box-shadow: 
+                0 0 0 6px #ff3333,
+                0 0 0 14px rgba(255, 0, 0, 0.5),
+                0 0 50px 25px rgba(255, 0, 0, 0.8),
+                inset 0 0 30px rgba(255, 150, 150, 0.7) !important;
+            transform: scale(1.02);
+}
+    </style>
+
+<div id="osi-widget" class="osi-container">
+        
+        <div class="osi-bubble">
+            <div class="osi-header">
+                <i class="bi bi-broadcast"></i> {{ assistant_data.title }}
+            </div>
+            
+            <div class="osi-content osi-cursor-blink" id="osi-typewriter"></div>
+
+            <div class="d-flex justify-content-between align-items-center w-100">
+                
+                <button id="osi-back-btn" class="osi-btn osi-btn-back" style="opacity: 0; pointer-events: none;">
+                    <i class="bi bi-chevron-double-left"></i>
+                </button>
+
+                <button id="osi-action-btn" class="osi-btn">
+                    </button>
+            </div>
+        </div>
+
+        <div class="osi-avatar-wrapper" onclick="document.querySelector('.osi-bubble').classList.toggle('d-none')">
+            <img src="https://api.dicebear.com/9.x/bottts/svg?{{ assistant_data.avatar_params | safe }}" class="osi-avatar-img" alt="OSI">
+        </div>
+    </div>
+
+    <script>
+        (function(){
+            const steps = {{ assistant_data.steps | tojson }}; 
+            const isTutorial = {{ 'true' if assistant_data.is_tutorial else 'false' }};
+            const tutorialId = "{{ assistant_data.tutorial_id }}";
+            const shouldAutoDismiss = {{ 'true' if assistant_data.auto_dismiss else 'false' }};
+            
+            let currentStepIndex = 0;
+            let currentHighlight = null;
+            let typeInterval;
+
+            const el = document.getElementById('osi-typewriter');
+            const btnNext = document.getElementById('osi-action-btn');
+            const btnBack = document.getElementById('osi-back-btn');
+            const widget = document.getElementById('osi-widget');
+            
+            // --- LÓGICA DE DIGITAÇÃO E HIGHLIGHT ---
+            function typeText(stepData) {
+                const text = stepData.text || stepData; 
+                const targetSelector = stepData.target;
+
+                // 1. Limpa destaque anterior
+                if (currentHighlight) {
+                    currentHighlight.classList.remove('osi-highlight');
+                    currentHighlight = null;
+                }
+
+                // 2. Aplica novo destaque
+                if (targetSelector) {
+                    const targetEl = document.querySelector(targetSelector);
+                    if (targetEl) {
+                        targetEl.classList.add('osi-highlight');
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        currentHighlight = targetEl;
+                    }
+                }
+
+                // 3. Efeito Typewriter
+                el.innerHTML = ""; 
+                el.classList.add('osi-cursor-blink');
+                let i = 0;
+                
+                if(typeInterval) clearInterval(typeInterval);
+
+                typeInterval = setInterval(() => {
+                    if (i < text.length) {
+                        el.innerHTML += text.charAt(i);
+                        i++;
+                    } else {
+                        clearInterval(typeInterval);
+                        el.classList.remove('osi-cursor-blink');
+                        
+                        // Auto Dismiss apenas no último passo
+                        if (shouldAutoDismiss && currentStepIndex === steps.length - 1) {
+                            startDismissTimer(text.length);
+                        }
+                    }
+                }, 20); 
+            }
+
+            // --- ATUALIZA ESTADO DOS BOTÕES ---
+            function updateButtonState() {
+                if (currentStepIndex < steps.length - 1) {
+                    
+                    if (currentStepIndex === 0 && isTutorial) {
+                        btnNext.innerHTML = "INICIAR TUTORIAL <i class='bi bi-play-fill'></i>";
+                        btnNext.classList.add('btn-start-highlight'); 
+                    } else {
+                        btnNext.innerHTML = "CONTINUAR <i class='bi bi-chevron-right'></i>";
+                        btnNext.classList.remove('btn-start-highlight');
+                    }
+                    
+                    btnNext.onclick = nextStep;
+                } else {
+                    btnNext.innerHTML = isTutorial ? "ENTENDIDO" : "FECHAR";
+                    btnNext.classList.remove('btn-start-highlight');
+                    btnNext.onclick = finishAssistant;
+                }
+
+                if (currentStepIndex > 0) {
+                    btnBack.style.opacity = "1";
+                    btnBack.style.pointerEvents = "auto";
+                    btnBack.onclick = prevStep;
+                } else {
+                    btnBack.style.opacity = "0";
+                    btnBack.style.pointerEvents = "none";
+                }
+            }
+
+            // --- NAVEGAÇÃO ---
+            function nextStep() {
+                currentStepIndex++;
+                updateButtonState();
+                typeText(steps[currentStepIndex]);
+            }
+
+            function prevStep() {
+                if (currentStepIndex > 0) {
+                    currentStepIndex--;
+                    updateButtonState();
+                    typeText(steps[currentStepIndex]);
+                }
+            }
+
+            function finishAssistant() {
+                if (currentHighlight) {
+                    currentHighlight.classList.remove('osi-highlight');
+                }
+                
+                widget.style.transition = "opacity 0.5s, transform 0.5s";
+                widget.style.opacity = "0";
+                widget.style.transform = "translateY(20px)";
+                
+                if (isTutorial && tutorialId && tutorialId !== 'None') {
+                    fetch('/api/mark-tutorial-seen/' + tutorialId, { method: 'POST' }).catch(console.error);
+                }
+
+                setTimeout(() => widget.remove(), 500);
+            }
+
+            function startDismissTimer(len) {
+                const readTime = 3000 + (len * 50);
+                setTimeout(() => {
+                    if (document.body.contains(widget)) finishAssistant();
+                }, readTime);
+            }
+
+            // --- INICIALIZAÇÃO ---
+            updateButtonState();
+            setTimeout(() => {
+                typeText(steps[0]);
+            }, 800);
+
+            window.closeOSI = finishAssistant;
+
+        })();
+    </script>
+    {% endif %}
+{% endmacro %}

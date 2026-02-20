@@ -1,0 +1,63 @@
+{% extends "base_template.html" %}
+
+{% block title %}Visualizar Quiz: {{ quiz.title }}{% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/training.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-warning mb-1">Visualização de Quiz</h2>
+            <h4 class="text-white">{{ quiz.title }}</h4>
+        </div>
+    </div>
+
+    <div class="card bg-dark text-white">
+        <div class="card-body">
+            <p class="text-muted">{{ quiz.description }}</p>
+            <ul class="list-inline">
+                <li class="list-inline-item"><span class="badge bg-primary">{{ quiz.category.value }}</span></li>
+                <li class="list-inline-item"><span class="badge bg-info">{{ quiz.questions|length }} Perguntas</span></li>
+                <li class="list-inline-item">
+                    <span class="badge bg-secondary">
+                        {% if quiz.time_limit_seconds %}
+                            {{ quiz.time_limit_seconds }} segundos
+                        {% else %}
+                            Sem limite de tempo
+                        {% endif %}
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="my-4">
+
+    <h3 class="text-info mb-3">Perguntas e Respostas</h3>
+
+    {% for question in quiz.questions %}
+        <div class="card bg-dark text-white mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <strong>{{ loop.index }}. {{ question.question_text }}</strong>
+                <span class="badge bg-success">{{ question.points }} pts</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for option in question.options %}
+                    {# Adiciona uma classe e um ícone se a opção for a correta #}
+                    <li class="list-group-item bg-dark text-white {% if option.is_correct %} list-group-item-success text-dark fw-bold {% endif %}">
+                        {% if option.is_correct %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% else %}
+                            <i class="bi bi-circle me-2" style="opacity: 0.3;"></i>
+                        {% endif %}
+                        {{ option.option_text }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

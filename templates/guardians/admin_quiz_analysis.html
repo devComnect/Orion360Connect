@@ -1,0 +1,104 @@
+{% extends "base_template.html" %}
+{% block title %}Análise: {{ quiz.title }}{% endblock %}
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guardians_css/admin.css') }}">
+    <style>
+        .progress-bar.bg-correct { background-color: #198754 !important; }
+        .progress-bar.bg-wrong { background-color: #dc3545 !important; }
+        .answer-list-group {
+            font-size: 0.9rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container d-flex">
+
+    <main class="admin-main-content p-4">
+        <div class="page-header d-flex justify-content-between align-items-center">
+            <h1 class="text-white mb-0">
+                <span class="text-muted">Análise do Quiz:</span><br>{{ quiz.title }}
+            </h1>
+            <a href="{{ url_for('admin_v2_bp.analytics_hub', tab='quiz') }}" class="btn btn-outline-info">
+                <i class="bi bi-arrow-left me-1"></i> Voltar para Análises
+            </a>
+        </div>
+        <hr class="border-secondary">
+
+        <h3 class="text-white mt-4 mb-3">Resumo por Pergunta</h3>
+        
+        {% for q_id, data in analysis.items() %}
+        <div class="card bg-dark text-white shadow-sm mb-3">
+            <div class="card-header">
+                <strong>{{ data.question_text }}</strong>
+                <span class="badge bg-secondary float-end">{{ data.total_responses }} Respostas Totais</span>
+            </div>
+            <div class="card-body">
+                {% if data.total_responses > 0 %}
+                <ul class="list-group list-group-flush">
+                    {% for option in data.options %}
+                    {% set percent = (option.count / data.total_responses * 100) %}
+                    <li class="list-group-item bg-dark text-white">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>
+                                {% if option.is_correct %}
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <strong>{{ option.option_text }} (Correta)</strong>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                                    {{ option.option_text }}
+                                {% endif %}
+                            </span>
+                            <span class="text-muted">{{ option.count }} Votos ({{ '%.0f'|format(percent) }}%)</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar {% if option.is_correct %}bg-correct{% else %}bg-wrong{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ percent }}%;" 
+                                 aria-valuenow="{{ percent }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center mb-0">Nenhuma resposta registrada para esta pergunta.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <h3 class="text-white mt-5 mb-3">Respostas Individuais Detalhadas</h3>
+        
+        {% for q_id, responses in detailed_responses.items() %}
+        <div class="card bg-dark text-white shadow-sm mb-3">
+            <div class="card-header">
+                <strong>{{ analysis[q_id].question_text }}</strong>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush answer-list-group">
+                    {% for resp in responses %}
+                    <li class="list-group-item bg-dark text-white d-flex justify-content-between border-secondary">
+                        <div>
+                            {% if resp.is_correct %}
+                                <i class="bi bi-check-circle text-success me-2" title="Correta"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle text-danger me-2" title="Incorreta"></i>
+                            {% endif %}
+                            <strong class="me-2">{{ resp.guardian_name }}:</strong>
+                            <span class="text-muted">{{ resp.answer_text }}</span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endfor %}
+        
+    </main>
+</div>
+{% endblock %}
