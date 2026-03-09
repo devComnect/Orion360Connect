@@ -2,7 +2,7 @@ from collections import defaultdict
 from datetime import datetime, date, timedelta
 from sqlalchemy import desc
 from sqlalchemy.orm import joinedload
-from flask import render_template, redirect, url_for, request, flash, session
+from flask import jsonify, render_template, redirect, url_for, request, flash, session
 from modules.guardians.missions_logic import get_or_create_active_quest_set
 from modules.login.decorators import login_required
 from modules.login.session_manager import SessionManager
@@ -11,7 +11,7 @@ from application.models import (db, Guardians, HistoricoAcao, NivelSeguranca, Gu
                                 TermoAttempt, AnagramAttempt, SpecializationPerkLevel, GuardianInsignia, 
                                 Perk, ShopItem, GuardianPurchase, PasswordAttempt)
 from .logic import (
-    get_global_setting, calculate_week_days_status, get_effective_streak_percentage, get_insignia_category, get_streak_cap)
+    get_global_setting, calculate_week_days_status, get_effective_streak_percentage, get_insignia_category, get_streak_cap, toggle_cosmetic, get_active_avatar_bg)
 from .utils_assistant import get_assistant_data
 from . import guardians_bp
 
@@ -42,91 +42,118 @@ BONUS_TYPES = {
 
 #MONTAGEM DO CARD DE BUFF EM MEU PERFIL
 def generate_active_buffs_html(perfil, effective_streak_percent):
-    """
-    Gera HTML estilo JRPG (Painel de Status) para o popover.
-    """
-    rows = []
-
+    # ── MAPA DE TIPOS ────────────────────────────────────────────
+    # (stat_class, bootstrap_icon, categoria_totalizador)
     STAT_MAP = {
-        'GCOIN_BONUS_PCT':    ('stat-gold', 'bi-coin', 'MOEDAS'),
-        'QUIZ_BONUS_PCT':     ('stat-int',  'bi-lightning-charge', 'QUIZ'),
-        'PATROL_BONUS_PCT':   ('stat-def',  'bi-shield-check', 'PATRULHA'),
-        'CODEGAME_BONUS_PCT': ('stat-dex',  'bi-controller', 'GAMES'),
-        'STREAK_BONUS_PCT':   ('stat-str',  'bi-fire', 'TETO OFENSIVA'),
-        'GLOBAL_SCORE_PCT':   ('stat-all',  'bi-globe', 'GLOBAL'),
-        'DEFAULT':            ('text-muted', 'bi-caret-up', 'GERAL')
+        'GCOIN_BONUS_PCT':      ('stat-gold', 'bi-coin',             'MOEDAS'),
+        'QUIZ_BONUS_PCT':       ('stat-int',  'bi-lightning-charge', 'QUIZ'),
+        'PATROL_BONUS_PCT':     ('stat-def',  'bi-shield-check',     'PATRULHA'),
+        'CODEGAME_BONUS_PCT':   ('stat-mini', 'bi-controller',       'MINIGAMES'),
+        'ANAGRAM_BONUS_PCT':    ('stat-mini', 'bi-puzzle',           'MINIGAMES'),
+        'TERMO_BONUS_PCT':      ('stat-mini', 'bi-keyboard',         'MINIGAMES'),
+        # GERAL: condicional de skill (vale para quiz E minigame)
+        'PERFECTION_BONUS_PCT': ('stat-dex',  'bi-bullseye',         'GERAL'),
+        'SPEED_BONUS_PCT':      ('stat-dex',  'bi-speedometer2',     'GERAL'),
+        # Streak (dinâmico — não entra como pct fixo no totalizador)
+        'STREAK_BONUS_PCT':     ('stat-str',  'bi-fire',             'OFENSIVA'),
+        # Global score (bônus sobre tudo ganho)
+        'GLOBAL_SCORE_PCT':     ('stat-all',  'bi-globe2',           'GLOBAL'),
+        'DEFAULT':              ('stat-all',  'bi-caret-up-fill',    'GERAL'),
     }
 
-    def _create_row(icon, name, target_name, value_str, style_class):
-        return f"""
-        <div class="buff-row">
-            <div class="buff-source">
-                <i class="bi {icon} {style_class}"></i> {name}
-            </div>
-            <div class="buff-target {style_class}">
-                {target_name}
-            </div>
-            <div class="buff-value {style_class}">
-                {value_str} <i class="bi bi-caret-up-fill" style="font-size: 0.7em;"></i>
-            </div>
+    # Ordem das zonas na grade e no totalizador
+    ZONE_ORDER = ['MOEDAS', 'QUIZ', 'MINIGAMES', 'PATRULHA', 'GERAL', 'GLOBAL']
+
+    # Metadados de exibição por zona
+    ZONE_META = {
+        'MOEDAS':    ('bi-coin',             'stat-gold', 'Moedas'),
+        'QUIZ':      ('bi-lightning-charge', 'stat-int',  'Quiz'),
+        'MINIGAMES': ('bi-controller',       'stat-mini', 'Minigames'),
+        'PATRULHA':  ('bi-shield-check',     'stat-def',  'Patrulha'),
+        'GERAL':     ('bi-bullseye',         'stat-dex',  'Geral'),
+        'GLOBAL':    ('bi-globe2',           'stat-all',  'Global'),
+    }
+
+    # Agrupa slots por zona: { 'QUIZ': [...], 'MOEDAS': [...], ... }
+    grouped_slots = {zone: [] for zone in ZONE_ORDER}
+    power_totals  = {}
+
+    def _add_slot(perk_code, value, display_name, source_tag):
+        style, icon, target = STAT_MAP.get(perk_code, STAT_MAP['DEFAULT'])
+        val_num = float(value)
+        val_display = int(val_num) if val_num == int(val_num) else val_num
+        suffix = "%" if '_PCT' in perk_code else ""
+
+        bucket = grouped_slots.get(target)
+        if bucket is None:
+            # zona inesperada → cria dinamicamente e adiciona ao ZONE_ORDER
+            grouped_slots[target] = []
+            bucket = grouped_slots[target]
+
+        bucket.append({
+            'stat_class': style,
+            'icon':       icon,
+            'value_str':  f"+{val_display}{suffix}",
+            'name':       display_name,
+            'source':     source_tag,
+            'target':     target,
+        })
+
+        if '_PCT' in perk_code and perk_code != 'STREAK_BONUS_PCT':
+            power_totals[target] = power_totals.get(target, 0) + int(val_display)
+
+    # ── 0. STREAK ────────────────────────────────────────────────
+    streak_html = ""
+    if perfil.current_streak and perfil.current_streak > 0:
+        dynamic_cap  = get_streak_cap(perfil)
+        streak_pct   = effective_streak_percent
+        bar_width    = int((streak_pct / dynamic_cap) * 100) if dynamic_cap > 0 else 0
+        power_totals['GLOBAL'] = power_totals.get('GLOBAL', 0) + streak_pct
+
+        streak_html = f"""
+        <div class="buff-section-label">
+            <i class="bi bi-fire stat-str"></i>SISTEMA — OFENSIVA DIÁRIA
         </div>
-        """
+        <div class="buff-streak-block mb-3">
+            <div class="buff-streak-fire"><i class="bi bi-fire"></i></div>
+            <div class="buff-streak-info">
+                <div class="buff-streak-label">
+                    Streak Ativo &mdash; {perfil.current_streak} dias consecutivos
+                </div>
+                <div class="buff-streak-bar-wrap">
+                    <div class="buff-streak-bar-fill" style="width:{bar_width}%"></div>
+                </div>
+                <div class="buff-streak-caps">
+                    <span>0%</span><span>CAP: {dynamic_cap}%</span>
+                </div>
+            </div>
+            <div class="buff-streak-val">
+                <div class="buff-streak-pct">+{streak_pct}%</div>
+                <div class="buff-streak-target">GLOBAL</div>
+            </div>
+        </div>"""
 
-    # 0. BÔNUS DE OFENSIVA (DIÁRIO)
-    if perfil.current_streak > 0:
-        style, icon, target = STAT_MAP['STREAK_BONUS_PCT']
-        dynamic_cap = get_streak_cap(perfil) 
-        val_display = f"+{effective_streak_percent}% <span style='font-size:0.65em; opacity:0.6;'>/ {dynamic_cap}% MAX</span>"
-        
-        rows.append(_create_row(
-            icon="bi-fire", 
-            name="Ofensiva Diária", 
-            target_name="GLOBAL", 
-            value_str=val_display,
-            style_class="stat-str" 
-        ))
-
-    # 1. BÔNUS DE ESPECIALIZAÇÃO (CAMINHO)
+    # ── 1. PERKS DE ESPECIALIZAÇÃO ───────────────────────────────
     if perfil.specialization_id and perfil.nivel_id:
-        current_level_number = perfil.nivel.level_number
         perk_entries = db.session.query(SpecializationPerkLevel)\
             .join(Perk).filter(
                 SpecializationPerkLevel.specialization_id == perfil.specialization_id,
-                SpecializationPerkLevel.level == current_level_number
+                SpecializationPerkLevel.level == perfil.nivel.level_number
             ).options(joinedload(SpecializationPerkLevel.perk)).all()
 
         for entry in perk_entries:
-            val = int(entry.bonus_value) if entry.bonus_value == int(entry.bonus_value) else entry.bonus_value
-            p_code = entry.perk.perk_code
-            style, icon, target = STAT_MAP.get(p_code, STAT_MAP['DEFAULT'])
-            
-            sulfixo = "%" if '_PCT' in p_code else ""
-            
-            rows.append(_create_row(
-                icon="bi-person-badge",
-                name=f"{entry.perk.name} (Nv.{entry.level})",
-                target_name=target,
-                value_str=f"+{val}{sulfixo}",
-                style_class=style
-            ))
+            _add_slot(entry.perk.perk_code, entry.bonus_value,
+                      entry.perk.name, "CAMINHO")
 
-    # 2. BÔNUS DE CONQUISTAS (INSÍGNIAS)
+    # ── 2. INSÍGNIAS ─────────────────────────────────────────────
     if perfil.featured_associations:
         for assoc in perfil.featured_associations:
             ins = assoc.insignia
             if ins and ins.bonus_value:
-                val = int(ins.bonus_value) if ins.bonus_value == int(ins.bonus_value) else ins.bonus_value
-                style, icon, target = STAT_MAP.get(ins.bonus_type, STAT_MAP['DEFAULT'])
-                
-                rows.append(_create_row(
-                    icon="bi-award-fill",
-                    name=ins.nome,
-                    target_name=target,
-                    value_str=f"+{val}%",
-                    style_class=style
-                ))
+                _add_slot(ins.bonus_type or 'DEFAULT', ins.bonus_value,
+                          ins.nome, "INSÍGNIA")
 
-    # 3. BÔNUS DE ITENS (LOJA)
+    # ── 3. ITENS DA LOJA ─────────────────────────────────────────
     try:
         shop_bonuses = db.session.query(ShopItem)\
             .join(GuardianPurchase, ShopItem.id == GuardianPurchase.item_id)\
@@ -134,33 +161,180 @@ def generate_active_buffs_html(perfil, effective_streak_percent):
                 GuardianPurchase.guardian_id == perfil.id,
                 ShopItem.bonus_value > 0,
                 ShopItem.bonus_type.isnot(None),
-                (GuardianPurchase.expires_at == None) | (GuardianPurchase.expires_at > datetime.utcnow())
+                (GuardianPurchase.expires_at == None) |
+                (GuardianPurchase.expires_at > datetime.utcnow())
             ).all()
 
         for item in shop_bonuses:
-            if 'TOKEN' in item.bonus_type or item.category == 'Consumíveis':
+            if 'TOKEN' in (item.bonus_type or '') or item.category == 'Consumíveis':
                 continue
-
-            val = int(item.bonus_value) if item.bonus_value == int(item.bonus_value) else item.bonus_value
-            sulfixo = "%" if '_PCT' in item.bonus_type else ""
-            style, icon, target = STAT_MAP.get(item.bonus_type, STAT_MAP['DEFAULT'])
-            item_icon = item.image_path if (item.image_path and 'bi-' in item.image_path) else icon
-
-            rows.append(_create_row(
-                icon=item_icon,
-                name=item.name,
-                target_name=target,
-                value_str=f"+{val}{sulfixo}",
-                style_class=style
-            ))
-            
+            _add_slot(item.bonus_type, item.bonus_value, item.name, "LOJA")
     except Exception as e:
         print(f"Erro helper buff shop: {e}")
 
-    if rows:
-        return f'<div class="buff-panel">{"".join(rows)}</div>'
-    
-    return "<div class='p-3 text-center text-muted small font-tech'>NENHUM MODIFICADOR DE SISTEMA ATIVO.</div>"
+    # ── RENDERIZAÇÃO: GRADE AGRUPADA ─────────────────────────────
+    SOURCE_BADGE = {
+        'CAMINHO':  ('bi-diagram-3', ''),
+        'INSÍGNIA': ('bi-award',     ''),
+        'LOJA':     ('bi-bag',       ''),
+    }
+
+    def _render_slot(slot):
+        badge_icon, badge_label = SOURCE_BADGE.get(slot['source'], ('bi-circle', '???'))
+        return f"""
+        <div class="buff-slot {slot['stat_class']}" title="{slot['source']}: {slot['name']}">
+            <span class="buff-slot-badge">
+                <i class="bi {badge_icon}"></i> {badge_label}
+            </span>
+            <i class="bi {slot['icon']} buff-slot-icon"></i>
+            <span class="buff-slot-value">{slot['value_str']}</span>
+            <span class="buff-slot-name">{slot['name']}</span>
+        </div>"""
+
+    def _render_empty():
+        return """
+        <div class="buff-slot slot-empty">
+            <i class="bi bi-square-dotted buff-slot-icon"></i>
+            <span class="buff-slot-name">—</span>
+        </div>"""
+
+    # Itera zonas na ordem definida, pulando as vazias
+    all_zones_order = ZONE_ORDER + [z for z in grouped_slots if z not in ZONE_ORDER]
+    slots_section_html = ""
+
+    for zone in all_zones_order:
+        zone_slots = grouped_slots.get(zone, [])
+        if not zone_slots:
+            continue
+
+        zone_icon, zone_style, zone_label = ZONE_META.get(
+            zone, ('bi-plus', 'stat-all', zone)
+        )
+
+        # Renderiza os slots desta zona
+        slots_html = "".join(_render_slot(s) for s in zone_slots)
+
+        # Preenche até fechar a linha (múltiplo de 3)
+        remainder = len(zone_slots) % 3
+        if remainder:
+            slots_html += _render_empty() * (3 - remainder)
+
+        slots_section_html += f"""
+        <div class="buff-zone-label">
+            <i class="bi {zone_icon} {zone_style}"></i>{zone_label}
+        </div>
+        <div class="buff-slot-grid mb-3">
+            {slots_html}
+        </div>"""
+
+    if not slots_section_html:
+        slots_section_html = """
+        <div class="p-3 text-center buff-section-label justify-content-center">
+            NENHUM FRAGMENTO EQUIPADO
+        </div>"""
+
+    slots_block = f"""
+    <div class="buff-section-label mt-1">
+        <i class="bi bi-grid-3x3" style="opacity:0.4"></i>FRAGMENTOS EQUIPADOS
+    </div>
+    {slots_section_html}"""
+
+    # ── RENDERIZAÇÃO: TOTALIZADOR ─────────────────────────────────
+    total_sum = 0
+    power_rows_html = ""
+
+    for zone in all_zones_order:
+        if zone not in power_totals:
+            continue
+        pct_value = power_totals[zone]
+        zone_icon, zone_style, zone_label = ZONE_META.get(
+            zone, ('bi-plus', 'stat-all', zone)
+        )
+        total_sum += pct_value
+        power_rows_html += f"""
+        <div class="buff-power-row">
+            <span class="buff-power-label">
+                <i class="bi {zone_icon} {zone_style}"></i>{zone_label.upper()}
+            </span>
+            <span class="buff-power-amount {zone_style}">+{pct_value}%</span>
+        </div>"""
+
+    if not power_rows_html:
+        power_rows_html = """
+        <div class="p-3 text-center buff-section-label justify-content-center">
+            NENHUM MODIFICADOR PERCENTUAL ATIVO
+        </div>"""
+
+    power_section = f"""
+    <div class="buff-section-label">
+        <i class="bi bi-sigma" style="opacity:0.4"></i>PODER ACUMULADO
+    </div>
+    <div class="buff-power-total">
+        {power_rows_html}
+        <div class="buff-power-footer">
+            <span class="buff-power-footer-label">
+                <i class="bi bi-cpu me-2"></i>Índice de Poder Total
+            </span>
+            <span class="buff-power-footer-value">+{total_sum}%</span>
+        </div>
+    </div>"""
+
+    # ── MODAL HTML FINAL ──────────────────────────────────────────
+    has_content = any(grouped_slots.get(z) for z in all_zones_order)
+    if not has_content and not streak_html:
+        modal_html = """
+        <div class='p-4 text-center buff-section-label justify-content-center'>
+            NENHUM MODIFICADOR DE SISTEMA ATIVO.
+        </div>"""
+    else:
+        modal_html = streak_html + slots_block + power_section
+
+    # ── MINI CARD HTML ────────────────────────────────────────────
+    mini_stats_html = ""
+    mini_categories = [(z, power_totals[z]) for z in all_zones_order if z in power_totals]
+
+    for zone_name, pct_value in mini_categories[:6]:
+        zone_icon, zone_style, zone_label = ZONE_META.get(
+            zone_name, ('bi-plus', 'stat-all', zone_name)
+        )
+        mini_stats_html += f"""
+        <div class="buff-mini-stat">
+            <span class="buff-mini-val {zone_style}">+{pct_value}%</span>
+            <span class="buff-mini-key">{zone_label}</span>
+        </div>"""
+
+    shown = len(mini_categories[:6])
+    for _ in range((3 - shown % 3) % 3):
+        mini_stats_html += """
+        <div class="buff-mini-stat">
+            <span class="buff-mini-val" style="color:#2a2f38">—</span>
+            <span class="buff-mini-key" style="color:#2a2f38">livre</span>
+        </div>"""
+
+    mini_html = f"""
+    <div class="buff-mini-wrap">
+        <div class="buff-mini-header">
+            <span class="buff-mini-title">
+                <i class="bi bi-cpu me-1"></i>Modificadores Ativos
+            </span>
+            <button class="btn-cyber btn-sm font-tech"
+                    style="font-size:0.6rem; padding:4px 10px; letter-spacing:1px;"
+                    data-bs-toggle="modal" data-bs-target="#statusWindowModal">
+                Ver Tudo <i class="bi bi-arrow-up-right"></i>
+            </button>
+        </div>
+        <div class="buff-mini-grid">
+            {mini_stats_html}
+        </div>
+        <div class="buff-mini-total">
+            <span class="buff-mini-total-label">
+                <i class="bi bi-sigma me-1"></i>Poder Total
+            </span>
+            <span class="buff-mini-total-val">+{total_sum}%</span>
+        </div>
+    </div>"""
+
+    return {'modal': modal_html, 'mini': mini_html}
 
 
 @guardians_bp.route('/meu-perfil', defaults={'perfil_id': None})
@@ -224,7 +398,7 @@ def meu_perfil(perfil_id):
     # --- 3. STATUS E BUFFS (REFATORADO) ---
     effective_streak_percent = get_effective_streak_percentage(perfil)
     week_days_data = calculate_week_days_status(perfil)
-    active_perks_html = generate_active_buffs_html(perfil, effective_streak_percent)
+    active_perks_data = generate_active_buffs_html(perfil, effective_streak_percent)
 
     # --- 4. HISTÓRICO E PROGRESSO ---
     historico = perfil.historico_acoes.order_by(desc(HistoricoAcao.data_evento)).limit(50)
@@ -262,6 +436,8 @@ def meu_perfil(perfil_id):
     inventory_bag = {}
     for purchase in active_purchases:
         item = purchase.item
+        if item.category in ('Consumíveis', 'Cosméticos'): 
+            continue
         if item.id not in inventory_bag:
             bonus_display = "Item Raro"
             if item.bonus_value:
@@ -316,7 +492,12 @@ def meu_perfil(perfil_id):
 
     quest_set = None
     active_missions = []
-    assistant_payload = get_assistant_data(perfil, 'meu_perfil')
+    logged_guardian = perfil if is_own_profile else Guardians.query.filter_by(user_id=logged_in_user_id).first()
+    assistant_payload = get_assistant_data(perfil, 'meu_perfil', viewer=logged_guardian)
+
+    #cosméticos
+    active_avatar_bg = get_active_avatar_bg(perfil.id)
+    cosmetic_purchases = GuardianPurchase.query.join(ShopItem).filter(GuardianPurchase.guardian_id == perfil.id,ShopItem.category == 'Cosméticos').options(joinedload(GuardianPurchase.item)).all()
 
     if is_own_profile:
         try:
@@ -359,7 +540,7 @@ def meu_perfil(perfil_id):
         # Buffs e Status
         effective_streak_percent=effective_streak_percent,
         week_days_data=week_days_data,
-        active_perks_html=active_perks_html,
+        active_perks_data=active_perks_data,
         
         # Missões e Specs
         quest_set=quest_set,
@@ -371,7 +552,11 @@ def meu_perfil(perfil_id):
         user_xp=(perfil.score_atual or 0),
         
         #assistente
-        assistant_data=assistant_payload
+        assistant_data=assistant_payload,
+
+        #toggle de cosméticos
+        active_avatar_bg=active_avatar_bg,
+        cosmetic_purchases=cosmetic_purchases
     )
 
 ##ROTA PRA EDITAR PERFIL
@@ -426,6 +611,56 @@ def edit_profile():
                            guardian=guardian,
                            minhas_insignias=minhas_insignias,
                            badge_limit=badge_limit)
+
+
+
+# C.1 — Nova rota de toggle
+def toggle_cosmetic(guardian_id: int, purchase_id: int) -> dict:
+    purchase = GuardianPurchase.query.get(purchase_id)
+
+    if not purchase or purchase.guardian_id != guardian_id:
+        return {'success': False, 'message': 'Item não encontrado.'}
+
+    if not purchase.item.cosmetic_slot:
+        return {'success': False, 'message': 'Item não é um cosmético válido.'}
+
+    slot = purchase.item.cosmetic_slot
+
+    if purchase.is_cosmetic_active:
+        # Toggle OFF
+        purchase.is_cosmetic_active = False
+        db.session.commit()
+        return {'success': True, 'is_active': False}
+    else:
+        # ── CORREÇÃO: busca e desativa um a um, sem join no update ──
+        purchases_to_deactivate = GuardianPurchase.query.join(ShopItem).filter(
+            GuardianPurchase.guardian_id == guardian_id,
+            GuardianPurchase.is_cosmetic_active == True,
+            ShopItem.cosmetic_slot == slot
+        ).all()  # ← traz os objetos primeiro
+
+        for p in purchases_to_deactivate:
+            p.is_cosmetic_active = False  # ← atualiza cada um individualmente
+
+        # Ativa o escolhido
+        purchase.is_cosmetic_active = True
+        db.session.commit()
+        return {'success': True, 'is_active': True}
+
+@guardians_bp.route('/cosmetic/toggle/<int:purchase_id>', methods=['POST'])
+@login_required
+def toggle_cosmetic_route(purchase_id):
+    user_id = session.get('user_id')
+    guardian = Guardians.query.filter_by(user_id=user_id).first()
+    if not guardian:
+        return redirect(url_for('guardians_bp.meu_perfil'))
+
+    result = toggle_cosmetic(guardian.id, purchase_id)  # ← .id aqui
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify(result)
+    flash('Cosmético atualizado.', 'success')
+    return redirect(url_for('guardians_bp.meu_perfil'))
 
 
 # == ROTA PARA ESCOLHA DE ESPECIALIZAÇÃO                  ==

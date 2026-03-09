@@ -311,6 +311,303 @@
             box-shadow: 0 0 10px rgba(255, 42, 109, 0.5);
             transform: scale(1.1);
         }
+        /* ============================================================
+        COSMÉTICOS — adicionar ao final de profile.css (e/ou loja.css)
+        ============================================================ */
+
+
+        /* ── AVATAR COM CAMADA DE BACKGROUND (profile + rankings) ── */
+
+        /* .avatar-frame já existe — apenas garantir position: relative */
+        .avatar-frame { position: relative; overflow: hidden; }
+
+        /* Camada de bg: preenche o frame por baixo do SVG */
+        .avatar-bg-layer {
+            position: absolute;
+            inset: 0;
+            background: #000;          /* fallback quando sem cosmético */
+            z-index: 0;
+            transition: background 0.4s ease;
+        }
+
+        /* Imagem do avatar flutua acima da camada de bg */
+        .avatar-img-overlay {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Mini-avatar no ranking */
+        .mini-avatar-wrap {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .mini-avatar-bg {
+            position: absolute;
+            inset: 0;
+            background: #1a1a1a;       /* fallback */
+            z-index: 0;
+            transition: background 0.4s ease;
+        }
+
+        .mini-avatar-overlay {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Avatar do pódio */
+        .podium-avatar-wrap {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0;          /* mantém o clip-path do frame original */
+        }
+
+        .podium-avatar-bg {
+            position: absolute;
+            inset: 0;
+            background: #1a1a1a;
+            z-index: 0;
+            transition: background 0.4s ease;
+        }
+
+        .podium-avatar-overlay {
+            position: relative;
+            z-index: 1;
+        }
+
+
+        /* ── GRID DE COSMÉTICOS NO INVENTÁRIO (meu perfil) ── */
+
+        .cosmetic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .cosmetic-slot {
+            background: #141414;
+            border: 1px solid #333;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cosmetic-slot.cosmetic-active {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 12px rgba(13, 202, 240, 0.15);
+        }
+
+        /* Raridades no slot de inventário */
+        .cosmetic-slot.rarity-RARE     { border-color: var(--rarity-rare); }
+        .cosmetic-slot.rarity-EPIC     { border-color: var(--rarity-epic); }
+        .cosmetic-slot.rarity-LEGENDARY{ border-color: var(--rarity-legendary); }
+        .cosmetic-slot.cosmetic-active.rarity-RARE      { box-shadow: 0 0 12px rgba(13,202,240,0.2); }
+        .cosmetic-slot.cosmetic-active.rarity-EPIC      { box-shadow: 0 0 12px rgba(214,51,132,0.2); }
+        .cosmetic-slot.cosmetic-active.rarity-LEGENDARY { box-shadow: 0 0 12px rgba(255,193,7,0.25); }
+
+        /* Preview do gradiente */
+        .cosmetic-preview {
+            height: 60px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            padding: 4px 6px;
+        }
+
+        .cosmetic-preview-label {
+            font-size: 0.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.6);
+            font-family: var(--tech-font);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        /* Info do cosmético */
+        .cosmetic-info {
+            padding: 8px 10px 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
+
+        .cosmetic-name {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #e0e0e0;
+            letter-spacing: 0.5px;
+        }
+
+        .cosmetic-slot-tag {
+            font-size: 0.55rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: var(--tech-font);
+        }
+
+        /* Botão toggle */
+        .cosmetic-toggle-form { padding: 6px 10px 10px; }
+
+        .btn-cosmetic-toggle {
+            width: 100%;
+            padding: 6px 10px;
+            font-family: var(--tech-font);
+            font-size: 0.65rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-cosmetic-on {
+            background: rgba(13, 202, 240, 0.1);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+        }
+        .btn-cosmetic-on:hover {
+            background: rgba(13, 202, 240, 0.2);
+        }
+
+        .btn-cosmetic-off {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #333;
+            color: #666;
+        }
+        .btn-cosmetic-off:hover {
+            border-color: #555;
+            color: #999;
+        }
+
+
+        /* ── SEÇÃO DE COSMÉTICOS NA LOJA ── */
+
+        .cosmetics-shop-section {
+            border-top: 1px solid #1e2530;
+            padding-top: 30px;
+        }
+
+        .cosmetics-shop-header {
+            margin-bottom: 20px;
+        }
+
+        .cosmetics-shop-title {
+            font-size: 1.1rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .cosmetics-shop-sub {
+            font-size: 0.7rem;
+            color: #444;
+            letter-spacing: 2px;
+            margin-top: 3px;
+        }
+
+        .cosmetics-shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .cosmetic-shop-card {
+            background: rgba(31, 40, 51, 0.95);
+            border: 1px solid #2c3e50;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cosmetic-shop-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .cosmetic-shop-card.rarity-RARE:hover     { box-shadow: 0 0 20px rgba(13,202,240,0.15); border-color: var(--rarity-rare); }
+        .cosmetic-shop-card.rarity-EPIC:hover     { box-shadow: 0 0 20px rgba(214,51,132,0.15); border-color: var(--rarity-epic); }
+        .cosmetic-shop-card.rarity-LEGENDARY:hover{ box-shadow: 0 0 20px rgba(255,193,7,0.2);   border-color: var(--rarity-legendary); }
+
+        /* Preview grande do gradiente no card da loja */
+        .cosmetic-shop-preview {
+            height: 100px;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 8px;
+        }
+
+        .cosmetic-shop-rarity-badge {
+            font-size: 0.55rem;
+            letter-spacing: 1px;
+            padding: 3px 7px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.4);
+        }
+
+        .cosmetic-shop-body {
+            padding: 12px 14px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .cosmetic-shop-name {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .cosmetic-shop-desc {
+            font-size: 0.72rem;
+            color: #888;
+            line-height: 1.4;
+            font-family: var(--ui-font);
+        }
+
+        .cosmetic-shop-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.58rem;
+            letter-spacing: 1px;
+            color: #555;
+            margin-top: auto;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .cosmetic-shop-footer {
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
     </style>
 {% endblock %}
 
@@ -398,6 +695,13 @@
                     <div class="slot-info">
                         <span class="slot-name">{{ item.name }}</span>
                         <span class="slot-status">ATIVO</span>
+                        {% if expires_map.get(item.id) %}
+                            <span class="slot-expires text-muted" 
+                                data-expires="{{ expires_map[item.id].isoformat() }}"
+                                style="font-size: 0.65rem; opacity: 0.7;">
+                                ...
+                            </span>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
@@ -521,6 +825,71 @@
         {% endfor %}
     </div>
 
+    {% if cosmetic_items %}
+    <div class="cosmetics-shop-section mt-5">
+        <div class="cosmetics-shop-header font-tech">
+            <div class="cosmetics-shop-title">
+                <i class="bi bi-palette-fill me-2" style="color: var(--rarity-epic);"></i>
+                COSMÉTICOS
+            </div>
+            <div class="cosmetics-shop-sub">// COLEÇÃO PERMANENTE — SEM ROTAÇÃO //</div>
+        </div>
+
+        <div class="cosmetics-shop-grid">
+            {% for item in cosmetic_items %}
+                {% set already_owned = item.id in owned_cosmetic_ids %}
+                {% set can_afford = guardian.guardian_coins >= item.cost %}
+                {% set rarity_class = 'rarity-' + (item.rarity or 'COMMON') %}
+
+                <div class="cosmetic-shop-card {{ rarity_class }}">
+                    {# Preview do gradiente #}
+                    <div class="cosmetic-shop-preview"
+                        style="background: {{ item.bonus_type }};">
+                        <div class="cosmetic-shop-rarity-badge badge-{{ item.rarity or 'COMMON' }}">
+                            <span class="rarity-dot"></span>
+                            {% if item.rarity == 'RARE' %}RARO
+                            {% elif item.rarity == 'EPIC' %}ÉPICO
+                            {% elif item.rarity == 'LEGENDARY' %}LENDÁRIO
+                            {% else %}COMUM{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="cosmetic-shop-body font-tech">
+                        <div class="cosmetic-shop-name">{{ item.name }}</div>
+                        <div class="cosmetic-shop-desc">{{ item.description }}</div>
+                        <div class="cosmetic-shop-meta">
+                            <span><i class="bi bi-person-bounding-box me-1"></i>Fundo do Avatar</span>
+                            <span><i class="bi bi-infinity me-1"></i>Permanente</span>
+                        </div>
+                    </div>
+
+                    <div class="cosmetic-shop-footer">
+                        <div class="item-price">{{ item.cost }} GC</div>
+
+                        {% if already_owned %}
+                            <button class="btn-buy-tech btn-disabled"
+                                    style="color: var(--neon-blue); border-color: var(--neon-blue);" disabled>
+                                <i class="bi bi-check-circle-fill"></i> ADQUIRIDO
+                            </button>
+                        {% elif not can_afford %}
+                            <button class="btn-buy-tech btn-disabled" disabled title="Saldo insuficiente">
+                                SEM MOEDAS
+                            </button>
+                        {% else %}
+                            <form action="{{ url_for('guardians_bp.comprar_item', item_id=item.id) }}" method="POST">
+                                <button type="submit" class="btn-buy-tech"
+                                        onclick="return confirm('Adquirir {{ item.name }} permanentemente?');">
+                                    COMPRAR <i class="bi bi-cart-plus"></i>
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <div class="text-center mt-5">
         <a href="{{ url_for('guardians_bp.meu_perfil') }}" class="btn btn-outline-secondary font-tech border-secondary text-muted" style="border-style: dashed;">
             &lt; RETORNAR AO PERFIL
@@ -528,4 +897,37 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.slot-expires').forEach(el => {
+        const expires = new Date(el.dataset.expires);
+
+        function update() {
+            const diff = expires - new Date();
+            if (diff <= 0) {
+                el.textContent = 'EXPIRADO';
+                el.style.color = '#ff4444';
+                return;
+            }
+
+            const days    = Math.floor(diff / 86400000);
+            const hours   = Math.floor((diff % 86400000) / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+
+            if (days > 0)
+                el.textContent = `${days}d ${hours}h restantes`;
+            else if (hours > 0)
+                el.textContent = `${hours}h ${minutes}m restantes`;
+            else
+                el.textContent = `${minutes}m restantes`;
+        }
+
+        update();
+        setInterval(update, 60000); // atualiza a cada minuto
+    });
+});
+</script>
 {% endblock %}

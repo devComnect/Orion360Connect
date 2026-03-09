@@ -36,6 +36,11 @@
                     <i class="bi bi-person-circle"></i> Meu Perfil
                 </a>
             </li>
+            <li>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#modalAlterarSenhaExterno">
+                    <i class="bi bi-shield-lock"></i> Alterar Senha
+                </a>
+            </li>
 
         {% elif is_portal_admin %}
             <li class="submenu">
@@ -141,6 +146,124 @@
     {% endif %}
 </aside>
 
+<div class="modal fade" id="modalAlterarSenhaExterno" tabindex="-1" aria-labelledby="modalAlterarSenhaExternoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalAlterarSenhaExternoLabel">
+          <i class="bi bi-shield-lock me-2"></i>Alterar Senha
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="alerta-senha-externo" class="alert d-none" role="alert"></div>
+
+        <div class="mb-3">
+            <label class="form-label">Senha Atual</label>
+            <input type="password" class="form-control" id="ext_senha_atual" 
+                    placeholder="Digite sua senha atual"
+                    autocomplete="current-password">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nova Senha</label>
+            <input type="password" class="form-control" id="ext_nova_senha" 
+                    placeholder="Mínimo 8 caracteres"
+                    autocomplete="new-password">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Confirmar Nova Senha</label>
+            <input type="password" class="form-control" id="ext_confirma_senha" 
+                    placeholder="Repita a nova senha"
+                    autocomplete="new-password">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-alterar-senha-externo">
+          <span id="ext-btn-texto">Salvar Nova Senha</span>
+          <span id="ext-btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
 <script src="{{ url_for('static', filename='js/header.js') }}"></script>
 
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btnAlterar = document.getElementById('btn-alterar-senha-externo');
+    
+    // Sai silenciosamente se o botão não existir (usuários não-externos)
+    if (!btnAlterar) return;
+
+    btnAlterar.addEventListener('click', async function () {
+        const nova_senha     = document.getElementById('ext_nova_senha').value;
+        const confirma_senha = document.getElementById('ext_confirma_senha').value;
+        const senha_atual    = document.getElementById('ext_senha_atual').value;
+        const btnTexto       = document.getElementById('ext-btn-texto');
+        const btnSpinner     = document.getElementById('ext-btn-spinner');
+
+        if (!senha_atual || !nova_senha || !confirma_senha) {
+            mostrarAlertaExterno('warning', 'Preencha todos os campos.');
+            return;
+        }
+        if (nova_senha !== confirma_senha) {
+            mostrarAlertaExterno('warning', 'A nova senha e a confirmação não coincidem.');
+            return;
+        }
+        if (nova_senha.length < 8) {
+            mostrarAlertaExterno('warning', 'A nova senha deve ter pelo menos 8 caracteres.');
+            return;
+        }
+
+        btnTexto.classList.add('d-none');
+        btnSpinner.classList.remove('d-none');
+
+        try {
+            const response = await fetch('/alterar_senha_externo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senha_atual, nova_senha, confirma_senha })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                mostrarAlertaExterno('success', result.message);
+                document.getElementById('ext_senha_atual').value = '';
+                document.getElementById('ext_nova_senha').value = '';
+                document.getElementById('ext_confirma_senha').value = '';
+            } else {
+                mostrarAlertaExterno('danger', result.error || 'Erro ao atualizar a senha.');
+            }
+        } catch (err) {
+            mostrarAlertaExterno('danger', 'Erro de conexão. Tente novamente.');
+        } finally {
+            btnTexto.classList.remove('d-none');
+            btnSpinner.classList.add('d-none');
+        }
+    });
+
+    function mostrarAlertaExterno(tipo, mensagem) {
+        const alerta = document.getElementById('alerta-senha-externo');
+        alerta.className = `alert alert-${tipo}`;
+        alerta.textContent = mensagem;
+        alerta.classList.remove('d-none');
+    }
+
+    document.getElementById('modalAlterarSenhaExterno').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('alerta-senha-externo').className = 'alert d-none';
+        document.getElementById('alerta-senha-externo').textContent = '';
+        document.getElementById('ext_senha_atual').value = '';
+        document.getElementById('ext_nova_senha').value = '';
+        document.getElementById('ext_confirma_senha').value = '';
+    });
+});
+</script>

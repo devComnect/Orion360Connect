@@ -6,6 +6,8 @@ from modules.login.session_manager import SessionManager
 from modules.home.routes import render_performance_individual
 import logging
 from sqlalchemy import func
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 login_bp = Blueprint('login', __name__)
 
@@ -230,3 +232,51 @@ def update_password():
     return jsonify({'message': 'Senha atualizada com sucesso!'})
 
 
+#rota para que users externos possam alterar sua propria senha
+@login_bp.route('/alterar_senha_externo', methods=['POST'])
+def alterar_senha_externo():
+    # 🔒 Só usuário logado e externo pode acessar
+    if 'user_id' not in session:
+        return jsonify({'error': 'Acesso não autorizado.'}), 401
+    if not session.get('is_externo'):
+        return jsonify({'error': 'Rota exclusiva para usuários externos.'}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Dados inválidos.'}), 400
+
+    senha_atual    = data.get('senha_atual')
+    nova_senha     = data.get('nova_senha')
+    confirma_senha = data.get('confirma_senha')
+
+    if not all([senha_atual, nova_senha, confirma_senha]):
+        return jsonify({'error': 'Todos os campos são obrigatórios.'}), 400
+
+    if nova_senha != confirma_senha:
+        return jsonify({'error': 'A nova senha e a confirmação não coincidem.'}), 400
+
+    if len(nova_senha) < 8:
+        return jsonify({'error': 'A nova senha deve ter pelo menos 8 caracteres.'}), 400
+
+    # Busca pelo user_id da sessão (user só altera a própria senha)
+    user = User.query.filter_by(id=session['user_id']).first()
+    if not user:
+        return jsonify({'error': 'Usuário não encontrado.'}), 404
+
+    # 🔒 Verifica senha atual — suporta plain text legado e hash
+    if user.password.startswith('pbkdf2:') or user.password.startswith('scrypt:'):
+        senha_valida = check_password_hash(user.password, senha_atual)
+    else:
+        senha_valida = (user.password == senha_atual)  # fallback plain text legado
+
+    if not senha_valida:
+        return jsonify({'error': 'Senha atual incorreta.'}), 403
+
+    if nova_senha == senha_atual:
+        return jsonify({'error': 'A nova senha não pode ser igual à atual.'}), 400
+
+    # ✅ Salva com hash (migração automática do plain text)
+    user.password = generate_password_hash(nova_senha)
+    db.session.commit()
+
+    return jsonify({'message': 'Senha atualizada com sucesso!'})

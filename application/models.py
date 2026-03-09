@@ -958,19 +958,20 @@ class ActiveMission(db.Model):
     
 class ShopItem(db.Model):
     __tablename__ = 'shop_items'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False) # Ex: "Pacote de Tokens"
-    description = db.Column(db.String(255), nullable=True) # Ex: "Recupera 3 tokens de Quiz"
-    category = db.Column(db.String(50), nullable=False, default='Geral') # Ex: "Consumíveis", "Bônus", "Cosméticos"
-    cost = db.Column(db.Integer, nullable=False) # Preço em G-Coins
-    image_path = db.Column(db.String(255), nullable=True) # Caminho da imagem ou classe de ícone (bi-star)
-    bonus_type = db.Column(db.String(50), nullable=True) 
-    bonus_value = db.Column(db.Float, nullable=True)
-    duration_days = db.Column(db.Integer, nullable=True)
-    purchase_limit = db.Column(db.Integer, nullable=True) # Quantas vezes pode comprar? (None = Infinito)
-    is_active = db.Column(db.Boolean, default=True) # Para o admin esconder itens
-    rarity = db.Column(db.String(20), default='COMMON', nullable=False)
+
+    id             = db.Column(db.Integer, primary_key=True)
+    name           = db.Column(db.String(100), nullable=False)
+    description    = db.Column(db.String(255), nullable=True)
+    category       = db.Column(db.String(50), nullable=False, default='Geral')
+    cost           = db.Column(db.Integer, nullable=False)
+    image_path     = db.Column(db.String(255), nullable=True)
+    bonus_type     = db.Column(db.String(255), nullable=True)   # cosméticos: guarda o CSS aqui
+    bonus_value    = db.Column(db.Float, nullable=True)
+    duration_days  = db.Column(db.Integer, nullable=True)
+    purchase_limit = db.Column(db.Integer, nullable=True)
+    is_active      = db.Column(db.Boolean, default=True)
+    rarity         = db.Column(db.String(20), default='COMMON', nullable=False)
+    cosmetic_slot  = db.Column(db.String(50), nullable=True)    # ← NOVO
 
     purchases = db.relationship('GuardianPurchase', back_populates='item')
 
@@ -983,11 +984,10 @@ class GuardianPurchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     guardian_id = db.Column(db.Integer, db.ForeignKey('guardians.id'), nullable=False, index=True)
     item_id = db.Column(db.Integer, db.ForeignKey('shop_items.id'), nullable=False, index=True)
-    
     purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
     cost_at_purchase = db.Column(db.Integer, nullable=False) # Quanto pagou na época (para histórico)
     expires_at = db.Column(db.DateTime, nullable=True)
-    
+    is_cosmetic_active = db.Column(db.Boolean, default=False, nullable=False)
     guardian = db.relationship('Guardians', backref=db.backref('purchases', lazy='dynamic'))
     item = db.relationship('ShopItem')
 

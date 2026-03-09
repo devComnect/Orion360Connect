@@ -1,0 +1,368 @@
+:root {
+    --neon-blue: #0dcaf0;
+    --neon-gold: #ffd700;
+    --neon-silver: #e0e0e0;
+    --neon-bronze: #cd7f32;
+    --bg-dark: #0b0c10;
+    --panel-bg: #1f2833;
+    --border-tech: #45a29e;
+}
+
+body { 
+    background-color: var(--bg-dark); 
+    font-family: 'Segoe UI', sans-serif;
+    background-image: radial-gradient(circle at 50% 0%, #1a2634 0%, #0b0c10 70%);
+}
+
+.font-tech { font-family: 'Share Tech Mono', monospace; }
+
+/* --- HEADER & COUNTDOWN --- */
+.ranking-header {
+    text-align: center;
+    padding: 50px 0 30px;
+    position: relative;
+}
+
+.ranking-title {
+    font-family: 'Share Tech Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(13, 202, 240, 0.4);
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+}
+
+.season-timer-card {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid var(--border-tech);
+    padding: 10px 25px;
+    border-radius: 50px;
+    gap: 15px;
+    box-shadow: 0 0 15px rgba(69, 162, 158, 0.2);
+}
+
+.btn-rewards-tech {
+    background: linear-gradient(90deg, var(--neon-gold), #ffc107);
+    color: #000;
+    border: none;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.4);
+    transition: transform 0.2s;
+}
+.btn-rewards-tech:hover { transform: scale(1.05); }
+
+/* --- TABS --- */
+.tech-tabs .nav-link {
+    color: #8892b0;
+    font-family: 'Share Tech Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid transparent;
+    margin: 0 5px;
+    transition: all 0.3s;
+}
+.tech-tabs .nav-link.active {
+    background: rgba(13, 202, 240, 0.1);
+    color: var(--neon-blue);
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 10px rgba(13, 202, 240, 0.15);
+}
+.tech-tabs .nav-link:hover:not(.active) {
+    color: #fff;
+    border-color: rgba(255,255,255,0.2);
+}
+
+/* --- PODIUM (TOP 3) --- */
+.podium-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 50px;
+    padding-top: 20px;
+    gap: 20px;
+}
+
+.podium-card {
+    background: var(--panel-bg);
+    border: 1px solid #333;
+    width: 220px;
+    text-align: center;
+    padding: 20px;
+    position: relative;
+    clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%, 0 15%);
+    transition: transform 0.3s;
+}
+
+.podium-card:hover { transform: translateY(-10px); }
+
+/* Tamanhos e Cores do Pódio */
+.podium-1 { height: 280px; order: 2; border-top: 4px solid var(--neon-gold); z-index: 2; }
+.podium-2 { height: 240px; order: 1; border-top: 4px solid var(--neon-silver); }
+.podium-3 { height: 220px; order: 3; border-top: 4px solid var(--neon-bronze); }
+
+.podium-avatar-wrapper {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 15px;
+}
+
+.podium-1 .podium-avatar-wrapper { width: 100px; height: 100px; }
+
+.podium-avatar {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    clip-path: none;
+    background: transparent;
+}
+
+.crown-icon {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2rem;
+    color: var(--neon-gold);
+    text-shadow: 0 0 10px var(--neon-gold);
+    animation: float 3s ease-in-out infinite;
+}
+
+.podium-rank {
+    font-size: 3rem;
+    font-weight: bold;
+    font-family: 'Share Tech Mono', monospace;
+    opacity: 0.5;
+    position: absolute;
+    bottom: 0;
+    right: 10px;
+    line-height: 1;
+}
+
+.podium-name {
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.podium-score {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.2rem;
+    color: var(--neon-blue);
+}
+
+/* --- LISTA GERAL (4º EM DIANTE) --- */
+.ranking-list-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.rank-row {
+    display: flex;
+    align-items: center;
+    background: rgba(31, 40, 51, 0.6);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 15px 20px;
+    transition: background 0.2s;
+    position: relative;
+}
+
+.rank-row:hover { background: rgba(31, 40, 51, 0.9); }
+
+.rank-row.current-user {
+    background: rgba(13, 202, 240, 0.1);
+    border-left: 4px solid var(--neon-blue);
+}
+
+.rank-num {
+    width: 50px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.2rem;
+    color: #8892b0;
+    text-align: center;
+}
+
+.rank-user-info {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-left: 20px;
+}
+
+.mini-avatar {
+    border-radius: 0; 
+    border: none;   
+}
+
+.rank-user-name {
+    font-weight: 600;
+    color: #fff;
+}
+
+.rank-dept-small {
+    font-size: 0.75rem;
+    color: #8892b0;
+    text-transform: uppercase;
+}
+
+.rank-total-score {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.1rem;
+    color: #fff;
+    text-align: right;
+    min-width: 100px;
+}
+
+/* Feedback Visual de Clique */
+.rank-row {
+    cursor: pointer; /* Garante que o cursor vire 'mãozinha' em toda a linha */
+}
+
+.rank-row:hover {
+    background: rgba(31, 40, 51, 0.9);
+    border-color: var(--neon-blue); /* Borda acende ao passar o mouse */
+    transform: translateX(5px); /* Leve movimento para a direita */
+}
+
+/* Opcional: Efeito no Pódio ao passar o mouse */
+.podium-card {
+    display: block; /* Necessário pois mudamos de div para a */
+    cursor: pointer;
+}
+/* --- TERMINAL MODAL DESIGN --- */
+.terminal-content {
+    background-color: #0a0a0a;
+    border: 2px solid var(--neon-blue);
+    box-shadow: 0 0 30px rgba(13, 202, 240, 0.15);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Scanline Effect (Linha passando) */
+.terminal-content::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 2;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+}
+
+.terminal-header-bar {
+    background: var(--neon-blue);
+    color: #000;
+    padding: 5px 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: bold;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.terminal-body {
+    padding: 20px;
+    min-height: 300px;
+    font-family: 'Share Tech Mono', monospace;
+    color: #fff;
+    font-size: 1rem;
+    overflow-y: auto;
+    position: relative;
+    z-index: 3;
+}
+
+/* Textos do Terminal */
+.term-line {
+    margin-bottom: 5px;
+    opacity: 0; /* Começa invisível para animação */
+    transform: translateX(-10px);
+    transition: all 0.1s ease-out;
+}
+.term-line.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.term-prefix { color: var(--neon-blue); margin-right: 10px; }
+.term-success { color: var(--neon-green); }
+.term-warning { color: var(--neon-gold); }
+.term-highlight { color: #fff; font-weight: bold; background: rgba(13, 202, 240, 0.2); padding: 0 5px; }
+
+/* Cursor Piscante */
+.cursor-blink {
+    display: inline-block;
+    width: 10px;
+    height: 1.2em;
+    background-color: var(--neon-blue);
+    animation: blink 1s step-end infinite;
+    vertical-align: text-bottom;
+    margin-left: 5px;
+}
+
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* Custom Scrollbar para o terminal */
+.terminal-body::-webkit-scrollbar { width: 8px; }
+.terminal-body::-webkit-scrollbar-track { background: #000; }
+.terminal-body::-webkit-scrollbar-thumb { background: var(--neon-blue); border-radius: 4px; }
+
+@keyframes float { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -10px); } }
+
+
+/* Mover para o CSS global — usado em perfil E rankings */
+
+.mini-avatar-wrap {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.mini-avatar-bg {
+    position: absolute;
+    inset: 0;
+    background: #1a1a1a;
+    z-index: 0;
+}
+
+.mini-avatar-overlay {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.podium-avatar-wrap {
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    width: 100%;
+    height: 100%;
+}
+.podium-avatar-bg {
+    position: absolute;
+    inset: 0;
+    background: #1a1a1a;
+    z-index: 0;
+}
+
+.podium-avatar-overlay {
+    position: relative;
+    z-index: 1;
+}

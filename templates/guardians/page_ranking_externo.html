@@ -193,7 +193,8 @@
             <div class="podium-card podium-2">
                 <div class="podium-avatar-wrapper">
                     <div class="podium-avatar">
-                        <i class="bi bi-person-circle text-muted" style="font-size: 2.5rem;"></i>
+                        <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ p2.avatar_seed or 'GuardianDefault' }}"
+                            style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
                     </div>
                 </div>
                 <div class="podium-name">{{ p2.name }}</div>
@@ -207,7 +208,8 @@
                 <div class="podium-avatar-wrapper">
                     <i class="bi bi-crown-fill crown-icon"></i>
                     <div class="podium-avatar" style="border: 2px solid var(--neon-gold);">
-                        <i class="bi bi-person-circle text-warning" style="font-size: 3.5rem;"></i>
+                        <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ p1.avatar_seed or 'GuardianDefault' }}"
+                            style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
                     </div>
                 </div>
                 <div class="podium-name text-warning">{{ p1.name }}</div>
@@ -220,7 +222,8 @@
             <div class="podium-card podium-3">
                 <div class="podium-avatar-wrapper">
                     <div class="podium-avatar">
-                        <i class="bi bi-person-circle text-muted" style="font-size: 2.5rem;"></i>
+                        <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ p3.avatar_seed or 'GuardianDefault' }}"
+                            style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
                     </div>
                 </div>
                 <div class="podium-name">{{ p3.name }}</div>

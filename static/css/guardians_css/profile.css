@@ -1,6 +1,6 @@
 /* =========================================
    VARIAVEIS GLOBAIS & THEME (CYBERPUNK)
-   ========================================= */
+   ========================================= */ 
 :root {
     /* Cores Base */
     --bg-dark: #0b0c10;
@@ -106,7 +106,6 @@ body {
     position: relative;
     margin: 0 auto;
     border: 2px solid var(--neon-blue);
-    padding: 4px;
     background: #000;
 }
 
@@ -116,6 +115,19 @@ body {
     object-fit: cover;
     /* Clip-path tech style */
     clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+}
+
+.avatar-img-overlay {
+    position: relative;
+    z-index: 1;
+    background: transparent !important; /* mata qualquer bg herdado */
+}
+
+.avatar-bg-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    transition: background 0.5s ease;
 }
 
 .level-badge {
@@ -443,3 +455,480 @@ body {
 .stat-dex  { color: #d63384; text-shadow: 0 0 5px rgba(214, 51, 132, 0.3); }
 .stat-str  { color: #ff4d4d; text-shadow: 0 0 5px rgba(255, 77, 77, 0.3); }
 .stat-all  { color: #f8f9fa; }
+
+
+/* =========================================
+   BUFF PANEL — STATUS WINDOW (v3)
+   Substitui bloco anterior no profile.css
+   ========================================= */
+
+/* ── GRADE DE SLOTS ── */
+.buff-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 0 4px;
+}
+
+/* Label de zona — separa os grupos dentro da grade */
+.buff-zone-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.58rem;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #555;
+    font-family: var(--tech-font);
+    margin: 6px 4px 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #1a1f27;
+}
+
+.buff-zone-label i { font-size: 0.75rem; }
+
+/* ── SLOT INDIVIDUAL ── */
+.buff-slot {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid #1e2530;
+    border-radius: 4px;
+    padding: 14px 10px 12px;
+    text-align: center;
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    cursor: default;
+    overflow: hidden;
+}
+
+/* Topo colorido por atributo */
+.buff-slot::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.buff-slot:hover { transform: translateY(-2px); }
+.buff-slot:hover::before { opacity: 1; }
+
+/* Cores por atributo */
+.buff-slot.stat-int  { color: var(--neon-blue); }
+.buff-slot.stat-int:hover  { border-color: var(--neon-blue);  box-shadow: 0 0 14px rgba(13,202,240,0.15); }
+
+.buff-slot.stat-gold { color: #ffd700; }
+.buff-slot.stat-gold:hover { border-color: #ffd700; box-shadow: 0 0 14px rgba(255,215,0,0.15); }
+
+.buff-slot.stat-def  { color: #20c997; }
+.buff-slot.stat-def:hover  { border-color: #20c997; box-shadow: 0 0 14px rgba(32,201,151,0.15); }
+
+.buff-slot.stat-dex  { color: #d63384; }
+.buff-slot.stat-dex:hover  { border-color: #d63384; box-shadow: 0 0 14px rgba(214,51,132,0.15); }
+
+.buff-slot.stat-str  { color: #ff4d4d; }
+.buff-slot.stat-str:hover  { border-color: #ff4d4d; box-shadow: 0 0 14px rgba(255,77,77,0.15); }
+
+.buff-slot.stat-all  { color: #c5c6c7; }
+.buff-slot.stat-all:hover  { border-color: #555; box-shadow: 0 0 14px rgba(197,198,199,0.08); }
+
+/* Laranja para MINIGAMES */
+.buff-slot.stat-mini { color: #fd7e14; }
+.buff-slot.stat-mini:hover { border-color: #fd7e14; box-shadow: 0 0 14px rgba(253,126,20,0.15); }
+
+/* Slot vazio */
+.buff-slot.slot-empty {
+    border: 1px dashed #1a1f27;
+    opacity: 0.2;
+    pointer-events: none;
+    color: #2a2f38;
+}
+
+/* Badge de origem (canto superior direito) */
+.buff-slot-badge {
+    position: absolute;
+    top: 5px; right: 5px;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 5px;
+    border-radius: 2px;
+    border: 1px solid currentColor;
+    opacity: 0.55;
+    font-family: var(--tech-font);
+    line-height: 1.4;
+}
+
+.buff-slot-icon {
+    font-size: 1.7rem;
+    display: block;
+    filter: drop-shadow(0 0 5px currentColor);
+    margin-bottom: 8px;
+}
+
+.buff-slot-value {
+    font-family: var(--tech-font);
+    font-size: 1.05rem;
+    font-weight: bold;
+    display: block;
+    color: inherit;
+}
+
+.buff-slot-name {
+    font-size: 0.62rem;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #888;
+    display: block;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── BLOCO DE STREAK ── */
+.buff-streak-block {
+    background: rgba(255, 77, 77, 0.05);
+    border: 1px solid rgba(255, 77, 77, 0.2);
+    border-left: 3px solid #ff4d4d;
+    border-radius: 4px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.buff-streak-fire {
+    font-size: 2.2rem;
+    color: #ff4d4d;
+    filter: drop-shadow(0 0 7px rgba(255,77,77,0.5));
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.buff-streak-info { flex: 1; min-width: 0; }
+
+.buff-streak-label {
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    color: #999;
+    text-transform: uppercase;
+    font-family: var(--tech-font);
+}
+
+.buff-streak-bar-wrap {
+    margin-top: 7px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 1px;
+    height: 5px;
+    overflow: hidden;
+}
+
+.buff-streak-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff4d4d, #ff8c42);
+    box-shadow: 0 0 6px rgba(255,77,77,0.5);
+}
+
+.buff-streak-caps {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 0.6rem;
+    color: #666;
+    font-family: var(--tech-font);
+}
+
+.buff-streak-val { text-align: right; flex-shrink: 0; }
+
+.buff-streak-pct {
+    font-family: var(--tech-font);
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #ff4d4d;
+    text-shadow: 0 0 10px rgba(255,77,77,0.4);
+    line-height: 1;
+}
+
+.buff-streak-target {
+    font-size: 0.62rem;
+    letter-spacing: 1px;
+    color: #666;
+    text-transform: uppercase;
+    font-family: var(--tech-font);
+}
+
+/* ── TOTALIZADOR ── */
+.buff-power-total {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid #1a1f27;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.buff-power-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 16px;
+    border-bottom: 1px solid #0f1217;
+}
+.buff-power-row:last-child { border-bottom: none; }
+
+.buff-power-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+    color: #999;
+    text-transform: uppercase;
+    font-family: var(--tech-font);
+}
+.buff-power-label i { font-size: 0.95rem; }
+
+.buff-power-amount {
+    font-family: var(--tech-font);
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+/* Cores no totalizador */
+.stat-mini { color: #fd7e14; text-shadow: 0 0 5px rgba(253,126,20,0.3); }
+
+.buff-power-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(13,202,240,0.04);
+    border-top: 1px solid rgba(13,202,240,0.1);
+}
+
+.buff-power-footer-label {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: #777;
+    text-transform: uppercase;
+    font-family: var(--tech-font);
+}
+
+.buff-power-footer-value {
+    font-family: var(--tech-font);
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--neon-blue);
+    text-shadow: 0 0 12px rgba(13,202,240,0.4);
+}
+
+/* ── SECTION LABEL (nível de seção maior) ── */
+.buff-section-label {
+    font-size: 0.62rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--tech-font);
+}
+.buff-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #1a1f27;
+}
+
+/* ── MINI CARD ── */
+.buff-mini-wrap {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.buff-mini-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.buff-mini-title {
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #777;
+    font-family: var(--tech-font);
+}
+
+.buff-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.buff-mini-stat {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid #1a1f27;
+    border-radius: 3px;
+    padding: 9px 6px;
+    text-align: center;
+}
+
+.buff-mini-val {
+    font-family: var(--tech-font);
+    font-size: 0.9rem;
+    font-weight: bold;
+    display: block;
+    line-height: 1;
+}
+
+.buff-mini-key {
+    font-size: 0.55rem;
+    letter-spacing: 1px;
+    color: #777;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 4px;
+}
+
+.buff-mini-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(13,202,240,0.05);
+    border: 1px solid rgba(13,202,240,0.1);
+    border-radius: 3px;
+    padding: 9px 14px;
+}
+
+.buff-mini-total-label {
+    font-size: 0.62rem;
+    letter-spacing: 2px;
+    color: #777;
+    text-transform: uppercase;
+    font-family: var(--tech-font);
+}
+
+.buff-mini-total-val {
+    font-family: var(--tech-font);
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--neon-blue);
+    text-shadow: 0 0 8px rgba(13,202,240,0.3);
+}
+
+#inventoryTabs .nav-link {
+    color: #555;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    border-radius: 0;
+}
+#inventoryTabs .nav-link.active {
+    color: var(--neon-blue);
+    border-bottom-color: var(--neon-blue);
+    background: transparent;
+}
+
+/* ── COSMÉTICOS — cards idênticos aos módulos ── */
+.cosmetic-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.cosmetic-slot {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid #1e2530;
+    border-radius: 4px;
+    padding: 10px 8px;
+    text-align: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Topo colorido por raridade */
+.cosmetic-slot.rarity-RARE     { border-color: rgba(13,202,240,0.4); }
+.cosmetic-slot.rarity-EPIC     { border-color: rgba(214,51,132,0.4); }
+.cosmetic-slot.rarity-LEGENDARY{ border-color: rgba(255,193,7,0.4);  }
+
+.cosmetic-slot.cosmetic-active {
+    box-shadow: 0 0 10px rgba(13,202,240,0.2);
+}
+.cosmetic-slot.cosmetic-active.rarity-LEGENDARY {
+    box-shadow: 0 0 10px rgba(255,193,7,0.25);
+}
+
+/* Preview do gradiente — substitui o ícone grande dos módulos */
+.cosmetic-preview {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.cosmetic-preview-label { display: none; } /* esconde no card pequeno */
+
+/* Nome e tag — igual ao inventory-label */
+.cosmetic-name {
+    font-size: 0.65rem;
+    letter-spacing: 0.5px;
+    color: #e0e0e0;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.cosmetic-slot-tag {
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #555;
+    font-family: var(--tech-font);
+}
+
+/* Botão toggle — compacto embaixo do card */
+.cosmetic-toggle-form { width: 100%; margin-top: 2px; }
+
+.btn-cosmetic-toggle {
+    width: 100%;
+    padding: 4px 6px;
+    font-family: var(--tech-font);
+    font-size: 0.58rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.btn-cosmetic-on {
+    background: rgba(13,202,240,0.1);
+    border: 1px solid var(--neon-blue);
+    color: var(--neon-blue);
+}
+.btn-cosmetic-on:hover  { background: rgba(13,202,240,0.2); }
+
+.btn-cosmetic-off {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid #2a2f38;
+    color: #555;
+}
+.btn-cosmetic-off:hover { border-color: #444; color: #888; }

@@ -726,50 +726,43 @@ def calculate_reroll_cost(current_count):
 
 def select_unique_daily_items(amount=4):
     """
-    Seleciona 'amount' itens únicos baseados na raridade configurada no banco.
+    Seleciona 'amount' itens únicos baseados na raridade.
+    Cosméticos são excluídos — eles ficam fixos na loja.
     """
-    all_items = ShopItem.query.filter_by(is_active=True).all()
-    
+    # MUDANÇA: exclui categoria Cosméticos do pool do gacha
+    all_items = ShopItem.query.filter(
+        ShopItem.is_active == True,
+        ShopItem.category != 'Cosméticos'
+    ).all()
+
     if len(all_items) <= amount:
         return [i.id for i in all_items]
 
-    # 1. Separa itens por raridade
-    items_by_rarity = {
-        'COMMON': [], 'RARE': [], 'EPIC': [], 'LEGENDARY': []
-    }
-    
+    items_by_rarity = {'COMMON': [], 'RARE': [], 'EPIC': [], 'LEGENDARY': []}
     for item in all_items:
         r = item.rarity if item.rarity in items_by_rarity else 'COMMON'
         items_by_rarity[r].append(item.id)
 
-    # 2. Obtém os pesos dinâmicos do banco
     rarity_weights_dict = get_shop_rarity_weights()
-    
-    # Prepara listas para o random.choices
-    rarities = list(rarity_weights_dict.keys()) # ['COMMON', 'RARE'...]
-    weights = list(rarity_weights_dict.values()) # [60, 30, 8, 2]
+    rarities = list(rarity_weights_dict.keys())
+    weights  = list(rarity_weights_dict.values())
 
     selected_ids = set()
-    max_attempts = 50 
+    max_attempts = 50
     attempts = 0
-    
+
     while len(selected_ids) < amount and attempts < max_attempts:
         attempts += 1
-        
-        # Sorteia a raridade usando os pesos do banco
         chosen_rarity = random.choices(rarities, weights=weights, k=1)[0]
-        
         pool = items_by_rarity[chosen_rarity]
-        
-        # Fallback: Se não houver itens dessa raridade, pega de outra pool disponível
+
         if not pool:
-            available_pools = [p for p in items_by_rarity.values() if len(p) > 0]
+            available_pools = [p for p in items_by_rarity.values() if p]
             if not available_pools:
                 break
             pool = random.choice(available_pools)
-            
-        chosen_id = random.choice(pool)
-        selected_ids.add(chosen_id)
+
+        selected_ids.add(random.choice(pool))
 
     return list(selected_ids)
 
@@ -832,26 +825,73 @@ def perform_shop_reroll(guardian):
 
 ##LIMITA OS SLOTS DO INVETÁRIO
 def check_shop_slots_available(guardian_id: int) -> bool:
-    """
-    Verifica se o jogador tem espaço para ativar mais um item passivo.
-    """
     max_slots = get_game_setting('ITEMS_MODULES_SET_AMOUNT', 4, int)
     now = datetime.utcnow()
     active_items_count = 0
     purchases = GuardianPurchase.query.filter_by(guardian_id=guardian_id).all()
-    
+
     for p in purchases:
-        if p.item.category == 'Consumíveis':
+        if p.item.category in ('Consumíveis', 'Cosméticos'):
             continue
-            
+
         if p.item.duration_days:
             expiration = p.purchased_at + timedelta(days=p.item.duration_days)
             if now < expiration:
                 active_items_count += 1
         else:
             active_items_count += 1
-            
+
     return active_items_count < max_slots
+
+def toggle_cosmetic(guardian_id: int, purchase_id: int) -> dict:
+    """
+    Ativa ou desativa um cosmético.
+    - Se estava inativo: ativa ele e desativa todos os outros do mesmo slot.
+    - Se estava ativo: apenas desativa (toggle off).
+    Retorna dict com 'success' e 'is_active' resultante.
+    """
+    purchase = GuardianPurchase.query.get(purchase_id)
+
+    if not purchase or purchase.guardian_id != guardian_id:
+        return {'success': False, 'message': 'Item não encontrado.'}
+
+    if not purchase.item.cosmetic_slot:
+        return {'success': False, 'message': 'Item não é um cosmético válido.'}
+
+    slot = purchase.item.cosmetic_slot
+
+    if purchase.is_cosmetic_active:
+        # Toggle OFF
+        purchase.is_cosmetic_active = False
+        db.session.commit()
+        return {'success': True, 'is_active': False}
+    else:
+        # Desativa todos do mesmo slot para este guardian
+        GuardianPurchase.query.join(ShopItem).filter(
+            GuardianPurchase.guardian_id == guardian_id,
+            GuardianPurchase.is_cosmetic_active == True,
+            ShopItem.cosmetic_slot == slot
+        ).update({'is_cosmetic_active': False}, synchronize_session='fetch')
+
+        # Ativa o escolhido
+        purchase.is_cosmetic_active = True
+        db.session.commit()
+        return {'success': True, 'is_active': True}
+
+
+def get_active_avatar_bg(guardian_id: int) -> str:
+    """
+    Retorna o CSS do background de avatar ativo para o guardian.
+    Retorna string vazia se nenhum cosmético de avatar_bg estiver ativo.
+    """
+    purchase = GuardianPurchase.query.join(ShopItem).filter(
+        GuardianPurchase.guardian_id == guardian_id,
+        GuardianPurchase.is_cosmetic_active == True,
+        ShopItem.cosmetic_slot == 'avatar_bg'
+    ).first()
+
+
+    return purchase.item.bonus_type if purchase else ''
 
 
 # ==========================================================

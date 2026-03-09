@@ -17,7 +17,7 @@ from application.models import (MissionCodeEnum, db, TermoGame, Guardians, Histo
 from .logic import (
     update_user_streak, atualizar_nivel_usuario, get_achievement_sort_key, get_active_perk_value, get_total_bonus,
     get_global_setting, calculate_weekly_coin_reward,
-    calculate_final_score, calculate_performance_bonuses, calculate_reroll_cost, get_game_setting,
+    calculate_final_score, calculate_performance_bonuses, calculate_reroll_cost, get_game_setting, get_active_avatar_bg,
     check_shop_slots_available, _get_shop_bonus, _get_insignia_bonus, get_or_create_shop_state, select_unique_daily_items)
 from .utils_assistant import get_assistant_data
 from . import guardians_bp
@@ -79,13 +79,29 @@ def rankings():
         func.sum(Guardians.score_atual).label('score_total')
     ).group_by(Guardians.departamento_nome).order_by(desc('score_total')).all()
 
+    avatar_bgs = {
+        p.id: get_active_avatar_bg(p.id)
+        for p in ranking_global
+    }
+
+    active_bg_purchases = db.session.query(
+        GuardianPurchase.guardian_id,
+        ShopItem.bonus_type
+    ).join(ShopItem).filter(
+        GuardianPurchase.is_cosmetic_active == True,
+        ShopItem.cosmetic_slot == 'avatar_bg'
+    ).all()
+
+    avatar_bgs = {row.guardian_id: row.bonus_type for row in active_bg_purchases}
+    
     return render_template('guardians/page_rankings.html', 
                            ranking_global=ranking_global,
                            ranking_streak=ranking_streak,
                            ranking_departamento=ranking_departamento,
                            current_user_id=current_guardian_id,
                            active_season=active_season,
-                           assistant_data=assistant_payload
+                           assistant_data=assistant_payload,
+                           avatar_bgs=avatar_bgs
                            )
 
 ##ROTA DA PAGINA DE REGRAS
@@ -2040,7 +2056,7 @@ def loja():
     for p in purchases:
         purchase_counts[p.item_id] = purchase_counts.get(p.item_id, 0) + 1
 
-        if p.item.category != 'Consumíveis':
+        if p.item.category not in ('Consumíveis', 'Cosméticos'):
             if p.item.id not in seen_module_ids:
                 active_modules.append(p.item)
                 seen_module_ids.add(p.item.id)
@@ -2052,6 +2068,16 @@ def loja():
     else:
         assistant_payload = get_assistant_data(guardian, 'loja')
 
+    expires_map = {}
+    for p in purchases:
+        if p.item.category != 'Consumíveis' and p.expires_at:
+            expires_map[p.item.id] = p.expires_at
+
+
+    cosmetic_items = ShopItem.query.filter_by(is_active=True, category='Cosméticos').order_by(ShopItem.cost.asc()).all()
+    owned_cosmetic_ids = {p.item_id for p in GuardianPurchase.query.filter_by(guardian_id=guardian.id).all() if p.item.category == 'Cosméticos'}
+    active_cosmetic_purchase_ids = {p.item_id: p.id for p in GuardianPurchase.query.join(ShopItem).filter(GuardianPurchase.guardian_id == guardian.id, GuardianPurchase.is_cosmetic_active == True).all()}
+
     return render_template(
         'guardians/page_loja.html',
         guardian=guardian,
@@ -2062,7 +2088,11 @@ def loja():
         reroll_count=shop_state.reroll_count,
         BONUS_TYPES=BONUS_TYPES,
         max_slots=max_slots,
-        assistant_data=assistant_payload
+        expires_map=expires_map,
+        assistant_data=assistant_payload,
+        cosmetic_items=cosmetic_items,
+        owned_cosmetic_ids=owned_cosmetic_ids,
+        active_cosmetic_purchase_ids=active_cosmetic_purchase_ids
     )
 
 @guardians_bp.route('/guardians/loja/reroll', methods=['POST'])
@@ -2118,7 +2148,7 @@ def comprar_item(item_id):
     purchased_count = len(purchases)
 
     # Limite a 4 itens por inventário
-    if item.category != 'Consumíveis':
+    if item.category not in ('Consumíveis', 'Cosméticos'):
         if not check_shop_slots_available(guardian.id):
             flash('Seus slots de memória estão cheios!', 'warning')
             return redirect(url_for('guardians_bp.loja'))

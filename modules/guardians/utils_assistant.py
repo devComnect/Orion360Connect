@@ -662,9 +662,10 @@ TUTORIALS = {
 # ==============================================================================
 # 3. LÓGICA DO ASSISTENTE
 # ==============================================================================
-def get_assistant_data(guardian, page_key, context_data=None):
+def get_assistant_data(guardian, page_key, context_data=None, viewer=None):
     if not guardian: return None
-    seen_data = guardian.tutorials_seen or {}
+    tutorial_subject = viewer if viewer is not None else guardian
+    seen_data = tutorial_subject.tutorials_seen or {}
 
     # --- A. EVENTO: COMPRA NA LOJA (Usando a nova tag item_buy) ---
     if page_key == 'shop_purchase':

@@ -57,18 +57,26 @@
                 {% endif %}
             </div>
 
+                        
             <div class="avatar-frame mb-3 mt-4" style="border-color: {{ theme_color }};">
+                {# Div interno exclusivo para o background cosmético #}
+                <div class="avatar-bg-layer"
+                    {% if active_avatar_bg %}style="background: {{ active_avatar_bg }};"{% endif %}>
+                </div>
+
                 {% if perfil.avatar_seed %}
-                    <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ perfil.avatar_seed }}" alt="User Avatar" class="avatar-img">
+                    <img src="https://api.dicebear.com/9.x/bottts/svg?seed={{ perfil.avatar_seed }}&backgroundColor[]=transparent"
+                        alt="User Avatar" class="avatar-img avatar-img-overlay">
                 {% else %}
-                    <div class="avatar-img d-flex align-items-center justify-content-center bg-dark">
+                    <div class="avatar-img avatar-img-overlay d-flex align-items-center justify-content-center">
                         <i class="bi bi-person-circle text-muted" style="font-size: 4rem;"></i>
                     </div>
                 {% endif %}
-                <div class="level-badge" data-bs-toggle="tooltip" title="Nível Atual" style="border-color: {{ theme_color }}; color: {{ theme_color }};">
+
+                <div class="level-badge" data-bs-toggle="tooltip" title="Nível Atual"
+                    style="border-color: {{ theme_color }}; color: {{ theme_color }};">
                     LVL.{{ nivel_atual.level_number if nivel_atual else '0' }}
                 </div>
-
             </div>
 
             <h2 class="text-white text-uppercase fw-bold mb-0 d-flex align-items-center justify-content-center flex-wrap gap-2">
@@ -149,16 +157,8 @@
                 {% endfor %}
             </div>
 
-            {% if active_perks_html and active_perks_html != "<div class='p-2 text-center text-muted small'>Nenhum modificador ativo.</div>" %}
-                <div class="mt-3">
-                    <button class="btn btn-sm btn-cyber-status font-tech px-4 py-2" 
-                            type="button"
-                            data-bs-toggle="modal" 
-                            data-bs-target="#statusWindowModal">
-                        <i class="bi bi-cpu text-warning me-2"></i> Modificadores
-                        <span class="ms-2 badge bg-dark border border-secondary text-muted" style="font-size: 0.6rem;">+</span>
-                    </button>
-                </div>
+            {% if active_perks_data and active_perks_data.mini %}     
+                {{ active_perks_data.mini | safe }} 
             {% endif %}
         </div>
     </section>
@@ -248,10 +248,10 @@
                 </div>
             </div>
         </div>
-
+        
         <div class="row">
             <div class="col-lg-8">
-                
+                {% if is_own_profile %}
                 <div class="cyber-card">
                     <div class="cyber-header">
                         <div class="cyber-title"><i class="bi bi-list-task text-neon-blue"></i>MISSÕES ATIVAS (RESGATE RECOMPENSAS) </div>
@@ -290,7 +290,7 @@
                         {% endif %}
                     </div>
                 </div>
-
+                {% endif %}
                 <div class="cyber-card">
                     <div class="cyber-header">
                         <div class="cyber-title"><i class="bi bi-terminal text-neon-blue"></i> LOG DO SISTEMA (HISTÓRICO)</div>
@@ -322,7 +322,7 @@
                             <i class="bi bi-trophy-fill text-neon-blue me-2"></i>GALERIA DE CONQUISTAS
                         </div>
                         <span class="badge bg-dark border border-secondary text-muted">
-                            {{ perfil.insignias|length }} Total
+                            {{ numero_conquistas }} Total
                         </span>
                     </div>
 
@@ -422,20 +422,27 @@
                 {% if is_own_profile %}
                 <div class="cyber-card">
                     <div class="cyber-header">
-                        <div class="inventory-profile-card cyber-title"><i class="bi bi-backpack2 text-neon-blue"></i> INVENTÁRIO</div>
+                        <div class="inventory-profile-card cyber-title">
+                            <i class="bi bi-backpack2 text-neon-blue"></i> INVENTÁRIO
+                        </div>
                     </div>
-                    
+
                     <div class="p-2">
-                        
+
+                        {# ── CARTEIRA ── #}
                         <h6 class="font-tech small text-muted text-uppercase ms-1 mb-2 mt-1">
                             <i class="bi bi-wallet2"></i> Carteira
                         </h6>
-                        <div class="inventory-grid mb-3" style="grid-template-columns: 1fr;"> <div class="inventory-slot resource-slot" style="border-color: #ffd700 !important; background: linear-gradient(90deg, rgba(255, 215, 0, 0.05), rgba(0,0,0,0));">
+                        <div class="inventory-grid mb-3" style="grid-template-columns: 1fr;">
+                            <div class="inventory-slot resource-slot"
+                                style="border-color: #ffd700 !important;
+                                        background: linear-gradient(90deg, rgba(255,215,0,0.05), rgba(0,0,0,0));">
                                 <div class="d-flex align-items-center justify-content-between px-3">
                                     <div class="text-start">
                                         <div class="inventory-label text-warning" style="font-size: 0.8rem;">SALDO ATUAL</div>
                                         <div class="inventory-count text-white" style="font-size: 1.5rem;">
-                                            {{ perfil.guardian_coins or 0 }} <span class="fs-6 text-muted">GC</span>
+                                            {{ perfil.guardian_coins or 0 }}
+                                            <span class="fs-6 text-muted">GC</span>
                                         </div>
                                     </div>
                                     <div class="inventory-icon" style="color: #ffd700; font-size: 2rem;">
@@ -447,17 +454,19 @@
 
                         <hr class="border-secondary opacity-25 my-2">
 
+                        {# ── TOKENS DE SISTEMA ── #}
                         <h6 class="font-tech small text-muted text-uppercase ms-1 mb-2">
                             <i class="bi bi-cpu"></i> Tokens de Sistema
                         </h6>
                         <div class="inventory-grid mb-3">
-                            
+
                             <div class="inventory-slot resource-slot">
                                 <div class="inventory-icon text-neon-blue"><i class="bi bi-bootstrap-reboot"></i></div>
                                 <div class="inventory-count">{{ perfil.retake_tokens or 0 }}</div>
                                 <div class="inventory-label">Quiz Tokens</div>
-                                
-                                <div class="crafting-progress" data-bs-toggle="tooltip" title="Próximo em {{ quizzes_remaining }} quizzes perfeitos">
+                                <div class="crafting-progress"
+                                    data-bs-toggle="tooltip"
+                                    title="Próximo em {{ quizzes_remaining }} quizzes perfeitos">
                                     {% set quiz_pct = 0 %}
                                     {% if quizzes_needed_for_token > 0 %}
                                         {% set quiz_pct = ((quizzes_needed_for_token - quizzes_remaining) / quizzes_needed_for_token) * 100 %}
@@ -470,8 +479,9 @@
                                 <div class="inventory-icon text-danger"><i class="bi bi-controller"></i></div>
                                 <div class="inventory-count">{{ perfil.minigame_retake_tokens or 0 }}</div>
                                 <div class="inventory-label">Game Tokens</div>
-                                
-                                <div class="crafting-progress" data-bs-toggle="tooltip" title="Próximo em {{ minigames_remaining }} jogos perfeitos">
+                                <div class="crafting-progress"
+                                    data-bs-toggle="tooltip"
+                                    title="Próximo em {{ minigames_remaining }} jogos perfeitos">
                                     {% set game_pct = 0 %}
                                     {% if minigames_needed_for_token > 0 %}
                                         {% set game_pct = ((minigames_needed_for_token - minigames_remaining) / minigames_needed_for_token) * 100 %}
@@ -483,44 +493,67 @@
 
                         <hr class="border-secondary opacity-25 my-2">
 
-                        <h6 class="active-modules-class font-tech small text-muted text-uppercase ms-1 mb-2">
-                                    <i class="bi bi-battery-charging"></i> Módulos Ativos
-                                </h6>
-                                
+                        {# ── TABS: MÓDULOS / COSMÉTICOS ── #}
+                        <ul class="nav font-tech mb-2" id="inventoryTabs" role="tablist"
+                            style="font-size: 0.65rem; letter-spacing: 1.5px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active px-3 py-2 text-uppercase"
+                                        id="tab-modulos-btn"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#tab-modulos"
+                                        type="button" role="tab">
+                                    <i class="bi bi-battery-charging me-1"></i>Módulos
+                                </button>
+                            </li>
+
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-3 py-2 text-uppercase"
+                                        id="tab-cosmeticos-btn"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#tab-cosmeticos"
+                                        type="button" role="tab">
+                                    <i class="bi bi-palette me-1"></i>Cosméticos
+                                    {% if cosmetic_purchases %}
+                                        <span class="badge bg-dark border border-secondary ms-1"
+                                            style="font-size: 0.5rem;">
+                                            {{ cosmetic_purchases|length }}
+                                        </span>
+                                    {% endif %}
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="inventoryTabContent">
+
+                            {# ── ABA: MÓDULOS ATIVOS ── #}
+                            <div class="tab-pane fade show active" id="tab-modulos" role="tabpanel">
                                 <div class="inventory-grid">
                                     {% set ns = namespace(has_visible_items=false) %}
 
                                     {% if inventory_bag %}
                                         {% for item_id, item_data in inventory_bag.items() %}
-                                            
-                                            {# --- FILTRO DE VISUALIZAÇÃO --- #}
                                             {% if 'Token' not in item_data.name %}
-                                            
                                                 {% set ns.has_visible_items = true %}
-
-                                                {# --- NOVA LÓGICA DE RARIDADE --- #}
-                                                {# Tenta pegar a raridade do item, se não existir, assume COMUM #}
                                                 {% set r_code = item_data.rarity if item_data.rarity else 'COMMON' %}
-                                                
-                                                {# Aplica a classe baseada na raridade: rarity-RARE, rarity-EPIC, etc. #}
-                                                <div class="inventory-slot rarity-{{ r_code }}" 
-                                                    data-bs-toggle="tooltip" 
+
+                                                <div class="inventory-slot rarity-{{ r_code }}"
+                                                    data-bs-toggle="tooltip"
                                                     data-bs-html="true"
-                                                    title="<strong class='text-uppercase' style='color: var(--rarity-{{ r_code|lower }})'>{{ item_data.name }}</strong><br><small>{{ item_data.description }}</small>">
-                                                    
+                                                    title="<strong class='text-uppercase' style='color:var(--rarity-{{ r_code|lower }})'>{{ item_data.name }}</strong><br><small>{{ item_data.description }}</small>">
+
                                                     <div class="inventory-icon">
                                                         {% if 'bi-' in item_data.icon %}
                                                             <i class="bi {{ item_data.icon }}"></i>
                                                         {% else %}
-                                                            <img src="{{ url_for('static', filename=item_data.icon) }}" style="width: 24px; height: 24px;">
+                                                            <img src="{{ url_for('static', filename=item_data.icon) }}"
+                                                                style="width:24px;height:24px;">
                                                         {% endif %}
                                                     </div>
 
                                                     <div class="inventory-count">x{{ item_data.count }}</div>
                                                     <div class="inventory-label text-truncate px-1">{{ item_data.name }}</div>
-                                                    
-                                                    {# Opcional: Mostra a raridade pequena no lugar do bonus ou mantem o bonus #}
-                                                    <div class="inventory-bonus-text" style="opacity: 0.8;">
+                                                    <div class="inventory-bonus-text" style="opacity:0.8;">
                                                         {{ item_data.bonus_display }}
                                                     </div>
                                                 </div>
@@ -528,9 +561,9 @@
                                         {% endfor %}
                                     {% endif %}
 
-                                    {# --- SLOT VAZIO (Placeholder) --- #}
                                     {% if not inventory_bag or not ns.has_visible_items %}
-                                        <div class="inventory-slot resource-slot opacity-50 border-dashed" style="grid-column: span 2; border-style: dashed !important;">
+                                        <div class="inventory-slot resource-slot opacity-50"
+                                            style="grid-column: span 2; border-style: dashed !important;">
                                             <div class="py-2">
                                                 <i class="bi bi-inbox fs-4 text-muted"></i>
                                                 <div class="inventory-label mt-1 text-muted">Nenhum Módulo</div>
@@ -538,9 +571,70 @@
                                         </div>
                                     {% endif %}
                                 </div>
-                        
-                    </div>
-                </div>
+                            </div>
+
+                            {# ── ABA: COSMÉTICOS ── #}
+                            <div class="tab-pane fade" id="tab-cosmeticos" role="tabpanel">
+                                {% if cosmetic_purchases %}
+                                    <div class="cosmetic-grid">
+                                        {% for purchase in cosmetic_purchases %}
+                                            {% set item = purchase.item %}
+                                            {% set is_active = purchase.is_cosmetic_active %}
+
+                                            <div class="cosmetic-slot {{ 'cosmetic-active' if is_active else '' }} rarity-{{ item.rarity }}">
+
+                                                {# Preview do gradiente #}
+                                                <div class="cosmetic-preview" style="background: {{ item.bonus_type }};">
+                                                    <div class="cosmetic-preview-label">{{ item.name }}</div>
+                                                </div>
+
+                                                {# Info #}
+                                                <div class="cosmetic-info">
+                                                    <span class="cosmetic-name font-tech">{{ item.name }}</span>
+                                                </div>
+
+                                                {# Botão toggle — só no próprio perfil #}
+                                                {% if is_own_profile %}
+                                                    <form action="{{ url_for('guardians_bp.toggle_cosmetic_route', purchase_id=purchase.id) }}"
+                                                        method="POST"
+                                                        class="cosmetic-toggle-form">
+                                                        <button type="submit"
+                                                                class="btn-cosmetic-toggle {{ 'btn-cosmetic-on' if is_active else 'btn-cosmetic-off' }}">
+                                                            {% if is_active %}
+                                                                <i class="bi bi-toggle-on"></i> ATIVO
+                                                            {% else %}
+                                                                <i class="bi bi-toggle-off"></i> ATIVAR
+                                                            {% endif %}
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+
+                                {% else %}
+                                    <div class="py-4 text-center">
+                                        <i class="bi bi-palette fs-3 text-muted d-block mb-2" style="opacity:0.3;"></i>
+                                        <div class="font-tech text-muted text-uppercase"
+                                            style="font-size:0.65rem; letter-spacing:2px;">
+                                            Nenhum cosmético adquirido
+                                        </div>
+                                        {% if is_own_profile %}
+                                            <a href="{{ url_for('guardians_bp.loja') }}"
+                                            class="btn-cyber btn-sm font-tech mt-3 d-inline-block"
+                                            style="font-size:0.6rem; padding:4px 12px; letter-spacing:1px;">
+                                                <i class="bi bi-shop me-1"></i>VER LOJA
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                        </div>{# /tab-content #}
+
+                    </div>{# /p-2 #}
+                </div>{# /cyber-card #}
                 {% endif %}
 
             </div>
@@ -564,7 +658,7 @@
                     </div>
                     <ul class="list-unstyled mb-0 lh-lg" style="margin-left: 3.5rem;">
                         <li><i class="bi bi-square-fill text-success me-2"></i> <strong>Verde:</strong> Posição correta (Único).</li>
-                        <li><i class="bi bi-square-fill me-2" style="color: #20c997;"></i> <strong>Verde-Água:</strong> Posição correta (Repetido).</li>
+                        <li><i class="bi bi-square-fill me-2" style="color: #9920c9;"></i> <strong>Roxo:</strong> Posição correta (Repetido).</li>
                         <li><i class="bi bi-square-fill text-info me-2"></i> <strong>Azul:</strong> Lugar errado (Repetido).</li>
                         <li><i class="bi bi-square-fill text-warning me-2"></i> <strong>Amarelo:</strong> Lugar errado (Único).</li>
                         <li><i class="bi bi-square-fill text-secondary me-2 opacity-25"></i> <strong>Cinza:</strong> Inexistente.</li>
@@ -600,7 +694,7 @@
 </div>
 
 <div class="modal fade" id="statusWindowModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content cyber-modal-content">
             
             <div class="modal-header border-0 pb-0">
@@ -612,9 +706,15 @@
                 </div>
             </div>
 
-            <div class="modal-body p-0 pt-2">
-                <div class="status-screen-bg">
-                    {{ active_perks_html|safe }}
+            <div class="modal-body p-0">
+                <div class="status-screen-bg p-3">
+                    {% if active_perks_data and active_perks_data.modal %}
+                        {{ active_perks_data.modal | safe }}
+                    {% else %}
+                        <div class="p-4 text-center buff-section-label justify-content-center">
+                            NENHUM MODIFICADOR DE SISTEMA ATIVO.
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -756,8 +856,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 } 
                 else if (f === 'correct_multi') {
                     // TEAL (VERDE ÁGUA): Certo e Múltiplo <--- NOVO VISUAL
-                    // Usamos 'bi-check-all' para dar ideia de múltiplo ou cor #20c997 (teal do bootstrap)
-                    html += '<i class="bi bi-check-square-fill mx-1" style="color: #20c997;" title="Correto e Repetido na senha"></i>'; 
+                    // Usamos 'bi-check-all' para dar ideia de múltiplo ou cor #9920c9 (roxo do bootstrap)
+                    html += '<i class="bi bi-check-square-fill mx-1" style="color: #9920c9;" title="Correto e Repetido na senha"></i>'; 
                 }
                 else if (f === 'multi') {
                     // AZUL: Lugar Errado e Múltiplo
