@@ -260,18 +260,16 @@
                         {% endfor %}
                     </div>
 
+                    {# CORREÇÃO 1: extrai os IDs das insígnias equipadas uma única vez, fora do loop #}
+                    {% set featured_ids = guardian.featured_associations | map(attribute='insignia_id') | list %}
+
                     <div class="badges-selection-grid">
+                        {# CORREÇÃO 2: ordena por bonus_value decrescente #}
                         {% for item in minhas_insignias %}
                             {% set insignia = item.insignia %}
-                            
-                            {% set is_equipped = false %}
-                            {% for assoc in guardian.featured_associations %}
-                                {% if assoc.insignia_id == insignia.id %}
-                                    {% set is_equipped = true %}
-                                {% endif %}
-                            {% endfor %}
 
-                            <div class="badge-option-card {{ 'selected' if is_equipped else '' }}" 
+                            {# CORREÇÃO 1: checa presença na lista ao invés do loop interno com set #}
+                            <div class="badge-option-card {{ 'selected' if insignia.id in featured_ids else '' }}" 
                                 data-id="{{ insignia.id }}"
                                 onclick="toggleBadgeSelection(this)">
                                 

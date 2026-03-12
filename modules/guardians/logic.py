@@ -67,7 +67,7 @@ def get_global_setting(key, default=None, setting_type=int):
     except (ValueError, TypeError):
         return default
 
-##CALCULA PONTUAÇÃO FINAL APÓS TODOS OS BONUS E GARANTE O BONUS DE OFENSIVA AO FINAL (CASO NÃO TENHA)
+##CALCULA PONTUAÇÃO FINAL APÓS TODOS OS BONUS E GARANTE O BONUS DE OFENSIVA AO FINAL (CASO NÃO TENHA) 
 def calculate_final_score(guardian: Guardians, current_total_score: int, raw_base_score: int, perk_code: str = None):
     """
     [FUNÇÃO MESTRA DE PONTUAÇÃO]
@@ -234,7 +234,7 @@ def calculate_performance_bonuses(guardian: Guardians, event_type: str, raw_scor
         base_perf_bonus = 0
         
         if event_type == 'quiz':
-            guardian.perfect_quiz_streak = (guardian.perfect_quiz_streak or 0) + 1
+            guardian.perfect_minigame_streak = (guardian.perfect_minigame_streak or 0) + 1
             guardian.perfect_quiz_cumulative_count = (guardian.perfect_quiz_cumulative_count or 0) + 1
             
             try:
@@ -244,7 +244,7 @@ def calculate_performance_bonuses(guardian: Guardians, event_type: str, raw_scor
             
             bonus_val = get_global_setting('PERFECT_QUIZ_STREAK_BONUS', default=10, setting_type=int)
             
-            if guardian.perfect_quiz_streak > 0 and guardian.perfect_quiz_streak % streak_threshold == 0:
+            if guardian.perfect_minigame_streak > 0 and guardian.perfect_minigame_streak % streak_threshold == 0:
                 base_perf_bonus = bonus_val
         
         elif event_type == 'minigame':
@@ -274,11 +274,7 @@ def calculate_performance_bonuses(guardian: Guardians, event_type: str, raw_scor
                 perfection_bonus = base_perf_bonus
 
     else:
-        if event_type == 'quiz':
-            guardian.perfect_quiz_streak = 0
-            
-        elif event_type == 'minigame':
-             guardian.perfect_minigame_streak = 0
+        guardian.perfect_minigame_streak = 0
 
     return {
         'time_bonus': int(time_bonus),

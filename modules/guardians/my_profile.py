@@ -607,10 +607,18 @@ def edit_profile():
         flash('Perfil atualizado com sucesso!', 'success')
         return redirect(url_for('guardians_bp.meu_perfil'))
 
+    # DEPOIS
+    minhas_insignias_sorted = sorted(
+        minhas_insignias,
+        key=lambda x: (
+            next((i for i, k in enumerate(['QUIZ', 'TERMO', 'ANAGRAM', 'PW', 'PATROL', 'GCOIN']) if k in (x.insignia.bonus_type or '')), 99),
+            -(x.insignia.bonus_value or 0)
+        )
+    )
     return render_template('guardians/page_edit_profile.html', 
-                           guardian=guardian,
-                           minhas_insignias=minhas_insignias,
-                           badge_limit=badge_limit)
+                        guardian=guardian,
+                        minhas_insignias=minhas_insignias_sorted,
+                        badge_limit=badge_limit)
 
 
 
